@@ -1,6 +1,6 @@
 # nightflight — 夜航 · 深夜观测工作台（可见相机穿行，自定美学版）
 
-来源：机制源自 [flycam](../flycam/index.html)（可见相机 rig + 真透视穿行 + 双向时间轴 + reduced-motion，已验收）。**本页不是复刻**：相机、时间轴、同步方式原样沿用，世界、色板、内容、字体角色全部重做，不绑定任何用户项目。
+来源：机制源自 [flycam](../flycam/index.html)（可见相机 rig + 真透视穿行 + 双向时间轴 + reduced-motion，已验收）。**本页不是复刻**：相机、时间轴、同步方式原样沿用，世界、色板、内容、字体角色全部重做，不绑定任何用户项目。原机制的溯源（mo1 / three.js WebGPU / Three.js Conf Paris）见 [../../km-camera-rig.md](../../km-camera-rig.md)。
 
 调性一句话：一台仪器在深夜的观测台里缓缓飞过别人的工作台面——暖纸、黄铜、月色压在深夜蓝上。
 

@@ -39,6 +39,7 @@
 | [spine/index.html](living/spine/index.html) | 深色侧栏：点「任务」箭头弹簧旋开，悬停子项脊柱条弹到对应高度，点子项光点带辉光滑过去，每步一枚极轻合成音 | 树状子导航、当前项指示、要声音反馈的微交互。内容是奕枢。复刻 lab01.dev UI Experiment #09 |
 | [flycam/index.html](living/flycam/index.html) | 左边黄相机沿虚线飞进一面物件拼贴墙：简历、深圳明信片、面试日历，末帧停在「深圳见。」信封 | 一段旅程用实物物件讲完、运镜讲一条路、同一进度驱动两窗格。复刻 KM 运镜演示，内容是 job-journey |
 | [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam，零件沿用 [#rig](flycam/index.html#rig) / [#flight](flycam/index.html#flight) / [#timeline](flycam/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
+| [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
 
 ## 零件
 
@@ -200,7 +201,7 @@
 
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
-| 可见相机 rig / 视锥沿航线走、过点实心 | [flycam](living/flycam/index.html#rig) | 左窗格 SVG 斜投影：线框视锥 + 正面交叉线 + 朝向三角 + 六边形机身；路径点 `t ≥ 到达时刻` 从空心变实心 |
+| 可见相机 rig / 视锥沿航线走、过点实心 | [rig](living/rig/index.html#rig) | 整页就是编辑视图：斜投影线框视锥 + 正面交叉线 + 朝向三角 + 六边形机身；路径点 `t ≥ 到达时刻` 从空心变实心，站号 01–05、起点只作航线端点。两窗格完整版在 [flycam](flycam/index.html) / [nightflight](nightflight/index.html) |
 | 真 3D 透视飞行 / 相机推进反算卡片位移 | [flycam](living/flycam/index.html#flight) | 外层 `perspective:900px` + 场景 `preserve-3d`；卡世界坐标固定，场景整体 `translate3d(-cam)`；缓动是 t 的纯函数，scrub 天然与播放一致 |
 | 便利贴逐字 / 打字进度换算 | [flycam](living/flycam/index.html#typenote) | 字符数 = t 在打字窗口内线性映射；窗口必须套着卡片在画面里的时段 |
 | 双向时间轴 / 拖动同步两窗格 | [flycam](living/flycam/index.html#timeline) | rAF 推 t；进度条 pointerdown/move 拖动，菱形刻度点跳；两窗格 + 时间轴同吃一个 `render(t)` |

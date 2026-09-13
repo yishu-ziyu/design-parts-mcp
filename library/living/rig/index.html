@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>镜头摇动 · RIG</title>
+<style>
+  :root{
+    --night:#101827;          /* 控制台面（时间轴） */
+    --night-deep:#0C121E;     /* 编辑视图底盘 / 装订底色 */
+    --moon:#F7F3EA;           /* 月色：文字、刻度、播放头 */
+    --tool:#FFD84D;           /* 仪器黄：视锥 / 航线 / 路径点 / 进度 */
+    --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",sans-serif;
+    background:var(--night-deep); color:var(--moon); overflow:hidden;
+  }
+  #app{ height:100vh; display:flex; flex-direction:column; }
+
+  /* —— 唯一的窗格：整页就是一台相机的编辑视图 —— */
+  #rig{
+    position:relative; flex:1; min-height:0; overflow:hidden;
+    background-color:var(--night-deep);
+    background-image:radial-gradient(circle, rgba(247,243,234,.07) var(--gr,1.2px), transparent var(--gr,1.2px));
+    background-size:var(--gd,26px) var(--gd,26px);
+  }
+  #rig svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .tag{
+    position:absolute; top:12px; z-index:5; pointer-events:none;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.2em;
+  }
+  #tag-l{ left:14px; color:rgba(255,216,77,.48); }
+  #hud{ right:14px; color:rgba(247,243,234,.42); }
+
+  #replay{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    z-index:8; cursor:pointer; border-radius:999px;
+    border:1px solid rgba(255,216,77,.5); background:rgba(12,18,30,.92); color:var(--moon);
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.22em; padding:13px 28px 13px 30px;
+    display:flex; align-items:center; gap:10px;
+  }
+  #replay[hidden]{ display:none; }
+
+  /* —— 底部时间轴 —— */
+  #timeline{
+    flex:none; height:78px; background:var(--night);
+    border-top:1px solid rgba(255,216,77,.18);
+    display:flex; align-items:center; gap:16px; padding:0 18px;
+  }
+  #playbtn{
+    flex:none; width:38px; height:38px; border-radius:50%;
+    border:1px solid rgba(255,216,77,.45); background:rgba(255,216,77,.14);
+    color:var(--moon); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #playbtn:hover{ background:rgba(255,216,77,.26); }
+  .tc{ flex:none; min-width:86px; font-family:var(--mono); font-size:12.5px; color:rgba(247,243,234,.45); }
+  .tc b{ color:var(--moon); font-weight:600; }
+  #track{ flex:1; position:relative; height:34px; cursor:pointer; touch-action:none; }
+  #track .rail{
+    position:absolute; left:0; right:0; top:50%; height:6px; transform:translateY(-50%);
+    background:rgba(247,243,234,.14); border-radius:99px;
+  }
+  #fill{
+    position:absolute; left:0; top:50%; height:6px; transform:translateY(-50%);
+    background:var(--tool); border-radius:99px; width:0;
+  }
+  #head{
+    position:absolute; top:2px; bottom:2px; width:3px; margin-left:-1.5px;
+    background:var(--moon); border-radius:2px; left:0;
+  }
+  #head::before{
+    content:""; position:absolute; top:-2px; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--moon); border-bottom:0;
+  }
+  .dia{
+    position:absolute; top:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px;
+    background:var(--moon); transform:rotate(45deg); border-radius:2.5px;
+    border:0; padding:0; cursor:pointer;
+  }
+  .dia::after{
+    content:""; position:absolute; inset:3px; background:var(--night); border-radius:1.5px;
+  }
+  .dia.passed::after{ background:var(--tool); }
+  #kej{
+    flex:none; font-family:var(--mono); font-size:10.5px; letter-spacing:.22em;
+    color:rgba(255,216,77,.8); border:1px solid rgba(255,216,77,.3);
+    border-radius:4px; padding:5px 9px; cursor:help;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #playbtn{ display:none; }
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="rig" aria-label="编辑视图">
+    <span class="tag" id="tag-l">RIG · 编辑视图</span>
+    <span class="tag" id="hud">T 0.00 · HDG 000° · SEG 1/5</span>
+    <svg id="rigsvg" viewBox="0 0 720 784" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <g id="wall"></g>
+      <g id="pathline" fill="none" stroke="#FFD84D" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9"></g>
+      <g id="frustum" fill="none" stroke="#FFD84D" stroke-width="2" stroke-linejoin="round"></g>
+      <g id="wpts"></g>
+    </svg>
+    <button id="replay" hidden>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 7a5 5 0 1 1-1.7-3.75"/><path d="M12 1v3h-3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>重播
+    </button>
+  </main>
+
+  <footer id="timeline">
+    <button id="playbtn" aria-label="播放或暂停">
+      <svg id="icon-play" width="14" height="14" viewBox="0 0 14 14"><path d="M3 1.5 12 7 3 12.5Z" fill="currentColor"/></svg>
+      <svg id="icon-pause" width="14" height="14" viewBox="0 0 14 14" style="display:none"><path d="M3 1.5h3v11H3zM8 1.5h3v11H8z" fill="currentColor"/></svg>
+      <svg id="icon-re" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none"><path d="M12 7a5 5 0 1 1-1.7-3.75"/><path d="M12 1v3h-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="tc"><b id="tc-now">0:00.0</b> / 0:12.0</span>
+    <div id="track">
+      <div class="rail"></div>
+      <div id="fill"></div>
+      <div id="head"></div>
+    </div>
+    <span id="kej" title="可拆：本页与 flycam / nightflight 同机制（可见相机 rig + 虚线航线 + 路径点点火 + 双向时间轴），这里只剩本体——右窗格渲染整个删掉。判断记在 ../../km-camera-rig.md：「左边比右边重要」，右窗格只是它的投影">可拆</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s){ return document.querySelector(s); };
+  var clamp = function(v,a,b){ return Math.min(b, Math.max(a, v)); };
+  var lerp = function(a,b,u){ return a + (b-a)*u; };
+
+  var RM = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var DURATION = 12;                         // 全程秒数
+
+  /* —— 航线：起点 + 五站（世界坐标 x, y, z；z 越负越深，段时长照契约） —— */
+  var WPTS = [
+    [-160, -40,   520],   // 起点：远景，五站一字排开
+    [  60, -30,   250],   // 站 1
+    [-190, -45,  -370],   // 站 2
+    [ 280,  30, -1010],   // 站 3
+    [-215, -20, -1630],   // 站 4
+    [ 200,   5, -2180]    // 站 5（末帧焦点）
+  ];
+  var SEGS = [0.20, 0.16, 0.24, 0.20, 0.20];
+
+  /* —— 编辑视图：斜投影 —— */
+  function eproj(x,y,z){
+    return [360 + x*0.5 + z*0.068, 400 + y*0.5 + z*0.03];
+  }
+  function poly(pts){
+    return pts.map(function(p){ return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" ");
+  }
+  var wallG = $("#wall"), wptsG = $("#wpts"), frG = $("#frustum"), pathG = $("#pathline");
+
+  /* —— 夜摄照片墙：白框 + 灰调 + 胶带 + 微旋转，只用夜色/月色 alpha 调 —— */
+  var PHOTOS = [
+    { x:-400, y: 100, z: -240, w:132, h:152, r:-6, k:"ridge"   },
+    { x: 430, y:-230, z: -420, w:150, h:112, r: 5, k:"moon"    },
+    { x: -90, y: 350, z: -700, w:112, h: 92, r: 3, k:"horizon" },
+    { x:-430, y:-190, z: -900, w:122, h:146, r: 4, k:"scope"   },
+    { x: 440, y: 260, z:-1160, w:142, h:112, r:-5, k:"cloud"   },
+    { x:-360, y: 320, z:-1560, w:122, h:150, r: 7, k:"moon"    },
+    { x: 400, y:-250, z:-1900, w:150, h:118, r:-4, k:"ridge"   },
+    { x:-300, y:  60, z:-2260, w:126, h:146, r: 6, k:"horizon" },
+    { x: 370, y: 300, z:-2520, w:136, h:108, r:-7, k:"scope"   }
+  ];
+  function photoArt(k, iw, ih){
+    var hw = iw/2, hh = ih/2;
+    var sky  = 'rgba(247,243,234,.13)';
+    var sky2 = 'rgba(247,243,234,.07)';
+    var glow = 'rgba(247,243,234,.8)';
+    var sil  = 'rgba(12,18,30,.9)';
+    var sil2 = 'rgba(12,18,30,.62)';
+    if (k === "ridge") return (
+      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="'+sky2+'"/>' +
+      '<path d="M'+(-hw)+','+hh+' L'+(-hw*0.32)+','+(-hh*0.28)+' L'+(hw*0.14)+','+hh+' Z" fill="'+sil+'"/>' +
+      '<path d="M'+(-hw*0.05)+','+hh+' L'+(hw*0.44)+','+(-hh*0.5)+' L'+hw+','+hh+' Z" fill="'+sil+'"/>' +
+      '<circle cx="'+(-hw*0.5)+'" cy="'+(-hh*0.62)+'" r="1.6" fill="'+glow+'" opacity=".85"/>' +
+      '<circle cx="'+(-hw*0.1)+'" cy="'+(-hh*0.8)+'" r="1.2" fill="'+glow+'" opacity=".6"/>' +
+      '<circle cx="'+(hw*0.55)+'" cy="'+(-hh*0.7)+'" r="1.4" fill="'+glow+'" opacity=".75"/>');
+    if (k === "moon") return (
+      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="'+sil+'"/>' +
+      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="'+sky2+'"/>' +
+      '<circle cx="'+(hw*0.12)+'" cy="'+(-hh*0.08)+'" r="'+(ih*0.3).toFixed(1)+'" fill="'+glow+'"/>' +
+      '<circle cx="'+(hw*0.02)+'" cy="'+(-hh*0.2)+'" r="'+(ih*0.055).toFixed(1)+'" fill="rgba(12,18,30,.2)"/>' +
+      '<circle cx="'+(hw*0.24)+'" cy="'+(hh*0.06)+'" r="'+(ih*0.04).toFixed(1)+'" fill="rgba(12,18,30,.18)"/>' +
+      '<circle cx="'+(hw*0.14)+'" cy="'+(hh*0.22)+'" r="'+(ih*0.03).toFixed(1)+'" fill="rgba(12,18,30,.16)"/>');
+    if (k === "horizon") return (
+      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+(ih*0.58)+'" fill="'+sky+'"/>' +
+      '<rect x="'+(-hw)+'" y="'+(-hh+ih*0.58)+'" width="'+iw+'" height="'+(ih*0.42)+'" fill="'+sil2+'"/>' +
+      '<circle cx="'+(hw*0.42)+'" cy="'+(-hh*0.44)+'" r="'+(ih*0.07).toFixed(1)+'" fill="'+glow+'" opacity=".9"/>' +
+      '<rect x="'+(hw*0.34)+'" y="'+(-hh+ih*0.6)+'" width="'+(iw*0.14)+'" height="'+(ih*0.4)+'" fill="rgba(247,243,234,.22)"/>' +
+      '<path d="M'+(-hw)+','+(-hh+ih*0.72)+' H'+hw+'" stroke="rgba(247,243,234,.3)" stroke-width="1.2" fill="none"/>' +
+      '<path d="M'+(-hw)+','+(-hh+ih*0.86)+' H'+hw+'" stroke="rgba(247,243,234,.22)" stroke-width="1.2" fill="none"/>');
+    if (k === "scope") return (
+      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="'+sky+'"/>' +
+      '<path d="M'+(-hw)+','+hh+' L'+(hw*0.5)+','+hh+' L'+hw+','+(-hh*0.1)+' L'+hw+','+hh+' Z" fill="'+sky2+'"/>' +
+      '<g transform="translate('+(hw*0.06)+','+(hh*0.04)+') rotate(-24)">' +
+        '<rect x="'+(-iw*0.36)+'" y="'+(-ih*0.07)+'" width="'+(iw*0.72)+'" height="'+(ih*0.14)+'" rx="2" fill="'+sil+'"/>' +
+        '<rect x="'+(iw*0.3)+'" y="'+(-ih*0.1)+'" width="'+(iw*0.1)+'" height="'+(ih*0.2)+'" rx="1.5" fill="'+sil+'"/>' +
+      '</g>' +
+      '<path d="M0,'+(-ih*0.04)+' L'+(-iw*0.14)+','+hh+' M0,'+(-ih*0.04)+' L'+(iw*0.05)+','+hh+' M0,'+(-ih*0.04)+' L'+(-iw*0.05)+','+hh+'" stroke="'+sil+'" stroke-width="2" fill="none"/>' +
+      '<circle cx="'+(-hw*0.62)+'" cy="'+(-hh*0.6)+'" r="1.3" fill="'+glow+'" opacity=".8"/>' +
+      '<circle cx="'+(hw*0.6)+'" cy="'+(-hh*0.66)+'" r="1.1" fill="'+glow+'" opacity=".6"/>');
+    return ( // cloud：云隙月光
+      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="'+sil+'"/>' +
+      '<circle cx="'+(hw*0.3)+'" cy="'+(-hh*0.22)+'" r="'+(ih*0.13).toFixed(1)+'" fill="'+glow+'" opacity=".9"/>' +
+      '<rect x="'+(-hw)+'" y="'+(-hh*0.05)+'" width="'+iw+'" height="'+(ih*0.2)+'" rx="'+(ih*0.1).toFixed(1)+'" fill="'+sky+'" opacity=".8"/>' +
+      '<rect x="'+(-hw*0.6)+'" y="'+(hh*0.3)+'" width="'+(iw*1.2)+'" height="'+(ih*0.22)+'" rx="'+(ih*0.11).toFixed(1)+'" fill="'+sky2+'" opacity=".9"/>' +
+      '<rect x="'+(hw*0.05)+'" y="'+(-hh*0.1)+'" width="'+(iw*0.5)+'" height="'+(ih*0.6)+'" fill="rgba(247,243,234,.12)"/>');
+  }
+  function photoSvg(p){
+    var c = eproj(p.x, p.y, p.z);
+    return '<g transform="translate('+c[0].toFixed(1)+','+c[1].toFixed(1)+') rotate('+p.r+')">' +
+      '<rect x="'+(-p.w/2)+'" y="'+(-p.h/2)+'" width="'+p.w+'" height="'+p.h+'" rx="2" fill="rgba(247,243,234,.8)" stroke="rgba(247,243,234,.32)"/>' +
+      photoArt(p.k, p.w-14, p.h-14) +
+      '<rect x="-25" y="'+(-p.h/2-7)+'" width="50" height="14" rx="2" fill="rgba(247,243,234,.2)" stroke="rgba(247,243,234,.24)" stroke-width=".5" transform="rotate(-4)"/>' +
+      '</g>';
+  }
+  wallG.innerHTML = PHOTOS.map(photoSvg).join("");
+
+  // 虚线航线
+  pathG.innerHTML = '<polyline points="' + WPTS.map(function(w){ return eproj(w[0],w[1],w[2]).map(function(v){return v.toFixed(1);}).join(","); }).join(" ") + '"/>';
+
+  // 路径点：五站各一枚六边形（空心→实心），站号 01–05；起点只作航线端点，不占点
+  function hexPts(cx,cy,r){
+    var s = "";
+    for (var i=0;i<6;i++){
+      var a = Math.PI/6 + i*Math.PI/3;
+      s += (cx+r*Math.cos(a)).toFixed(1) + "," + (cy+r*Math.sin(a)).toFixed(1) + " ";
+    }
+    return s.trim();
+  }
+  var TI = []; // 各路径点到达时刻（含起点）
+  (function(){ var acc = 0; TI.push(acc); SEGS.forEach(function(w){ acc += w; TI.push(acc); }); })();
+
+  // 站号贴在哪一侧：默认右上（照 nightflight）；斜投影里 01 与 03 只差 24 单位，
+  // 固定右上时 01 会被 03 的六边形盖掉，所以让站号自己躲开别的站点和航线。
+  var LABEL_SLOTS = [
+    { dx: 13, dy:-11, ta:"start" },   // 右上
+    { dx: 13, dy: 18, ta:"start" },   // 右下
+    { dx:-13, dy:-11, ta:"end"   },   // 左上
+    { dx:-13, dy: 18, ta:"end"   }    // 左下
+  ];
+  var WPT_E = WPTS.slice(1).map(function(w){ return eproj(w[0],w[1],w[2]); });
+  var PATH_E = WPTS.map(function(w){ return eproj(w[0],w[1],w[2]); });
+  function labelClash(x0, y0, x1, y1, self){
+    if (WPT_E.some(function(q, j){
+      return j !== self && x1 > q[0]-9 && x0 < q[0]+9 && y1 > q[1]-9 && y0 < q[1]+9;
+    })) return true;
+    for (var i=0;i<PATH_E.length-1;i++){
+      var A = PATH_E[i], B = PATH_E[i+1];
+      for (var k=0;k<=16;k++){
+        var px = A[0] + (B[0]-A[0])*k/16, py = A[1] + (B[1]-A[1])*k/16;
+        if (px > x0-2 && px < x1+2 && py > y0-2 && py < y1+2) return true;
+      }
+    }
+    return false;
+  }
+  function labelSlot(i){
+    var p = WPT_E[i];
+    for (var k=0;k<LABEL_SLOTS.length;k++){
+      var a = LABEL_SLOTS[k];
+      var x0 = a.ta === "start" ? p[0]+a.dx : p[0]+a.dx-20;
+      if (!labelClash(x0, p[1]+a.dy-9, x0+20, p[1]+a.dy+1, i)) return a;
+    }
+    return LABEL_SLOTS[0];
+  }
+  wptsG.innerHTML = WPTS.slice(1).map(function(w, i){
+    var e = WPT_E[i], L = labelSlot(i);
+    return '<polygon points="' + hexPts(e[0], e[1], 8) + '" fill="none" stroke="#FFD84D" stroke-width="2.5"/>' +
+      '<text x="'+(e[0]+L.dx).toFixed(1)+'" y="'+(e[1]+L.dy).toFixed(1)+'" fill="rgba(255,216,77,.72)" ' +
+      'text-anchor="'+L.ta+'" stroke="#0C121E" stroke-width="3" paint-order="stroke" ' +
+      'style="font-family:var(--mono);font-size:11px;letter-spacing:.12em">0'+(i+1)+'</text>';
+  }).join("");
+  var wptEls = Array.prototype.slice.call(wptsG.querySelectorAll("polygon"));
+
+  // 视锥：apex + 四角 + 正面三角 + 机身六边形
+  frG.innerHTML = '<line/><line/><line/><line/><line/><line/>' +
+    '<polygon fill="none"/>' +
+    '<polygon fill="#FFD84D" stroke="none"/>' +
+    '<polygon fill="#FFD84D" stroke="none"/>';
+  var frLines = Array.prototype.slice.call(frG.querySelectorAll("line"));
+  var frPolys = frG.querySelectorAll("polygon");
+  var frFace = frPolys[0];
+  var frTri = frPolys[1];
+  var frBody = frPolys[2];
+
+  /* —— 取景：内容安全框 + 每帧 measure。
+     整页就是这一块编辑视图；窗口比例变了也不裁掉任何照片/路径点，网格跟着世界缩放。 —— */
+  var pane = $("#rig"), svg = $("#rigsvg");
+  var SAFE = (function(){
+    var xs = [], ys = [], FL = 560, FW = 310, FH = 190;
+    var push = function(p){ xs.push(p[0]); ys.push(p[1]); };
+    PHOTOS.forEach(function(p){
+      var c = eproj(p.x,p.y,p.z), hw = p.w/2, hh = p.h/2;
+      var a = p.r*Math.PI/180, ca = Math.cos(a), sa = Math.sin(a);
+      [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].forEach(function(q){
+        push([c[0] + q[0]*ca - q[1]*sa, c[1] + q[0]*sa + q[1]*ca]);
+      });
+    });
+    WPTS.forEach(function(w){
+      var e = eproj(w[0],w[1],w[2]);
+      push(e); push([e[0]-42, e[1]-28]); push([e[0]+42, e[1]+30]);   // 站号小字的范围（左右两种落位）
+      push(eproj(w[0]-FW,w[1]-FH,w[2]-FL)); push(eproj(w[0]+FW,w[1]-FH,w[2]-FL));
+      push(eproj(w[0]+FW,w[1]+FH,w[2]-FL)); push(eproj(w[0]-FW,w[1]+FH,w[2]-FL));
+    });
+    var pad = 24;
+    return [ Math.min.apply(null,xs)-pad, Math.min.apply(null,ys)-pad,
+             Math.max.apply(null,xs)+pad, Math.max.apply(null,ys)+pad ];
+  })();
+  var lastW = 0, lastH = 0;
+  function fit(){
+    var r = pane.getBoundingClientRect();
+    if (r.width === lastW && r.height === lastH) return;
+    lastW = r.width; lastH = r.height;
+    var bw = SAFE[2]-SAFE[0], bh = SAFE[3]-SAFE[1];
+    var s = Math.min(r.width/bw, r.height/bh) || 1;      // 内容永远完整可见，至少填满一个方向
+    var vw = r.width/s, vh = r.height/s;
+    var cx = (SAFE[0]+SAFE[2])/2, cy = (SAFE[1]+SAFE[3])/2;
+    svg.setAttribute("viewBox", (cx-vw/2).toFixed(1)+" "+(cy-vh/2).toFixed(1)+" "+vw.toFixed(1)+" "+vh.toFixed(1));
+    pane.style.setProperty("--gd", (26*s).toFixed(1)+"px");
+    pane.style.setProperty("--gr", Math.max(0.6, 1.2*s).toFixed(2)+"px");
+  }
+  window.addEventListener("resize", function(){ render(t); });   // 窗口变了立刻按新尺寸重画（暂停/终帧时不靠播放循环）
+
+  /* —— 状态 —— */
+  var t = 0, playing = false, ended = false, dragging = false, wasPlaying = false;
+  var DEMO = null;
+  try {
+    var q = new URLSearchParams(location.search);
+    var dv = q.get("demo");
+    if (dv != null){
+      var nested = new URLSearchParams(dv.indexOf("=") >= 0 ? dv : "progress=" + dv);
+      var pv = nested.get("progress") != null ? nested.get("progress") : q.get("progress");
+      if (pv != null && isFinite(parseFloat(pv))) DEMO = clamp(parseFloat(pv), 0, 1);
+    } else {
+      var pv2 = q.get("progress");
+      if (pv2 != null && isFinite(parseFloat(pv2))) DEMO = clamp(parseFloat(pv2), 0, 1);
+    }
+  } catch(e){ DEMO = null; }
+
+  /* —— 相机：段内 smoothstep（reduced-motion 退化为线性 = 瞬移到位） —— */
+  function camAt(tt){
+    var a = 0;
+    for (var i=0;i<SEGS.length;i++){
+      var w = SEGS[i];
+      if (tt <= a + w || i === SEGS.length-1){
+        var u = clamp((tt - a)/w, 0, 1);
+        if (!RM) u = u*u*(3-2*u);
+        var A = WPTS[i], B = WPTS[i+1];
+        return [lerp(A[0],B[0],u), lerp(A[1],B[1],u), lerp(A[2],B[2],u)];
+      }
+      a += w;
+    }
+    return WPTS[WPTS.length-1].slice();
+  }
+
+  /* —— 仪表行：进度 / 朝向（由视锥行进方向算）/ 段号 —— */
+  var hud = $("#hud");
+  function segAt(tt){
+    var a = 0;
+    for (var i=0;i<SEGS.length;i++){ if (tt <= a + SEGS[i] + 1e-9) return i+1; a += SEGS[i]; }
+    return SEGS.length;
+  }
+  function pad3(n){ n = ((Math.round(n) % 360) + 360) % 360; return (n<10?"00":n<100?"0":"") + n; }
+  function hdgAt(tt){
+    var A = camAt(Math.max(0, tt - 0.004)), B = camAt(Math.min(1, tt + 0.004));
+    var dx = B[0]-A[0], dz = B[2]-A[2];
+    if (Math.abs(dx) < 1e-6 && Math.abs(dz) < 1e-6) return 0;
+    return Math.atan2(dx, -dz) * 180/Math.PI;            // 0° = 朝航线深处（-z）
+  }
+
+  /* —— 渲染：scrub 与播放同吃 render(t)，每一帧都是 t 的纯函数 —— */
+  function render(tt){
+    fit();                        // 每帧重取窗格尺寸（尺寸不变直接返回，防跳变）
+    var cam = camAt(tt);
+    renderRig(cam, tt);
+    hud.textContent = "T " + tt.toFixed(2) + " · HDG " + pad3(hdgAt(tt)) + "° · SEG " + segAt(tt) + "/" + SEGS.length;
+    renderTimeline(tt);
+  }
+
+  /* —— 编辑视图：视锥沿航线滑行，路过的路径点点火 —— */
+  function renderRig(cam, tt){
+    var apex = eproj(cam[0], cam[1], cam[2]);
+    var FL = 560, FW = 310, FH = 190;
+    var base = [
+      eproj(cam[0]-FW, cam[1]-FH, cam[2]-FL),
+      eproj(cam[0]+FW, cam[1]-FH, cam[2]-FL),
+      eproj(cam[0]+FW, cam[1]+FH, cam[2]-FL),
+      eproj(cam[0]-FW, cam[1]+FH, cam[2]-FL)
+    ];
+    for (var i=0;i<4;i++){
+      frLines[i].setAttribute("x1", apex[0]); frLines[i].setAttribute("y1", apex[1]);
+      frLines[i].setAttribute("x2", base[i][0]); frLines[i].setAttribute("y2", base[i][1]);
+    }
+    frFace.setAttribute("points", poly(base));
+    frLines[4].setAttribute("x1", base[0][0]); frLines[4].setAttribute("y1", base[0][1]);
+    frLines[4].setAttribute("x2", base[2][0]); frLines[4].setAttribute("y2", base[2][1]);
+    frLines[5].setAttribute("x1", base[1][0]); frLines[5].setAttribute("y1", base[1][1]);
+    frLines[5].setAttribute("x2", base[3][0]); frLines[5].setAttribute("y2", base[3][1]);
+
+    // 朝向小三角：正面顶边中点，指向飞行方向
+    var topMid = eproj(cam[0], cam[1]-FH, cam[2]-FL);
+    var bcx = (base[0][0]+base[1][0]+base[2][0]+base[3][0])/4;
+    var bcy = (base[0][1]+base[1][1]+base[2][1]+base[3][1])/4;
+    var dx = bcx-apex[0], dy = bcy-apex[1];
+    var dl = Math.hypot(dx,dy) || 1; dx/=dl; dy/=dl;
+    var px = -dy, py = dx;
+    frTri.setAttribute("points",
+      (topMid[0]+dx*16).toFixed(1)+","+(topMid[1]+dy*16).toFixed(1)+" "+
+      (topMid[0]+px*9).toFixed(1)+","+(topMid[1]+py*9).toFixed(1)+" "+
+      (topMid[0]-px*9).toFixed(1)+","+(topMid[1]-py*9).toFixed(1));
+
+    frBody.setAttribute("points", hexPts(apex[0], apex[1], 10));
+
+    wptEls.forEach(function(el, i){
+      var passed = tt >= TI[i+1] - 0.001;      // el 是第 i+1 站（起点不占点）
+      el.setAttribute("fill", passed ? "#FFD84D" : "none");
+    });
+  }
+
+  /* —— 时间轴 —— */
+  var track = $("#track"), fill = $("#fill"), head = $("#head");
+  var tcNow = $("#tc-now");
+  TI.forEach(function(tt){
+    var b = document.createElement("button");
+    b.className = "dia"; b.style.left = (tt*100) + "%";
+    b.setAttribute("aria-label", "跳到 " + Math.round(tt*100) + "%");
+    b.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      t = tt; ended = false; setEnded(false);
+      render(t);
+    });
+    track.appendChild(b);
+  });
+  var dias = Array.prototype.slice.call(track.querySelectorAll(".dia"));
+
+  function fmt(tt){
+    var s = tt * DURATION;
+    return "0:" + (s < 10 ? "0" : "") + s.toFixed(1);
+  }
+  function renderTimeline(tt){
+    fill.style.width = (tt*100) + "%";
+    head.style.left = (tt*100) + "%";
+    tcNow.textContent = fmt(tt);
+    dias.forEach(function(d, i){
+      d.classList.toggle("passed", tt >= TI[i] - 0.001);
+    });
+  }
+
+  function setEnded(v){
+    ended = v;
+    $("#replay").hidden = !v;
+    $("#icon-play").style.display = (v || playing) ? "none" : "";
+    $("#icon-pause").style.display = (!v && playing) ? "" : "none";
+    $("#icon-re").style.display = v ? "" : "none";
+  }
+
+  var playbtn = $("#playbtn");
+  playbtn.addEventListener("click", function(){
+    if (RM) return;
+    if (ended){ t = 0; playing = true; setEnded(false); render(t); return; }
+    playing = !playing;
+    setEnded(false);
+  });
+  $("#replay").addEventListener("click", function(){
+    t = 0; playing = true; setEnded(false); render(t);
+  });
+
+  // 拖拽即拖相机：pointerdown 记住是否在播，松手再接着播（防跳变）
+  function seekFromEvent(e){
+    var r = track.getBoundingClientRect();
+    t = clamp((e.clientX - r.left)/r.width, 0, 1);
+    if (ended && t < 1) setEnded(false);
+    render(t);
+  }
+  track.addEventListener("pointerdown", function(e){
+    dragging = true;
+    try { track.setPointerCapture(e.pointerId); } catch(err){}
+    wasPlaying = playing; playing = false;
+    seekFromEvent(e);
+  });
+  track.addEventListener("pointermove", function(e){ if (dragging) seekFromEvent(e); });
+  track.addEventListener("pointerup", function(){
+    if (!dragging) return;
+    dragging = false;
+    if (wasPlaying && !ended && !RM) playing = true;
+    setEnded(ended);
+  });
+
+  /* —— 启动 —— */
+  if (DEMO != null){
+    t = DEMO; playing = false;
+    (function dloop(){ render(t); requestAnimationFrame(dloop); })(); // 定帧循环重渲染（render 为 t 的纯函数），供无头截图
+    return;
+  }
+  if (RM){
+    t = 1; playing = false;          // 终帧布局，无自动运镜
+    setEnded(false);
+    render(t);
+  } else {
+    playing = true;
+    setEnded(false);
+    render(t);
+  }
+  var last = performance.now();
+  function loop(now){
+    if (playing && !dragging){
+      t += (now - last)/1000/DURATION;
+      if (t >= 1){ t = 1; playing = false; setEnded(true); }
+      render(t);
+    }
+    last = now;
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

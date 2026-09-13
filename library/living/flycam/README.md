@@ -1,6 +1,6 @@
 # flycam — 可见相机穿行 2D 画布（求职之旅物件飞行版）
 
-来源：https://x.com/KMkota0/status/2097648429727904197 （5s 屏录，60fps；逐帧拷贝在 `_source/km-tweet.mp4`）。
+来源：https://x.com/KMkota0/status/2097648429727904197 （5s 屏录，60fps；逐帧拷贝在 `_source/km-tweet.mp4`）。工具溯源（2026-09-13）：原片是编辑器 **mo1**（mo1.app，three.js WebGPU 栈，作者 @KMkota0）在首届 Three.js Conf Paris 的演示；完整链条见 [../../km-camera-rig.md](../../km-camera-rig.md)。
 
 调性一句话：左窗格里那台黄色线框相机是主角，右窗格只是它的眼睛——相机沿虚线穿过一面照片墙，物件迎面掠来。
 
