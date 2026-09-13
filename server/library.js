@@ -87,12 +87,19 @@ function resolveLink(url, baseDir, livingDir) {
 }
 
 /**
+ * 条目 path：以数据根为基准的相对路径（两种模式统一，不靠字符串拼前缀）。
+ */
+function relFromRoot(resolved, link) {
+  return path.relative(resolved.root, link.abs).split(path.sep).join("/");
+}
+
+/**
  * 解析 INDEX.md：发明表 + 零件表。
  * 返回 { inventions, parts, warnings }
  * 死链行（指向不存在文件或 living 之外）剔除并记 warning。
  */
 export function parseIndex(resolved) {
-  const { indexFile, baseDir, livingDir } = resolved;
+  const { indexFile, baseDir, livingDir, root } = resolved;
   const text = fs.readFileSync(indexFile, "utf8");
   const warnings = [];
   const inventions = [];
@@ -131,7 +138,7 @@ export function parseIndex(resolved) {
         title: m[1] || link.note,
         note: link.note,
         anchor: link.anchor,
-        path: `living/${link.href}${link.anchor ? `#${link.anchor}` : ""}`,
+        path: relFromRoot(resolved, link) + (link.anchor ? `#${link.anchor}` : ""),
         description: cells[1] ?? "",
         when: cells[2] ?? "",
       });
@@ -143,7 +150,7 @@ export function parseIndex(resolved) {
         title: cells[0] ?? "",
         note: link.note,
         anchor: link.anchor,
-        path: `living/${link.href}${link.anchor ? `#${link.anchor}` : ""}`,
+        path: relFromRoot(resolved, link) + (link.anchor ? `#${link.anchor}` : ""),
         description: cells[2] ?? "",
       });
     }
