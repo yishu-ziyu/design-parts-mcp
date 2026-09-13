@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>红鲱鱼与枪 · 证据飞行</title>
+<style>
+  :root{
+    --yellow:#f2e33a;
+    --orange:#e8833a;
+    --red:#c0392b;
+    --green:#2e9e5b;
+    --ink:#17181c;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",sans-serif;
+    background:#101013; color:#e8e6e0; overflow:hidden;
+  }
+  #app{ height:100vh; display:flex; flex-direction:column; }
+
+  /* 窗口条 */
+  #chrome{
+    height:38px; flex:none; background:#1b1b1f;
+    display:flex; align-items:center; padding:0 14px; gap:8px;
+    border-bottom:1px solid #2a2a30;
+  }
+  #chrome .dot{ width:12px; height:12px; border-radius:50%; }
+  #chrome .title{ margin:0 auto; font-size:12.5px; color:#8b8b93; letter-spacing:.06em; }
+
+  /* 两窗格 */
+  #panes{ flex:1; display:flex; min-height:0; }
+  .pane{ position:relative; width:50%; min-width:0; }
+  #rig{ background:#232327; border-right:1px solid #2c2c32; }
+  #rig svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .pane-tag{
+    position:absolute; top:10px; left:12px; font-size:11px; letter-spacing:.14em;
+    color:rgba(255,255,255,.34); z-index:5; pointer-events:none;
+  }
+
+  /* 右窗格：真透视 */
+  #flight{
+    overflow:hidden; perspective:900px;
+    background:#f1ede3;
+    background-image:radial-gradient(#d9d2c0 1px, transparent 1.4px);
+    background-size:24px 24px;
+  }
+  #scene{
+    position:absolute; inset:0; transform-style:preserve-3d; will-change:transform;
+  }
+  .c3d{
+    position:absolute; left:50%; top:50%;
+    box-shadow:0 8px 22px rgba(25,22,15,.12);
+    will-change:transform,opacity;
+  }
+  .pane-tag.dark{ color:rgba(40,36,26,.4); }
+
+  .card{ border-radius:12px; padding:20px 22px; }
+  .card .kicker{
+    font-size:12px; letter-spacing:.18em; font-weight:600; margin-bottom:10px;
+  }
+  .card .body{ font-size:19px; line-height:1.5; font-weight:600; }
+
+  .rumor{ background:#fff; color:#26241f; border-left:6px solid #d64541; width:360px; height:210px; }
+  .rumor .kicker{ color:#d64541; }
+  .rumor .body{ color:#26241f; }
+  .rumor .sub{ margin-top:12px; font-size:12.5px; color:#98938a; letter-spacing:.1em; }
+
+  .prop{ background:#f7f1e2; color:#4a4436; width:270px; height:180px; }
+  .prop .kicker{ color:#96803f; }
+  .prop .body{ font-size:17px; color:#413b2e; }
+
+  .ev{ background:#fff; width:300px; height:190px; }
+  .ev .head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .ev .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .ev .dot.g{ background:var(--green); }
+  .ev .dot.r{ background:#d64541; }
+  .ev .verdict-word{ font-size:12px; letter-spacing:.16em; font-weight:700; color:#6c675e; }
+  .ev .body{ font-size:15.5px; font-weight:500; color:#2c2a26; line-height:1.55; }
+
+  .chip{
+    background:#fbfaf6; border:1px solid #e0dacb; border-radius:999px;
+    padding:5px 14px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:13px; color:#4a463e; white-space:nowrap;
+  }
+  .chip em{ font-style:normal; font-size:10.5px; color:#b3ac9c; margin-right:7px; letter-spacing:.12em; }
+
+  .note{
+    background:#ffd84d; width:250px; height:230px; border-radius:4px;
+    padding:34px 20px 18px; color:#3d3413;
+  }
+  .note .clip{ position:absolute; top:-16px; left:24px; }
+  .note .typed{ font-size:16.5px; line-height:1.7; font-weight:600; min-height:5.2em; }
+  .note .typed .caret{
+    display:inline-block; width:2px; height:1.05em; background:#3d3413;
+    vertical-align:-0.18em; margin-left:2px;
+  }
+  .note .mini{ position:absolute; bottom:12px; left:20px; font-size:11px; letter-spacing:.14em; color:#a08a3c; }
+
+  .judgement{
+    background:var(--ink); color:#f2f0ea; width:440px; height:300px;
+    border-radius:16px; padding:28px 30px;
+  }
+  .judgement .kicker{ color:#8f8a7e; }
+  .judgement h1{ font-size:31px; font-weight:800; letter-spacing:.01em; margin-bottom:18px; }
+  .judgement .meter{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .judgement .bar{
+    flex:1; height:8px; border-radius:99px; background:#33343b; overflow:hidden;
+  }
+  .judgement .bar i{ display:block; height:100%; width:47%; background:var(--orange); border-radius:99px; }
+  .judgement .score{ font-size:14px; font-weight:700; color:var(--orange); white-space:nowrap; }
+  .judgement .why{ font-size:13.5px; color:#a5a196; line-height:1.6; }
+  .judgement .lack{
+    margin-top:14px; font-size:11.5px; letter-spacing:.1em; color:#7c776c;
+    border-top:1px solid #2c2d34; padding-top:10px;
+  }
+
+  #strings{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
+  #strings line{ stroke:var(--red); stroke-width:2; stroke-linecap:round; opacity:.85; }
+
+  #replay{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    z-index:8; border:0; cursor:pointer; border-radius:999px;
+    background:rgba(23,24,28,.88); color:#f2f0ea;
+    font-size:14px; letter-spacing:.2em; padding:13px 30px 13px 34px;
+    display:flex; align-items:center; gap:10px;
+    box-shadow:0 10px 30px rgba(20,18,12,.35);
+  }
+  #replay[hidden]{ display:none; }
+
+  /* 底部时间轴 */
+  #timeline{
+    flex:none; height:78px; background:#1d1d21; border-top:1px solid #2c2c32;
+    display:flex; align-items:center; gap:16px; padding:0 18px;
+  }
+  #playbtn{
+    flex:none; width:38px; height:38px; border-radius:50%; border:1px solid #3a3a42;
+    background:#26262c; color:#e8e6e0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #playbtn:hover{ background:#303038; }
+  .tc{ flex:none; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:#9a9aa2; min-width:86px; }
+  .tc b{ color:#e8e6e0; font-weight:600; }
+  #track{
+    flex:1; position:relative; height:34px; cursor:pointer; touch-action:none;
+  }
+  #track .rail{
+    position:absolute; left:0; right:0; top:50%; height:6px; transform:translateY(-50%);
+    background:#3a3a41; border-radius:99px;
+  }
+  #fill{
+    position:absolute; left:0; top:50%; height:6px; transform:translateY(-50%);
+    background:var(--orange); border-radius:99px; width:0;
+  }
+  #head{
+    position:absolute; top:2px; bottom:2px; width:3px; margin-left:-1.5px;
+    background:#5b8def; border-radius:2px; left:0;
+  }
+  #head::before{
+    content:""; position:absolute; top:-2px; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:#5b8def; border-bottom:0;
+  }
+  .dia{
+    position:absolute; top:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px;
+    background:#f4f2ec; transform:rotate(45deg); border-radius:2.5px;
+    border:0; padding:0; cursor:pointer;
+  }
+  .dia::after{
+    content:""; position:absolute; inset:3px; background:#1d1d21; border-radius:1.5px;
+  }
+  .dia.passed::after{ background:var(--orange); }
+  #kej{
+    flex:none; font-size:11px; letter-spacing:.22em; color:#55555e;
+    border:1px solid #33333b; border-radius:6px; padding:4px 9px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    #playbtn{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="chrome">
+    <span class="dot" style="background:#ff5f57"></span>
+    <span class="dot" style="background:#febc2e"></span>
+    <span class="dot" style="background:#28c840"></span>
+    <span class="title">红鲱鱼与枪 · 证据飞行</span>
+  </header>
+
+  <main id="panes">
+    <section class="pane" id="rig" aria-label="编辑视图">
+      <span class="pane-tag">编辑视图</span>
+      <svg id="rigsvg" viewBox="0 0 720 760" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <pattern id="gdots" width="26" height="26" patternUnits="userSpaceOnUse">
+            <circle cx="1.2" cy="1.2" r="1.2" fill="#333338"/>
+          </pattern>
+        </defs>
+        <rect width="720" height="760" fill="#232327"/>
+        <rect width="720" height="760" fill="url(#gdots)"/>
+        <g id="wall"></g>
+        <g id="pathline" fill="none" stroke="#f2e33a" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9"></g>
+        <g id="frustum" fill="none" stroke="#f2e33a" stroke-width="2" stroke-linejoin="round"></g>
+        <g id="wpts"></g>
+      </svg>
+    </section>
+
+    <section class="pane" id="flight" aria-label="相机渲染">
+      <span class="pane-tag dark">相机渲染</span>
+      <div id="scene"></div>
+      <svg id="strings" aria-hidden="true"></svg>
+      <button id="replay" hidden>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 7a5 5 0 1 1-1.7-3.75"/><path d="M12 1v3h-3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>重播
+      </button>
+    </section>
+  </main>
+
+  <footer id="timeline">
+    <button id="playbtn" aria-label="播放或暂停">
+      <svg id="icon-play" width="14" height="14" viewBox="0 0 14 14"><path d="M3 1.5 12 7 3 12.5Z" fill="currentColor"/></svg>
+      <svg id="icon-pause" width="14" height="14" viewBox="0 0 14 14" style="display:none"><path d="M3 1.5h3v11H3zM8 1.5h3v11H8z" fill="currentColor"/></svg>
+      <svg id="icon-re" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none"><path d="M12 7a5 5 0 1 1-1.7-3.75"/><path d="M12 1v3h-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="tc"><b id="tc-now">0:00.0</b> / 0:12.0</span>
+    <div id="track">
+      <div class="rail"></div>
+      <div id="fill"></div>
+      <div id="head"></div>
+    </div>
+    <span id="kej">可拆</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s){ return document.querySelector(s); };
+  var clamp = function(v,a,b){ return Math.min(b, Math.max(a, v)); };
+  var lerp = function(a,b,u){ return a + (b-a)*u; };
+
+  var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var DURATION = 12;          // 全程秒数
+  var PERSP = 900;            // 右窗格透视距离
+  var FADE_START = 320;       // z' 超过此值开始淡出
+  var FADE_END = 560;         // z' 超过此值隐藏（即将掠过相机）
+  var TYPE_START = 0.30, TYPE_END = 0.50;
+
+  /* —— 参数区：航线（相机世界坐标 x, y, z）与段节奏 —— */
+  var WPTS = [
+    [   0, -20,   950],   // 远景，整面证据墙
+    [   0, -20,  -300],   // 原句卡
+    [   0,-140,  -700],   // 命题扇面
+    [ 400,  60, -1900],   // 便利贴（尚缺）
+    [-330, -20, -2630],   // 证据 · 支持 1
+    [   0, -50, -3380],   // 证据 · 支持 2
+    [ 340,   0, -4240],   // 证据 · 反驳
+    [   0, -10, -5380]    // 判断卡（末帧焦点）
+  ];
+  var SEGS = [0.10, 0.15, 0.16, 0.11, 0.14, 0.15, 0.19]; // 段间节奏不同，末段放慢
+
+  /* —— 卡片（世界坐标，z 越负越深） —— */
+  var CARDS = [
+    { id:"rumor", x:0,    y:-20,  z:0,     w:360, h:210, ry:2,  cls:"card rumor",
+      html:'<div class="kicker">网传</div><div class="body">每天喝咖啡超过四杯<br>会导致骨质疏松</div><div class="sub">原句</div>' },
+    { id:"p1", x:-205, y:-170, z:-500, w:270, h:180, ry:13, cls:"card prop",
+      html:'<div class="kicker">命题 1</div><div class="body">每日摄入量<br>与骨密度的关系</div>' },
+    { id:"p2", x:0,    y:-140, z:-500, w:270, h:180, ry:-5, cls:"card prop",
+      html:'<div class="kicker">命题 2</div><div class="body">长期影响<br>还是短期波动</div>' },
+    { id:"p3", x:205,  y:-170, z:-500, w:270, h:180, ry:-13, cls:"card prop",
+      html:'<div class="kicker">命题 3</div><div class="body">个体差异<br>与叠加因素</div>' },
+    { id:"note", x:430, y:100, z:-1550, w:250, h:230, ry:-9, cls:"c3d note", typed:true,
+      html:'<svg class="clip" width="34" height="52" viewBox="0 0 34 52" fill="none" stroke="#8a8a92" stroke-width="3"><path d="M10 14v24a7 7 0 0 0 14 0V10a10 10 0 0 0-20 0v30" stroke-linecap="round"/></svg><div class="typed"></div><div class="mini">尚缺</div>' },
+    { id:"s1", x:-330, y:-40, z:-2250, w:300, h:190, ry:4, cls:"card ev",
+      html:'<div class="head"><span class="dot g"></span><span class="verdict-word">证据 · 支持</span></div><div class="body">队列研究：&gt;4 杯/日与髋部骨折风险相关（n=3 万）</div>' },
+    { id:"s2", x:0,    y:-60, z:-3050, w:300, h:190, ry:-3, cls:"card ev",
+      html:'<div class="head"><span class="dot g"></span><span class="verdict-word">证据 · 支持</span></div><div class="body">meta 分析：高摄入组骨密度下降更快</div>' },
+    { id:"r1", x:340,  y:-20, z:-3900, w:300, h:190, ry:-4, cls:"card ev",
+      html:'<div class="head"><span class="dot r"></span><span class="verdict-word">证据 · 反驳</span></div><div class="body">北欧 8 年追踪：中等量摄入无显著关联</div>' },
+    { id:"judge", x:0, y:-10, z:-5100, w:440, h:300, ry:0, cls:"c3d card judgement",
+      html:'<div class="kicker">判断</div><h1>只有后半截站得住。</h1><div class="meter"><div class="bar"><i></i></div><span class="score">可信度 47</span></div><div class="why">高剂量证据占优，但存在研究规模缺口</div><div class="lack">尚缺：剂量分层的原始数据，还查不清</div>' }
+  ];
+  var NOTE_TEXT = "尚缺：个体差异数据，还查不清";
+
+  var CHIPS = [
+    { x:-330, y:150, z:-2250, t:"cohort-study.cn" },
+    { x:0,    y:130, z:-3050, t:"meta.example.org" },
+    { x:340,  y:150, z:-3900, t:"nordic-tracker.example" }
+  ];
+
+  /* 红绳：证据卡 ↔ 来源 chip，证据卡 ↔ 证据卡 */
+  var STRINGS = [
+    { a:[-330,  55, -2250], b:[-330, 136, -2250] },
+    { a:[   0,  35, -3050], b:[   0, 116, -3050] },
+    { a:[ 340,  45, -3900], b:[ 340, 136, -3900] },
+    { a:[-180,-135, -2250], b:[-150,-155, -3050] }
+  ];
+
+  /* —— 构建右窗格 DOM —— */
+  var scene = $("#scene"), flight = $("#flight");
+  CARDS.forEach(function(c){
+    var el = document.createElement("div");
+    el.className = "c3d " + c.cls;
+    el.style.width = c.w + "px";
+    el.style.height = c.h + "px";
+    el.style.marginLeft = (-c.w/2) + "px";
+    el.style.marginTop = (-c.h/2) + "px";
+    el.innerHTML = c.html;
+    if (c.id === "note") el.id = "typenote";
+    scene.appendChild(el);
+    c.el = el;
+    if (c.typed) c.typedEl = el.querySelector(".typed");
+  });
+  CHIPS.forEach(function(ch){
+    var el = document.createElement("div");
+    el.className = "c3d chip";
+    el.innerHTML = "<em>来源</em>" + ch.t;
+    scene.appendChild(el);
+    ch.el = el;
+  });
+
+  var stringsSvg = $("#strings");
+  stringsSvg.innerHTML = STRINGS.map(function(){ return '<line/>'; }).join("");
+  var stringEls = Array.prototype.slice.call(stringsSvg.querySelectorAll("line"));
+
+  /* —— 左窗格（编辑视图）：斜投影 —— */
+  function eproj(x,y,z){
+    return [360 + x*0.5 + z*0.058, 320 + y*0.5 + z*0.026];
+  }
+  function poly(pts){
+    return pts.map(function(p){ return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" ");
+  }
+  var wallG = $("#wall"), wptsG = $("#wpts"), frG = $("#frustum"), pathG = $("#pathline");
+
+  // 照片墙装饰：每张卡一块灰阶平行四边形
+  var GRAYS = ["#3b3b42","#44444b","#3e3e45","#47474f","#3b3b42"];
+  function quad(points, fill, stroke){
+    return '<polygon points="' + poly(points) + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
+  }
+  var wallHtml = "";
+  CARDS.forEach(function(c,i){
+    wallHtml += quad([
+      eproj(c.x-c.w/2, c.y-c.h/2, c.z), eproj(c.x+c.w/2, c.y-c.h/2, c.z),
+      eproj(c.x+c.w/2, c.y+c.h/2, c.z), eproj(c.x-c.w/2, c.y+c.h/2, c.z)
+    ], GRAYS[i % GRAYS.length], "#5a5a63");
+  });
+  CHIPS.forEach(function(ch){
+    wallHtml += quad([
+      eproj(ch.x-70, ch.y-14, ch.z), eproj(ch.x+70, ch.y-14, ch.z),
+      eproj(ch.x+70, ch.y+14, ch.z), eproj(ch.x-70, ch.y+14, ch.z)
+    ], "#35353c", "#55555e");
+  });
+  wallG.innerHTML = wallHtml;
+
+  // 航线虚线
+  pathG.innerHTML = '<polyline points="' + WPTS.map(function(w){ return eproj(w[0],w[1],w[2]).map(function(v){return v.toFixed(1);}).join(","); }).join(" ") + '"/>';
+
+  // 路径点（六边形，空心→实心）
+  function hexPts(cx,cy,r){
+    var s = "";
+    for (var i=0;i<6;i++){
+      var a = Math.PI/6 + i*Math.PI/3;
+      s += (cx+r*Math.cos(a)).toFixed(1) + "," + (cy+r*Math.sin(a)).toFixed(1) + " ";
+    }
+    return s.trim();
+  }
+  var TI = [0]; // 各路径点到达时刻
+  var acc = 0;
+  SEGS.forEach(function(w){ acc += w; TI.push(acc); });
+  wptsG.innerHTML = WPTS.map(function(w){
+    var e = eproj(w[0],w[1],w[2]);
+    return '<polygon points="' + hexPts(e[0], e[1], 8) + '" fill="none" stroke="#f2e33a" stroke-width="2.5"/>';
+  }).join("");
+  var wptEls = Array.prototype.slice.call(wptsG.querySelectorAll("polygon"));
+
+  // 视锥：apex + 四角 + 正面三角 + 机身六边形
+  frG.innerHTML = '<line/><line/><line/><line/><line/><line/>' +
+    '<polygon fill="none"/>' +
+    '<polygon fill="#f2e33a" stroke="none"/>' +
+    '<polygon fill="#f2e33a" stroke="none"/>';
+  var frLines = Array.prototype.slice.call(frG.querySelectorAll("line"));
+  var frPolys = frG.querySelectorAll("polygon");
+  var frFace = frPolys[0];
+  var frTri = frPolys[1];
+  var frBody = frPolys[2];
+
+  /* —— 状态 —— */
+  var t = 0, playing = false, ended = false, dragging = false;
+  var DEMO = null;
+  try {
+    var q = new URLSearchParams(location.search);
+    var dv = q.get("demo");
+    if (dv != null){
+      var nested = new URLSearchParams(dv.indexOf("=") >= 0 ? dv : "progress=" + dv);
+      var pv = nested.get("progress") != null ? nested.get("progress") : q.get("progress");
+      if (pv != null && isFinite(parseFloat(pv))) DEMO = clamp(parseFloat(pv), 0, 1);
+    } else {
+      var pv2 = q.get("progress");
+      if (pv2 != null && isFinite(parseFloat(pv2))) DEMO = clamp(parseFloat(pv2), 0, 1);
+    }
+  } catch(e){ DEMO = null; }
+
+  /* —— 相机：段内 smoothstep（reduced-motion 线性） —— */
+  function camAt(tt){
+    var a = 0;
+    for (var i=0;i<SEGS.length;i++){
+      var w = SEGS[i];
+      if (tt <= a + w || i === SEGS.length-1){
+        var u = clamp((tt - a)/w, 0, 1);
+        if (!RM) u = u*u*(3-2*u);
+        var A = WPTS[i], B = WPTS[i+1];
+        return [lerp(A[0],B[0],u), lerp(A[1],B[1],u), lerp(A[2],B[2],u)];
+      }
+      a += w;
+    }
+    return WPTS[WPTS.length-1].slice();
+  }
+
+  /* —— 右窗格投影（与 CSS perspective 同式） —— */
+  var paneW = 720, paneH = 760;
+  function measure(){
+    var r = flight.getBoundingClientRect();
+    paneW = r.width; paneH = r.height;
+  }
+  window.addEventListener("resize", measure);
+  measure();
+
+  function rproj(wx,wy,wz,cam){
+    var zp = wz - cam[2];
+    var den = PERSP - zp;
+    if (den < 80) return null;
+    var k = PERSP/den;
+    return [paneW/2 + (wx-cam[0])*k, paneH/2 + (wy-cam[1])*k, k];
+  }
+
+  /* —— 渲染 —— */
+  function render(tt){
+    var cam = camAt(tt);
+    var eyeZ = cam[2] + PERSP;
+
+    scene.style.transform = "translate3d(" + (-cam[0]) + "px," + (-cam[1]) + "px," + (-cam[2]) + "px)";
+
+    CARDS.forEach(function(c){
+      var zp = c.z - cam[2];
+      if (zp > FADE_END || zp < -PERSP*6){
+        c.el.style.visibility = "hidden";
+        return;
+      }
+      c.el.style.visibility = "visible";
+      var op = zp <= FADE_START ? 1 : 1 - (zp - FADE_START)/(FADE_END - FADE_START);
+      c.el.style.opacity = op.toFixed(3);
+      var dist = PERSP - zp;                       // 眼到卡距离
+      var tiltF = clamp((dist - 650)/750, 0, 1);   // 远处倾斜飞入，临近摆正
+      var dir = (c.x + c.y) >= 0 ? -1 : 1;
+      var ryv = c.ry + dir*tiltF*11;
+      var rxv = -6*tiltF;
+      c.el.style.transform = "translate3d(" + c.x + "px," + c.y + "px," + c.z + "px) rotateY(" + ryv.toFixed(2) + "deg) rotateX(" + rxv.toFixed(2) + "deg)";
+      if (c.typed){
+        var n = Math.floor(clamp((tt - TYPE_START)/(TYPE_END - TYPE_START), 0, 1) * NOTE_TEXT.length + 0.0001);
+        var done = n >= NOTE_TEXT.length;
+        c.typedEl.innerHTML = NOTE_TEXT.slice(0, n) + (done ? "" : '<span class="caret"></span>');
+      }
+    });
+
+    CHIPS.forEach(function(ch){
+      var zp = ch.z - cam[2];
+      if (zp > FADE_END || zp < -PERSP*6){ ch.el.style.visibility = "hidden"; return; }
+      ch.el.style.visibility = "visible";
+      ch.el.style.opacity = (zp <= FADE_START ? 1 : 1 - (zp - FADE_START)/(FADE_END - FADE_START)).toFixed(3);
+      ch.el.style.transform = "translate3d(" + ch.x + "px," + ch.y + "px," + ch.z + "px)";
+    });
+
+    STRINGS.forEach(function(s, i){
+      var p1 = rproj(s.a[0], s.a[1], s.a[2], cam);
+      var p2 = rproj(s.b[0], s.b[1], s.b[2], cam);
+      var el = stringEls[i];
+      // 太远（k 小）或太近（将掠过）时不画，避免浮空短线
+      var kOk = function(p){ return p && p[2] > 0.55 && p[2] < 1.85; };
+      if (!kOk(p1) || !kOk(p2)){ el.style.display = "none"; return; }
+      el.style.display = "";
+      el.setAttribute("x1", p1[0].toFixed(1)); el.setAttribute("y1", p1[1].toFixed(1));
+      el.setAttribute("x2", p2[0].toFixed(1)); el.setAttribute("y2", p2[1].toFixed(1));
+    });
+
+    renderRig(cam);
+    renderTimeline(tt);
+  }
+
+  /* —— 左窗格 rig —— */
+  function renderRig(cam){
+    var apex = eproj(cam[0], cam[1], cam[2]);
+    var FL = 560, FW = 310, FH = 190;
+    var base = [
+      eproj(cam[0]-FW, cam[1]-FH, cam[2]-FL),
+      eproj(cam[0]+FW, cam[1]-FH, cam[2]-FL),
+      eproj(cam[0]+FW, cam[1]+FH, cam[2]-FL),
+      eproj(cam[0]-FW, cam[1]+FH, cam[2]-FL)
+    ];
+    for (var i=0;i<4;i++){
+      frLines[i].setAttribute("x1", apex[0]); frLines[i].setAttribute("y1", apex[1]);
+      frLines[i].setAttribute("x2", base[i][0]); frLines[i].setAttribute("y2", base[i][1]);
+    }
+    frFace.setAttribute("points", poly(base));
+    // 对角线（源片正面有交叉线）
+    frLines[4].setAttribute("x1", base[0][0]); frLines[4].setAttribute("y1", base[0][1]);
+    frLines[4].setAttribute("x2", base[2][0]); frLines[4].setAttribute("y2", base[2][1]);
+    frLines[5].setAttribute("x1", base[1][0]); frLines[5].setAttribute("y1", base[1][1]);
+    frLines[5].setAttribute("x2", base[3][0]); frLines[5].setAttribute("y2", base[3][1]);
+
+    // 朝向小三角：正面顶边中点，指向飞行方向
+    var topMid = eproj(cam[0], cam[1]-FH, cam[2]-FL);
+    var bcx = (base[0][0]+base[1][0]+base[2][0]+base[3][0])/4;
+    var bcy = (base[0][1]+base[1][1]+base[2][1]+base[3][1])/4;
+    var dx = bcx-apex[0], dy = bcy-apex[1];
+    var dl = Math.hypot(dx,dy) || 1; dx/=dl; dy/=dl;
+    var px = -dy, py = dx;
+    frTri.setAttribute("points",
+      (topMid[0]+dx*16).toFixed(1)+","+(topMid[1]+dy*16).toFixed(1)+" "+
+      (topMid[0]+px*9).toFixed(1)+","+(topMid[1]+py*9).toFixed(1)+" "+
+      (topMid[0]-px*9).toFixed(1)+","+(topMid[1]-py*9).toFixed(1));
+
+    frBody.setAttribute("points", hexPts(apex[0], apex[1], 10));
+
+    wptEls.forEach(function(el, i){
+      var passed = t >= TI[i] - 0.001;
+      el.setAttribute("fill", passed ? "#f2e33a" : "none");
+    });
+  }
+
+  /* —— 时间轴 —— */
+  var track = $("#track"), fill = $("#fill"), head = $("#head");
+  var tcNow = $("#tc-now");
+  TI.forEach(function(tt){
+    var b = document.createElement("button");
+    b.className = "dia"; b.style.left = (tt*100) + "%";
+    b.setAttribute("aria-label", "跳到 " + Math.round(tt*100) + "%");
+    b.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      t = tt; ended = false; setEnded(false);
+      render(t);
+    });
+    track.appendChild(b);
+  });
+  var dias = Array.prototype.slice.call(track.querySelectorAll(".dia"));
+
+  function fmt(tt){
+    var s = tt * DURATION;
+    return "0:" + (s < 10 ? "0" : "") + s.toFixed(1);
+  }
+  function renderTimeline(tt){
+    fill.style.width = (tt*100) + "%";
+    head.style.left = (tt*100) + "%";
+    tcNow.textContent = fmt(tt);
+    dias.forEach(function(d, i){
+      d.classList.toggle("passed", tt >= TI[i] - 0.001);
+    });
+  }
+
+  function setEnded(v){
+    ended = v;
+    $("#replay").hidden = !v;
+    $("#icon-play").style.display = (v || playing) ? "none" : "";
+    $("#icon-pause").style.display = (!v && playing) ? "" : "none";
+    $("#icon-re").style.display = v ? "" : "none";
+  }
+
+  var playbtn = $("#playbtn");
+  playbtn.addEventListener("click", function(){
+    if (RM) return;
+    if (ended){ t = 0; setEnded(false); playing = true; setEnded(false); render(t); return; }
+    playing = !playing;
+    setEnded(false);
+  });
+  $("#replay").addEventListener("click", function(){
+    t = 0; playing = true; setEnded(false); render(t);
+  });
+
+  function seekFromEvent(e){
+    var r = track.getBoundingClientRect();
+    t = clamp((e.clientX - r.left)/r.width, 0, 1);
+    if (ended && t < 1) setEnded(false);
+    render(t);
+  }
+  track.addEventListener("pointerdown", function(e){
+    dragging = true;
+    try { track.setPointerCapture(e.pointerId); } catch(err){}
+    wasPlaying = playing; playing = false;
+    seekFromEvent(e);
+  });
+  track.addEventListener("pointermove", function(e){ if (dragging) seekFromEvent(e); });
+  track.addEventListener("pointerup", function(e){
+    if (!dragging) return;
+    dragging = false;
+    if (wasPlaying && !ended && !RM) playing = true;
+    setEnded(ended);
+  });
+  var wasPlaying = false;
+
+  /* —— 启动 —— */
+  if (DEMO != null){
+    t = DEMO; playing = false;
+    render(t);                      // 定帧，供无头截图
+    return;
+  }
+  if (RM){
+    t = 1; playing = false;         // 终帧布局，无自动运镜
+    setEnded(false);
+    render(t);
+  } else {
+    playing = true;
+    setEnded(false);
+    render(t);
+  }
+  var last = performance.now();
+  function loop(now){
+    if (playing && !dragging){
+      t += (now - last)/1000/DURATION;
+      if (t >= 1){ t = 1; playing = false; setEnded(true); }
+      render(t);
+    }
+    last = now;
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

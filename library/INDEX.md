@@ -37,6 +37,7 @@
 | [bento/index.html](living/bento/index.html) | 镜头在一块 bento 大画布上自己巡游，停在谁身上谁才动 | 产品落地页一屏讲多个能力、每张卡一段自己的时间轴。多卡分焦点仍按 creed 摆风景窗 |
 | [triage/index.html](living/triage/index.html) | 勾一行，批量工具条浮上来。三态复选、深色 tooltip、归档行折叠、计数递减 | 批量列表、先选后操作、核查队列。内容是 user-project 的待核查命题 |
 | [spine/index.html](living/spine/index.html) | 深色侧栏：点「任务」箭头弹簧旋开，悬停子项脊柱条弹到对应高度，点子项光点带辉光滑过去，每步一枚极轻合成音 | 树状子导航、当前项指示、要声音反馈的微交互。内容是奕枢。复刻 lab01.dev UI Experiment #09 |
+| [flycam/index.html](living/flycam/index.html) | 左边黄相机沿虚线飞进证据墙，右边是它眼里的画面；红绳拴着来源，末帧下判断 | 证据链叙事要「过程可见」、运镜讲一条推理线、同一进度驱动两窗格。复刻 KM 运镜演示，内容是 user-project |
 
 ## 零件
 
@@ -193,6 +194,15 @@
 | 液态玻璃 / 折射透镜 / feDisplacementMap | [liquid-glass](living/liquid-glass/index.html#stage) | 拖那块圆角玻璃。字弯。蓝球穿过去。底下 × 收到底边变成按钮 |
 | 玻璃收成 FAB | [liquid-glass](living/liquid-glass/index.html#fab) | 500ms 下去，600ms 回来。圆角跟着边长走 |
 | 调这块玻璃 / 预设 | [liquid-glass](living/liquid-glass/index.html#panel) | Simple / Thick / Frosted / Cut / Orange plexiglass |
+
+### 可见相机 / 透视飞行 / 双向时间轴
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 可见相机 rig / 视锥沿航线走、过点实心 | [flycam](living/flycam/index.html#rig) | 左窗格 SVG 斜投影：线框视锥 + 正面交叉线 + 朝向三角 + 六边形机身；路径点 `t ≥ 到达时刻` 从空心变实心 |
+| 真 3D 透视飞行 / 相机推进反算卡片位移 | [flycam](living/flycam/index.html#flight) | 外层 `perspective:900px` + 场景 `preserve-3d`；卡世界坐标固定，场景整体 `translate3d(-cam)`；缓动是 t 的纯函数，scrub 天然与播放一致 |
+| 便利贴逐字 / 打字进度换算 | [flycam](living/flycam/index.html#typenote) | 字符数 = t 在打字窗口内线性映射；窗口必须套着卡片在画面里的时段 |
+| 双向时间轴 / 拖动同步两窗格 | [flycam](living/flycam/index.html#timeline) | rAF 推 t；进度条 pointerdown/move 拖动，菱形刻度点跳；两窗格 + 时间轴同吃一个 `render(t)` |
 
 ### 方法 / 网点
 
