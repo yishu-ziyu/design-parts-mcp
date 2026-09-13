@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bento graphics — 镜头扫过一张 agent 画布</title>
+<style>
+:root{
+  --paper:#F2EFE9;
+  --card:#FFFFFF;
+  --line:#E7E3DA;
+  --line-strong:#D8D2C4;
+  --panel:#FAF8F3;
+  --panel-2:#F5F2EA;
+  --ink:#201E1A;
+  --ink-2:#57534A;
+  --muted:#8A857A;
+  --green:#2F9E5B;
+  --red:#C94F38;
+  --blue:#4A6BD8;
+  --hl:#AFA894;
+  --ease-io:cubic-bezier(0.65,0,0.35,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--paper)}
+body{
+  font-family:system-ui,-apple-system,"PingFang SC","Noto Sans SC","Segoe UI",sans-serif;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============ #camera 视口 + 大画布 ============ */
+#viewport{
+  height:100vh;
+  overflow:hidden;
+  position:relative;
+  background:var(--paper);
+}
+#camera{
+  position:absolute;left:0;top:0;
+  transform-origin:0 0;
+  transition:transform 1800ms var(--ease-io);
+  will-change:transform;
+}
+#stage{
+  position:absolute;left:0;top:0;
+  width:2400px;height:1900px;
+}
+
+/* 顶部大标语（属于画布，镜头会带到） */
+#headline{
+  position:absolute;left:64px;top:48px;width:1600px;
+  font-size:88px;line-height:1.14;font-weight:600;
+  letter-spacing:-0.025em;color:var(--ink);
+}
+#headline em{font-style:normal;color:var(--ink-2)}
+
+/* ============ 卡片基础 ============ */
+.card{
+  position:absolute;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:30px 32px;
+  cursor:pointer;
+}
+.card h2{font-size:22px;font-weight:600;letter-spacing:-0.01em}
+.card .sub{font-size:15px;line-height:1.55;color:var(--ink-2);margin-top:8px}
+
+/* ============ builder 卡（焦点 A） ============ */
+#builder{left:60px;top:330px;width:1660px;height:850px}
+.app{
+  position:relative;margin-top:20px;
+  width:100%;height:664px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  display:flex;overflow:hidden;
+}
+.side{
+  width:290px;flex:none;
+  background:var(--panel-2);
+  border-right:1px solid var(--line);
+  padding:18px 14px;
+}
+.brand{display:flex;align-items:center;gap:9px;padding:4px 8px 14px}
+.brand i{width:14px;height:14px;border-radius:50%;background:var(--ink)}
+.brand b{font-size:14px;font-weight:600}
+.sel{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:9px;padding:8px 11px;font-size:13px;font-weight:500;
+  margin-bottom:16px;
+}
+.sel u{text-decoration:none;color:var(--muted);font-size:11px}
+.glabel{font-size:11px;color:var(--muted);letter-spacing:0.06em;padding:6px 8px}
+.sitem{
+  display:flex;align-items:center;gap:9px;
+  font-size:13px;color:var(--ink-2);
+  padding:7px 9px;border-radius:8px;
+}
+.sitem i{width:12px;height:12px;border-radius:4px;border:1.5px solid var(--line-strong);flex:none}
+.sitem.on{background:var(--card);border:1px solid var(--line);color:var(--ink);font-weight:500}
+
+.flow-head{
+  height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px 0 20px;
+  border-bottom:1px solid var(--line);
+  background:var(--card);
+}
+.flow-tabs{display:flex;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:60px;padding:3px}
+.flow-tab{
+  font:inherit;font-size:12.5px;
+  background:transparent;border:1px solid transparent;border-radius:60px;
+  padding:4px 15px;color:var(--muted);
+  transition:background-color 200ms,color 200ms,border-color 200ms;
+}
+.flow-tab.on{background:var(--card);border-color:var(--line);color:var(--ink);font-weight:500}
+.flow-path{font-size:12px;color:var(--muted)}
+.flow-path b{color:var(--ink);font-weight:500}
+.flow-path span{margin:0 7px;color:var(--line-strong)}
+.flow{
+  position:relative;flex:1;
+  background-image:radial-gradient(#E4DFD2 1.1px,transparent 1.1px);
+  background-size:24px 24px;
+  background-position:12px 12px;
+}
+.flow svg.wires{position:absolute;inset:0;width:100%;height:100%}
+.node{
+  position:absolute;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:12px;
+  transition:border-color 300ms,background-color 300ms;
+}
+.node .nt{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;padding:10px 12px 6px}
+.node .nt i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line-strong);flex:none}
+.node .nd{font-size:11px;line-height:1.5;color:var(--muted);padding:0 12px 10px;border-top:1px solid var(--panel-2);margin-top:4px;padding-top:7px}
+.pill-node{
+  position:absolute;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:60px;
+  font-size:11.5px;color:var(--ink-2);
+  padding:6px 14px;
+}
+.start-node{
+  position:absolute;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:60px;
+  font-size:12px;font-weight:500;
+  padding:7px 16px;
+  display:flex;align-items:center;gap:7px;
+}
+.start-node i{width:0;height:0;border-left:6px solid var(--ink);border-top:4px solid transparent;border-bottom:4px solid transparent}
+
+/* builder 微动效：光标走位 + 节点高亮（只在镜头停在 A 时播） */
+.flow-cursor{position:absolute;left:140px;top:540px;width:20px;height:24px;z-index:3;opacity:0}
+#builder.play .flow-cursor{opacity:1;animation:cursorWalk 5.5s cubic-bezier(.45,.05,.3,1) forwards}
+#builder.play .n-triage{animation:glowA 5.5s linear forwards}
+#builder.play .n-exchange{animation:glowC 5.5s linear forwards}
+@keyframes cursorWalk{
+  0%{transform:translate(0,0)}
+  16%{transform:translate(510px,-386px)}
+  58%{transform:translate(510px,-386px)}
+  76%{transform:translate(825px,-142px)}
+  100%{transform:translate(825px,-142px)}
+}
+@keyframes glowA{
+  0%,17%{border-color:var(--line);background-color:var(--card)}
+  22%,58%{border-color:var(--hl);background-color:#F6F2E9}
+  64%,100%{border-color:var(--line);background-color:var(--card)}
+}
+@keyframes glowC{
+  0%,76%{border-color:var(--line);background-color:var(--card)}
+  81%,100%{border-color:var(--hl);background-color:#F6F2E9}
+}
+
+/* ============ 右列两张卡 ============ */
+#chan{left:1760px;top:330px;width:580px;height:400px}
+#tools{left:1760px;top:770px;width:580px;height:410px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.chip{
+  border:1px solid var(--line);border-radius:60px;
+  padding:9px 18px;font-size:13.5px;color:var(--ink-2);
+  background:var(--panel);
+}
+.mini-rows{margin-top:24px;display:flex;flex-direction:column;gap:12px}
+.mini-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:13px 16px;font-size:13.5px;
+}
+.mini-row b{font-weight:500}
+.mini-row span{color:var(--muted);font-size:12.5px}
+
+/* ============ 聊天卡（焦点 B 左） #chat ============ */
+#chat{left:60px;top:1220px;width:1070px;height:640px}
+.chat-area{position:relative;height:490px;margin-top:18px}
+.chat-line{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.chat-col{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:600px;display:flex;flex-direction:column;align-items:center}
+.bubble{
+  border-radius:16px;
+  width:100%;
+  padding:16px 20px 15px;
+  font-size:14.5px;line-height:1.6;
+  transition:transform 450ms var(--ease-io),opacity 450ms var(--ease-io);
+}
+.b-user{
+  position:relative;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  min-height:76px;
+}
+.b-user .who{
+  position:absolute;left:-13px;top:-13px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+}
+.b-user .who i{width:10px;height:11px;background:var(--paper);border-radius:5px 5px 2px 2px;display:block}
+.b-agent{
+  background:var(--card);
+  border:1px solid var(--line);
+  color:var(--ink-2);
+  margin-top:56px;
+  transform:translateY(18px);opacity:0;
+}
+.b-agent .who{
+  position:absolute;left:-13px;top:-13px;
+  width:28px;height:28px;border-radius:50%;
+  background:radial-gradient(circle at 32% 30%, #8FD0C6, #4A6BD8 78%);
+  border:2px solid var(--card);
+}
+.b-agent{position:relative}
+.b-agent.show{transform:translateY(0);opacity:1}
+.caret{
+  display:inline-block;width:2px;height:15px;
+  background:var(--ink);vertical-align:-2px;margin-left:2px;
+  animation:blink 0.85s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+.knot{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--card);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  margin:14px 0;
+}
+.knot i{width:10px;height:10px;border-radius:50%;border:2px solid var(--line-strong);display:block}
+.toast{
+  display:flex;align-items:center;gap:9px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:60px;padding:9px 18px 9px 12px;
+  font-size:13.5px;color:var(--ink-2);
+  margin:6px 0;
+  transform:translateY(8px);opacity:0;
+  transition:transform 350ms var(--ease-io),opacity 350ms var(--ease-io);
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast i{width:18px;height:18px;border-radius:50%;background:var(--green);position:relative;flex:none}
+.toast i::after{
+  content:"";position:absolute;left:5px;top:4px;width:5px;height:8px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff;
+  transform:rotate(42deg);
+}
+
+/* ============ 分析卡（焦点 B 右） #chart ============ */
+#chart{left:1170px;top:1220px;width:1170px;height:640px}
+.chart-grid{display:grid;grid-template-columns:640px 1fr;gap:18px;margin-top:18px;height:488px}
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px 20px;
+  position:relative;
+  overflow:hidden;
+}
+.plabel{font-size:13px;font-weight:600}
+.pbig{font-size:27px;font-weight:600;letter-spacing:-0.02em;margin-top:4px}
+.pbig small{font-size:15px;font-weight:500;color:var(--ink-2)}
+.chart-wrap{position:relative;margin-top:10px;width:596px;height:330px}
+.chart-wrap svg{position:absolute;left:0;top:0}
+#chartDot{
+  position:absolute;width:11px;height:11px;border-radius:50%;
+  background:var(--red);border:2.5px solid var(--card);
+  left:-6px;top:-6px;opacity:0;
+}
+#chartTip{
+  position:absolute;width:150px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:8px 12px;font-size:12.5px;line-height:1.75;color:var(--ink);
+  opacity:0;
+}
+#chartTip .r{display:flex;align-items:center;gap:7px;white-space:nowrap}
+#chartTip .r i{width:8px;height:8px;border-radius:50%;display:block;flex:none}
+.right-col{display:flex;flex-direction:column;gap:18px}
+.csat .chart-wrap-s{margin-top:12px;width:100%;height:74px}
+.bars{margin-top:14px;display:flex;flex-direction:column;gap:14px}
+.bar-row .bl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:6px}
+.bar-row .bl b{font-weight:500;color:var(--ink)}
+.bar-track{height:12px;border-radius:60px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:60px;background:#55514A;transition:width 900ms var(--ease-io)}
+.success{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+}
+.side-panel-title{font-size:13px;font-weight:600}
+.csat-body{display:flex;align-items:flex-start;justify-content:space-between}
+
+/* ============ 控制条 ============ */
+#controls{
+  position:fixed;right:22px;top:20px;z-index:10;
+  display:flex;gap:8px;
+}
+#controls button{
+  font:inherit;font-size:13px;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:60px;
+  padding:8px 16px;
+  color:var(--ink-2);
+  cursor:pointer;
+  transition:background-color 200ms,color 200ms,border-color 200ms;
+}
+#controls button:hover{border-color:var(--line-strong);color:var(--ink)}
+#controls button.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+#stageHint{
+  position:fixed;left:22px;bottom:16px;z-index:10;
+  font-size:12px;color:var(--muted);
+}
+
+/* ============ 页尾「可拆」 ============ */
+#notes{
+  max-width:860px;
+  margin:0 auto;
+  padding:72px 32px 120px;
+}
+#notes h3{font-size:14px;letter-spacing:0.08em;color:var(--muted);font-weight:600;margin-bottom:22px}
+#notes dl{display:grid;grid-template-columns:150px 1fr;gap:12px 20px;font-size:14px;line-height:1.7}
+#notes dt{color:var(--muted)}
+#notes dd{color:var(--ink-2)}
+#notes code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+
+/* ============ reduced-motion：全部直达终态 ============ */
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+  .flow-cursor{display:none}
+  .caret{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="camera">
+    <div id="stage">
+
+      <header id="headline">一个画布，<br>长出<em>会办事的</em> agent</header>
+
+      <!-- 焦点 A：builder 卡 -->
+      <article class="card" id="builder" data-go="a">
+        <h2>把 agent 的脑子搭出来</h2>
+        <p class="sub">配置语音、知识库、系统提示与工作流，再把现有工具接上 —— 都在同一个地方。</p>
+        <div class="app">
+          <div class="side">
+            <div class="brand"><i></i><b>前哨平台</b></div>
+            <div class="sel">客服助手 <u>▾</u></div>
+            <div class="glabel">工作流</div>
+            <div class="sitem on"><i></i>接待分流</div>
+            <div class="sitem"><i></i>退款引导</div>
+            <div class="sitem"><i></i>物流查询</div>
+            <div class="sitem"><i></i>会员登记</div>
+            <div class="glabel">知识库</div>
+            <div class="sitem"><i></i>帮助中心</div>
+            <div class="sitem"><i></i>商品目录</div>
+            <div class="sitem"><i></i>政策文档</div>
+          </div>
+          <div class="flow-side" style="flex:1;display:flex;flex-direction:column;min-width:0">
+            <div class="flow-head">
+              <div class="flow-tabs"><span class="flow-tab on">语音</span><span class="flow-tab">文本</span></div>
+              <span class="flow-path"><b>客服助手</b><span>/</span>主流程</span>
+            </div>
+            <div class="flow">
+              <svg class="wires" viewBox="0 0 1306 620" preserveAspectRatio="none" aria-hidden="true">
+                <g fill="none" stroke="#D8D2C4" stroke-width="1.5">
+                  <path d="M655,66 C655,90 652,88 652,110"/>
+                  <path d="M650,200 C650,236 492,226 492,262"/>
+                  <path d="M650,200 C650,236 832,226 832,262"/>
+                  <path d="M492,294 C492,330 427,312 427,350"/>
+                  <path d="M832,294 C832,330 967,312 967,350"/>
+                </g>
+              </svg>
+              <div class="start-node" style="left:600px;top:28px"><i></i>开始</div>
+              <div class="node n-triage" style="left:520px;top:110px;width:260px;height:90px">
+                <div class="nt"><i></i>识别问题</div>
+                <div class="nd">先弄清用户要什么，再分流到对应分支。</div>
+              </div>
+              <div class="pill-node" style="left:432px;top:262px">iOS 订单</div>
+              <div class="pill-node" style="left:772px;top:262px">网页订单</div>
+              <div class="node n-refund" style="left:300px;top:350px;width:254px;height:100px">
+                <div class="nt"><i></i>引导退款</div>
+                <div class="nd">告诉用户退款入口和到账时间。</div>
+              </div>
+              <div class="node n-exchange" style="left:840px;top:350px;width:254px;height:100px">
+                <div class="nt"><i></i>处理换货</div>
+                <div class="nd">核对订单后生成换货工单。</div>
+              </div>
+              <svg class="flow-cursor" viewBox="0 0 20 24" aria-hidden="true">
+                <path d="M2,1 L2,19 L7,14.5 L10.5,22 L13.5,20.5 L10,13.5 L16.5,13.5 Z" fill="#201E1A" stroke="#fff" stroke-width="1.2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 右列：渠道卡 / 工具卡 -->
+      <article class="card" id="chan" data-go-self>
+        <h2>多渠道接进来</h2>
+        <p class="sub">同一套 agent，网页、电话、App 里都能用。</p>
+        <div class="chips">
+          <span class="chip">网页挂件</span>
+          <span class="chip">电话</span>
+          <span class="chip">App 内嵌</span>
+          <span class="chip">邮件</span>
+        </div>
+      </article>
+      <article class="card" id="tools" data-go-self>
+        <h2>接上现有工具</h2>
+        <p class="sub">查订单、开工单，动作落在你们已有的系统里。</p>
+        <div class="mini-rows">
+          <div class="mini-row"><b>查订单状态</b><span>已连通</span></div>
+          <div class="mini-row"><b>创建工单</b><span>已连通</span></div>
+          <div class="mini-row"><b>查询物流</b><span>已连通</span></div>
+        </div>
+      </article>
+
+      <!-- 焦点 B：聊天卡 -->
+      <article class="card" id="chat" data-go="b">
+        <h2>先聊一遍，再上线</h2>
+        <p class="sub">上线前用真实对话过一遍：拦截、回复、兜底都看得见。</p>
+        <div class="chat-area">
+          <div class="chat-line"></div>
+          <div class="chat-col">
+            <div class="bubble b-user">
+              <span class="who"><i></i></span>
+              <span id="typedText"></span><span class="caret" id="caret"></span>
+            </div>
+            <div class="knot"><i></i></div>
+            <div class="toast" id="observedToast"><i></i>Observed prompt</div>
+            <div class="knot"><i></i></div>
+            <div class="bubble b-agent" id="agentReply">
+              <span class="who"></span>
+              <span id="agentText">抱歉让您久等了。订单 #4556 已经交给快递，预计明天上午送达，链接稍后发您。</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 焦点 B：分析卡 -->
+      <article class="card" id="chart" data-go="b">
+        <h2>看得见的效果</h2>
+        <p class="sub">解决率、满意度、语言分布 —— 内置报表，也能下钻到每一段对话。</p>
+        <div class="chart-grid">
+          <div class="panel">
+            <div class="plabel">Resolution Rate</div>
+            <div class="pbig">93.6<small>%</small></div>
+            <div class="chart-wrap">
+              <svg id="mainChart" width="596" height="330" viewBox="0 0 596 330" aria-hidden="true">
+                <g stroke="#EDE9DF" stroke-width="1">
+                  <line x1="40" y1="30" x2="560" y2="30"/>
+                  <line x1="40" y1="150" x2="560" y2="150"/>
+                  <line x1="40" y1="270" x2="560" y2="270"/>
+                </g>
+                <g font-size="11" fill="#8A857A" font-family="system-ui,sans-serif">
+                  <text x="6" y="34">100%</text>
+                  <text x="10" y="154">50%</text>
+                  <text x="14" y="274">0%</text>
+                  <text x="40" y="316">8月17日</text>
+                  <text x="512" y="316">8月24日</text>
+                </g>
+                <path id="fillV2" fill="rgba(74,107,216,0.09)" opacity="0"/>
+                <path id="lineV2" fill="none" stroke="#4A6BD8" stroke-width="2"/>
+                <path id="lineV1" fill="none" stroke="#C94F38" stroke-width="2"/>
+              </svg>
+              <div id="chartDot"></div>
+              <div id="chartTip">
+                <div class="r"><i style="background:#C94F38"></i>V1：<b id="tipV1">93.61%</b></div>
+                <div class="r"><i style="background:#4A6BD8"></i>V2：<b id="tipV2">77.61%</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="right-col">
+            <div class="panel csat">
+              <div class="csat-body">
+                <div>
+                  <div class="side-panel-title">Average CSAT</div>
+                  <div class="pbig">4.9 <small>★</small></div>
+                </div>
+              </div>
+              <div class="chart-wrap-s">
+                <svg id="csatChart" width="100%" height="74" viewBox="0 0 300 74" preserveAspectRatio="none" aria-hidden="true">
+                  <path id="csatLine" fill="none" stroke="#55514A" stroke-width="2"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="side-panel-title">Most used languages</div>
+              <div class="bars">
+                <div class="bar-row">
+                  <div class="bl"><b>中文</b><span>8,529</span></div>
+                  <div class="bar-track"><div class="bar-fill" id="barZh" data-w="82%"></div></div>
+                </div>
+                <div class="bar-row">
+                  <div class="bl"><b>English</b><span>6,120</span></div>
+                  <div class="bar-track"><div class="bar-fill" id="barEn" data-w="56%"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel success">
+              <div class="side-panel-title">Highest Success Rate</div>
+              <div class="pbig">92.7<small>%</small></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</div>
+
+<nav id="controls" aria-label="镜头控制">
+  <button data-go="wide">总览</button>
+  <button data-go="a">编排</button>
+  <button data-go="b">部署与数据</button>
+  <button id="replay">再播</button>
+</nav>
+<div id="stageHint">自动巡游中 · 点任意卡片或右上按钮跳转 · 再播重置时间轴</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt>#camera</dt>
+    <dd>一个 overflow:hidden 视口对 2400×1900 大画布做 <code>translate+scale</code>（transform-origin 0 0），<code>transition:transform 1800ms cubic-bezier(0.65,0,0.35,1)</code>。焦点矩形→变换由 JS 算：<code>s=min(vw/fw,vh/fh)</code>，居中补偿。循环：宽景 1.5s → A 停 5.5s → B 停 6.5s → 回 A，整圈 ≈15.6s。</dd>
+    <dt>#builder</dt>
+    <dd>卡内微动效与镜头解耦：镜头到达才挂 <code>.play</code>，离开即摘。光标是一段 <code>cursorWalk 5.5s</code> 的 transform 关键帧，两个节点用 <code>glowA/glowC</code> 在对应百分比点亮/熄灭——同一时长各管各的百分比，不用 JS 逐帧。</dd>
+    <dt>#chat</dt>
+    <dd>打字用 JS 逐字追加（26ms/字）+ CSS <code>blink</code> 光标；绿点 toast 和回复卡都是 <code>transform+opacity 350/450ms</code> 滑入，不单靠 fade。离开焦点即复位，回来重播。</dd>
+    <dt>#chart</dt>
+    <dd>SVG <code>stroke-dasharray=总长</code>，rAF 2.2s 推 dashoffset 到 0；红点用 <code>getPointAtLength</code> 沿线走，tooltip 两行数值跟点，横条 <code>width 900ms</code> 长出来。reduced-motion 下全部直达终态。</dd>
+  </dl>
+</section>
+
+<script>
+(function(){
+"use strict";
+var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- 镜头 ---------- */
+var camera = document.getElementById("camera");
+var viewport = document.getElementById("viewport");
+var stage = document.getElementById("stage");
+
+function rectOf(name){
+  if(name==="wide") return {x:0,y:0,w:2400,h:1900};
+  if(name==="a") return {x:24,y:296,w:1736,h:920};
+  if(name==="b") return {x:24,y:1186,w:2352,h:710};
+  return null;
+}
+function focus(name, instant){
+  var r = rectOf(name), el;
+  if(!r){
+    el = document.querySelector('[data-go="'+name+'"]') ||
+         document.getElementById(name);
+    if(!el) return;
+    r = {x:el.offsetLeft-24, y:el.offsetTop-24, w:el.offsetWidth+48, h:el.offsetHeight+48};
+  }
+  var vw = viewport.clientWidth, vh = viewport.clientHeight;
+  var s = Math.min(vw/r.w, vh/r.h);
+  var tx = (vw - r.w*s)/2 - r.x*s;
+  var ty = (vh - r.h*s)/2 - r.y*s;
+  /* 画布比视口大的方向上不许露出画布外的空纸 */
+  if(2400*s > vw) tx = Math.max(vw - 2400*s, Math.min(tx, 0));
+  if(1900*s > vh) ty = Math.max(vh - 1900*s, Math.min(ty, 0));
+  if(instant){
+    camera.style.transition = "none";
+    camera.style.transform = "translate("+tx+"px,"+ty+"px) scale("+s+")";
+    void camera.offsetWidth;
+    camera.style.transition = "";
+  }else{
+    camera.style.transform = "translate("+tx+"px,"+ty+"px) scale("+s+")";
+  }
+  markOn(name);
+}
+function markOn(name){
+  var btns = document.querySelectorAll("#controls button[data-go]");
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle("on", btns[i].getAttribute("data-go")===name);
+}
+
+/* ---------- builder 微动效 ---------- */
+var builder = document.getElementById("builder");
+function playBuilder(){
+  builder.classList.remove("play");
+  void builder.offsetWidth;
+  builder.classList.add("play");
+}
+function stopBuilder(){ builder.classList.remove("play"); }
+
+/* ---------- B 卡：聊天 + 图表 ---------- */
+var typedEl = document.getElementById("typedText");
+var caret = document.getElementById("caret");
+var toast = document.getElementById("observedToast");
+var reply = document.getElementById("agentReply");
+var USER_MSG = "喂？我上周下的单，说今天到的，现在还没到。";
+var timers = [];
+var rafId = 0;
+
+var v1 = [77.5,79,78.2,82,80.5,86,84.5,88.5,87,91.5,90,93.6];
+var v2 = [54,57,53.5,61,59,65,62,69,66,71.5,69,74];
+function pts(arr){
+  var out=[], i;
+  for(i=0;i<arr.length;i++) out.push([40+i*(520/(arr.length-1)), 270-arr[i]*2.4]);
+  return out;
+}
+function smooth(p){
+  var d="M"+p[0][0]+","+p[0][1], i;
+  for(i=1;i<p.length-1;i++){
+    var mx=(p[i][0]+p[i+1][0])/2, my=(p[i][1]+p[i+1][1])/2;
+    d+=" Q"+p[i][0]+","+p[i][1]+" "+mx+","+my;
+  }
+  d+=" L"+p[p.length-1][0]+","+p[p.length-1][1];
+  return d;
+}
+var lineV1=document.getElementById("lineV1"), lineV2=document.getElementById("lineV2"),
+    fillV2=document.getElementById("fillV2"), csatLine=document.getElementById("csatLine"),
+    dot=document.getElementById("chartDot"), tip=document.getElementById("chartTip"),
+    tipV1=document.getElementById("tipV1"), tipV2=document.getElementById("tipV2"),
+    barZh=document.getElementById("barZh"), barEn=document.getElementById("barEn");
+var P1=pts(v1), P2=pts(v2);
+lineV1.setAttribute("d", smooth(P1));
+lineV2.setAttribute("d", smooth(P2));
+fillV2.setAttribute("d", smooth(P2)+" L560,270 L40,270 Z");
+(function(){
+  var c=[4.5,4.55,4.4,4.65,4.5,4.75,4.6,4.85], p=[], i;
+  for(i=0;i<c.length;i++) p.push([6+i*(288/(c.length-1)), 62-(c[i]-4.0)/1.0*52]);
+  csatLine.setAttribute("d", smooth(p));
+})();
+var L1=0, L2=0, LC=0;
+try{ L1=lineV1.getTotalLength(); L2=lineV2.getTotalLength(); LC=csatLine.getTotalLength(); }catch(e){}
+function prepLines(){
+  [ [lineV1,L1],[lineV2,L2],[csatLine,LC] ].forEach(function(o){
+    o[0].style.strokeDasharray = o[1];
+    o[0].style.strokeDashoffset = o[1];
+  });
+  fillV2.setAttribute("opacity","0");
+}
+function easeIO(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+function drawChart(){
+  prepLines();
+  dot.style.opacity="0"; tip.style.opacity="0";
+  var t0 = performance.now(), DUR=2200;
+  function frame(now){
+    var p = Math.min(1,(now-t0)/DUR), e = easeIO(p);
+    lineV1.style.strokeDashoffset = L1*(1-e);
+    lineV2.style.strokeDashoffset = L2*(1-e);
+    fillV2.setAttribute("opacity", String(0.9*e));
+    csatLine.style.strokeDashoffset = LC*(1-e);
+    var pt = lineV1.getPointAtLength(L1*e);
+    var i = Math.min(v1.length-1, Math.round(e*(v1.length-1)));
+    dot.style.opacity="1";
+    dot.style.transform = "translate("+pt.x+"px,"+pt.y+"px)";
+    tipV1.textContent = v1[i].toFixed(2)+"%";
+    tipV2.textContent = v2[i].toFixed(2)+"%";
+    var tx = pt.x+16; if(tx>430) tx = pt.x-172;
+    tip.style.left = tx+"px";
+    tip.style.top = Math.max(2, pt.y-70)+"px";
+    tip.style.opacity = e>0.18 ? "1" : "0";
+    if(p<1) rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+}
+function resetChart(){
+  cancelAnimationFrame(rafId);
+  prepLines();
+  dot.style.opacity="0"; tip.style.opacity="0";
+  barZh.style.width="0"; barEn.style.width="0";
+}
+function later(ms, fn){ timers.push(setTimeout(fn, ms)); }
+function resetChat(){
+  timers.forEach(clearTimeout); timers=[];
+  typedEl.textContent="";
+  caret.style.display="";
+  toast.classList.remove("show");
+  reply.classList.remove("show");
+}
+function playB(){
+  resetChat(); resetChart();
+  later(250, drawChart);
+  later(700, function(){ barZh.style.width = barZh.getAttribute("data-w"); });
+  later(950, function(){ barEn.style.width = barEn.getAttribute("data-w"); });
+  var i=0;
+  later(150, function type(){
+    typedEl.textContent = USER_MSG.slice(0, ++i);
+    if(i<USER_MSG.length) timers.push(setTimeout(type, 34));
+    else{
+      later(250, function(){ caret.style.display="none"; });
+      later(450, function(){ toast.classList.add("show"); });
+      later(1900, function(){ reply.classList.add("show"); });
+    }
+  });
+}
+function finalizeB(){
+  timers.forEach(clearTimeout); timers=[];
+  cancelAnimationFrame(rafId);
+  typedEl.textContent = USER_MSG;
+  caret.style.display="none";
+  toast.classList.add("show");
+  reply.classList.add("show");
+  [ [lineV1,L1],[lineV2,L2],[csatLine,LC] ].forEach(function(o){
+    o[0].style.strokeDasharray="none"; o[0].style.strokeDashoffset="0";
+  });
+  fillV2.setAttribute("opacity","0.9");
+  var end=lineV1.getPointAtLength(L1);
+  dot.style.opacity="1";
+  dot.style.transform="translate("+end.x+"px,"+end.y+"px)";
+  tipV1.textContent="93.61%"; tipV2.textContent="77.61%";
+  tip.style.left=(end.x-172)+"px"; tip.style.top=(end.y-70)+"px"; tip.style.opacity="1";
+  barZh.style.width=barZh.getAttribute("data-w");
+  barEn.style.width=barEn.getAttribute("data-w");
+}
+
+/* ---------- 时间轴 ---------- */
+var loopTimers=[];
+function after(ms, fn){ loopTimers.push(setTimeout(fn, ms)); }
+function clearLoop(){ loopTimers.forEach(clearTimeout); loopTimers=[]; }
+function stopAll(){ clearLoop(); stopBuilder(); resetChat(); resetChart(); }
+
+function visitA(hold, next){
+  stopBuilder();
+  resetChat(); resetChart();
+  focus("a");
+  after(1900, function(){
+    playBuilder();
+    after(hold, next);
+  });
+}
+function visitB(hold, next){
+  stopBuilder();
+  focus("b");
+  after(1900, function(){
+    playB();
+    after(hold, next);
+  });
+}
+function startLoop(){
+  clearLoop(); stopBuilder(); resetChat(); resetChart();
+  focus("wide");
+  after(1500, function(){
+    visitA(5500, function(){
+      visitB(6500, function(){ startLoopFromA(); });
+    });
+  });
+}
+function startLoopFromA(){
+  visitA(5500, function(){
+    visitB(6500, function(){ startLoopFromA(); });
+  });
+}
+
+/* ---------- 控制 ---------- */
+document.getElementById("controls").addEventListener("click", function(ev){
+  var b = ev.target.closest("button");
+  if(!b) return;
+  if(b.id==="replay"){
+    if(RM){ finalizeB(); focus("wide", true); }
+    else startLoop();
+    return;
+  }
+  var go = b.getAttribute("data-go");
+  stopAll();
+  if(RM){ focus(go, true); finalizeB(); }
+  else{
+    focus(go);
+    if(go==="a") after(1900, playBuilder);
+    if(go==="b") after(1900, playB);
+    if(go==="wide") after(2000, startLoop);
+  }
+});
+stage.addEventListener("click", function(ev){
+  var card = ev.target.closest(".card");
+  if(!card) return;
+  var go = card.getAttribute("data-go");
+  if(!go) go = card.id;
+  stopAll();
+  if(RM){ focus(go, true); finalizeB(); }
+  else{
+    focus(go);
+    if(go==="a") after(1900, playBuilder);
+    if(go==="b") after(1900, playB);
+    else if(go!=="wide") after(2200, startLoop);
+  }
+});
+
+/* ---------- 启动 ---------- */
+window.addEventListener("resize", function(){
+  if(RM) focus("wide", true);
+});
+if(RM){
+  focus("wide", true);
+  finalizeB();
+}else{
+  startLoop();
+}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>红鲱鱼与枪 · 核查队列</title>
+<style>
+  /* ===== 配色（来自 lab01.dev UI Experiment #02 的视觉层，配色不变，内容全换） ===== */
+  :root{
+    --bg:#F6F8FC;
+    --low:#868FA0;
+    --high:#202124;
+    --accent:#E8EDF7;
+    --hair:rgba(32,33,36,.09);
+    --font:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#fff;font-family:var(--font);color:var(--high);
+    -webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 16px 72px}
+
+  /* ===== 舞台：540 方形框，内容像原版一样被裁掉一角 ===== */
+  #frame{
+    width:540px;height:540px;flex:none;
+    background:var(--bg);
+    border:1px solid var(--hair);
+    border-radius:2px;
+    overflow:hidden;isolate;
+  }
+  #frame main{display:flex;height:100%}
+
+  /* ===== 侧栏 248px ===== */
+  aside{width:248px;flex:none;padding:16px}
+  .brand{display:flex;align-items:center;gap:9px;padding:6px 2px;margin-bottom:14px}
+  .brand b{font-size:12.5px;font-weight:600;letter-spacing:.02em}
+  nav ul{list-style:none;display:grid;gap:2px}
+  nav a{
+    display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;
+    border-radius:999px;font-size:12px;color:var(--low);text-decoration:none;
+  }
+  nav a svg{width:16px;height:16px;flex:none}
+  nav a .n{margin-left:auto;font-size:10px;color:var(--low)}
+  nav a.on{background:var(--accent);color:var(--high);font-weight:600}
+  nav a:hover{color:var(--high)}
+
+  /* ===== 右列：搜索 + 白卡 ===== */
+  .col{flex:none;width:276px;margin-right:16px;margin-top:16px}
+  .search{position:relative;margin-bottom:14px}
+  .search input{
+    width:100%;height:34px;border:0;outline:none;border-radius:999px;
+    background:var(--accent);color:var(--high);
+    font-family:var(--font);font-size:11.5px;padding:0 12px 0 34px;
+  }
+  .search input::placeholder{color:var(--low)}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--low)}
+
+  .card{
+    background:#fff;width:100%;height:520px;border-radius:12px;padding:12px;
+    outline:1px solid rgba(32,33,36,.05);
+    box-shadow:0 1px 2px rgba(32,33,36,.05); /* 极轻一层，只做白卡浮起 */
+  }
+
+  /* ===== 表头：主复选框 + 批量工具条 ===== */
+  #tri-state{display:flex;align-items:center;height:20px;padding-left:8px;margin-bottom:10px}
+  input.cb{
+    appearance:none;-webkit-appearance:none;width:14px;height:14px;flex:none;
+    border-radius:4px;background:#fff;cursor:pointer;position:relative;
+    box-shadow:inset 0 0 0 1px rgba(32,33,36,.18);
+  }
+  input.cb:checked,input.cb:indeterminate{
+    background:var(--low);box-shadow:inset 0 0 0 1px var(--low);
+  }
+  input.cb:checked::after{
+    content:"";position:absolute;inset:0;
+    background:#fff;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.4 6.4l2.4 2.4 4.8-5.6' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.4 6.4l2.4 2.4 4.8-5.6' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat;
+  }
+  /* indeterminate = 横线态 */
+  input.cb:indeterminate::after{
+    content:"";position:absolute;inset:0;
+    background:#fff;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.6 6h6.8' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.6 6h6.8' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
+  }
+
+  #toolbar{display:none;align-items:center;margin-left:10px}
+  #toolbar.show{display:flex}
+  #toolbar .sep{width:1px;height:14px;background:var(--hair);margin:0 10px 0 2px}
+  @keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  #toolbar.show>*{animation:rise .32s ease both}
+  #toolbar.show .sep{animation-delay:0s}
+  #toolbar.show .act-wrap:nth-child(2){animation-delay:.04s}
+  #toolbar.show .act-wrap:nth-child(3){animation-delay:.08s}
+  #toolbar.show .act-wrap:nth-child(4){animation-delay:.12s}
+  .act-wrap{position:relative;height:18px;display:flex;align-items:center}
+  .act{background:none;border:0;padding:0;cursor:pointer;color:var(--low);display:flex}
+  .act:hover{color:var(--high)}
+  .act svg{width:18px;height:18px}
+
+  /* ===== tooltip：深色、缩放+透明度过渡，非瞬跳 ===== */
+  .tip{
+    position:absolute;bottom:calc(100% + 7px);left:50%;
+    transform:translateX(-50%) scale(.95);transform-origin:bottom center;
+    opacity:0;pointer-events:none;white-space:nowrap;
+    background:rgba(32,33,36,.9);color:#fff;
+    font-size:10px;font-weight:500;line-height:1;padding:5px 7px;border-radius:5px;
+    transition:opacity .18s ease,transform .18s ease;
+  }
+  .act:hover + .tip,.act:focus-visible + .tip,.tip.force{
+    opacity:1;transform:translateX(-50%) scale(1);
+  }
+
+  /* ===== 命题行 ===== */
+  #queue{list-style:none;display:grid;gap:3px}
+  .row{
+    display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:8px;align-items:center;
+    padding:6px 10px;border-radius:999px;overflow:hidden;
+    box-shadow:inset 0 0 0 1px rgba(32,33,36,.08);
+    transition:opacity .3s ease,transform .3s ease;
+  }
+  .row:has(input.cb:checked){background:var(--high);color:#fff;box-shadow:none}
+  .row:has(input.cb:checked) .meta,.row:has(input.cb:checked) .chip{color:rgba(255,255,255,.66)}
+  .row:has(input.cb:checked) .chip{background:rgba(255,255,255,.14)}
+  .claim{
+    font-size:11px;font-weight:500;line-height:1.45;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .meta{font-size:9.5px;color:var(--low);margin-top:3px;line-height:1.5}
+  .nb{white-space:nowrap}
+  .chip{
+    font-size:9.5px;padding:2px 7px;border-radius:999px;background:var(--accent);
+    color:var(--high);white-space:nowrap;
+  }
+  @keyframes chipPulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .chip.pulse{animation:chipPulse 1.8s ease-in-out infinite}
+  .row.collapsing{opacity:0;transform:translateX(10px);padding-top:0;padding-bottom:0;overflow:hidden}
+
+  /* ===== 框下 meta 行：色票可复制 ===== */
+  #meta-line{display:flex;align-items:center;gap:14px;margin-top:14px;font-size:10.5px;color:var(--low)}
+  .swatches{display:flex;align-items:center;gap:8px}
+  .sw{width:14px;height:14px;border-radius:4px;border:1px solid var(--hair);cursor:pointer;padding:0}
+  #copied{opacity:0;transition:opacity .2s ease}
+  #copied.show{opacity:1}
+
+  /* ===== 页尾「可拆」 ===== */
+  #notes{max-width:640px;margin-top:56px}
+  #notes h3{font-size:12px;letter-spacing:.12em;color:var(--low);font-weight:600;margin-bottom:16px}
+  #notes dl{display:grid;grid-template-columns:150px 1fr;gap:10px 18px;font-size:12px;line-height:1.7}
+  #notes dt{color:var(--low)}
+  #notes code{font-family:var(--font);font-size:11px;background:var(--accent);border-radius:4px;padding:1px 6px}
+
+  /* ===== reduced-motion：直达终态、无脉动，逻辑不变 ===== */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div id="frame">
+  <main>
+    <!-- ===== 侧栏：logo + 队列导航 ===== -->
+    <aside>
+      <header class="brand">
+        <!-- 自绘鱼形标：红鲱鱼（缺一枚红，三色纪律） -->
+        <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true">
+          <path fill="#868FA0" d="M1 10c3-4.4 6.8-6.4 10.2-6.4 3.4 0 6.2 2.5 7 6.4-.8 3.9-3.6 6.4-7 6.4C7.8 16.4 4 14.4 1 10Z"/>
+          <path fill="#202124" d="M17.6 10 24 3.6v12.8L17.6 10Z"/>
+          <circle cx="6.4" cy="8.8" r="1.3" fill="#F6F8FC"/>
+        </svg>
+        <b>红鲱鱼与枪</b>
+      </header>
+      <nav aria-label="核查队列导航">
+        <ul>
+          <li><a class="on" href="#0" aria-current="page">
+            <svg viewBox="0 0 18 18" fill="currentColor"><path d="M2 3.5h14v2H2v-2Zm0 4.5h14v2H2V8Zm0 4.5h9v2H2v-2Z"/></svg>
+            队列<span class="n" id="queue-count">7</span></a></li>
+          <li><a href="#0">
+            <svg viewBox="0 0 18 18" fill="currentColor"><path fill-rule="evenodd" d="M9 2 17 15.5H1L9 2ZM8.1 7h1.8v4.2H8.1V7Zm0 5.4h1.8v1.8H8.1v-1.8Z"/></svg>
+            争议<span class="n">1</span></a></li>
+          <li><a href="#0">
+            <svg viewBox="0 0 18 18" fill="currentColor"><path d="M8 1.05A8 8 0 1 0 16.95 10H8V1.05Z"/></svg>
+            尚缺<span class="n">3</span></a></li>
+          <li><a href="#0">
+            <svg viewBox="0 0 18 18" fill="currentColor"><path fill-rule="evenodd" d="M9 1a8 8 0 1 1 0 16A8 8 0 0 1 9 1ZM8.1 5.1h1.8v3h3v1.8h-3v3H8.1v-3h-3V8.1h3v-3Z"/></svg>
+            待补证<span class="n">1</span></a></li>
+          <li><a href="#0">
+            <svg viewBox="0 0 18 18" fill="currentColor"><path d="M4 1.5h10a1 1 0 0 1 1 1V17l-6-4.4L3 17V2.5a1 1 0 0 1 1-1Z"/></svg>
+            已留存<span class="n">12</span></a></li>
+          <li><a href="#0">
+            <svg viewBox="0 0 18 18" fill="currentColor"><path fill-rule="evenodd" d="M1.5 2.5h15v4.2h-15V2.5Zm1 5.6h13v6.4a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5V8.1Zm4.8 1.8h3.4v1.6H7.3V9.9Z"/></svg>
+            归档<span class="n">31</span></a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- ===== 右列：搜索 + 白卡队列 ===== -->
+    <div class="col">
+      <div class="search">
+        <svg viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7 2a5 5 0 1 0 0 10A5 5 0 0 0 7 2Zm0 2.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6Z"/><path d="M10.6 9.3l5 5-1.3 1.3-5-5 1.3-1.3Z"/></svg>
+        <input type="text" placeholder="搜命题或来源" aria-label="搜命题或来源">
+      </div>
+
+      <div class="card">
+        <!-- 表头 = 三态主复选框 + 浮现工具条 -->
+        <div id="tri-state">
+          <input type="checkbox" class="cb" id="main-checkbox" aria-label="全选本页命题">
+          <div id="toolbar">
+            <span class="sep"></span>
+            <span class="act-wrap">
+              <button class="act" id="act-dispatch" aria-label="派发核查">
+                <svg viewBox="0 0 18 18" fill="currentColor"><path d="M16.8 1.2 1.5 7.6l5.6 2.2 2.2 5.6L16.8 1.2Z"/></svg>
+              </button>
+              <span class="tip" id="tooltip">派发核查</span>
+            </span>
+            <span class="act-wrap">
+              <button class="act" id="act-dispute" aria-label="标记争议">
+                <svg viewBox="0 0 18 18" fill="currentColor"><path d="M3 1.5h1.7v15H3v-15Z"/><path d="M5.7 2.2H15l-2.4 3.4L15 9H5.7V2.2Z"/></svg>
+              </button>
+              <span class="tip">标记争议</span>
+            </span>
+            <span class="act-wrap" id="archive-collapse">
+              <button class="act" id="act-archive" aria-label="归档">
+                <svg viewBox="0 0 18 18" fill="currentColor"><path fill-rule="evenodd" d="M1.5 2.5h15v4.2h-15V2.5Zm1 5.6h13v6.4a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5V8.1Zm4.8 1.8h3.4v1.6H7.3V9.9Z"/></svg>
+              </button>
+              <span class="tip">归档</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 待核查命题队列（红鲱鱼与枪） -->
+        <ul id="queue">
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">每天喝咖啡超四杯会致骨质疏松</p>
+              <p class="meta">zhihu.com · <span class="nb">支持2</span> · <span class="nb">反驳1</span> · <span class="nb">尚缺3</span> · <span class="nb">可信度54</span></p>
+            </div>
+            <span class="chip">待核查</span>
+          </li>
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">某市9月起电动车牌照摇号新规</p>
+              <p class="meta">weibo.com · <span class="nb">支持4</span> · <span class="nb">反驳0</span> · <span class="nb">尚缺1</span> · <span class="nb">可信度78</span></p>
+            </div>
+            <span class="chip">排查中</span>
+          </li>
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">维C泡腾片能预防感冒</p>
+              <p class="meta">news.example.cn · <span class="nb">支持1</span> · <span class="nb">反驳3</span> · <span class="nb">尚缺2</span> · <span class="nb">可信度31</span></p>
+            </div>
+            <span class="chip">争议</span>
+          </li>
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">长期戴蓝牙耳机损伤听力</p>
+              <p class="meta">zhihu.com · <span class="nb">支持3</span> · <span class="nb">反驳1</span> · <span class="nb">尚缺4</span></p>
+            </div>
+            <span class="chip">还查不清</span>
+          </li>
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">研究表明黑巧克力能助减脂</p>
+              <p class="meta">mp.weixin.qq.com · <span class="nb">支持2</span> · <span class="nb">反驳2</span> · <span class="nb">尚缺1</span> · <span class="nb">可信度47</span></p>
+            </div>
+            <span class="chip">待补证</span>
+          </li>
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">2026年起某国禁售燃油新车</p>
+              <p class="meta">news.example.cn · <span class="nb">支持5</span> · <span class="nb">反驳1</span> · <span class="nb">尚缺2</span> · <span class="nb">可信度66</span></p>
+            </div>
+            <span class="chip">排查中</span>
+          </li>
+          <li class="row">
+            <input type="checkbox" class="cb item" aria-label="选中该命题">
+            <div>
+              <p class="claim">站立办公每天多耗840千卡</p>
+              <p class="meta">weibo.com · <span class="nb">支持2</span> · <span class="nb">反驳0</span> · <span class="nb">尚缺5</span></p>
+            </div>
+            <span class="chip">待核查</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 框下 meta：Geist Mono 标注 + 三色票（点击复制） -->
+<div id="meta-line">
+  <span>红鲱鱼与枪 · 待核查队列 · 批量选择</span>
+  <span class="swatches">
+    <button class="sw" data-hex="#F6F8FC" style="background:#F6F8FC" aria-label="复制 #F6F8FC"></button>
+    <button class="sw" data-hex="#868FA0" style="background:#868FA0" aria-label="复制 #868FA0"></button>
+    <button class="sw" data-hex="#202124" style="background:#202124" aria-label="复制 #202124"></button>
+  </span>
+  <span id="copied">已复制</span>
+</div>
+
+<!-- 页尾可拆 -->
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#tri-state</code></dt>
+    <dd>主复选框三态：全勾 = checked、部分 = indeterminate（横线）、无 = 空。点主框：有任何勾选则全清，否则全选。对应源 <code>syncMainFromItems / onMainChange</code>。</dd>
+    <dt><code>#toolbar</code></dt>
+    <dd>勾任意一行，批量操作条从 <code>display:none</code> 变 <code>flex</code> 浮出，子项 40ms 错峰上升；全取消即收回。对应源 <code>updateEmailActionsVisibility</code>。</dd>
+    <dt><code>#tooltip</code></dt>
+    <dd>按钮的兄弟 span。默认 <code>scale(.95)+opacity 0</code>，hover/focus 到 <code>scale(1)+1</code>，origin bottom，180ms——非瞬跳。</dd>
+    <dt><code>#archive-collapse</code></dt>
+    <dd>点「归档」被选行先量高，收到 0 并右移淡出后摘节点，侧栏队列计数同步减一。reduced-motion 直达。</dd>
+  </dl>
+</section>
+
+<script>
+(function(){
+"use strict";
+/* ===== 机制 1:1 对应 lab01.dev/experiments/04 的 main.js =====
+   syncMainFromItems        ← 源同名函数：主框三态由条目勾选数推出
+   onMainChange             ← 源同名函数：有勾→全清，无→全选
+   onItemChange             ← 源同名函数：条目变化后同步主框与工具条
+   updateActionsVisibility  ← 源 updateEmailActionsVisibility：有勾显工具条
+*/
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const mainCheckbox = document.getElementById("main-checkbox");
+const toolbar      = document.getElementById("toolbar");
+const items        = Array.from(document.querySelectorAll("#queue .item"));
+const queueEl      = document.getElementById("queue");
+const queueCount   = document.getElementById("queue-count");
+
+function updateActionsVisibility() {
+  const show = Boolean(mainCheckbox.checked) || items.some(function(i){ return i.checked; });
+  toolbar.classList.toggle("show", show);
+}
+
+function syncMainFromItems() {
+  const checkedCount = items.filter(function(i){ return i.checked; }).length;
+  mainCheckbox.indeterminate = checkedCount > 0 && checkedCount < items.length;
+  mainCheckbox.checked = checkedCount > 0 && checkedCount === items.length;
+}
+
+function onMainChange() {
+  const anyItemChecked = items.some(function(i){ return i.checked; });
+  items.forEach(function(i){ i.checked = !anyItemChecked ? true : false; });
+  syncMainFromItems();
+  updateActionsVisibility();
+}
+
+function onItemChange() {
+  syncMainFromItems();
+  updateActionsVisibility();
+}
+
+mainCheckbox.addEventListener("change", onMainChange);
+items.forEach(function(i){ i.addEventListener("change", onItemChange); });
+
+/* ===== 克制加戏：归档折叠 / 派发核查脉动（不动三态核心） ===== */
+function selectedRows() {
+  return items.filter(function(i){ return i.checked; }).map(function(i){ return i.closest(".row"); });
+}
+function clearSelection() {
+  items.forEach(function(i){ i.checked = false; });
+  syncMainFromItems();
+  updateActionsVisibility();
+}
+function refreshCount() {
+  queueCount.textContent = queueEl.querySelectorAll(".row").length;
+}
+function collapseRow(row) {
+  if (reduceMotion) { row.remove(); refreshCount(); return; }
+  row.style.height = row.offsetHeight + "px";
+  requestAnimationFrame(function(){
+    row.classList.add("collapsing");
+    row.style.height = "0px";
+  });
+  setTimeout(function(){ row.remove(); refreshCount(); }, 320);
+}
+function setStatus(rows, text, pulse) {
+  rows.forEach(function(r){
+    const chip = r.querySelector(".chip");
+    chip.textContent = text;
+    chip.classList.toggle("pulse", Boolean(pulse) && !reduceMotion);
+  });
+}
+document.getElementById("act-archive").addEventListener("click", function(){
+  const rows = selectedRows();
+  clearSelection();
+  rows.forEach(collapseRow);
+});
+document.getElementById("act-dispatch").addEventListener("click", function(){
+  setStatus(selectedRows(), "排查中", true);
+  clearSelection();
+});
+document.getElementById("act-dispute").addEventListener("click", function(){
+  setStatus(selectedRows(), "争议", false);
+  clearSelection();
+});
+
+/* ===== 色票复制 ===== */
+const copied = document.getElementById("copied");
+document.querySelectorAll(".sw").forEach(function(sw){
+  sw.addEventListener("click", function(){
+    const hex = sw.dataset.hex;
+    const done = function(){ copied.classList.add("show"); setTimeout(function(){ copied.classList.remove("show"); }, 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(hex).then(done, done);
+    } else {
+      const t = document.createElement("textarea");
+      t.value = hex; document.body.appendChild(t); t.select();
+      try { document.execCommand("copy"); } catch(e){}
+      t.remove(); done();
+    }
+  });
+});
+
+/* ===== 供无头截图的 demo 参数（正常打开不受影响） =====
+   ?demo=checked   自动勾两行（验证 indeterminate + 工具条浮出）
+   ?demo=tooltip   勾两行并强制第一条 tooltip 可见
+   ?demo=archive   勾两行并触发归档（验证行减少 + 计数递减）
+   ?demo=dispatch  勾两行并派发核查（验证状态片变排查中） */
+const demo = new URLSearchParams(location.search).get("demo");
+if (demo) {
+  if (demo !== "all") {
+    if (items[0]) items[0].checked = true;
+    if (items[2]) items[2].checked = true;
+  }
+  syncMainFromItems();
+  updateActionsVisibility();
+  if (demo === "all") mainCheckbox.click();
+  if (demo === "mainclick") mainCheckbox.click();
+  if (demo === "tooltip") document.getElementById("tooltip").classList.add("force");
+  if (demo === "archive") document.getElementById("act-archive").click();
+  if (demo === "dispatch") document.getElementById("act-dispatch").click();
+}
+
+syncMainFromItems();
+updateActionsVisibility();
+})();
+</script>
+</body>
+</html>

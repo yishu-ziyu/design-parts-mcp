@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>产品窗坐在风景里 · Creed</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.2.5/400.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.2.5/600.css" />
+<style>
+  :root {
+    --ink: #1f1f1a;
+    --paper: #f9f9f8;
+    --muted: #6b6b64;
+    --note-paper: #f4efe4;
+    --note-ink: #1c1914;
+    --green: #2f6b4f;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --sans: "Geist Sans", Geist, system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--note-paper); color: var(--note-ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .stage {
+    position: relative;
+    height: calc(100svh - 48px);
+    background: #1a2740;
+    overflow: hidden;
+    color: #fff;
+    font-family: var(--sans);
+  }
+  .stage.is-plain { background: #d8d6d0; }
+  .sky {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 40%;
+    transform: scale(1.08);
+    will-change: transform;
+  }
+  .sky.is-in { transform: scale(1); transition: transform 8s var(--ease); }
+  .stage.is-plain .sky { display: none; }
+  .fade {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 38%;
+    background: linear-gradient(transparent, rgba(249,249,248,.96));
+    pointer-events: none;
+  }
+
+  .pill {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    height: 44px;
+    padding: 0 8px 0 16px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: max-width .42s var(--ease), box-shadow .42s var(--ease), background .42s var(--ease), color .42s var(--ease);
+    max-width: 1100px;
+    width: calc(100% - 28px);
+  }
+  .pill.is-solid {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: 0 10px 28px rgba(20,18,12,.12);
+    max-width: 720px;
+  }
+  .pill:not(.is-solid) {
+    background: transparent;
+    color: #fff;
+    box-shadow: none;
+  }
+  .stage.is-bare .pill { display: none; }
+  .pill b { font-weight: 600; letter-spacing: -.02em; }
+  .pill nav { display: flex; gap: 18px; margin-left: auto; color: #444; }
+  .pill .star {
+    background: #4f6ef7;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .pill:not(.is-solid) nav { color: rgba(255,255,255,.88); }
+  .pill:not(.is-solid) .star { background: rgba(255,255,255,.18); }
+  @media (max-width: 720px) { .pill nav { display: none; } }
+
+  .hero-copy {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translate(-50%, 16px);
+    opacity: 0;
+    width: min(720px, 92%);
+    text-align: center;
+    z-index: 4;
+  }
+  .hero-copy.is-in {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    transition: transform .9s var(--ease) .15s, opacity .9s var(--ease) .15s;
+  }
+  .hero-copy h1 {
+    margin: 0;
+    font-size: clamp(36px, 5.4vw, 60px);
+    font-weight: 600;
+    letter-spacing: -1.5px;
+    line-height: 1.04;
+  }
+  .hero-copy p {
+    margin: 22px 0 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255,255,255,.9);
+  }
+  .hero-copy .cta {
+    display: inline-block;
+    margin-top: 18px;
+    background: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .stage.is-plain .hero-copy { color: var(--ink); }
+  .stage.is-plain .hero-copy p { color: var(--muted); }
+
+  .win {
+    position: absolute;
+    left: 50%;
+    bottom: -8%;
+    transform: translate(-50%, 56px);
+    opacity: 0;
+    width: min(1040px, 92%);
+    height: 46%;
+    background: #fff;
+    color: var(--ink);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 24px 60px rgba(20,18,12,.22);
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 36px 1fr;
+    z-index: 5;
+  }
+  .win.is-in {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    transition: transform 1s var(--ease), opacity 1s var(--ease);
+  }
+  .stage.is-nowin .win { display: none; }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    border-bottom: 1px solid #ecece8;
+    background: #fafaf8;
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 9px; height: 9px; border-radius: 50%; background: #e0e0dc; display: block; }
+  .dots i:nth-child(1) { background: #ff5f57; }
+  .dots i:nth-child(2) { background: #febc2e; }
+  .dots i:nth-child(3) { background: #28c840; }
+  .addr {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: #7a7a74;
+    background: #fff;
+    border: 1px solid #ecece8;
+    border-radius: 8px;
+    padding: 3px 0;
+  }
+  .body {
+    display: grid;
+    grid-template-columns: 196px 1fr;
+    min-height: 0;
+  }
+  .side { border-right: 1px solid #ecece8; font-size: 13px; padding-top: 10px; }
+  .side .brand { padding: 4px 14px 12px; font-weight: 600; }
+  .side a {
+    display: block;
+    margin: 2px 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    color: #444;
+  }
+  .side a.on { background: #f1f0ec; color: var(--ink); font-weight: 500; }
+  .doc { padding: 18px 28px 24px; }
+  .doc h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.03em; font-weight: 600; }
+  .doc .meta { font-size: 12px; color: #6a6a64; margin-bottom: 16px; }
+  .doc .sec {
+    border-left: 3px solid #7b5cff;
+    padding-left: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+  .doc p { margin: 0 0 10px; font-size: 14.5px; line-height: 1.55; color: #2a2a24; }
+
+  .hudbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--note-ink);
+    font-family: var(--sans);
+  }
+  .hudbar button {
+    border: 1px solid var(--note-ink);
+    background: var(--note-ink);
+    color: var(--paper);
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 8px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: #5c564c; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 20px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+    .body { grid-template-columns: 1fr; }
+    .side { display: none; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .scenes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 8px 0 22px;
+  }
+  @media (max-width: 640px) { .scenes { grid-template-columns: 1fr; } }
+  .scene {
+    background: #fff;
+    border: 1px solid var(--note-ink);
+    border-radius: 16px;
+    padding: 10px;
+  }
+  .mat {
+    border-radius: 12px;
+    min-height: 168px;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+  }
+  .mat.blue { background: #5b7cff; }
+  .mat.green { background: #7cbc7a; }
+  .mat.pink { background: #e889c0; }
+  .mini {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    width: 100%;
+    max-width: 280px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.45;
+    box-shadow: 0 8px 20px rgba(20,18,12,.12);
+  }
+  .mini .k { font-size: 11px; font-weight: 600; color: #7b5cff; margin-bottom: 6px; }
+  .mini input {
+    width: 100%;
+    border: 1px solid #e6e6e2;
+    border-radius: 999px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font: inherit;
+  }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--note-ink);
+    color: var(--paper);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--note-ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: #5c564c;
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<section class="stage" id="stage">
+  <img class="sky" src="assets/garden.jpg" alt="" />
+  <div class="fade"></div>
+  <div class="pill" aria-hidden="true">
+    <b>Creed</b>
+    <nav><span>Product</span><span>Resources</span><span>Legal</span></nav>
+    <span class="star">★ 174</span>
+  </div>
+  <div class="hero-copy">
+    <h1>Your context file<br>for all agents</h1>
+    <p>Tell every agent who you are, once.</p>
+    <a class="cta" href="#how">View roadmap →</a>
+  </div>
+  <div class="win" aria-hidden="true">
+    <div class="bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="addr">creed.md</div>
+    </div>
+    <div class="body">
+    <div class="side">
+      <div class="brand">Creed</div>
+      <a class="on">File</a>
+      <a>Connections</a>
+      <a>Settings</a>
+    </div>
+    <div class="doc">
+      <h2>Steve.md</h2>
+      <div class="meta">Synced to cloud · just now</div>
+      <div class="sec">Identity</div>
+      <p>Co-founder of Apple. I care about making advanced technology feel inevitable, personal, and humane.</p>
+      <p>My best work joins engineering, design, storytelling, and taste into one coherent product.</p>
+    </div>
+    </div>
+  </div>
+</section>
+<div class="hudbar">
+  <button type="button" id="btnReplay">再播进场</button>
+  <button type="button" id="btnSky" aria-pressed="true">风景</button>
+  <button type="button" id="btnWin" aria-pressed="true">产品窗</button>
+  <button type="button" id="btnPill" aria-pressed="true">胶囊导航</button>
+</div>
+
+<header class="mast">
+  <h1>不是模板。是三样东西叠在一起。</h1>
+  <p class="sub">样本：creed.md/home。你自己的产品页抄这套排法，别去买一套 SaaS 皮肤。</p>
+</header>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>你觉得牛，是因为这一屏</h3>
+      <p class="drop">先看见一整张真的天空。白字压在云上。产品不是一张海报，是一扇已经打开的窗口，坐在风景里，里面的文件正在被人用。导航不是顶栏，是一粒白胶囊。下面那三个按钮可以拆开：关掉风景，只剩灰底；关掉窗口，只剩口号；关掉胶囊，只剩照片。</p>
+      <p>这页不是 Framer 模板，也不是 Webflow 市场货。它是自己写的 Next.js，字用 Geist。丝滑来自同一条缓动，不是来自某个付费主题。风景会从 1.08 收到 1，窗口从下面滑上来，导航从透明收成白胶囊。错过了按「再播进场」。</p>
+    </div>
+    <figure>
+      <img src="assets/hero.jpg" alt="Creed 首页英雄区" />
+      <figcaption><strong>图 1.</strong> 原站第一屏。风景是世界，窗口是产品，胶囊是路标。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>丝滑是一条曲线，不是一个库</h3>
+    <p>整站几乎所有动效用同一条贝塞尔：<code>cubic-bezier(0.22, 1, 0.36, 1)</code>。导航收成胶囊用 420 毫秒，勾选这种小动作用 160 毫秒。没有 Lenis，没有 GSAP，没有 Three.js。手感来自：少、同一条曲线、同一套圆角。</p>
+    <p>纸是 <code>#F9F9F8</code>，字是 <code>#1F1F1A</code>。不是纯白，不是纯黑。标题 Geist 60 / 54，字距 -1.5px。一节一个大标题，下面只放一件事。</p>
+  </div>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>先别去翻模板市场。模板卖的是一整屋家具。你要的是三件：一张世界、一扇正在工作的窗、一条大家都认得的路。
+  </aside>
+
+  <div class="prose" id="how">
+    <h3>功能不要截图，要一场小戏</h3>
+    <p>往下滚，每一段功能都是：左边两句人话，右边一块色垫，垫上再搁一张小小的产品切片。色垫是蓝、绿、粉、橙。切片里只有这一个动作：输入、同意、开关。不是仪表盘全家福。</p>
+  </div>
+
+  <figure>
+    <img src="assets/features.jpg" alt="How It Works 双卡" />
+    <figcaption><strong>图 2.</strong> How It Works。产品自己出演，插画师下班。</figcaption>
+  </figure>
+
+  <div class="scenes">
+    <div class="scene">
+      <div class="mat green">
+        <div class="mini">
+          <div class="k">Ask</div>
+          Plan my week so I actually write.
+          <input value="Plan my week so I" readonly />
+        </div>
+      </div>
+    </div>
+    <div class="scene">
+      <div class="mat blue">
+        <div class="mini">
+          <div class="k">Routines</div>
+          Deep work 7 to 11am.<br>
+          Review the week Friday at 4.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p>上面两张是这页现做的。色垫加上一张小卡片，就是「功能呈现」。你要做自己的产品页：每个功能只演一个动作。分析就只露打分，同意就只露 Reject / Accept。不要把设置页拍一张塞进去。</p>
+  </div>
+
+  <figure>
+    <img src="assets/slices.jpg" alt="三张功能切片" />
+    <figcaption><strong>图 3.</strong> 三张垫，三个动作。同一扇窗拆开用，不是三套插画。</figcaption>
+  </figure>
+
+  <div class="recipe">
+    <h3>配方 · 给你自己的产品页</h3>
+    <ol class="how">
+      <li>选一张有空间的照片当世界。天空、桌子、车间都行。不要用紫色光斑。</li>
+      <li>标题一句话，最多两行。字距收紧。副标题一句。按钮一粒胶囊，不要一对大按钮抢戏。</li>
+      <li>产品窗坐进照片下沿。窗口里是产品正在做它最重要的那一件事。假数据也要像真的。</li>
+      <li>滚下去换暖纸 <code>#F9F9F8</code>。一节一个大标题。每节一块色垫加一张产品切片。</li>
+      <li>导航做成胶囊，<code>position: fixed</code>。进出用 <code>420ms cubic-bezier(0.22, 1, 0.36, 1)</code>。</li>
+      <li>一种无衬线。一种圆角（12 到 16）。一种墨。勾选 160 毫秒，大件 420 毫秒。不要再引进动效库。</li>
+    </ol>
+<pre>.stage { height: 100svh; overflow: hidden; }
+.sky { position: absolute; inset: 0; object-fit: cover; }
+.pill {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  background: #fff; border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(20,18,12,.12);
+  transition: max-width .42s cubic-bezier(.22, 1, .36, 1);
+}
+.win {
+  position: absolute; left: 50%; bottom: -8%; transform: translateX(-50%);
+  width: min(1040px, 92%); border-radius: 14px 14px 0 0;
+}
+h1 { font: 600 60px/1.04 Geist, system-ui, sans-serif; letter-spacing: -1.5px; }</pre>
+    <p>原站把产品编辑器直接嵌在落地页里，所以切片是真的。你第一版用静态 HTML 演那个动作就够。先让窗坐进风景，再考虑把真应用嵌进去。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本：<a href="https://creed.md/home">creed.md/home</a>。栈是 Next.js + Geist，不是 Framer / Webflow 模板。</p>
+  <p>怎么把陌生页做成这种笔记：<a href="../stranger/index.html">拆开再装回去</a> · 货架：<a href="../index.html">living/</a></p>
+</footer>
+
+<script>
+(function () {
+  const stage = document.getElementById('stage')
+  const sky = stage.querySelector('.sky')
+  const win = stage.querySelector('.win')
+  const copy = stage.querySelector('.hero-copy')
+  const pill = stage.querySelector('.pill')
+  let pillTimer = 0
+
+  function playIn() {
+    sky.classList.remove('is-in')
+    win.classList.remove('is-in')
+    copy.classList.remove('is-in')
+    pill.classList.remove('is-solid')
+    void stage.offsetWidth
+    requestAnimationFrame(() => {
+      sky.classList.add('is-in')
+      win.classList.add('is-in')
+      copy.classList.add('is-in')
+    })
+    clearTimeout(pillTimer)
+    pillTimer = setTimeout(() => pill.classList.add('is-solid'), 900)
+  }
+
+  function bind(id, cls) {
+    const btn = document.getElementById(id)
+    btn.addEventListener('click', () => {
+      const on = btn.getAttribute('aria-pressed') !== 'true'
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false')
+      stage.classList.toggle(cls, !on)
+    })
+  }
+  bind('btnSky', 'is-plain')
+  bind('btnWin', 'is-nowin')
+  bind('btnPill', 'is-bare')
+  document.getElementById('btnReplay').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    playIn()
+  })
+  playIn()
+})()
+</script>
+</body>
+</html>

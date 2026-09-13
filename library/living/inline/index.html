@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>一段话就是导航</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --copy: #111111;
+    --quiet: #aaa9a5;
+    --yellow: #fff0a9;
+    --bluechip: #dce8fa;
+    --greenchip: #dff1df;
+    --purple: #e8def8;
+    --royal: #4169e1;
+    --sans: -apple-system, system-ui, "Segoe UI", "Helvetica Neue", Arial, "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 980px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--sans);
+    padding: 8px 12px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  .well {
+    border: 1px solid var(--ink);
+    background: #fafafa;
+    padding: 48px 40px 52px;
+  }
+  .well.narrow { padding: 28px 18px 32px; }
+  .stage {
+    position: relative;
+    width: min(100%, var(--col, 760px));
+    margin: 0 auto;
+  }
+
+  .intro {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.42;
+    letter-spacing: -0.025em;
+    color: var(--copy);
+  }
+  .intro strong, .intro a.strong {
+    font-weight: 600;
+    color: var(--copy);
+  }
+  .intro .muted { color: var(--quiet); font-weight: 400; }
+  .intro a,
+  .intro a:link,
+  .intro a:visited,
+  .lab a,
+  .lab a:link,
+  .lab a:visited,
+  a.highlight,
+  a.highlight:link,
+  a.highlight:visited {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .highlight {
+    display: inline;
+    padding: 1px 4px 2px;
+    border-radius: 3px;
+    color: inherit;
+    text-decoration: none;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: filter 160ms ease;
+  }
+  .highlight:hover { filter: brightness(0.94); }
+  .highlight:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  .yellow { background: var(--yellow); }
+  .blue-bg { background: var(--bluechip); }
+  .green { background: var(--greenchip); }
+  .purple { background: var(--purple); }
+  .blue { color: var(--royal); }
+
+  /* 关掉灰句：补充信息和主句一样黑 */
+  .flat-mute .muted { color: var(--copy); }
+  /* 关掉色块：链接还在，只是黑字 */
+  .no-chip .highlight {
+    background: transparent;
+    padding: 0;
+  }
+  /* 错的：每个词变成一张卡 */
+  .as-cards .intro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+  .as-cards .intro > * {
+    display: inline-block;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .as-cards .intro .muted { color: var(--quiet); }
+  /* 眯眼：只剩色块和黑块，字看不清 */
+  .squint .intro { filter: blur(7px); }
+
+  .preview {
+    display: none;
+    position: absolute;
+    z-index: 4;
+    width: 240px;
+    padding: 12px 14px 10px;
+    background: #fff;
+    border: 1px solid var(--ink);
+    box-shadow: 0 8px 24px rgb(0 0 0 / .08);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.4;
+    letter-spacing: 0;
+    color: var(--copy);
+  }
+  .preview.is-on { display: block; }
+  .preview .k { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); margin: 0 0 6px; }
+  .preview p { margin: 0; }
+  .preview a { color: var(--green); }
+
+  .lab {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .lab figure {
+    margin: 0;
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 14px 14px 12px;
+    min-height: 148px;
+  }
+  .lab .mini {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.4;
+    letter-spacing: -0.02em;
+    color: var(--copy);
+    margin: 0 0 10px;
+  }
+  .lab .mini.same * { color: var(--copy) !important; background: none !important; font-weight: 400 !important; padding: 0 !important; }
+  .lab .mini.chips a { background: var(--yellow); padding: 1px 3px; border-radius: 3px; }
+  .lab .mini.stack { display: flex; flex-wrap: wrap; gap: 6px; }
+  .lab .mini.stack span {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    background: #fff;
+    font-size: 12px;
+  }
+  .lab figcaption { margin: 0; font-size: 13px; }
+  .lab figcaption b { color: var(--green); }
+  .wrap-demo {
+    margin-top: 10px;
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 14px;
+    width: 320px;
+  }
+  .wrap-demo p {
+    margin: 0 0 8px;
+    font-family: var(--sans);
+    font-size: 22px;
+    line-height: 1.42;
+    letter-spacing: -0.025em;
+  }
+  .wrap-demo figcaption { margin: 0; font-size: 13px; }
+  .wrap-demo figcaption b { color: var(--green); }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 36px 24px 40px; }
+  .page h2 { font-weight: 500; font-size: 20px; color: var(--green); margin: 28px 0 10px; }
+  .page p { margin: 0 0 12px; }
+  .page a { color: var(--green); }
+  .page code, .page pre { font-family: ui-monospace, Menlo, monospace; }
+  .page pre {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .page ol.how { margin: 0 0 14px 1.15em; padding: 0; }
+  .page ol.how li { margin: 0 0 10px; }
+  .beats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .beats > div { border: 1px solid var(--ink); background: var(--cream); padding: 12px; }
+  .beats .n { font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .beats h3 { margin: 8px 0 6px; font-size: 16px; font-weight: 500; color: var(--green); }
+  .beats p { margin: 0; font-size: 14px; }
+  .warn {
+    border: 1px solid var(--ink);
+    background: #efe8d6;
+    padding: 12px 14px;
+    margin: 0 0 16px;
+  }
+  .warn p:last-child { margin-bottom: 0; }
+  .note, footer.colophon {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 36px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  footer.colophon { font-size: 12.5px; padding-bottom: 48px; }
+  @media (max-width: 760px) {
+    .lab, .beats { grid-template-columns: 1fr; }
+    .well { padding: 28px 18px 32px; }
+    .intro { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">living / inline</div>
+  <h1>一段话就是导航</h1>
+  <p class="sub">链接是句法。不要做成卡片。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>拆开</h2>
+    <div class="toggles">
+      <button type="button" id="tog-mute" aria-pressed="true">灰句</button>
+      <button type="button" id="tog-chip" aria-pressed="true">色块</button>
+      <button type="button" id="tog-cards" aria-pressed="false">卡片墙</button>
+      <button type="button" id="tog-narrow" aria-pressed="false">窄栏</button>
+      <button type="button" id="tog-squint" aria-pressed="false">眯眼</button>
+    </div>
+  </div>
+
+  <div class="well" id="well">
+    <div class="stage" id="stage">
+      <p class="intro" id="flow">
+        hello, i’m <strong>奕枢</strong>.
+        <strong> two years making things with code, then the design side won.</strong>
+        now i work on
+        <a class="strong" href="#kairos">kairos</a><span class="muted">, a native mac assistant you talk to, not a chat tab.</span>
+        on the side i keep
+        <a class="highlight yellow" id="chip" href="../INDEX.md" data-preview="notes">living notes</a><span class="muted">, a page you open, a machine you can copy without leaving the paragraph.</span>
+        i keep what moves me in
+        <a class="highlight yellow" href="#inspiration">inspiration</a>,
+        think out loud in
+        <a class="highlight blue-bg" href="#writing" data-preview="writing">writing</a>,<span class="muted"> and live on </span><a class="highlight green" href="#x">X</a><span class="muted"> and </span><a class="highlight purple" href="#github">github</a>.
+      </p>
+      <aside class="preview" id="preview" hidden>
+        <p class="k" id="preview-k"></p>
+        <p id="preview-b"></p>
+      </aside>
+    </div>
+  </div>
+
+  <div class="lab" id="layers">
+    <figure>
+      <p class="mini same">hello, i’m 奕枢. two years making things with code. now i work on kairos, a native mac assistant.</p>
+      <figcaption><b>一层墨</b> 每个词一样黑。扫一眼不知道先看哪。</figcaption>
+    </figure>
+    <figure>
+      <p class="mini">hello, i’m <strong>奕枢</strong>. <span class="muted">two years making things with code.</span> now i work on <a class="highlight yellow" href="#">kairos</a>.</p>
+      <figcaption><b>三层</b> 黑是事实。灰是补充。色块是能点的名词。</figcaption>
+    </figure>
+    <figure>
+      <p class="mini stack"><span>hello</span><span>奕枢</span><span>kairos</span><span>notes</span><span>writing</span></p>
+      <figcaption><b>错的</b> 每个词一张卡。窗口变窄，句子断了。</figcaption>
+    </figure>
+  </div>
+  <figure class="wrap-demo" id="chip-wrap">
+    <p>keep this in <a class="highlight yellow" href="#">a page you open, a machine you can copy without leaving the paragraph</a>.</p>
+    <figcaption><b>折行</b> 栏宽 320。色块跟着每一行裁，不是一块跨行的大矩形。</figcaption>
+  </figure>
+</div>
+
+<div class="page">
+  <div class="beats">
+    <div>
+      <div class="n">01 流</div>
+      <h3>浏览器自己排</h3>
+      <p>一个 <code>p</code>。词是 <code>span</code> / <code>a</code>。不要 <code>position: absolute</code>。窄了它会换行。</p>
+    </div>
+    <div>
+      <div class="n">02 灰</div>
+      <h3>先把次要弄淡</h3>
+      <p>不是把重点撑大。黑 <code>#111</code>，灰 <code>#aaa9a5</code>，色块才是第三层。字号可以一样。</p>
+    </div>
+    <div>
+      <div class="n">03 块</div>
+      <h3>名词带着底</h3>
+      <p>链接没有下划线。底色换行不断开，靠 <code>box-decoration-break: clone</code>。</p>
+    </div>
+  </div>
+
+  <h2>先忘掉按钮行</h2>
+  <p>传统个人页是标题、一段介绍、一排按钮。这台机器把按钮拆开，塞回句子里。</p>
+  <p>DOM 必须是：字、链接、字、灰字、链接。不是一列卡片。卡片把句子杀了。窗口变窄以后，卡片会折成一堆砖，不再是一段话。</p>
+  <p>层级不是字号。Refactoring UI 写过：重要的加粗，次要的改淡，不要把标题撑到不舒服。NN/g 的眯眼测试：糊掉以后，该先看见的还在。点「眯眼」，色块还在，灰句融进纸里。</p>
+
+  <h2>三层墨</h2>
+  <p>扫一眼只能带走这些。那是故意的。</p>
+<pre>#111       奕枢 · two years · kairos · living notes
+#aaa9a5    补充从句。关掉「灰句」，它们会抢戏。
+色块       inspiration / writing / X / github
+           能点的名词，不是装饰</pre>
+  <p>色盲不能只靠颜色。色块同时是链接，键盘能 tab 到。底纹只是让手知道「这里能进」。</p>
+
+  <h2>窗帘换成底纹</h2>
+  <p>色块换行时，默认会变成一整块矩形，第二行的底连在一起很难看。写上：</p>
+<pre>.highlight {
+  display: inline;
+  padding: 1px 4px 2px;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}</pre>
+  <p>点「窄栏」。living notes 后面那句灰会折到下一行。色块自己也必须能折。clone 的意思：每一行各裁一块底，圆角跟着走。</p>
+
+  <h2>按这个顺序写</h2>
+  <ol class="how">
+    <li>先写一整段纯文字，放进一个 <code>p</code>。不要切成多个 <code>div</code>。把窗口拉窄，它应该还是一段话。</li>
+    <li>把事实包进 <code>strong</code>，字重 600，颜色 <code>#111</code>。字号不要变。</li>
+    <li>把从句包进 <code>span.muted</code>，颜色 <code>#aaa9a5</code>。不要用更细的字重，也不要把字缩小。淡掉就够了。</li>
+    <li>把能点的名词换成 <code>a</code>。去掉下划线。颜色继承。再加上浅色底：黄 <code>#fff0a9</code>、蓝 <code>#dce8fa</code>、绿 <code>#dff1df</code>、紫 <code>#e8def8</code>。</li>
+    <li>给底加上 <code>box-decoration-break: clone</code>。再把栏挤到 320，看色块折行时是不是每行各有一块。</li>
+    <li>hover 只做一件事：<code>filter: brightness(0.94)</code>。不要位移，位移会把行高撑乱。</li>
+  </ol>
+  <div class="warn">
+    <p>若每个词都能点，没有灰句，这页会变成一张标签云。先弱化，再给名词底。</p>
+    <p>若做成 flex 卡片墙，句子死了。对照上面第三格。</p>
+    <p>若用 <code>position: absolute</code> 摆词，窗口一窄就撞车。</p>
+    <p>原参考用 Geist / Inter。标本不走 CDN，用系统无衬线。配方里写了原字体。</p>
+  </div>
+
+  <h2>可抄</h2>
+<pre>.intro {
+  max-width: 760px;
+  font-family: "Geist", "Inter", system-ui, sans-serif;
+  font-size: 22px;
+  line-height: 1.42;
+  letter-spacing: -0.025em;
+  color: #111;
+}
+.intro strong { font-weight: 600; }
+.muted { color: #aaa9a5; font-weight: 400; }
+.intro a { text-decoration: none; color: inherit; }
+.highlight {
+  display: inline;
+  padding: 1px 4px 2px;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.yellow  { background: #fff0a9; }
+.blue-bg { background: #dce8fa; }
+.green   { background: #dff1df; }
+.purple  { background: #e8def8; }</pre>
+
+  <h2>一个名词可以再展开</h2>
+  <p>hover <code>writing</code> 或 <code>living notes</code>，旁边会出一张小纸。这不是必须。句子先成立，预览后加。预览用绝对定位，不要把预览写进 <code>p</code> 里，否则会把行撑开。</p>
+
+  <h2>不是把 ozzy 的整站搬过来</h2>
+  <p>来源是一段个人介绍：流动的字、三层墨、句法里的链接。这里换成奕枢的词，机器一样。干净个人页、灰纸斜体仍走 <a href="../you-find/index.html">you-find</a>。字里夹物体仍走 <a href="../chapter-one/index.html">chapter-one</a>。长文栏宽仍走 <a href="../type/index.html">type</a>。</p>
+
+  <h2>配方</h2>
+<pre>栏        760，窄对照 320
+字        系统无衬线 22 / 行高 1.42 / 字距 -0.025em
+三层      #111 字重 600 · #aaa9a5 字重 400 · 浅色底链接
+换行      box-decoration-break: clone
+交互      去下划线。hover 降亮度。预览不进段落
+开关      灰句 / 色块 / 卡片墙 / 窄栏 / 眯眼
+不要      Canvas、绝对定位每个词、按钮行、flex 卡片墙</pre>
+</div>
+
+<section class="note">
+  活笔记。第一屏就是发明。可拆：<code>#flow</code> <code>#layers</code> <code>#chip</code>。<br />
+  原则：Notion Will's S · Emphasize by de-emphasizing · Size isn’t everything · Visual Hierarchy · 眯眼测试。
+</section>
+<footer class="colophon">
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const stage = document.getElementById("stage")
+  const well = document.getElementById("well")
+  const preview = document.getElementById("preview")
+  const pk = document.getElementById("preview-k")
+  const pb = document.getElementById("preview-b")
+  const copy = {
+    notes: {
+      k: "living notes",
+      b: "打开就能抄的标本。不是分类表。"
+    },
+    writing: {
+      k: "writing",
+      b: "Why interfaces should feel alive →"
+    }
+  }
+
+  function bind(id, fn) {
+    const btn = document.getElementById(id)
+    btn.addEventListener("click", () => {
+      const on = btn.getAttribute("aria-pressed") === "true"
+      btn.setAttribute("aria-pressed", on ? "false" : "true")
+      fn(!on)
+    })
+  }
+
+  bind("tog-mute", (on) => stage.classList.toggle("flat-mute", !on))
+  bind("tog-chip", (on) => stage.classList.toggle("no-chip", !on))
+  bind("tog-cards", (on) => {
+    stage.classList.toggle("as-cards", on)
+    hidePreview()
+  })
+  bind("tog-narrow", (on) => {
+    stage.style.setProperty("--col", on ? "320px" : "760px")
+    well.classList.toggle("narrow", on)
+  })
+  bind("tog-squint", (on) => stage.classList.toggle("squint", on))
+
+  function hidePreview() {
+    preview.classList.remove("is-on")
+    preview.hidden = true
+  }
+
+  function showPreview(el, key) {
+    const item = copy[key]
+    if (!item || stage.classList.contains("as-cards")) return
+    pk.textContent = item.k
+    pb.innerHTML = item.b
+    const r = el.getBoundingClientRect()
+    const s = stage.getBoundingClientRect()
+    preview.style.left = Math.min(r.left - s.left, s.width - 250) + "px"
+    preview.style.top = (r.bottom - s.top + 8) + "px"
+    preview.hidden = false
+    preview.classList.add("is-on")
+  }
+
+  stage.querySelectorAll("[data-preview]").forEach((el) => {
+    const key = el.getAttribute("data-preview")
+    el.addEventListener("mouseenter", () => showPreview(el, key))
+    el.addEventListener("mouseleave", hidePreview)
+    el.addEventListener("focus", () => showPreview(el, key))
+    el.addEventListener("blur", hidePreview)
+  })
+})()
+</script>
+</body>
+</html>

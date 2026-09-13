@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>说明书是三扇窗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #f7f4f0;
+    --page-deep: #efebe6;
+    --card: #fffcfb;
+    --ink: #211f1c;
+    --muted: #8a8682;
+    --line: #ece8e4;
+    --orange: #da642b;
+    --orange-deep: #c45522;
+    --folder-top: #ee8643;
+    --folder-bot: #e36d2c;
+    --fail: #eb3f5f;
+    --peach: #f7ece4;
+    --photos: #8eb6ea;
+    --docs: #e8a8b8;
+    --videos: #d48ba6;
+    --sounds: #b4a4dc;
+    --note: #f4efe4;
+    --green: #2f6b4f;
+    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
+    --serif-note: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --mono: ui-monospace, Menlo, monospace;
+    --ease: cubic-bezier(.22, .86, .3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--note); }
+  body { color: var(--ink); font-family: var(--sans); }
+
+  .studio {
+    min-height: calc(100svh - 48px);
+    background: var(--page);
+    color: var(--ink);
+    padding: 18px 22px 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background .35s var(--ease), color .35s var(--ease);
+  }
+  .studio.is-night {
+    --page: #1c1916;
+    --page-deep: #141210;
+    --card: #26221e;
+    --ink: #f3eee6;
+    --muted: #9a948c;
+    --line: #3a342e;
+    --peach: #3a2a22;
+    background: #1c1916;
+    color: #f3eee6;
+  }
+
+  .nav {
+    width: min(1080px, 100%);
+    height: 52px;
+    padding: 0 10px 0 16px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 88%, #fff);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.7) inset,
+      0 10px 28px -18px rgba(40, 28, 16, .28);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .studio.is-night .nav {
+    background: #26221e;
+    box-shadow: 0 0 0 1px #3a342e, 0 10px 28px -18px #0008;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--orange);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -.02em;
+  }
+  .brand svg { display: block; }
+  .nav-end { display: flex; align-items: center; gap: 10px; }
+  .moon {
+    width: 34px; height: 34px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 999px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .moon:hover { color: var(--ink); background: var(--page-deep); }
+  .signup {
+    appearance: none;
+    border: 0;
+    height: 34px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: var(--orange);
+    color: #fff;
+    font: 700 11.5px/1 var(--sans);
+    letter-spacing: .04em;
+    cursor: pointer;
+  }
+  .signup:hover { background: var(--orange-deep); }
+
+  .hero {
+    width: min(760px, 100%);
+    text-align: center;
+    margin: clamp(1.2rem, 3.2vh, 2.1rem) 0 0.4rem;
+  }
+  .process {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--peach);
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .16em;
+  }
+  .hero h1 {
+    margin: 12px 0 8px;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(34px, 5.4vw, 52px);
+    letter-spacing: -.03em;
+    line-height: 1.05;
+  }
+  .hero p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+
+  .board { width: min(1080px, 100%); margin-top: 4px; }
+  .windows {
+    display: grid;
+    grid-template-columns: 1fr 1.08fr 1fr;
+    gap: 18px 22px;
+    align-items: end;
+  }
+  .captions {
+    display: grid;
+    grid-template-columns: 1fr 1.08fr 1fr;
+    gap: 0 22px;
+    margin-top: 18px;
+  }
+  @media (max-width: 900px) {
+    .windows, .captions { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
+    .stack-wrap { order: -1; height: 250px; }
+    .captions article:nth-child(2) { order: -1; }
+    .card { min-height: 0; }
+  }
+  .captions h3 {
+    margin: 0 0 6px;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: -.02em;
+  }
+  .captions h3::before {
+    content: "";
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--orange);
+    margin-right: 8px;
+    transform: translateY(-2px);
+  }
+  .captions p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 16px;
+    min-height: 292px;
+    box-shadow:
+      0 0 0 1px rgba(40, 28, 16, .04),
+      0 18px 40px -28px rgba(40, 28, 16, .35);
+  }
+  .studio.is-night .card { box-shadow: 0 0 0 1px #3a342e; }
+
+  .dropzone {
+    border: 1.5px dashed #efd2c0;
+    border-radius: 16px;
+    min-height: 148px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: background .25s var(--ease), border-color .25s var(--ease);
+  }
+  .dropzone:hover, .dropzone.is-over {
+    background: var(--peach);
+    border-color: var(--orange);
+  }
+  .arrow {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--peach);
+    color: var(--orange);
+    display: grid;
+    place-items: center;
+  }
+  .dropzone b { font-size: 13px; font-weight: 600; }
+  .dropzone small { color: var(--muted); font-size: 11px; }
+
+  .files { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 52px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--card);
+    animation: row-in .45s var(--ease) both;
+  }
+  @keyframes row-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .ico {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+  }
+  .ico.bad { background: #fde8ec; color: var(--fail); }
+  .ico.ok { background: #eef3f1; color: #5f746c; }
+  .row .name { font-size: 13px; font-weight: 600; }
+  .row .meta { font-size: 11px; color: var(--muted); }
+  .row .meta.bad { color: var(--fail); }
+  .row-end { display: flex; align-items: center; gap: 8px; }
+  .try {
+    border: 0;
+    background: transparent;
+    color: var(--fail);
+    font: 600 12px var(--sans);
+    cursor: pointer;
+    padding: 0;
+  }
+  .icon-btn {
+    width: 28px; height: 28px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 8px;
+  }
+  .icon-btn:hover { background: var(--page-deep); color: var(--ink); }
+
+  .stack-wrap {
+    position: relative;
+    height: 318px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .stack {
+    position: relative;
+    width: min(100%, 292px);
+    height: 252px;
+    cursor: pointer;
+  }
+  .sheet {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 10px 24px -16px rgba(40,28,16,.4);
+    transition: transform .45s var(--ease);
+  }
+  .studio.is-night .sheet:not(.front) { background: #3a342e; }
+  .sheet.s3 { background: #eef3fb; transform: translate(14px, -34px) rotate(5.2deg); }
+  .sheet.s2 { background: #f8e8ef; transform: translate(-12px, -22px) rotate(-4.2deg); }
+  .sheet.s1 { background: #fff; transform: translate(6px, -10px) rotate(1.8deg); }
+  .stack:hover .s3, .stack.is-open .s3 { transform: translate(22px, -56px) rotate(9deg); }
+  .stack:hover .s2, .stack.is-open .s2 { transform: translate(-20px, -38px) rotate(-8deg); }
+  .stack:hover .s1, .stack.is-open .s1 { transform: translate(8px, -18px) rotate(3deg); }
+  .sheet.front {
+    background: linear-gradient(180deg, var(--folder-top) 0%, var(--folder-bot) 100%);
+    color: #fff;
+    padding: 22px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    transform: none;
+    z-index: 2;
+  }
+  .stack:hover .front, .stack.is-open .front { transform: translateY(-4px); }
+  .front-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .front h4 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -.03em; }
+  .front .count { margin: 4px 0 0; font-size: 13px; opacity: .88; }
+  .dots {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: #ffffff2e;
+    display: grid;
+    place-items: center;
+    letter-spacing: 1px;
+    font-size: 14px;
+  }
+  .front .when {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid #ffffff36;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .82;
+  }
+
+  .card.storage { display: flex; flex-direction: column; }
+  .storage .upgrade { margin-top: auto; }
+  .storage h5 {
+    margin: 2px 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+  }
+  .storage h5 span { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .bar {
+    display: flex;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #eeeae6;
+    margin-bottom: 14px;
+  }
+  .studio.is-night .bar { background: #3a342e; }
+  .seg {
+    height: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .85s var(--ease);
+  }
+  .studio.is-in .seg { transform: scaleX(1); }
+  .seg.photos { width: 37.5%; background: var(--photos); }
+  .seg.docs { width: 10.16%; background: var(--docs); }
+  .seg.videos { width: 20.31%; background: var(--videos); }
+  .seg.sounds { width: 7.81%; background: var(--sounds); }
+  .legend { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .legend div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+  .legend span { color: var(--muted); }
+  .legend i {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  .upgrade {
+    display: grid;
+    grid-template-columns: 1fr 88px;
+    gap: 8px;
+    align-items: center;
+    background: var(--page);
+    border-radius: 16px;
+    padding: 12px 12px 12px 14px;
+  }
+  .upgrade small {
+    display: block;
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: var(--orange);
+    font-weight: 700;
+  }
+  .upgrade b { display: block; font-size: 13px; margin: 3px 0 8px; font-weight: 600; }
+  .upgrade button {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 999px;
+    height: 26px;
+    padding: 0 12px;
+    font: 500 12px var(--sans);
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .folders {
+    position: relative;
+    height: 56px;
+  }
+  .folders span {
+    position: absolute;
+    width: 54px; height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--folder-top), var(--folder-bot));
+  }
+  .folders span:first-child { right: 18px; top: 4px; transform: rotate(-8deg); }
+  .folders span:last-child { right: 0; top: 12px; transform: rotate(8deg); }
+
+  .hudbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid #1c1914;
+    font-family: var(--serif-note);
+    color: #1c1914;
+  }
+  .hudbar button, .readout { font-family: var(--mono); font-size: 12px; }
+  .hudbar button {
+    border: 1px solid #1c1914;
+    background: #1c1914;
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .readout { color: #5c564c; letter-spacing: .04em; }
+
+  .note {
+    background: var(--note);
+    color: #1c1914;
+    font-family: var(--serif-note);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .note main { max-width: 640px; margin: 0 auto; padding: 40px 24px 40px; }
+  .note h1 { font-weight: 400; font-size: 28px; letter-spacing: -.02em; margin: 0 0 8px; }
+  .note .sub { margin: 0 0 22px; font-style: italic; color: #5c564c; }
+  .note p { margin: 0 0 12px; }
+  .note h2 { font-size: 18px; font-weight: 500; color: var(--green); margin: 22px 0 8px; }
+  .note pre, .note code { font-family: var(--mono); }
+  .note pre {
+    background: #1c1914;
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .note ol { margin: 0 0 12px 1.15em; padding: 0; }
+  .note li { margin: 0 0 8px; }
+  .note a { color: inherit; }
+  .note figcaption { font-size: 13.5px; color: #5c564c; margin: 0 0 12px; }
+  footer.colophon {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    font-family: var(--serif-note);
+    font-size: 12.5px;
+    color: #5c564c;
+    background: var(--note);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row, .seg, .sheet, .sheet.front { animation: none; transition: none; }
+    .studio.is-in .seg { transform: scaleX(1); }
+  }
+</style>
+</head>
+<body>
+<div class="studio" id="studio">
+  <header class="nav">
+    <div class="brand">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2.5 7.2 8 2.8l5.5 4.4V13a1 1 0 0 1-1 1H8.7V10H7.3v4H3.5a1 1 0 0 1-1-1V7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      MiniFolio
+    </div>
+    <div class="nav-end">
+      <button class="moon" id="moon" type="button" aria-label="dark mode" aria-pressed="false">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M13 9.2A5.4 5.4 0 1 1 6.8 3 4.2 4.2 0 0 0 13 9.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="signup" type="button">SIGN UP FOR FREE</button>
+    </div>
+  </header>
+
+  <div class="hero">
+    <span class="process">PROCESS</span>
+    <h1>How MiniFolio Works</h1>
+    <p>Three basic steps optimized entirely client-side on your hardware.</p>
+  </div>
+
+  <div class="board">
+    <div class="windows">
+      <div class="card">
+        <div class="dropzone" id="drop" tabindex="0">
+          <span class="arrow" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 11.5V3.8M8 3.8 5.2 6.6M8 3.8l2.8 2.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 12.6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <b>Choose file or drag &amp; drop</b>
+          <small>PDF, PNG, TXT, max 5MB</small>
+          <input id="file" type="file" multiple hidden accept=".pdf,.png,.txt,application/pdf,image/png,text/plain" />
+        </div>
+        <div class="files" id="files"></div>
+      </div>
+
+      <div class="stack-wrap">
+        <div class="stack" id="stack" tabindex="0" role="button" aria-label="cycle folder">
+          <div class="sheet s3"></div>
+          <div class="sheet s2"></div>
+          <div class="sheet s1"></div>
+          <div class="sheet front">
+            <div class="front-top">
+              <div>
+                <h4 id="folderName">Images</h4>
+                <p class="count" id="folderCount">248 images</p>
+              </div>
+              <span class="dots">···</span>
+            </div>
+            <p class="when">Last edited time 19 May, 2024</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card storage" id="storage">
+        <h5>Storage <span>97 GB / 128 GB</span></h5>
+        <div class="bar" aria-hidden="true">
+          <div class="seg photos"></div>
+          <div class="seg docs"></div>
+          <div class="seg videos"></div>
+          <div class="seg sounds"></div>
+        </div>
+        <div class="legend">
+          <div><span><i style="background:var(--photos)"></i>Photos</span><span>48 GB</span></div>
+          <div><span><i style="background:var(--docs)"></i>Documents</span><span>13 GB</span></div>
+          <div><span><i style="background:var(--videos)"></i>Videos</span><span>26 GB</span></div>
+          <div><span><i style="background:var(--sounds)"></i>Sounds</span><span>10 GB</span></div>
+        </div>
+        <div class="upgrade">
+          <div>
+            <small>UPGRADE</small>
+            <b>Want to Increase Storage?</b>
+            <button type="button">Upgrade</button>
+          </div>
+          <div class="folders" aria-hidden="true"><span></span><span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="captions">
+      <article>
+        <h3>Select &amp; Drop Files</h3>
+        <p>Open the dashboard and drag files directly into the target zone. File status indicators validate sizes instantly.</p>
+      </article>
+      <article>
+        <h3>Choose Format &amp; Compress</h3>
+        <p>Choose output format extensions (WebP, PNG, JPEG, SVG) and tune parameters inside the webapp.</p>
+      </article>
+      <article>
+        <h3>Export &amp; Save Chunks</h3>
+        <p>Export optimized assets directly to your system downloads folder. Zero remote network storage.</p>
+      </article>
+    </div>
+  </div>
+</div>
+
+<div class="hudbar">
+  <span class="readout" id="readout">说明书是三扇窗</span>
+  <button type="button" id="btnReplay">再走一遍</button>
+  <button type="button" id="btnFan">再让开</button>
+</div>
+
+<section class="note">
+  <main>
+    <h1>说明书是三扇窗。</h1>
+    <p class="sub">截图里的 MiniFolio。公开网上搜不到活站，按原图复刻。</p>
+    <p>三步不是三个图标。左边是投放区，中间是一叠文件夹，右边是容量条。产品自己的窗就是说明。</p>
+    <figure>
+      <figcaption>图 1. 底 <code>#f7f4f0</code>。标题墨 <code>#211f1c</code>。按钮和文件夹同一橙 <code>#da642b</code>。失败只出现在状态上，<code>#eb3f5f</code>。蜡笔红不要进这页。</figcaption>
+    </figure>
+    <p>左边同时放失败和成功。designSystem.pdf 3MB 失败，components.pdf 1.2MB 已传，上限 5MB。点投放区或把文件拖进去，会在这台电脑上检查大小，不上网。</p>
+    <figure>
+      <figcaption>图 2. 中间那叠：正面 Images，248 张，19 May 2024。后面露出白、粉、浅蓝。鼠标放上去，后面的卡再让开。点一下换一叠。右边 97 / 128 GB，Photos 48、Documents 13、Videos 26、Sounds 10。条子进场时自己长出来。</figcaption>
+    </figure>
+    <h2>可拆</h2>
+    <ul>
+      <li><a href="#drop">投放区</a>：虚线框，点选或拖入。上限 5MB。文件留在这台电脑。</li>
+      <li><a href="#files">文件行</a>：失败和成功同时在。失败有红字和 Try Again。</li>
+      <li><a href="#stack">叠卡</a>：Images 248。放上去后面的卡让开。点一下换一叠。</li>
+      <li><a href="#storage">容量条</a>：97 / 128 GB，四段色，进场自己长出来。</li>
+    </ul>
+    <h2>下次怎么用</h2>
+    <ol>
+      <li>讲三步时，把产品里正在用的窗直接摆上去。不要另画一套图解。</li>
+      <li>失败和成功要同时在。只给成功态，投放区是假的。</li>
+      <li>中间那叠要能让开、能换。只是一张静图不算。</li>
+      <li>容量条子要会长。数字用原图的，不要另编一套。</li>
+      <li>橙是产品色。要能再走一遍。</li>
+    </ol>
+<pre>.stack:hover .s3 { transform: translate(18px, -42px) rotate(8deg); }
+.stack:hover .s2 { transform: translate(-16px, -28px) rotate(-7deg); }
+.sheet.front {
+  background: linear-gradient(180deg, #ee8643, #e36d2c);
+}
+.seg { transform: scaleX(0); transform-origin: left; }
+.studio.is-in .seg { transform: scaleX(1); transition: transform .85s cubic-bezier(.22,.86,.3,1); }
+/* 97/128：48 + 13 + 26 + 10 */
+.photos { width: 37.5%; } .docs { width: 10.16%; }
+.videos { width: 20.31%; } .sounds { width: 7.81%; }</pre>
+    <p>原件是会话里那张截图，存成 <a href="assets/source.png">assets/source.png</a>。minifolio.com / .app / .io 都打不开。产品窗坐在风景里走 <a href="../creed/index.html">living/creed</a>。工具藏在纸上走 <a href="../pageflow/index.html">living/pageflow</a>。</p>
+  </main>
+</section>
+<footer class="colophon">
+  <p>范本：截图 MiniFolio。色从原图像素读出。文案、文件名、248 / 97 / 128 都是图上的数。没有活站可对。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const SEED = [
+    { name: 'designSystem.pdf', size: '3 MB', ok: false },
+    { name: 'components.pdf', size: '1.2 MB', ok: true }
+  ]
+  const FOLDERS = [
+    { name: 'Images', count: '248 images', top: '#ee8643', bot: '#e36d2c' },
+    { name: 'Documents', count: '86 files', top: '#e8a06a', bot: '#c96a3a' },
+    { name: 'Videos', count: '32 clips', top: '#d48ba6', bot: '#b45d7a' }
+  ]
+  const LIMIT = 5 * 1024 * 1024
+
+  const studio = document.getElementById('studio')
+  const filesEl = document.getElementById('files')
+  const drop = document.getElementById('drop')
+  const input = document.getElementById('file')
+  const stack = document.getElementById('stack')
+  const moon = document.getElementById('moon')
+  const readout = document.getElementById('readout')
+  let items = SEED.map((x) => ({ ...x }))
+  let folder = 0
+
+  function icon(ok) {
+    return ok
+      ? '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 2.5h4.2L11 5.2V11.2A.8.8 0 0 1 10.2 12H4A.8.8 0 0 1 3.2 11.2V3.3A.8.8 0 0 1 4 2.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M8.1 2.6V5h2.6" stroke="currentColor" stroke-width="1.2"/></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2.4 12.2 11H1.8L7 2.4Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M7 6v2.2M7 9.8v.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
+  }
+  function trash() {
+    return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 4h8M5.2 4V3.2A.8.8 0 0 1 6 2.4h2a.8.8 0 0 1 .8.8V4M4.2 4l.4 7.2h4.8L9.8 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
+  }
+
+  function paintFiles() {
+    filesEl.innerHTML = items.map((it, i) => `
+      <div class="row" style="animation-delay:${i * 80}ms">
+        <span class="ico ${it.ok ? 'ok' : 'bad'}">${icon(it.ok)}</span>
+        <div>
+          <div class="name">${it.name}</div>
+          <div class="meta ${it.ok ? '' : 'bad'}">${it.size} · ${it.ok ? 'Uploaded' : 'Upload failed'}</div>
+        </div>
+        <div class="row-end">
+          ${it.ok ? '' : `<button class="try" data-try="${i}" type="button">Try Again</button>`}
+          <button class="icon-btn" data-del="${i}" type="button" aria-label="remove">${trash()}</button>
+        </div>
+      </div>`).join('')
+  }
+
+  function paintFolder() {
+    const f = FOLDERS[folder]
+    document.getElementById('folderName').textContent = f.name
+    document.getElementById('folderCount').textContent = f.count
+    stack.querySelector('.front').style.background =
+      `linear-gradient(180deg, ${f.top} 0%, ${f.bot} 100%)`
+  }
+
+  function replay() {
+    items = SEED.map((x) => ({ ...x }))
+    folder = 0
+    paintFiles()
+    paintFolder()
+    studio.classList.remove('is-in')
+    void studio.offsetWidth
+    requestAnimationFrame(() => studio.classList.add('is-in'))
+    readout.textContent = '再走一遍'
+  }
+
+  filesEl.addEventListener('click', (e) => {
+    const retry = e.target.closest('[data-try]')
+    const del = e.target.closest('[data-del]')
+    if (retry) {
+      items[+retry.dataset.try].ok = true
+      paintFiles()
+      readout.textContent = '失败改成已传'
+      return
+    }
+    if (del) {
+      items.splice(+del.dataset.del, 1)
+      paintFiles()
+    }
+  })
+
+  function addFiles(list) {
+    for (const file of list) {
+      const ok = file.size <= LIMIT
+      const mb = file.size / (1024 * 1024)
+      const size = mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`
+      items.unshift({ name: file.name, size, ok })
+    }
+    paintFiles()
+    readout.textContent = '文件留在这台电脑'
+  }
+
+  drop.addEventListener('click', () => input.click())
+  drop.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click() }
+  })
+  input.addEventListener('change', () => { addFiles(input.files); input.value = '' })
+  ;['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => {
+    e.preventDefault(); drop.classList.add('is-over')
+  }))
+  ;['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => {
+    e.preventDefault(); drop.classList.remove('is-over')
+  }))
+  drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files))
+
+  stack.addEventListener('click', () => {
+    folder = (folder + 1) % FOLDERS.length
+    paintFolder()
+    readout.textContent = FOLDERS[folder].name
+  })
+  stack.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stack.click() }
+  })
+
+  moon.addEventListener('click', () => {
+    const on = studio.classList.toggle('is-night')
+    moon.setAttribute('aria-pressed', String(on))
+    readout.textContent = on ? '夜里' : '白天'
+  })
+
+  document.getElementById('btnReplay').addEventListener('click', replay)
+  document.getElementById('btnFan').addEventListener('click', () => {
+    stack.classList.add('is-open')
+    window.setTimeout(() => stack.classList.remove('is-open'), 900)
+    readout.textContent = '后面的卡让开'
+  })
+
+  paintFiles()
+  paintFolder()
+  requestAnimationFrame(() => studio.classList.add('is-in'))
+})()
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>doodle · 坐不住</title>
+<style>
+:root{--paper:#f4efe4;--ink:#000;--line:#E8E8E8;--blue:#1e4bd7;--sans:-apple-system,"Helvetica Neue",sans-serif;--serif:"Iowan Old Style",Palatino,"Songti SC","Noto Serif SC",Georgia,serif;--mono:ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+.stage{padding:8vh 6vw 4vh;text-align:center}
+.row{display:flex;justify-content:center;gap:clamp(18px,4vw,56px);flex-wrap:wrap}
+.cell{width:clamp(72px,13vw,108px);margin:0}
+.cell svg{width:100%;height:auto;overflow:visible;display:block}
+.cell figcaption{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#5c564c;margin-top:10px;text-transform:lowercase}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(26px,4.6vw,44px);margin:6vh 0 0;line-height:1.25}
+h1 em{font-style:italic;color:var(--blue)}
+.lie{font-family:var(--mono);font-size:12.5px;color:#5c564c;margin:14px 0 0}
+.controls{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:26px 0 0}
+button{font:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--ink);background:transparent;border-radius:999px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+label.slider{font-family:var(--mono);font-size:11.5px;color:#5c564c;display:inline-flex;align-items:center;gap:6px}
+input[type=range]{accent-color:var(--ink);width:90px}
+.note{max-width:62ch;margin:9vh auto 0;padding:0 6vw;font-family:var(--serif);font-size:17px;line-height:1.75}
+.note h2{font-size:13px;font-family:var(--mono);font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:#5c564c;margin:0 0 10px}
+.note p{margin:0 0 18px}
+.note code{font-family:var(--mono);font-size:.82em;background:#e9e3d8;padding:1px 5px;border-radius:3px}
+figure.big{margin:34px 0}
+figure.big .demo{border:1px solid var(--line);background:#fff;border-radius:6px;padding:26px;display:flex;justify-content:center;gap:34px}
+figure.big .demo svg{width:74px;overflow:visible}
+figure.big figcaption{font-family:var(--sans);font-size:13.5px;color:#4c463d;margin-top:10px;line-height:1.6}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px;margin:8px 0 26px}
+td,th{border-bottom:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{color:#5c564c;font-weight:400}
+.foot{max-width:62ch;margin:8vh auto 10vh;padding:0 6vw;font-size:13px;color:#5c564c;font-family:var(--mono);line-height:1.8}
+.foot a{color:var(--blue)}
+.ink path{fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+[data-wiggle=on] .boil{filter:url(#boil)}
+@media (prefers-reduced-motion:reduce){[data-wiggle=on] .boil{filter:none}}
+</style></head>
+<body data-wiggle="on">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="boil" x="-30%" y="-30%" width="160%" height="160%">
+<feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="2" seed="1" result="noise">
+<animate id="seedAnim" attributeName="seed" values="1;2;3;4;5;6" dur="0.75s" repeatCount="indefinite" calcMode="discrete"/>
+</feTurbulence>
+<feDisplacementMap id="disp" in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+</filter>
+<filter id="boilLinear" x="-30%" y="-30%" width="160%" height="160%">
+<feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="2" seed="1" result="n2">
+<animate attributeName="seed" values="1;2;3;4;5;6" dur="0.75s" repeatCount="indefinite" calcMode="linear"/>
+</feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="n2" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+</filter>
+</defs></svg>
+
+<section class="stage">
+<div class="row" id="heroRow"></div>
+<h1>先一笔一笔<em>画出来</em>，然后永远<em>坐不住</em></h1>
+<p class="lie">不是逐帧画的。不是画歪的。抖，是一个滤镜。</p>
+<div class="controls">
+<button id="btnWiggle" aria-pressed="true">抖</button>
+<button id="btnDiscrete" aria-pressed="true">逐帧</button>
+<button id="btnReplay">再画一遍</button>
+<label class="slider">幅度<input id="amp" type="range" min="1" max="8" step="0.5" value="4"></label>
+<label class="slider">快慢<input id="spd" type="range" min="1" max="8" step="1" value="4"></label>
+</div>
+</section>
+
+<section class="note">
+<h2>看见什么</h2>
+<p>六个图标：星、心、灯泡、太阳、笑脸、铅笔。打开这一页，它们各自按笔画顺序被画出来——短线快、长线慢——画完不停，整排开始抖。抖法跟《乐一通》老动画一样：每一帧线条都在微微变形，像墨水还没干。</p>
+<p>先玩开关。<b>关掉「抖」</b>，图标立刻变成安静的矢量图——你会发现手绘感一大半不是线条歪，是<b>它在动</b>。<b>把「逐帧」切到「连续」</b>，抖还在，但变成果冻：同一段噪声，不跳帧、平滑插值，卡通感当场死掉。这一个开关就是整篇笔记的发明。</p>
+
+<figure class="big">
+<div class="demo" id="figLies"></div>
+<figcaption>图 1 · 同一个灯泡，三种活法。左：原样——噪声 seed 在 1→6 之间<b>跳变</b>（<code>calcMode="discrete"</code>）。中：seed 平滑插值——果冻。右：滤镜关掉——安静，但也死了。原站 158 个图标共用这一个 <code>#boil</code> 滤镜。</figcaption>
+</figure>
+
+<h2>抖的配方</h2>
+<p>秘密武器是一个 SVG 滤镜，两行：<code>feTurbulence</code>（分形噪声，baseFrequency 0.055，2 个倍频）加 <code>feDisplacementMap</code>（把线条按噪声的 R/G 通道推开，幅度 4）。噪声的 <code>seed</code> 用 SMIL 在 1;2;3;4;5;6 六个值之间循环，0.75 秒一圈，<b>discrete 跳变</b>——这就是「逐帧」：不是画了六帧，是噪声算了六帧，每帧整页共用。零动画库。</p>
+<p>两个防呆细节，都是从原站源码里抄的：<b>扁图标</b>（减号、圆点）要在组里垫一个隐形的 48×48 方块，不然滤镜区域会塌掉，抖不出来；<b>圆头笔帽</b>在笔画还没开始画时会露出一个墨点，所以路径压着 <code>visibility</code>，到开画那一帧才放行。</p>
+
+<h2>入场的配方</h2>
+<p>每条路径归一化成 <code>pathLength=1</code>，用 <code>stroke-dashoffset 1→0</code> 画出来。时长不是统一的：<b>笔画几何长度 ÷ 130</b>，钳在 0.15 到 0.7 秒之间——所以星星一笔约 0.7 秒画完，太阳的九根光芒各自短促。同一图标内笔画<b>重叠 70%</b> 接续（下一笔在上一笔画到七成时开画），ease 是 <code>power1.inOut</code>。一排图标按位置错开 0.06 秒 × 序号。原站是滚进视口触发，这一页打开就画。</p>
+
+<h2>还有一层谎</h2>
+<p>线条的「手抖」也不全是手抖。原站齿轮图标的八个齿是<b>算出来的</b>：种子随机数 <code>mulberry32(7)</code> 给每个齿加抖动，种子固定，保证服务端和客户端渲染出同一个「手笔」。手绘风 = 真手绘 + 假装手绘，五五开。</p>
+
+<h2>数字</h2>
+<table>
+<tr><th>参数</th><th>值</th><th>出处</th></tr>
+<tr><td>滤镜</td><td><code>fractalNoise · 0.055 · octaves 2</code></td><td>boil</td></tr>
+<tr><td>跳帧</td><td><code>seed 1..6 · 0.75s · discrete</code></td><td>boil</td></tr>
+<tr><td>幅度 / 快慢</td><td>位移 scale 1–8（默认 4）· 时长 = 1.3 − speed×0.11 秒</td><td>原站全局控制</td></tr>
+<tr><td>笔画</td><td>viewBox 48×48 · stroke 3.4 · round cap/join</td><td>globals.css</td></tr>
+<tr><td>入场</td><td>时长 = 长度/130，钳 0.15–0.7s · 重叠 0.7 · power1.inOut · 行错开 0.06s</td><td>DrawStrokes</td></tr>
+<tr><td>防呆</td><td>隐形 48×48 垫框 · visibility 压墨点 · reduced-motion 全停</td><td>DoodleIcon</td></tr>
+</table>
+
+<h2>什么时候用</h2>
+<p>要「活的手绘感」：涂鸦风图标、儿童/玩具产品、假笔记 App、任何「墨水未干」的场合。要点：抖必须<b>跳帧</b>；入场时长必须<b>跟笔画长度走</b>，统一 fade 等于没画。别用在严肃数据界面——它永远在动，会抢读数的注意力。</p>
+</section>
+
+<section class="foot">
+配方 · 下次来了一个「坐不住」的页面：量它的滤镜（是不是一个共享 #boil）；问 seed 是不是 discrete；抄 0.055 / 0.75s / scale 4；入场抄 len/130 和 0.7 重叠。<br>
+出处 · <a href="https://github.com/nicoletangnan/doodle-icons">nicoletangnan/doodle-icons</a>（MIT）· 原站 doodle-icons.vercel.app 已下线；本页六个图标的路径数据为原站源码原样，未重画 · 量于 2026-09-01
+</section>
+
+<script>
+const ICONS=[{"name":"star","paths":["M 24 8.5 C 25.6 12.3, 27.2 16, 28.9 19.7 C 32.9 20.1, 36.9 20.6, 40.8 21.3 C 37.9 24, 34.9 26.6, 31.9 29.1 C 32.8 33.1, 33.6 37, 34.2 41 C 30.8 39, 27.4 36.9, 24 34.8 C 20.6 36.9, 17.2 39, 13.8 41 C 14.4 37, 15.2 33.1, 16.1 29.1 C 13.1 26.6, 10.1 24, 7.2 21.3 C 11.1 20.6, 15.1 20.1, 19.1 19.7 C 20.8 16, 22.4 12.3, 24 8.5 Z"]},{"name":"heart","paths":["M 24 39 C 17 33.5, 10.5 28.2, 8.5 21.5 C 7 16.5, 9.5 12, 14 11.2 C 18 10.5, 21.7 12.8, 24 16.6 C 26.3 12.7, 30 10.4, 34 11.2 C 38.5 12.1, 41 16.6, 39.4 21.6 C 37.3 28.3, 30.9 33.6, 24 39 Z"]},{"name":"bulb","paths":["M 24 8 C 30.5 8, 35 12.6, 35 18.5 C 35 22.5, 32.7 25.2, 30.5 27.5 C 29.6 28.5, 29 29.8, 28.8 31 C 25.7 31.3, 22.5 31.3, 19.3 31 C 19.1 29.8, 18.5 28.5, 17.6 27.5 C 15.4 25.2, 13 22.5, 13 18.5 C 13 12.6, 17.5 8, 24 8 Z","M 24 13.2 C 26.3 13.3, 27.6 15, 27.2 17.1 C 26.8 19, 25.1 20.1, 23.2 19.6 C 21.4 19.1, 20.5 17.4, 21 15.6 C 21.4 14.1, 22.5 13.2, 24 13.2 Z","M 24 21.8 C 24 24.6, 24 27.5, 24 30.3","M 20 34.4 C 22.6 34.8, 25.4 34.8, 28 34.4","M 21 38.6 C 23 39, 25 39, 27 38.6"]},{"name":"sun","paths":["M 24 17 C 28 16.9, 30.7 19.5, 30.7 23.5 C 30.7 27.4, 28.1 30, 24.1 30 C 20.2 30, 17.5 27.5, 17.5 23.6 C 17.5 19.7, 20.1 17.1, 24 17 Z","M 24 8.5 C 24 10.3, 24 12, 24 13.6","M 24 33.5 C 24 35.2, 24 36.9, 24 38.6","M 8.9 23.5 C 10.7 23.5, 12.4 23.5, 14 23.5","M 34 23.5 C 35.7 23.5, 37.4 23.5, 39.1 23.5","M 13.2 12.8 C 14.5 14, 15.7 15.2, 16.9 16.5","M 31.1 30.6 C 32.3 31.8, 33.5 33, 34.7 34.3","M 34.8 12.9 C 33.5 14.1, 32.3 15.3, 31.1 16.6","M 16.9 30.7 C 15.7 31.9, 14.4 33.1, 13.2 34.4"]},{"name":"smile","paths":["M 24 8.5 C 32.8 8.5, 39.5 15.2, 39.5 24 C 39.5 32.8, 32.8 39.5, 24 39.5 C 15.2 39.5, 8.5 32.8, 8.5 24 C 8.5 15.2, 15.2 8.5, 24 8.5 Z","M 18.5 20 l .01 0","M 29.5 20 l .01 0","M 16.5 27.5 C 19 31, 22 32.6, 24.5 32.5 C 27.5 32.4, 30.2 30.6, 31.8 27.8"]},{"name":"pencil","paths":["M 10.5 37.8 C 11.5 34.6, 12.6 31.7, 14 29 C 20 22, 26.3 15.4, 33 9.4 C 34.8 10.9, 36.6 12.6, 38.2 14.5 C 32.6 21, 26.4 27.4, 19.8 33.6 C 16.8 35.3, 13.7 36.7, 10.5 37.8 Z","M 29.2 13.2 C 31 14.7, 32.7 16.3, 34.3 18.1","M 12.2 34.2 C 12.9 35, 13.6 35.7, 14.4 36.4"]}];
+const NS="http://www.w3.org/2000/svg";
+function svgFor(icon){
+  const s=document.createElementNS(NS,"svg");s.setAttribute("viewBox","0 0 48 48");s.setAttribute("role","img");s.setAttribute("aria-label",icon.name);
+  const g=document.createElementNS(NS,"g");g.setAttribute("class","ink boil");
+  const sp=document.createElementNS(NS,"rect");sp.setAttribute("width","48");sp.setAttribute("height","48");sp.setAttribute("fill","none");g.appendChild(sp);
+  icon.paths.forEach(d=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",d);p.setAttribute("pathLength","1");p.style.strokeDasharray=1;p.style.strokeDashoffset=1;p.style.visibility="hidden";g.appendChild(p)});
+  s.appendChild(g);return s;
+}
+const hero=document.getElementById("heroRow");
+ICONS.forEach(icon=>{const f=document.createElement("figure");f.className="cell";f.appendChild(svgFor(icon));const c=document.createElement("figcaption");c.textContent=icon.name;f.appendChild(c);hero.appendChild(f)});
+
+function drawAll(){
+  document.querySelectorAll("#heroRow .ink").forEach((g,i)=>{
+    let at=(i%6)*0.06;
+    g.querySelectorAll("path").forEach(p=>{
+      const len=p.getTotalLength();
+      const dur=Math.min(0.7,Math.max(0.15,len/130));
+      p.getAnimations().forEach(a=>a.cancel());
+      p.style.visibility="hidden";p.style.strokeDashoffset=1;
+      setTimeout(()=>{p.style.visibility="visible"},at*1000);
+      p.animate([{strokeDashoffset:1},{strokeDashoffset:0}],{duration:dur*1000,delay:at*1000,easing:"cubic-bezier(.37,0,.63,1)",fill:"both"});
+      at+=dur*0.7;
+    });
+  });
+}
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){
+  document.querySelectorAll(".ink path").forEach(p=>{p.style.visibility="visible";p.style.strokeDashoffset=0});
+}else{drawAll()}
+document.getElementById("btnReplay").onclick=drawAll;
+
+const bw=document.getElementById("btnWiggle");
+bw.onclick=()=>{const on=bw.getAttribute("aria-pressed")!=="true";bw.setAttribute("aria-pressed",on);document.body.dataset.wiggle=on?"on":"off"};
+const bd=document.getElementById("btnDiscrete");
+bd.onclick=()=>{const on=bd.getAttribute("aria-pressed")!=="true";bd.setAttribute("aria-pressed",on);bd.textContent=on?"逐帧":"连续";document.getElementById("seedAnim").setAttribute("calcMode",on?"discrete":"linear")};
+document.getElementById("amp").oninput=e=>document.getElementById("disp").setAttribute("scale",e.target.value);
+document.getElementById("spd").oninput=e=>document.getElementById("seedAnim").setAttribute("dur",(1.3-e.target.value*0.11).toFixed(2)+"s");
+
+const fig=document.getElementById("figLies");
+const bulb=()=>ICONS.find(i=>i.name==="bulb");
+const a=svgFor(bulb());
+const b=svgFor(bulb());b.querySelector(".boil").style.filter="url(#boilLinear)";
+const c=svgFor(bulb());c.querySelector(".boil").classList.remove("boil");
+[a,b,c].forEach(s=>fig.appendChild(s));
+fig.querySelectorAll(".ink path").forEach(p=>{p.style.visibility="visible";p.style.strokeDashoffset=0});
+</script>
+</body></html>

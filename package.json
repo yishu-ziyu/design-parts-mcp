@@ -1,0 +1,23 @@
+{
+  "name": "design-parts-mcp",
+  "version": "0.1.0",
+  "description": "Local stdio MCP server exposing a library of living design notes: searchable interaction & motion parts for AI coding tools.",
+  "license": "MIT",
+  "author": "yishu-ziyu",
+  "type": "module",
+  "main": "./server/library.js",
+  "bin": {
+    "design-parts-mcp": "./server/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "sync": "node scripts/sync.js",
+    "test": "node scripts/test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.0"
+  }
+}

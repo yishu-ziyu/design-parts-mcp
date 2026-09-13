@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>拆开再装回去</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .qs {
+    max-width: 980px;
+    margin: 18px auto 0;
+    padding: 0 28px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 760px) { .qs { grid-template-columns: 1fr 1fr; padding: 0 18px; } }
+  .q {
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 12px 12px 10px;
+    min-height: 118px;
+  }
+  .q .n {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .q h2 { font-size: 18px; font-weight: 500; margin: 8px 0 6px; color: var(--green); }
+  .q p { margin: 0; font-size: 14.5px; }
+  .q.is-on { background: var(--ink); color: var(--cream); }
+  .q.is-on h2 { color: #cfe3d4; }
+  .q.is-on .n { color: #b7b1a6; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 28px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  .better {
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 14px 16px;
+    margin: 0 0 18px;
+  }
+  .better p:last-child { margin-bottom: 0; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">living / stranger</div>
+  <h1>陌生页怎么做成活笔记</h1>
+  <p class="sub">给下一次的你。用户丢来一个网址或一张截图，你要交回一页能打开、能拆开的东西。</p>
+</header>
+
+<div class="qs" id="qs">
+  <div class="q is-on" data-i="0">
+    <div class="n">问 1</div>
+    <h2>看见什么</h2>
+    <p>先说眼睛看见的，不说技术栈。</p>
+  </div>
+  <div class="q" data-i="1">
+    <div class="n">问 2</div>
+    <h2>是不是三维</h2>
+    <p>WebGL、视频、CSS、烤好的图。量，别猜。</p>
+  </div>
+  <div class="q" data-i="2">
+    <div class="n">问 3</div>
+    <h2>数字是多少</h2>
+    <p>宽、叠、斜、时间、颜色。抄原站的数。</p>
+  </div>
+  <div class="q" data-i="3">
+    <div class="n">问 4</div>
+    <h2>图从哪来</h2>
+    <p>把原图下载下来。不要自己重画。</p>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>上次做成的就是这个</h3>
+      <p class="drop">用户丢来 Chapter One 首页。看起来像一排立体书。打开原站一量：十六张透明 PNG，负边距叠在一起，高度跟横坐标走。于是笔记的第一屏就是那一排书，正在走。鼠标停住，左右让开。</p>
+      <p>不是先写分类。是先让那一架子在笔记里活过来。essay 跟在后面，只解释你已经看见的东西。</p>
+    </div>
+    <figure>
+      <img src="assets/shelf.jpg" alt="Chapter One 书架子复刻所依据的原屏" />
+      <figcaption><strong>图 1.</strong> 用户指着的那一屏。笔记要先长出这一屏，再写字。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>一次只收一个发明</h3>
+    <p>Chapter One 整站还有宣言段、钉住滚动、故事页。那次只收「架子」。Creed 整站有十屏，只收「风景里坐着产品窗」。一次做一个发明。做完挂到 <a href="../INDEX.md">living/INDEX.md</a>。下一屏是下一篇。</p>
+    <p>做好的架子在 <a href="../shelf/index.html">living/shelf</a>。做好的 Creed 排法在 <a href="../creed/index.html">living/creed</a>。打开它们，不要在这页再摘要一遍。</p>
+  </div>
+
+  <figure>
+    <img src="assets/shelf-band.jpg" alt="架子特写" />
+    <figcaption><strong>图 2.</strong> 原图里橙色那本被抬起。复刻要对上的是这条缝，不是导航栏像素。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>先让第一屏看起来像用户丢来的图。essay 写得再漂亮，第一屏不像，这篇笔记就是废纸。
+  </aside>
+
+  <div class="prose">
+    <h3>上次为什么像</h3>
+    <p>书是他们烤好的 PNG，不是我生成的假书。斜率是他们脚本里的 <code>10 / 步宽</code>，不是「看起来斜一点」。火车复制三遍，因为原站就是这么循环。悬停左右让开 120 像素，抬高 18 像素，都是量出来的。</p>
+    <p>然后给三个开关：叠、斜、走。关掉哪一件，哪一件的贡献就露出来。读者不是在读原理，是在拆一台机器。</p>
+  </div>
+
+  <div class="better">
+    <h3>下一次要比这次好</h3>
+    <p>第一屏必须先对上用户的截图，再写一句解释。悬停、滚动、开关，要在真浏览器里点过。截到片头或空白，就还没看见，不能开始写。</p>
+    <p>开关不要压在发明上。数字写进配方，不要写进货架摘要。<code>DESIGN.md</code> 只留一句指针。</p>
+    <p>给发明起一个谎的名字，一句就够：不是三维；不是模板；灰不是另一种颜色。读者带着这句去看第一屏。</p>
+  </div>
+
+  <div class="recipe">
+    <h3>配方 · 下次来了一个陌生页</h3>
+    <ol class="how">
+      <li>打开活页。问这四句：看见什么；是不是三维；数字是多少；图从哪来。在原站上量，不要凭印象。</li>
+      <li>只收用户指着的那一个发明。下载原图。抄原站的数。</li>
+      <li>在 <code>living/名字/</code> 做一页 HTML。第一屏就是发明，正在转。essay 用图注教，页尾给配方。</li>
+      <li>加能拆开的开关。在真浏览器里悬停、滚动、开关。第一屏要对得上用户那张图。</li>
+      <li>货架 <code>living/INDEX.md</code> 加一行。<code>DESIGN.md</code> 加一节指针。不要另写一份没有图的摘要。</li>
+    </ol>
+<pre>Goal:     打开 living/&lt;name&gt;/index.html，第一屏就是那个发明
+Hard bar: 和用户截图同一件事在发生（悬停让开、字当词、窗坐在风景里）
+Improve:  再拆掉一个你会误判的谎（不是三维 / 不是模板 / …）
+
+问：看见什么 → 是不是三维 → 数字是多少 → 图从哪来
+做：下载原图，抄原数，第一屏先活，再写字
+挂：INDEX.md 一行，DESIGN.md 一句指针</pre>
+    <p>动效必须能再播。写成字的缓动等于没写。打开就要看见；错过了要有按钮。</p>
+    <p>用户说还可以更好。标准很简单：下一次打开笔记的人，不用问你「这是怎么做的」。他按开关就能看见。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本作业：<a href="../shelf/index.html">书架子</a> · <a href="../tubik/index.html">Tubik 方片子</a> · <a href="../exposure/index.html">照片是章节</a> · <a href="../creed/index.html">Creed 风景窗</a> · <a href="../chapter-one/index.html">图当词</a></p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const cards = [...document.querySelectorAll('#qs .q')]
+  let i = 0
+  setInterval(() => {
+    cards.forEach((c, n) => c.classList.toggle('is-on', n === i))
+    i = (i + 1) % cards.length
+  }, 1600)
+})()
+</script>
+</body>
+</html>

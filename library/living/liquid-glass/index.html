@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>液态玻璃 — 这块会弯后面的东西</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio {
+    max-width: 980px;
+    margin: 18px auto 0;
+    padding: 0 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+
+  /* the 600×400 well — do not shrink: clone is a fixed 600px copy */
+  .playground {
+    position: relative;
+    width: 600px;
+    height: 400px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--ink);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, .28);
+  }
+  .scene { position: absolute; inset: 0; pointer-events: none; }
+  .background-image {
+    position: absolute; inset: 0;
+    background-image: url('assets/scene.webp');
+    background-size: 600px 400px;
+    background-repeat: no-repeat;
+  }
+  .caption {
+    position: absolute; top: 196px; left: 0; right: 0; margin: 0; text-align: center;
+    color: #fff;
+    font: 800 38px -apple-system, system-ui, sans-serif;
+    letter-spacing: .01em;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+  }
+  .orb {
+    position: absolute; top: 150px; left: 0; width: 56px; height: 56px; border-radius: 50%;
+    background: radial-gradient(circle at 34% 32%, #fff, #7cc4ff 42%, #2563eb 82%);
+    box-shadow: 0 0 28px rgba(90, 165, 255, .65);
+  }
+  .refraction-scene {
+    position: absolute; top: 0; left: 0; width: 600px; height: 400px; transform-origin: top left;
+  }
+  .lens {
+    position: absolute; top: 150px; left: 250px;
+    width: 100px; height: 100px;
+    border-radius: 16px; overflow: hidden;
+    isolation: isolate;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .25);
+    cursor: grab;
+  }
+  .lens:active { cursor: grabbing; }
+  .lens-clip {
+    position: absolute; inset: 0;
+    clip-path: inset(0 round 16px);
+  }
+  .lens-blur { position: absolute; inset: 0; will-change: filter; }
+  .lens-refraction {
+    position: absolute;
+    filter: url(#lens-init);
+    transform-origin: top left;
+    pointer-events: none;
+    will-change: filter;
+  }
+  .lens-tint {
+    position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+  .lens-glint {
+    position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: inset 1.5px 1.5px 4px rgba(255, 255, 255, .7),
+                inset -2px -2px 5px rgba(0, 0, 0, .28);
+  }
+  .fab {
+    position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%);
+    width: 60px; height: 60px; padding: 0; border: none; background: none;
+    cursor: pointer; z-index: 10;
+  }
+  .fab .ic {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 24px; height: 24px; transition: opacity var(--ico-dur, 700ms) ease;
+  }
+  .fab .ic line   { stroke: #fff; stroke-width: 2.5; stroke-linecap: round; }
+  .fab .ic circle { fill: #fff; }
+  .fab .ic-x    { opacity: 1; }
+  .fab .ic-dots { opacity: 0; }
+  .fab.minimized .ic-x    { opacity: 0; }
+  .fab.minimized .ic-dots { opacity: 1; }
+
+  .panel {
+    display: flex; flex-direction: column; gap: 12px;
+    width: 260px; padding: 18px;
+    background: var(--cream);
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font: 13px -apple-system, system-ui, sans-serif;
+  }
+  .panel h3 {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel label { display: grid; grid-template-columns: 84px 1fr 40px; align-items: center; gap: 10px; }
+  .panel input[type="range"] { width: 100%; accent-color: var(--green); }
+  .panel input[type="color"] { width: 100%; height: 24px; padding: 0; border: none; background: none; cursor: pointer; }
+  .panel .val { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .panel .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .panel .preset {
+    flex: 100%; padding: 8px 12px; cursor: pointer;
+    background: var(--ink); color: var(--cream); border: none;
+    font: 600 13px -apple-system, system-ui, sans-serif;
+  }
+  .panel .preset:hover { background: var(--green); }
+  .panel .preset:active { transform: translateY(1px); }
+
+  .unselectable { user-select: none; -webkit-user-select: none; }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 80px;
+  }
+  .page h2 {
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--green);
+    margin: 28px 0 10px;
+  }
+  .page p { margin: 0 0 12px; }
+  .page ol { margin: 0 0 12px 1.2em; padding: 0; }
+  .page a { color: var(--green); }
+  .beats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .beats > div {
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 12px;
+  }
+  .beats .n {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .beats h3 { margin: 8px 0 6px; font-size: 16px; font-weight: 500; color: var(--green); }
+  .beats p { margin: 0; font-size: 14px; }
+  @media (max-width: 760px) {
+    .beats { grid-template-columns: 1fr; }
+    .studio { padding: 0 12px; overflow-x: auto; justify-content: flex-start; }
+  }
+  .note {
+    max-width: 720px;
+    margin: 0 auto 40px;
+    padding: 0 24px 48px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .note code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">living / liquid-glass</div>
+  <h1>这块玻璃会弯后面的东西</h1>
+  <p class="sub">拖它。蓝球穿过去字还在弯。底下的 × 会收成一粒按钮。</p>
+</header>
+
+<div class="studio" id="stage">
+  <div class="playground" id="canvas">
+    <div class="scene" id="scene">
+      <div class="background-image"></div>
+      <h2 class="caption unselectable">Liquid&nbsp;Glass</h2>
+      <div class="orb"></div>
+    </div>
+
+    <div class="lens" id="lens">
+      <div class="lens-clip" id="lensClip">
+        <div class="lens-blur" id="blurWrap">
+          <div class="lens-refraction" id="refraction"></div>
+        </div>
+        <div class="lens-tint" id="tintLayer"></div>
+        <div class="lens-glint" id="glintLayer"></div>
+      </div>
+    </div>
+
+    <button class="fab" id="fab" type="button" aria-label="收成按钮 / 展开玻璃">
+      <svg class="ic ic-x" viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/>
+      </svg>
+      <svg class="ic ic-dots" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+      </svg>
+    </button>
+  </div>
+
+  <aside class="panel" id="panel">
+    <h3>这块玻璃</h3>
+    <label>Depth      <input type="range" id="depth"  min="0"   max="120" step="1"    value="60"><span class="val" id="depth-v">60</span></label>
+    <label>Splay      <input type="range" id="splay"   min="2"   max="40"  step="1"    value="2"><span class="val" id="splay-v">2</span></label>
+    <label>Feather    <input type="range" id="feather" min="0"   max="40"  step="1"    value="24"><span class="val" id="feather-v">24</span></label>
+    <label>Curvature  <input type="range" id="curve"   min="0.3" max="3"   step="0.1"  value="2"><span class="val" id="curve-v">2</span></label>
+    <label>Blur       <input type="range" id="blur"   min="0"   max="5"   step="0.01" value="0"><span class="val" id="blur-v">0</span></label>
+    <label>Chromatic  <input type="range" id="chroma" min="0"   max="0.25" step="0.01" value="0.0"><span class="val" id="chroma-v">0</span></label>
+    <label>Glint      <input type="range" id="glint"  min="0"   max="150" step="5"    value="25"><span class="val" id="glint-v">25</span></label>
+    <label>Tint       <input type="range" id="tint"   min="0"   max="1"   step="0.01" value="0"><span class="val" id="tint-v">0</span></label>
+    <label>Tint color <input type="color" id="tintColor" value="#ffffff"></label>
+    <div class="presets">
+      <button type="button" class="preset" data-preset="soft">Simple glass</button>
+      <button type="button" class="preset" data-preset="thick">Thick glass</button>
+      <button type="button" class="preset" data-preset="frosted">Frosted glass</button>
+      <button type="button" class="preset" data-preset="cut">Cut glass</button>
+      <button type="button" class="preset" data-preset="plexi">Orange plexiglass</button>
+    </div>
+  </aside>
+</div>
+
+<svg id="filter-housing" width="0" height="0" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute" aria-hidden="true"></svg>
+
+<div class="page">
+  <div class="beats">
+    <div>
+      <div class="n">01 拖</div>
+      <h3>玻璃跟着指针走</h3>
+      <p>折射的是一份克隆。真场景还在下面。两层要对齐，不然字会裂开。</p>
+    </div>
+    <div>
+      <div class="n">02 穿</div>
+      <h3>蓝球用 left，不用关键帧</h3>
+      <p>Safari 把 transform 动画丢给合成器，滤镜采不到。所以球的位置写在主线程上。</p>
+    </div>
+    <div>
+      <div class="n">03 收</div>
+      <h3>× 变成一粒按钮</h3>
+      <p>500ms 收到底边。回来 600ms。圆角跟着边长走，地图提前烤好，第一次不闪。</p>
+    </div>
+  </div>
+
+  <h2>不要用 backdrop-filter 冒充</h2>
+  <p>毛玻璃只是糊一层。这块是透镜：离屏画出位移图，喂给 SVG <code>feDisplacementMap</code>，再用 CSS <code>filter</code> 套在克隆上。Safari 不能把 SVG 滤镜接到 backdrop-filter 上。</p>
+  <p>每动一次换一个 filter id。不换的话 Safari 会把第一帧冻住。这条是 Aave 的办法。</p>
+
+  <h2>原件</h2>
+  <p>CodePen <a href="https://codepen.io/mr-tipton/pen/YPqGgxa">mr-tipton / SVG Liquid Glass</a>。风景图已拷到本页 <code>assets/scene.webp</code>。不要再去外链。</p>
+</div>
+
+<section class="note">
+  活笔记。第一屏就是发明。滑杆是给要抄的人。产品页不要把这排控制台贴上去。<br />
+  原则：Notion Will's S · Progressive Disclosure · Hierarchy is Everything · 不必填满整个屏幕。
+</section>
+
+<script src="glass.js"></script>
+</body>
+</html>

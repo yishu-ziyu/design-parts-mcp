@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>想法贴在墙上</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Newsreader:opsz,wght@10..72,400;10..72,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-brand: Fraunces, "Iowan Old Style", Palatino, serif;
+    --font-ui: Figtree, "Avenir Next", "Segoe UI", sans-serif;
+    --font-note: Newsreader, "Iowan Old Style", Georgia, serif;
+    --ink: #2a261f;
+    --cream: #f3eee6;
+    --wall: #0e0d0c;
+    --wall-mid: #151412;
+    --note: #f4efe4;
+    --green: #2f6b4f;
+    --serif-note: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --mono: ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: #12110f; }
+  body {
+    color: var(--cream);
+    font-family: var(--font-ui);
+  }
+
+  .studio {
+    min-height: calc(100svh - 48px);
+    padding: 36px 28px 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background:
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse 90% 55% at 50% -10%, #1f1d1a 0%, transparent 58%),
+      linear-gradient(180deg, var(--wall-mid) 0%, var(--wall) 100%);
+    background-blend-mode: overlay, normal, normal;
+    background-size: 180px 180px, auto, auto;
+  }
+  .head {
+    width: min(100%, 1120px);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px 24px;
+    margin-bottom: clamp(2rem, 5vh, 3.4rem);
+  }
+  .brand {
+    margin: 0;
+    font-family: var(--font-brand);
+    font-weight: 500;
+    font-size: clamp(2.85rem, 8vw, 4.85rem);
+    letter-spacing: -.035em;
+    line-height: .92;
+    color: var(--cream);
+  }
+  .credit {
+    margin: 0 0 .2rem;
+    font-family: var(--font-note);
+    font-size: .98rem;
+    color: #f3eee66b;
+  }
+
+  .main { width: min(100%, 1120px); }
+  .bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.35rem;
+    padding: 0 .4rem .8rem;
+    border-bottom: 1px solid #f3eee61a;
+    color: #f3eee675;
+    font-size: .76rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .bar span { color: #f3eee6c7; font-variant-numeric: tabular-nums; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(1.6rem, 3.2vw, 2.4rem) clamp(.95rem, 2vw, 1.5rem);
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .card {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 1 / 1.06;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(var(--tilt, 0deg));
+    transition: transform .4s;
+  }
+  .card.is-in {
+    animation: note-disperse .78s cubic-bezier(.22, .86, .3, 1) both;
+    animation-delay: var(--intro-delay, 0s);
+  }
+  .card:hover { z-index: 2; transform: rotate(0) translateY(-5px); }
+  @keyframes note-disperse {
+    0% { opacity: .94; transform: translate(var(--intro-x, 0), var(--intro-y, 0)) rotate(var(--intro-rotate, 0deg)) scale(.94); }
+    to { opacity: 1; transform: translate(0, 0) rotate(var(--tilt, 0deg)) scale(1); }
+  }
+
+  .paper {
+    position: relative;
+    isolation: isolate;
+    width: 86%;
+    height: 86%;
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: 1.2rem .9rem 1.15rem;
+    background:
+      linear-gradient(165deg, #ffffff47 0%, transparent 42%),
+      linear-gradient(200deg, var(--paper, #f2ebe0) 0%, var(--paper-warm, #e7dfd0) 100%);
+    box-shadow:
+      inset 0 1px #ffffff9e,
+      inset 0 -1px 2px #46371e14,
+      0 1px 1px #00000038,
+      0 6px 14px #00000047,
+      0 18px 36px #00000057;
+  }
+  .fiber, .grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .fiber {
+    opacity: .62;
+    mix-blend-mode: multiply;
+    background-image: url("assets/paper-fiber.webp");
+    background-size: 220% 220%;
+    background-position: var(--fiber-x, 30%) var(--fiber-y, 20%);
+  }
+  .grain {
+    opacity: .22;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  .tape {
+    position: absolute;
+    top: 1.5%;
+    left: 50%;
+    z-index: 3;
+    width: 50%;
+    pointer-events: none;
+    transform: translate(-50%) rotate(-1.1deg);
+    filter: drop-shadow(0 1px 1px #0003);
+  }
+  .card:nth-child(5n+2) .tape { width: 49%; transform: translate(-50%) rotate(1.3deg); }
+  .card:nth-child(5n+3) .tape { width: 45%; transform: translate(-50%) rotate(-.5deg); }
+  .card:nth-child(5n+4) .tape { width: 48%; transform: translate(-50%) rotate(.8deg); }
+  .card:nth-child(5n) .tape { width: 46%; transform: translate(-50%) rotate(-1.6deg); }
+  .txt {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    max-width: 15ch;
+    font-family: var(--font-note);
+    font-size: clamp(.72rem, 1.3vw, .94rem);
+    letter-spacing: -.01em;
+    line-height: 1.42;
+    color: #1f1b16;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .by {
+    position: relative;
+    z-index: 1;
+    margin: .2rem 0 0;
+    font-family: var(--font-note);
+    font-size: clamp(.62rem, 1.05vw, .76rem);
+    color: #2a261f7a;
+    text-align: center;
+  }
+  .heart {
+    appearance: none;
+    position: absolute;
+    bottom: 9%;
+    right: 10%;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: .22rem;
+    border: 0;
+    background: 0;
+    color: #1f1b1680;
+    cursor: pointer;
+    padding: .2rem .28rem;
+    font-family: var(--font-ui);
+    font-size: calc(.68rem + 1pt);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .heart.is-on { color: #8c3d3d; }
+  .heart svg { width: 13px; height: 13px; }
+
+  .cta {
+    position: fixed;
+    right: max(1.25rem, env(safe-area-inset-right));
+    bottom: calc(48px + 1.1rem);
+    z-index: 40;
+    width: 8.2rem;
+    height: 6.9rem;
+    border: 0;
+    background: 0;
+    cursor: pointer;
+    filter: drop-shadow(0 12px 16px #0000005c);
+    transition: transform .25s, filter .25s;
+  }
+  .cta:hover { transform: translateY(-5px) rotate(-1deg); filter: drop-shadow(0 16px 20px #0000006b); }
+  .stack {
+    position: absolute;
+    left: .15rem;
+    bottom: .25rem;
+    width: 6.75rem;
+    height: 5.55rem;
+    transform: rotate(-2deg);
+  }
+  .stack:before, .stack:after, .stack .front {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    background-image: url("assets/paper-fiber.webp");
+    background-size: 180px 180px;
+    box-shadow: 0 3px 8px #00000038;
+  }
+  .stack:before { background-color: #cbd8c5; transform: translate(.42rem, -.4rem) rotate(7deg); }
+  .stack:after { background-color: #e0cbbd; transform: translate(.15rem, -.2rem) rotate(2.5deg); }
+  .stack .front {
+    z-index: 1;
+    background-color: #f4ebcd;
+    color: #2a261f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .stack .front strong {
+    font-family: var(--font-note);
+    font-weight: 500;
+    font-size: 1.08rem;
+  }
+  .stack .front small {
+    font-family: var(--font-ui);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .48;
+    margin-top: .35rem;
+    font-size: .57rem;
+    font-weight: 600;
+  }
+  .pen {
+    position: absolute;
+    right: .05rem;
+    bottom: -.05rem;
+    z-index: 3;
+    transform: rotate(13deg);
+    transform-origin: bottom;
+    filter: drop-shadow(1px 2px 1px #00000047);
+    transition: transform .25s;
+  }
+  .cta:hover .pen { transform: rotate(7deg) translateY(-2px); }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    place-items: center;
+    padding: 1rem;
+  }
+  .modal.is-open { display: grid; }
+  .back {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: #0a0908c7;
+    cursor: pointer;
+  }
+  .panel {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 560px);
+    max-height: min(92vh, 820px);
+    overflow: auto;
+    border: 1px solid #f3eee614;
+    border-radius: 14px;
+    padding: 1.5rem 1.4rem 1.6rem;
+    background: radial-gradient(80% 45% at 50% 0, #24221e 0%, #0000 55%), #161513;
+    box-shadow: 0 28px 70px #00000094;
+  }
+  .panel h2 {
+    margin: 0;
+    font-family: var(--font-brand);
+    font-weight: 500;
+    font-size: clamp(1.7rem, 4.5vw, 2.15rem);
+    letter-spacing: -.03em;
+    text-align: center;
+  }
+  .panel .sub {
+    margin: .4rem 0 0;
+    font-family: var(--font-note);
+    color: #f3eee680;
+    font-size: 1.02rem;
+    text-align: center;
+  }
+  .x {
+    position: absolute;
+    top: .8rem;
+    right: .9rem;
+    border: 0;
+    background: 0;
+    color: #f3eee673;
+    font-size: 1.45rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .preview {
+    width: min(100%, 200px);
+    aspect-ratio: 1 / 1.06;
+    margin: 1.1rem auto .6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-0.8deg);
+  }
+  .preview .paper { width: 100%; height: 100%; }
+  fieldset {
+    border: 0;
+    margin: 0 0 .9rem;
+    padding: 0;
+    text-align: center;
+  }
+  legend {
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #f3eee67a;
+    font-size: .78rem;
+    font-weight: 500;
+    margin: 0 auto .6rem;
+  }
+  .colors, .tapes { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; }
+  .swatch {
+    appearance: none;
+    width: 1.85rem;
+    height: 1.85rem;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    padding: 0;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px #00000029;
+    background: var(--sw);
+  }
+  .swatch.is-on { border-color: var(--cream); }
+  .tape-pick {
+    appearance: none;
+    width: 4.4rem;
+    border: 0;
+    background: 0;
+    color: #f3eee66b;
+    border-radius: 6px;
+    padding: .25rem .1rem;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: .72rem;
+  }
+  .tape-pick.is-on { color: var(--cream); background: #f3eee60f; }
+  .tape-pick img { display: block; width: 100%; height: 1.35rem; object-fit: contain; margin-bottom: .25rem; }
+  label.field {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    margin: 0 0 .85rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #f3eee680;
+    font-size: .82rem;
+    font-weight: 500;
+  }
+  label.field input, label.field textarea {
+    width: 100%;
+    color: var(--cream);
+    font-family: var(--font-note);
+    letter-spacing: 0;
+    text-transform: none;
+    background: #ffffff09;
+    border: 1px solid #f3eee61f;
+    border-radius: 8px;
+    padding: .72rem .85rem;
+    font-size: 1.05rem;
+  }
+  .count { text-align: right; font-size: .72rem; color: #f3eee66b; margin-top: -.55rem; }
+  .go {
+    appearance: none;
+    width: 100%;
+    border: 0;
+    border-radius: 999px;
+    padding: .82rem 1.25rem;
+    background: var(--cream);
+    color: #161513;
+    font-family: var(--font-ui);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .hudbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid #1c1914;
+    font-family: var(--serif-note);
+    color: #1c1914;
+  }
+  .hudbar button, .readout { font-family: var(--mono); font-size: 12px; }
+  .hudbar button {
+    border: 1px solid #1c1914;
+    background: #1c1914;
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .readout { color: #5c564c; letter-spacing: .04em; }
+
+  .note {
+    background: var(--note);
+    color: #1c1914;
+    font-family: var(--serif-note);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .note main { max-width: 640px; margin: 0 auto; padding: 40px 24px 40px; }
+  .note h1 { font-weight: 400; font-size: 28px; letter-spacing: -.02em; margin: 0 0 8px; }
+  .note .sub { margin: 0 0 22px; font-style: italic; color: #5c564c; }
+  .note p { margin: 0 0 12px; }
+  .note h2 { font-size: 18px; font-weight: 500; color: var(--green); margin: 22px 0 8px; }
+  .note pre, .note code { font-family: var(--mono); }
+  .note pre {
+    background: #1c1914;
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .note ol { margin: 0 0 12px 1.15em; padding: 0; }
+  .note li { margin: 0 0 8px; }
+  .note a { color: inherit; }
+  .note figcaption { font-size: 13.5px; color: #5c564c; margin: 0 0 12px; }
+  footer.colophon {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    font-family: var(--serif-note);
+    font-size: 12.5px;
+    color: #5c564c;
+    background: var(--note);
+  }
+</style>
+</head>
+<body>
+<div class="studio">
+  <header class="head">
+    <h1 class="brand">the thoughtful list</h1>
+    <p class="credit">想法贴在墙上。谁来都能留一条。</p>
+  </header>
+  <div class="main">
+    <div class="bar">
+      <p><span id="count">0</span> thoughts added</p>
+      <span>SHOW ME: wall</span>
+    </div>
+    <div class="grid" id="grid" aria-label="Thoughtful notes"></div>
+  </div>
+</div>
+
+<button class="cta" id="cta" type="button" aria-label="add yours">
+  <span class="stack"><span class="front"><strong>add yours</strong><small>write a thought</small></span></span>
+  <svg class="pen" width="18" height="42" viewBox="0 0 24 110" aria-hidden="true">
+    <path d="M6 11 18 8l5 84-10 2Z" fill="#d4a556"/>
+    <path d="m13 94 10-2-4 13Z" fill="#e8dcc7"/>
+    <path d="m17.2 100.8 1.8 4.2-4.1-2.8Z" fill="#29251f"/>
+    <path d="M6 11 18 8l1 13-12 2Z" fill="#516b59"/>
+  </svg>
+</button>
+
+<div class="modal" id="modal" aria-hidden="true">
+  <button class="back" id="back" type="button" aria-label="close"></button>
+  <div class="panel" role="dialog" aria-labelledby="mtitle">
+    <button class="x" id="close" type="button" aria-label="close">×</button>
+    <h2 id="mtitle">add your note</h2>
+    <p class="sub">(be kind)</p>
+    <div class="preview" id="preview"></div>
+    <fieldset>
+      <legend>Paper color</legend>
+      <div class="colors" id="colors"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Tape</legend>
+      <div class="tapes" id="tapes"></div>
+    </fieldset>
+    <label class="field">Your note
+      <textarea id="body" rows="3" maxlength="120" placeholder="a small thing worth doing…"></textarea>
+    </label>
+    <div class="count"><span id="n">0</span>/120</div>
+    <label class="field">Your name (optional)
+      <input id="who" maxlength="32" placeholder="this will show up on the wall…" />
+    </label>
+    <button class="go" id="go" type="button">Submit</button>
+  </div>
+</div>
+
+<div class="hudbar">
+  <span class="readout" id="readout">墙上 0 条</span>
+  <button type="button" id="btnScatter">再散开</button>
+  <button type="button" id="btnWrite">写一条</button>
+</div>
+
+<section class="note">
+  <main>
+    <h1>想法贴在墙上。</h1>
+    <p class="sub">thoughtful.charmiekapoor.com。不是评论区。是一叠被胶带粘住的纸。</p>
+    <p>墙是 <code>#0e0d0c</code>，上面一层噪点。每张纸几乎是正方形，<code>aspect-ratio: 1 / 1.06</code>，自己歪 <code>--tilt</code>。纸心只占 86%。字用 Newsreader，最多 15ch，居中。作者淡一档。心在右下角。</p>
+    <figure>
+      <figcaption>图 1. 胶带是真图，不是 CSS 条。纸纹 <code>paper-fiber.webp</code>，multiply，透明度 0.62。颜色是两档渐变：正面一块，底下一块更暖。</figcaption>
+    </figure>
+    <p>进场时纸条从边上飞进来，0.78 秒，<code>cubic-bezier(.22, .86, .3, 1)</code>。停住以后，鼠标放上去才扳直，并抬高 5 像素。右下角那一叠「add yours」也是纸，铅笔会抬一下。</p>
+    <figure>
+      <figcaption>图 2. 写下的时候先看见纸条。选颜色、选胶带，字当场写在预览上。提交以后贴到墙上。这一页用本机记下，不连别人的库。</figcaption>
+    </figure>
+    <h2>下次怎么用</h2>
+    <ol>
+      <li>个人站、产品站，要人留一句话：做一面墙，不要做输入框列表。</li>
+      <li>每条想法是一张纸。纸要有纹、有胶带、有一点歪。</li>
+      <li>写下之前先让人看见自己的纸条。颜色和胶带是在选物件，不是在填表。</li>
+      <li>先存在这台电脑上。真要给所有访客看，再用你自己的库。不要抄别人的后台。</li>
+      <li>进场要能再播。心要能点。</li>
+    </ol>
+<pre>.card { aspect-ratio: 1 / 1.06; transform: rotate(var(--tilt)); }
+.card:hover { transform: rotate(0) translateY(-5px); }
+.paper {
+  width: 86%; height: 86%;
+  background: linear-gradient(200deg, var(--paper), var(--paper-warm));
+}
+.fiber { mix-blend-mode: multiply; opacity: .62; }
+@keyframes note-disperse {
+  from { transform: translate(var(--intro-x), var(--intro-y)) rotate(var(--intro-rotate)) scale(.94); }
+  to   { transform: rotate(var(--tilt)); }
+}</pre>
+    <p>原站：<a href="https://thoughtful.charmiekapoor.com/">thoughtful.charmiekapoor.com</a>。干净的个人页走 <a href="../you-find/index.html">living/you-find</a>。档案柜走 <a href="../mosby/index.html">living/mosby</a>。</p>
+  </main>
+</section>
+<footer class="colophon">
+  <p>范本：Charmie / The Thoughtful List。纸色、胶带、进场曲线从打包后的 CSS 读出。纸纹和六种胶带是原站图。示范句是标本自己写的，不是墙上 313 条的搬运。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const COLORS = [
+    { id: 'terracotta', paper: '#e5a789', warm: '#d59274' },
+    { id: 'ochre', paper: '#e1c17e', warm: '#cfab67' },
+    { id: 'sage', paper: '#bfceb2', warm: '#aabd9c' },
+    { id: 'sky', paper: '#abc1d8', warm: '#93adc8' },
+    { id: 'lilac', paper: '#c9b2cc', warm: '#b59bb9' }
+  ]
+  const TAPES = ['frosted', 'gingham', 'polka', 'linen', 'hearts', 'smiley']
+  const SEED = [
+    { t: '先让人摸到，再解释。', who: '艺书', color: 'sage', tape: 'gingham', hearts: 3 },
+    { t: 'stay simple', who: '', color: 'ochre', tape: 'linen', hearts: 1 },
+    { t: '留下一句就好，不用写长。', who: '访客', color: 'sky', tape: 'frosted', hearts: 2 },
+    { t: '产品做完的那天，记得谢谢昨天的自己。', who: '', color: 'lilac', tape: 'hearts', hearts: 4 },
+    { t: 'Life is too short, take that risk.', who: '', color: 'terracotta', tape: 'polka', hearts: 2 },
+    { t: '墙比评论区诚实。纸会歪。', who: '标本', color: 'sage', tape: 'smiley', hearts: 1 },
+    { t: 'Never Stop Learning', who: '', color: 'lilac', tape: 'gingham', hearts: 1 },
+    { t: 'rock bottom is a fertile ground', who: '', color: 'ochre', tape: 'linen', hearts: 1 },
+    { t: 'Every day it gets a little easier', who: 'Niral', color: 'sky', tape: 'frosted', hearts: 1 },
+    { t: 'appreciate people’s good work in public.', who: 'sanyam', color: 'sage', tape: 'polka', hearts: 4 }
+  ]
+  const TILTS = [-1.8, 1.2, -.6, 2, -1.4, .8, -2.1, 1.6, -.4, 1.1]
+  const KEY = 'ys-thoughtful-notes'
+  const grid = document.getElementById('grid')
+  const countEl = document.getElementById('count')
+  const readout = document.getElementById('readout')
+  const modal = document.getElementById('modal')
+  const preview = document.getElementById('preview')
+  const colorsEl = document.getElementById('colors')
+  const tapesEl = document.getElementById('tapes')
+  const body = document.getElementById('body')
+  const who = document.getElementById('who')
+  const n = document.getElementById('n')
+
+  let notes = []
+  let draft = { color: 'terracotta', tape: 'frosted' }
+
+  function load() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEY) || 'null')
+      if (Array.isArray(raw) && raw.length) return raw
+    } catch (e) {}
+    return SEED.map((x, i) => Object.assign({ id: 's' + i }, x))
+  }
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(notes))
+  }
+  function colorOf(id) {
+    return COLORS.find((c) => c.id === id) || COLORS[0]
+  }
+
+  function cardHTML(note, i) {
+    const c = colorOf(note.color)
+    const tilt = TILTS[i % TILTS.length]
+    const liked = !!note.liked
+    return '<article class="card" style="--paper:' + c.paper + ';--paper-warm:' + c.warm + ';--tilt:' + tilt + 'deg;--intro-delay:' + (i * 0.045) + 's;--intro-x:' + (i % 2 ? 42 : -36) + 'px;--intro-y:' + (18 + (i % 5) * 10) + 'px;--intro-rotate:' + (tilt * 4) + 'deg;--fiber-x:' + (20 + (i * 13) % 60) + '%;--fiber-y:' + (15 + (i * 9) % 50) + '%">' +
+      '<img class="tape" src="assets/tape-' + note.tape + '.webp" alt="" />' +
+      '<div class="paper"><span class="fiber"></span><span class="grain"></span>' +
+      '<p class="txt">' + escape(note.t) + '</p>' +
+      (note.who ? '<p class="by">— ' + escape(note.who) + '</p>' : '') +
+      '</div>' +
+      '<button class="heart' + (liked ? ' is-on' : '') + '" type="button" data-id="' + note.id + '" aria-label="Give a heart">' +
+      '<svg viewBox="0 0 16 16" fill="' + (liked ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.3"><path d="M8 13.4s-5.2-3.2-5.2-6.2A2.7 2.7 0 0 1 8 5.2a2.7 2.7 0 0 1 5.2 2c0 3-5.2 6.2-5.2 6.2Z"/></svg>' +
+      '<span>' + (note.hearts || 0) + '</span></button></article>'
+  }
+
+  function escape(s) {
+    return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]))
+  }
+
+  function paintWall(scatter) {
+    grid.innerHTML = notes.map(cardHTML).join('')
+    countEl.textContent = notes.length
+    readout.textContent = '墙上 ' + notes.length + ' 条'
+    if (scatter) {
+      requestAnimationFrame(() => {
+        [...grid.children].forEach((el) => {
+          el.classList.remove('is-in')
+          void el.getBoundingClientRect()
+          el.classList.add('is-in')
+        })
+      })
+    }
+  }
+
+  function paintDraft() {
+    const c = colorOf(draft.color)
+    const text = body.value.trim() || 'a small thing worth doing…'
+    preview.innerHTML = '<div class="paper" style="--paper:' + c.paper + ';--paper-warm:' + c.warm + '">' +
+      '<span class="fiber"></span><span class="grain"></span>' +
+      '<img class="tape" src="assets/tape-' + draft.tape + '.webp" alt="" />' +
+      '<p class="txt">' + escape(text) + '</p></div>'
+    n.textContent = body.value.length
+    ;[...colorsEl.children].forEach((b) => b.classList.toggle('is-on', b.dataset.id === draft.color))
+    ;[...tapesEl.children].forEach((b) => b.classList.toggle('is-on', b.dataset.id === draft.tape))
+  }
+
+  function openModal() {
+    modal.classList.add('is-open')
+    modal.setAttribute('aria-hidden', 'false')
+    paintDraft()
+    body.focus()
+  }
+  function closeModal() {
+    modal.classList.remove('is-open')
+    modal.setAttribute('aria-hidden', 'true')
+  }
+
+  COLORS.forEach((c) => {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.className = 'swatch'
+    b.dataset.id = c.id
+    b.style.setProperty('--sw', c.paper)
+    b.addEventListener('click', () => { draft.color = c.id; paintDraft() })
+    colorsEl.appendChild(b)
+  })
+  TAPES.forEach((id) => {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.className = 'tape-pick'
+    b.dataset.id = id
+    b.innerHTML = '<img src="assets/tape-' + id + '.webp" alt="" />' + id
+    b.addEventListener('click', () => { draft.tape = id; paintDraft() })
+    tapesEl.appendChild(b)
+  })
+
+  notes = load()
+  paintWall(true)
+
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.heart')
+    if (!btn) return
+    const note = notes.find((x) => x.id === btn.dataset.id)
+    if (!note) return
+    note.liked = !note.liked
+    note.hearts = Math.max(0, (note.hearts || 0) + (note.liked ? 1 : -1))
+    save()
+    paintWall(false)
+  })
+
+  document.getElementById('cta').addEventListener('click', openModal)
+  document.getElementById('btnWrite').addEventListener('click', openModal)
+  document.getElementById('back').addEventListener('click', closeModal)
+  document.getElementById('close').addEventListener('click', closeModal)
+  document.getElementById('btnScatter').addEventListener('click', () => paintWall(true))
+  body.addEventListener('input', paintDraft)
+  document.getElementById('go').addEventListener('click', () => {
+    const t = body.value.trim()
+    if (!t) { body.focus(); return }
+    notes.unshift({
+      id: 'n' + Date.now(),
+      t: t.slice(0, 120),
+      who: who.value.trim().slice(0, 32),
+      color: draft.color,
+      tape: draft.tape,
+      hearts: 0
+    })
+    save()
+    body.value = ''
+    who.value = ''
+    closeModal()
+    paintWall(false)
+    const first = grid.firstElementChild
+    if (first) {
+      first.style.setProperty('--intro-x', '0px')
+      first.style.setProperty('--intro-y', '28px')
+      first.style.setProperty('--intro-rotate', '-8deg')
+      first.style.setProperty('--intro-delay', '0s')
+      first.classList.remove('is-in')
+      void first.getBoundingClientRect()
+      first.classList.add('is-in')
+    }
+  })
+})()
+</script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>花落，字干净</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Inter:ital,wght@0,400;0,500;0,600;1,400&family=Fira+Code:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=Newsreader:ital,wght@1,400;1,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #ededed;
+    --ink: rgb(8, 9, 10);
+    --mute: oklab(0.56 0 0 / 0.6);
+    --note: #f4efe4;
+    --green: #2f6b4f;
+    --serif-note: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --sans: Inter, "Noto Sans SC", "PingFang SC", sans-serif;
+    --italic: Newsreader, "Noto Serif SC", Georgia, serif;
+    --mono: "Fira Code", ui-monospace, Menlo, monospace;
+    --hand: "Dancing Script", cursive;
+    --col: 624px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--page); }
+  body { color: var(--ink); font-family: var(--sans); }
+
+  .studio {
+    position: relative;
+    min-height: calc(100svh - 48px);
+    background: var(--page);
+    color: var(--ink);
+    overflow: hidden;
+  }
+  .petals {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .studio.is-still .petals { display: none; }
+  @keyframes petal-fall {
+    0% { opacity: 0; transform: translateY(-8vh); }
+    8% { opacity: 1; transform: translateY(4vh); }
+    92% { opacity: .85; transform: translateY(96vh); }
+    to { opacity: 0; transform: translateY(110vh); }
+  }
+  @keyframes petal-sway {
+    0% { transform: translate(-28px) rotate(0); }
+    to { transform: translate(28px) rotate(180deg); }
+  }
+
+  .col {
+    position: relative;
+    z-index: 2;
+    width: min(var(--col), calc(100% - 40px));
+    margin: 0 auto;
+    padding: 72px 0 88px;
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 0 36px;
+  }
+  .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .who img {
+    width: 56px; height: 56px; border-radius: 999px;
+    object-fit: cover; display: block;
+  }
+  .who a {
+    display: block;
+    font-size: 20px;
+    line-height: 30px;
+    font-weight: 500;
+    color: inherit;
+    text-decoration: none;
+  }
+  .who .role { margin: 0; font-size: 14px; line-height: 21px; }
+
+  .sig { height: 40px; width: auto; color: var(--ink); flex: 0 0 auto; }
+  .sig .wipe {
+    transform: scaleX(0);
+    transform-box: fill-box;
+    transform-origin: left center;
+  }
+  .sig.is-on .wipe {
+    transform: scaleX(1);
+    transition: transform 1.8s cubic-bezier(0.35, 0, 0.15, 1) 0.15s;
+  }
+
+  .bio { font-size: 15px; line-height: 24.375px; }
+  .bio p { margin: 0 0 16px; }
+  .bio em {
+    font-family: var(--italic);
+    font-style: italic;
+    font-weight: 400;
+  }
+  .bio a {
+    color: inherit;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    text-decoration-color: rgba(8, 9, 10, .35);
+  }
+
+  .series { margin: 36px 0 0; }
+  .series h2 {
+    margin: 0 0 10px;
+    font-family: var(--italic);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 28px;
+  }
+  .series ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 32px;
+    border-top: 1px solid rgba(8, 9, 10, .08);
+  }
+  .series li {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(8, 9, 10, .08);
+  }
+  .series .name {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    color: inherit;
+  }
+  .series .desc {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--mute);
+  }
+  @media (max-width: 640px) {
+    .series ul { grid-template-columns: 1fr; }
+    .head { align-items: flex-start; }
+    .sig { height: 32px; }
+  }
+
+  .term-btn {
+    position: fixed;
+    right: 22px;
+    bottom: 64px;
+    z-index: 8;
+    width: 64px;
+    height: 64px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 999px;
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    cursor: pointer;
+    font: 500 18px/1 var(--mono);
+  }
+  .term {
+    display: none;
+    position: fixed;
+    left: 50%;
+    top: 18%;
+    transform: translateX(-50%);
+    width: min(720px, calc(100% - 32px));
+    z-index: 9;
+    background: #1a1a1a;
+    color: #d6d6d6;
+    border-radius: 10px;
+    overflow: hidden;
+    font: 13px/1.55 var(--mono);
+    box-shadow: none;
+    border: 1px solid #111;
+  }
+  .term.is-open { display: block; }
+  .term .bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #2a2a2a;
+    color: #bbb;
+    font-size: 12px;
+  }
+  .term .dot { width: 10px; height: 10px; border-radius: 99px; background: #555; }
+  .term .dot.r { background: #ff5f57; }
+  .term .dot.y { background: #febc2e; }
+  .term .dot.g { background: #28c840; }
+  .term pre {
+    margin: 0;
+    padding: 14px 16px 18px;
+    white-space: pre-wrap;
+    font: inherit;
+    color: #cfcfcf;
+  }
+  .term .g { color: #3ddc84; }
+  .term .w { color: #fff; }
+
+  .hudbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid #1c1914;
+    font-family: var(--serif-note);
+  }
+  .hudbar button, .readout {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .hudbar button {
+    border: 1px solid #1c1914;
+    background: #1c1914;
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: #5c564c;
+  }
+  .readout { color: #5c564c; letter-spacing: .04em; }
+
+  .note {
+    background: var(--note);
+    color: #1c1914;
+    font-family: var(--serif-note);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .note main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 24px 96px;
+  }
+  .note h1 {
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  .note .sub { margin: 0 0 22px; font-style: italic; color: #5c564c; }
+  .note p { margin: 0 0 12px; }
+  .note h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--green);
+    margin: 22px 0 8px;
+  }
+  .note pre, .note code { font-family: var(--mono); }
+  .note pre {
+    background: #1c1914;
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .note ol { margin: 0 0 12px 1.15em; padding: 0; }
+  .note li { margin: 0 0 8px; }
+  .note a { color: inherit; }
+  footer.colophon {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    font-family: var(--serif-note);
+    font-size: 12.5px;
+    color: #5c564c;
+    background: var(--note);
+  }
+</style>
+</head>
+<body>
+<div class="studio" id="studio">
+  <div class="petals" id="petals" aria-hidden="true"></div>
+  <div class="col">
+    <div class="head">
+      <div class="who">
+        <img src="assets/avatar.jpg" alt="" />
+        <div>
+          <a href="https://github.com/Pleasurecruise" target="_blank" rel="noreferrer">@Pleasure1234</a>
+          <p class="role">全栈开发者</p>
+        </div>
+      </div>
+      <svg class="sig" id="sig" viewBox="0 0 310 65" aria-label="Pleasure1234">
+        <defs>
+          <clipPath id="sig-clip">
+            <rect class="wipe" x="0" y="-8" width="310" height="80"></rect>
+          </clipPath>
+        </defs>
+        <text x="306" y="50" text-anchor="end" fill="currentColor" opacity="0.08"
+          font-family="Dancing Script, cursive" font-size="44" font-weight="600">Pleasure1234</text>
+        <text x="306" y="50" text-anchor="end" fill="currentColor" clip-path="url(#sig-clip)"
+          font-family="Dancing Script, cursive" font-size="44" font-weight="600">Pleasure1234</text>
+      </svg>
+    </div>
+    <div class="bio">
+      <p>不足之处 敬请谅解</p>
+      <p>就读于 <a href="https://www.nottingham.ac.uk/">UoN</a> 的计算机科学学生，在<em>full-stack</em>开发和<em>AI</em>技术方面有实践经验。活跃于开源项目贡献者，主要为 <a href="https://github.com/CherryHQ/cherry-studio">Cherry Studio</a> 贡献代码。</p>
+      <p>离开键盘后，我喜欢骑公路车、沉浸在音乐里、或者沉迷于开放世界游戏。我是<em>hackathon</em>爱好者。</p>
+    </div>
+    <div class="series">
+      <h2>我的系列</h2>
+      <ul>
+        <li>
+          <a class="name" href="https://you-find.me/">my-profile</a>
+          <p class="desc">Personal website &amp; portfolio</p>
+        </li>
+        <li>
+          <a class="name" href="https://github.com/Pleasurecruise/my-monorepo">my-monorepo</a>
+          <p class="desc">AI infra monorepo template</p>
+        </li>
+        <li>
+          <a class="name" href="https://memos.you-find.me/">my-memos</a>
+          <p class="desc">My digital memos &amp; notes</p>
+        </li>
+        <li>
+          <a class="name" href="https://github.com/Pleasurecruise/my-env">my-env</a>
+          <p class="desc">Dev environment with Docker</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <button type="button" class="term-btn" id="btnTerm" aria-label="Toggle terminal">&gt;_</button>
+  <div class="term" id="term" role="dialog" aria-label="terminal">
+    <div class="bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span>pleasure1234@website:~</span>
+    </div>
+    <pre><span class="w">Welcome to</span> <span class="g">Pleasure1234's Website</span>
+$ /whoami
+Hi. Pleasure1234. Nottingham. Computer Science.
+
+Type <span class="g">/help</span> to see commands.
+
+<span class="g">pleasure1234@website:~$</span></pre>
+  </div>
+</div>
+
+<div class="hudbar">
+  <span class="readout" id="readout">花瓣 18 · 签名 1.8s</span>
+  <button type="button" id="btnPetal" aria-pressed="true">花瓣</button>
+  <button type="button" id="btnSig">再写签名</button>
+  <button type="button" id="btnTerm2" aria-pressed="false">终端</button>
+</div>
+
+<section class="note">
+  <main>
+    <h1>花落，字干净。</h1>
+    <p class="sub">you-find.me。不是模板，是一张灰纸，字自己站稳。</p>
+    <p>底是 <code>#ededed</code>。栏宽 624。正文 Inter / Noto Sans SC，15 / 24.4。英文词换成 Newsreader 斜体。节标题也是它，18，只斜不加粗到失控。</p>
+    <p>名字不是 Logo。Dancing Script 44，右边先放一层 8% 的影子，再用 clip-path 从左往右揭开。1.8 秒，<code>cubic-bezier(0.35, 0, 0.15, 1)</code>，晚 0.15 秒。错过了按「再写签名」。</p>
+    <p>花瓣 18 片。颜色只有那五只粉。落下 10–22 秒，左右晃 28 像素。CSS，不是 WebGL。</p>
+    <h2>下次怎么用</h2>
+    <ol>
+      <li>个人页先定一张灰纸和一条 624 的栏。不要卡片。</li>
+      <li>中文用无衬线。夹进来的英文词用斜体衬线。</li>
+      <li>手写只写名字。用揭开，不要每帧重绘路径。</li>
+      <li>气氛用会落的东西，不要大背景图。</li>
+      <li>终端是另一副嗓子。要能再打开。</li>
+    </ol>
+<pre>.page { background: #ededed; color: rgb(8, 9, 10); }
+.col { width: 624px; }
+.bio { font: 400 15px/24.375px Inter, "Noto Sans SC", sans-serif; }
+.bio em { font-family: Newsreader, serif; font-style: italic; }
+h2 { font: italic 600 18px/28px Newsreader, serif; }
+/* 签名 */
+.wipe { transform: scaleX(0); transform-origin: left center; transform-box: fill-box; }
+.is-on .wipe { transform: scaleX(1); transition: transform 1.8s cubic-bezier(0.35, 0, 0.15, 1) .15s; }
+/* 花瓣 */
+@keyframes petal-fall {
+  0% { opacity: 0; transform: translateY(-8vh); }
+  8% { opacity: 1; }
+  to { opacity: 0; transform: translateY(110vh); }
+}</pre>
+    <p>原站：<a href="https://you-find.me/">you-find.me</a>。网页长读仍走 <a href="../type/index.html">living/type</a>。论文双栏走 <a href="../bunsen/index.html">living/bunsen</a>。</p>
+  </main>
+</section>
+<footer class="colophon">
+  <p>范本：Pleasure1234 / you-find.me。花瓣与签名数字从打包后的 JS 读出。头像是原站在用的 GitHub 图。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const COLORS = ['#ffb7c5', '#ffc8d5', '#ff9ebc', '#ffdde6', '#f9a8c9']
+  const PATH = 'M12 27C7.5 27 3 22.5 3 16.5C3 10 7 3 12 2C17 3 21 10 21 16.5C21 22.5 16.5 27 12 27Z'
+  const petals = document.getElementById('petals')
+  const studio = document.getElementById('studio')
+  const sig = document.getElementById('sig')
+  const term = document.getElementById('term')
+  const btnPetal = document.getElementById('btnPetal')
+  const btnSig = document.getElementById('btnSig')
+  const btnTerm = document.getElementById('btnTerm')
+  const btnTerm2 = document.getElementById('btnTerm2')
+  const readout = document.getElementById('readout')
+
+  function plant() {
+    petals.innerHTML = ''
+    for (let i = 0; i < 18; i++) {
+      const left = Math.random() * 100
+      const size = 8 + Math.random() * 10
+      const color = COLORS[i % COLORS.length]
+      const fall = 10 + Math.random() * 12
+      const delay = Math.random() * 16 - 10
+      const sway = 2.5 + Math.random() * 3
+      const rot = Math.random() * 360
+      const wrap = document.createElement('div')
+      wrap.style.cssText = 'position:absolute;top:0;left:' + left + '%;animation:petal-fall ' + fall + 's ' + delay + 's linear infinite backwards'
+      const inner = document.createElement('div')
+      inner.style.cssText = 'animation:petal-sway ' + sway + 's ease-in-out infinite alternate'
+      inner.innerHTML = '<svg width="' + size + '" height="' + (size * 1.3) + '" viewBox="0 0 24 30" style="transform:rotate(' + rot + 'deg);opacity:.78"><path d="' + PATH + '" fill="' + color + '"/><path d="' + PATH + '" fill="white" opacity="0.18"/></svg>'
+      wrap.appendChild(inner)
+      petals.appendChild(wrap)
+    }
+  }
+
+  function writeSig() {
+    sig.classList.remove('is-on')
+    void sig.getBoundingClientRect()
+    requestAnimationFrame(() => sig.classList.add('is-on'))
+  }
+
+  function paint() {
+    const still = studio.classList.contains('is-still')
+    const open = term.classList.contains('is-open')
+    btnPetal.setAttribute('aria-pressed', still ? 'false' : 'true')
+    btnTerm2.setAttribute('aria-pressed', open ? 'true' : 'false')
+    readout.textContent = (still ? '花瓣关' : '花瓣 18') + ' · 签名 1.8s' + (open ? ' · 终端开' : '')
+  }
+
+  function toggleTerm() {
+    term.classList.toggle('is-open')
+    paint()
+  }
+
+  btnPetal.addEventListener('click', () => {
+    studio.classList.toggle('is-still')
+    if (!studio.classList.contains('is-still')) plant()
+    paint()
+  })
+  btnSig.addEventListener('click', writeSig)
+  btnTerm.addEventListener('click', toggleTerm)
+  btnTerm2.addEventListener('click', toggleTerm)
+
+  plant()
+  writeSig()
+  paint()
+})()
+</script>
+</body>
+</html>

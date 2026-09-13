@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>第一屏不是作品墙 · Tubik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gray: #f4f4f4;
+    --ink: #000;
+    --blue: #4c32ff;
+    --frost: rgba(236, 236, 236, .4);
+    --note: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --sans: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+    --serif-note: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --mono: ui-monospace, Menlo, monospace;
+    --ease: cubic-bezier(.215, .61, .355, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--note); }
+  body {
+    color: var(--note-ink);
+    font-family: var(--serif-note);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .studio {
+    position: relative;
+    height: calc(100svh - 48px);
+    background: var(--gray);
+    color: var(--ink);
+    overflow: hidden;
+    font-family: var(--sans);
+  }
+
+  .top {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 6.15vw;
+    padding: 0 3.1vw;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: .8vw;
+    color: inherit;
+    text-decoration: none;
+  }
+  .brand img { height: 2.35vw; width: auto; display: block; }
+  .brand span {
+    font-size: 1.7vw;
+    font-weight: 400;
+    letter-spacing: -.03em;
+    line-height: 1;
+  }
+  .menu {
+    display: flex;
+    align-items: center;
+    gap: 1.7vw;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .end {
+    display: flex;
+    align-items: center;
+    gap: 1.4vw;
+  }
+  .ua {
+    border: .05vw solid var(--ink);
+    border-radius: 100vw;
+    padding: .18vw .8vw .12vw;
+    font-size: 1vw;
+    line-height: 1.6;
+  }
+  .nav-a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 300;
+    font-size: 2vw;
+    line-height: 1;
+    letter-spacing: -1px;
+    height: 2.15vw;
+    overflow: hidden;
+    display: block;
+    white-space: nowrap;
+  }
+  .nav-a.is-blue { color: var(--blue); }
+  .slide {
+    display: block;
+    font-size: 2vw;
+    line-height: 2.15vw;
+    font-weight: 300;
+    letter-spacing: -1px;
+    transition: transform .2s var(--ease);
+  }
+  .studio.is-slide .nav-a:hover .slide { transform: translateY(-50%); }
+  .studio:not(.is-slide) .dup { display: none; }
+  .studio:not(.is-slide) .nav-a { overflow: visible; height: auto; }
+
+  .stage {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    padding: 4vw 7.813vw 6vw 5.729vw;
+    padding-top: 7.2vw;
+  }
+  .copy { flex: 1 1 0; min-width: 0; }
+  .kicker {
+    margin: 0 0 0 10.5vw;
+    font-size: .833vw;
+    letter-spacing: .1vw;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 1.2;
+  }
+  .lines { margin: 2.083vw 0 3.125vw; }
+  .line {
+    margin: 0;
+    font-size: 6.25vw;
+    font-weight: 300;
+    letter-spacing: -.2vw;
+    line-height: 95%;
+    width: max-content;
+  }
+  .studio.is-stagger .line.b1 { margin-left: 6.3vw; }
+  .studio.is-stagger .line.b2 { margin-left: 1.5vw; }
+  .studio.is-stagger .line.b3 { margin-left: 8.5vw; }
+
+  .awards {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 6vw;
+    width: fit-content;
+  }
+  .awards p {
+    margin: 0;
+    font-size: .7vw;
+    letter-spacing: .05vw;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .marks {
+    display: flex;
+    align-items: center;
+    gap: 4.4vw;
+    margin-top: 1.6vw;
+    padding-left: 1.6vw;
+  }
+  .marks img { display: block; }
+  .marks .webby { width: 4.4vw; }
+  .marks .reddot { width: 2.5vw; }
+  .marks .fwa { width: 5.2vw; }
+  .marks .aww { width: 3.1vw; }
+  .marks .good { width: 2.3vw; }
+
+  .reel {
+    position: relative;
+    width: 37vw;
+    height: 37vw;
+    flex: 0 0 auto;
+    border-radius: .85vw;
+    overflow: hidden;
+    background: #e8d3c0;
+    cursor: none;
+  }
+  .reel video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .studio:not(.is-play) .reel { cursor: default; }
+  .play {
+    position: absolute;
+    left: 42%;
+    top: 48%;
+    width: 6.25vw;
+    height: 6.25vw;
+    border-radius: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--frost);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transform: translate(-50%, -50%) scale(.9);
+    pointer-events: none;
+    z-index: 5;
+    will-change: transform, left, top;
+  }
+  .play img { width: 70%; height: auto; display: block; }
+
+  .hudbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-bottom: 1px solid var(--note-ink);
+  }
+  .hud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .hud button {
+    font-family: var(--sans);
+    font-size: 13px;
+    border: 1px solid var(--note-ink);
+    background: var(--note-ink);
+    color: var(--note);
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hud button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .readout {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 8px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 20px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  figure { margin: 0 0 16px; }
+  figure img, figure video {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--note-ink);
+    background: #fff;
+  }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .thumbs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .thumbs figure { margin: 0; }
+  .thumbs img { height: 220px; object-fit: cover; }
+  .prose { max-width: 38rem; }
+  pre, code { font-family: var(--mono); }
+  pre {
+    background: var(--note-ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--note-ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  .parts { margin: 0 0 18px 1.15em; padding: 0; }
+  .parts li { margin: 0 0 6px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+
+  @media (max-width: 900px) {
+    .menu, .ua { display: none; }
+    .brand span { font-size: 18px; }
+    .brand img { height: 28px; }
+    .top { height: 56px; padding: 0 18px; }
+    .stage {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 22px;
+      padding: 72px 20px 28px;
+      overflow: auto;
+    }
+    .copy { width: 100%; }
+    .kicker { margin-left: 0; font-size: 11px; letter-spacing: .12em; text-align: center; }
+    .lines { margin: 10px 0 18px; text-align: left; }
+    .line { font-size: 12vw; }
+    .studio.is-stagger .line.b1 { margin-left: 8vw; }
+    .studio.is-stagger .line.b2 { margin-left: 2vw; }
+    .studio.is-stagger .line.b3 { margin-left: 12vw; }
+    .awards { margin-left: 0; width: 100%; }
+    .awards p { font-size: 10px; }
+    .marks { gap: 18px; padding-left: 0; justify-content: center; }
+    .marks .webby { width: 52px; }
+    .marks .reddot { width: 30px; }
+    .marks .fwa { width: 62px; }
+    .marks .aww { width: 38px; }
+    .marks .good { width: 28px; }
+    .reel { width: min(88vw, 420px); height: min(88vw, 420px); }
+    .play { width: 72px; height: 72px; }
+    .nav-a { height: 22px; font-size: 18px; }
+    .slide { font-size: 18px; line-height: 22px; }
+    .readout { display: none; }
+    .pair, .thumbs { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+</style>
+</head>
+<body>
+<section class="studio is-play is-stagger is-slide" id="hero">
+  <header class="top" id="nav">
+    <a class="brand" href="https://tubikstudio.com/" rel="noreferrer">
+      <img src="assets/logo.svg" alt="" />
+      <span>tubik</span>
+    </a>
+    <nav class="menu">
+      <a class="nav-a" href="https://tubikstudio.com/works"><span class="slide">work<span class="dup"><br>work</span></span></a>
+      <a class="nav-a" href="https://tubikstudio.com/services"><span class="slide">services<span class="dup"><br>services</span></span></a>
+      <a class="nav-a" href="https://tubikstudio.com/company"><span class="slide">about<span class="dup"><br>about</span></span></a>
+      <a class="nav-a" href="https://blog.tubikstudio.com/"><span class="slide">blog<span class="dup"><br>blog</span></span></a>
+      <a class="nav-a" href="https://lab.tubikstudio.com/"><span class="slide">lab<span class="dup"><br>lab</span></span></a>
+    </nav>
+    <div class="end">
+      <span class="ua">UA</span>
+      <a class="nav-a is-blue" href="https://tubikstudio.com/contact"><span class="slide">contact us<span class="dup"><br>contact us</span></span></a>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="copy" id="lines">
+      <p class="kicker">We are a design studio</p>
+      <div class="lines">
+        <h1 class="line b1">Crafting</h1>
+        <h1 class="line b2">UX design</h1>
+        <h1 class="line b3">and brands</h1>
+      </div>
+      <div class="awards" id="awards">
+        <p>Practice, excellence, recognition</p>
+        <div class="marks">
+          <img class="webby" src="assets/webby.svg" alt="The Webby Awards" />
+          <img class="reddot" src="assets/reddot.svg" alt="Red Dot" />
+          <img class="fwa" src="assets/fwa.svg" alt="FWA" />
+          <img class="aww" src="assets/awwwards.svg" alt="Awwwards" />
+          <img class="good" src="assets/good-design.png" alt="Good Design Award" />
+        </div>
+      </div>
+    </div>
+    <div class="reel" id="reel">
+      <video id="tape" muted loop playsinline autoplay poster="assets/showreel-poster.avif">
+        <source src="assets/showreel.mp4" type="video/mp4" />
+      </video>
+      <div class="play" id="play" aria-hidden="true">
+        <img src="assets/play.svg" alt="" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hudbar">
+  <div class="readout" id="readout">片子在转 · 三行错开 · 词会滑</div>
+  <div class="hud">
+    <button type="button" id="btnPlay" aria-pressed="true">片子在转</button>
+    <button type="button" id="btnStagger" aria-pressed="true">三行错位</button>
+    <button type="button" id="btnSlide" aria-pressed="true">词会滑</button>
+  </div>
+</div>
+
+<header class="mast">
+  <h1>第一屏不是作品墙。</h1>
+  <p class="sub">Tubik Studio 首页。样本：tubikstudio.com</p>
+</header>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>你打开就是这个</h3>
+      <p class="drop">浅灰整屏。左边三行大字，右边一块圆角方片子正在播。奖项很小，排在声明下面。上面那条导航，词很大，contact us 是唯一的蓝。</p>
+      <p>看起来像贴纸墙，像三维。打开上面那一段：没有 canvas，没有 Three。片子是他们烤好的 1080 方 MP4。</p>
+    </div>
+    <figure>
+      <img src="assets/source.jpg" alt="Tubik 首页第一屏：声明在左，方片子在右" />
+      <figcaption><strong>图 1.</strong> 原站这一屏。灰底 <code>#F4F4F4</code>。片子 37vw 见方，圆角 0.85vw。蓝只有 contact us，<code>#4C32FF</code>。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>看见什么 / 是不是三维 / 数字 / 图从哪来</h3>
+    <p>看见：一句工作室声明，一块正在播的作品。不是案例网格。</p>
+    <p>不是三维。WebGL 零。GSAP 有，用来滑导航、跟鼠标。立体来自片子里的道具，不来自浏览器。</p>
+    <p>整站字号跟 <code>1vw</code> 走。标题 6.25vw，行高 95%，字距 -0.2vw。三行不是居中，也不是右齐，是三条手写的左边距：6.3 / 1.5 / 8.5 vw。</p>
+    <p>图从原站下载。标志、奖项、播放钮、showreel 都是他们的文件。原字体是 TWK Lausanne。这页用免费的 Inter Tight 顶上，数字没改。</p>
+  </div>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>工作室首页先说话，再给一块正在动的证据。不要一上来铺十二张案例卡。
+  </aside>
+
+  <div class="prose">
+    <h3>三台小机器</h3>
+    <p>上面那一屏同时开着三件事。页顶三个按钮可以单独关掉。</p>
+    <p><b>片子在转。</b>视频 1080×1080，<code>object-fit: cover</code> 填进 37vw 的方盒。静音、循环。玻璃圆钮 6.25vw，底 <code>rgba(236,236,236,.4)</code> 加 20px 模糊。鼠标进方盒，钮跟着走，自己的箭头藏起来。</p>
+    <p><b>三行错位。</b>三个独立的 <code>h1</code>，class 叫 b1 b2 b3。关掉按钮，三行回到同一条左边。你会看见：错位才是那句「Crafting UX design and brands」的形状，不是字本身。</p>
+    <p><b>词会滑。</b>每个导航词写两遍，中间一个 <code>&lt;br&gt;</code>。盒子 <code>overflow: hidden</code>，只露出一行。悬停把整块上移 50%。缓动 <code>cubic-bezier(.215, .61, .355, 1)</code>，0.2 秒。原站把同一套用在 contact us 上，颜色换成蓝。</p>
+  </div>
+
+  <div class="prose">
+    <h3>一次只收这一个</h3>
+    <p>往下滚，原站还有观点笔记横滑、作品墙、客户栏。那是下一篇。作品墙标题到 10vw，封面是视频。Mosby’s Files 已经收过，在 <a href="../mosby/index.html">living/mosby</a>。</p>
+  </div>
+
+  <div class="thumbs">
+    <figure>
+      <img src="assets/work-alabama.jpg" alt="The Alabama Solution 案例封面" />
+      <figcaption><strong>图 2.</strong> 下一篇才收：作品墙封面。这张是 HBO 调查页 The Alabama Solution。</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/work-mosby.jpg" alt="Mosby’s Files 案例封面" />
+      <figcaption><strong>图 3.</strong> 同一家做的档案柜。活笔记已经在 mosby，不必在这页再做一遍。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>可拆</h3>
+    <ul class="parts">
+      <li><a href="#hero">整屏发明</a>：声明在左，方片子在右。</li>
+      <li><a href="#lines">三行错位</a>：标题用手推左边距，不要自动排版。</li>
+      <li><a href="#reel">方片子</a>：圆角方盒 + 循环片 + 玻璃播放钮跟鼠标。</li>
+      <li><a href="#nav">导航滑词</a>：一词写两遍，盒子只露一行。</li>
+      <li><a href="#awards">奖项横排</a>：声明下面一排小标，不是 marquee。</li>
+    </ul>
+  </div>
+
+  <div class="recipe">
+    <h3>配方</h3>
+    <ol class="how">
+      <li>底 <code>#F4F4F4</code>。导航透明覆在上面，高 6.15vw，左右垫 3.1vw。</li>
+      <li>主区 <code>display: flex; justify-content: space-between; align-items: center</code>。左垫 5.729vw，右垫 7.813vw。</li>
+      <li>标题 6.25vw / 行高 95% / 字距 -0.2vw。三行左边距 6.3、1.5、8.5 vw。</li>
+      <li>小标 0.833vw，大写，字距 0.1vw，左边距 10.5vw。</li>
+      <li>奖项区整体左移 6vw，标 0.7vw，logo 缝 4.4vw。</li>
+      <li>片子盒 37vw 见方，圆角 0.85vw，<code>overflow: hidden</code>。</li>
+      <li>播放钮 6.25vw 圆，毛玻璃。鼠标在盒内时，中心跟着走。</li>
+      <li>导航词 2vw，字重 300。盒子高约 2.15vw，里面叠两行，悬停 <code>translateY(-50%)</code>。</li>
+      <li>蓝只给 contact us：<code>#4C32FF</code>。</li>
+    </ol>
+<pre>.studio { background: #F4F4F4; }
+.line { font-size: 6.25vw; line-height: 95%; letter-spacing: -.2vw; }
+.b1 { margin-left: 6.3vw; }
+.b2 { margin-left: 1.5vw; }
+.b3 { margin-left: 8.5vw; }
+.reel { width: 37vw; height: 37vw; border-radius: .85vw; overflow: hidden; }
+.play {
+  width: 6.25vw; height: 6.25vw; border-radius: 100vw;
+  background: rgba(236,236,236,.4); backdrop-filter: blur(20px);
+}
+.nav-a { height: 2.15vw; overflow: hidden; font-size: 2vw; font-weight: 300; }
+.nav-a:hover .slide { transform: translateY(-50%); }
+.contact { color: #4C32FF; }</pre>
+    <p>原站是 Webflow，字体 Lausanne。做自己的工作室首页：先写三行声明，再放一块自己的方片子。不要先铺作品墙。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本：<a href="https://tubikstudio.com/">tubikstudio.com</a> 首页 <code>.hero-section_home</code>。字体原是 TWK Lausanne / Lausanne 300，这页用 Inter Tight 代替。</p>
+  <p>同一工作室的档案柜：<a href="../mosby/index.html">案子是文件夹</a> · 货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const studio = document.getElementById("hero")
+  const tape = document.getElementById("tape")
+  const reel = document.getElementById("reel")
+  const play = document.getElementById("play")
+  const readout = document.getElementById("readout")
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+  const flags = { play: !reduce, stagger: true, slide: true }
+
+  function sync() {
+    studio.classList.toggle("is-play", flags.play)
+    studio.classList.toggle("is-stagger", flags.stagger)
+    studio.classList.toggle("is-slide", flags.slide)
+    document.getElementById("btnPlay").setAttribute("aria-pressed", String(flags.play))
+    document.getElementById("btnStagger").setAttribute("aria-pressed", String(flags.stagger))
+    document.getElementById("btnSlide").setAttribute("aria-pressed", String(flags.slide))
+    if (flags.play) tape.play().catch(function () {})
+    else tape.pause()
+    const bits = []
+    bits.push(flags.play ? "片子在转" : "片子停住")
+    bits.push(flags.stagger ? "三行错开" : "三行齐左")
+    bits.push(flags.slide ? "词会滑" : "词不滑")
+    readout.textContent = bits.join(" · ")
+  }
+
+  document.getElementById("btnPlay").addEventListener("click", function () {
+    flags.play = !flags.play
+    sync()
+  })
+  document.getElementById("btnStagger").addEventListener("click", function () {
+    flags.stagger = !flags.stagger
+    sync()
+  })
+  document.getElementById("btnSlide").addEventListener("click", function () {
+    flags.slide = !flags.slide
+    sync()
+  })
+
+  function park() {
+    play.style.left = "42%"
+    play.style.top = "48%"
+    play.style.transform = "translate(-50%, -50%) scale(.9)"
+  }
+
+  reel.addEventListener("mousemove", function (e) {
+    const r = reel.getBoundingClientRect()
+    const x = ((e.clientX - r.left) / r.width) * 100
+    const y = ((e.clientY - r.top) / r.height) * 100
+    play.style.left = x + "%"
+    play.style.top = y + "%"
+    play.style.transform = "translate(-50%, -50%) scale(1)"
+  })
+  reel.addEventListener("mouseleave", park)
+  park()
+
+  if (reduce) flags.play = false
+  sync()
+})()
+</script>
+</body>
+</html>

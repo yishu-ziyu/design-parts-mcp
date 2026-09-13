@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图纸还没画完</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --sheet: #fcfdfc;
+    --copy: #171a19;
+    --lime: #0fa958;
+    --hair: rgba(228, 232, 230, .68);
+    --rail-out: 48px;
+    --rail-in: 177px;
+    --nav-h: 47px;
+    --news-h: 35px;
+    --draw-ease: cubic-bezier(.2, .7, .2, 1);
+    --sans: -apple-system, system-ui, "Segoe UI", "Helvetica Neue", Arial, "PingFang SC", sans-serif;
+    --script: "Courier New", Courier, "Noto Serif SC", "Songti SC", SimSun, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1280px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 2;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .toggles button, button.play {
+    font: 600 13px var(--sans);
+    padding: 8px 12px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  button.play:hover, .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+  button.play:active, .toggles button:active { transform: translateY(1px); }
+  #clock {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    min-width: 4.6em;
+    text-align: right;
+  }
+
+  #stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: min(86vh, 860px);
+    min-height: 640px;
+    overflow: hidden;
+    border: 1px solid var(--ink);
+    background: var(--sheet);
+    color: var(--copy);
+    font-family: var(--sans);
+  }
+
+  #grid {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .55;
+    background-image: radial-gradient(rgba(107, 115, 112, .2) 1px, transparent 1px);
+    background-size: 7px 7px;
+    clip-path: inset(0 0 100% 0);
+  }
+  .is-play #grid {
+    animation: landing-pattern-draw 1.8s cubic-bezier(.16, 1, .3, 1) .5s both;
+  }
+  .glows {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(52% 38% at 24% 20%, rgba(56, 161, 105, .16) 0%, transparent 72%),
+      radial-gradient(38% 52% at 76% 12%, rgba(183, 244, 210, .42) 0%, transparent 70%),
+      radial-gradient(circle at 50% 4%, transparent 0%, transparent 34%, var(--sheet) 82%);
+  }
+  .fade-x {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(90deg, var(--sheet) 0%, transparent 20%, transparent 80%, var(--sheet) 100%);
+  }
+
+  #draw { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .rail-y {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: var(--hair);
+    clip-path: inset(0 0 100% 0);
+  }
+  .rail-x {
+    position: absolute;
+    left: 50%;
+    width: 100vw;
+    height: 1px;
+    margin-left: -50vw;
+    background: var(--hair);
+    clip-path: inset(0 100% 0 0);
+  }
+  .is-play .rail-y { animation: landing-line-draw-y .9s var(--draw-ease) both; }
+  .is-play .rail-x { animation: landing-line-draw-x .9s var(--draw-ease) both; }
+  .pin {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    background: var(--sheet);
+    border: 1px solid var(--hair);
+    opacity: 0;
+    z-index: 3;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  .is-play .pin { animation: landing-pin-draw .76s ease-out .42s both; }
+
+  @keyframes landing-line-draw-y {
+    from { clip-path: inset(0 0 100% 0); }
+    to { clip-path: inset(0); }
+  }
+  @keyframes landing-line-draw-x {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0); }
+  }
+  @keyframes landing-pattern-draw {
+    from { clip-path: inset(0 0 100% 0); filter: saturate(.8); }
+    to { clip-path: inset(0); filter: saturate(1); }
+  }
+  @keyframes landing-pin-draw {
+    0%, 55% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes fade-wrong {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .nav {
+    position: relative;
+    z-index: 5;
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px 0 calc(var(--rail-in) + 8px);
+    gap: 16px;
+  }
+  .brand { display: flex; align-items: center; height: 22px; }
+  .brand img { height: 22px; width: auto; display: block; }
+  .menu {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--copy);
+  }
+  .menu span { cursor: default; }
+  .end { display: flex; align-items: center; gap: 8px; padding-right: 8px; }
+  .lang {
+    height: 28px;
+    padding: 0 10px;
+    border: 1px solid #e4e8e6;
+    border-radius: 24px;
+    background: #fff;
+    font: 500 12px var(--sans);
+    color: var(--copy);
+  }
+  .login {
+    height: 28px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 24px;
+    color: #fff;
+    font: 500 12px var(--sans);
+    background: linear-gradient(135deg, #1a4a35 0%, #2d6a4f 50%, #0fa958 100%);
+    box-shadow: 0 0 0 1px oklab(0 0 0 / .15), 0 2px 4px rgb(0 0 0 / .03);
+  }
+
+  .news {
+    position: relative;
+    z-index: 5;
+    height: var(--news-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--copy);
+  }
+  .news b { color: var(--lime); font-weight: 600; font-size: 12px; }
+
+  .hero {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px 48px 0;
+    min-height: 0;
+    flex: 1;
+  }
+  .hero .lede { flex: 0 0 auto; }
+  .hero h2 {
+    margin: 0;
+    max-width: 896px;
+    font-family: var(--script);
+    font-weight: 300;
+    font-size: 36px;
+    line-height: 1.12;
+    letter-spacing: 0;
+    color: var(--lime);
+  }
+  .hero .lede {
+    margin: 16px 0 0;
+    max-width: 600px;
+    font-family: var(--script);
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(122, 127, 124, .95);
+  }
+
+  #compose {
+    margin-top: 32px;
+    width: 100%;
+    max-width: 628px;
+    text-align: left;
+    background: #fff;
+    border: 1px solid oklab(0.547744 -0.0105664 0.0015924 / .3);
+    border-radius: 32px;
+    box-shadow: 0 2px 4px rgb(0 0 0 / .05), 0 8px 10px -1px rgb(0 0 0 / .05);
+    overflow: hidden;
+  }
+  #compose .pad { padding: 16px 20px 4px; }
+  #compose textarea {
+    display: block;
+    width: 100%;
+    min-height: 72px;
+    border: 0;
+    resize: none;
+    background: transparent;
+    font: 400 16px/26px var(--sans);
+    color: var(--copy);
+    outline: none;
+  }
+  #compose textarea::placeholder { color: #9aa19e; }
+  #compose .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px 12px 16px;
+  }
+  .add {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 24px;
+    border: 1px solid #e4e8e6;
+    background: var(--sheet);
+    font: 500 12px var(--sans);
+    color: var(--copy);
+  }
+  .send {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 999px;
+    background: oklab(0.369602 -0.0606817 0.0199045 / .1);
+    color: var(--copy);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .send svg { display: block; }
+
+  #cta {
+    display: none;
+    margin-top: 32px;
+    height: 48px;
+    padding: 0 28px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1a4a35, #0fa958);
+    color: #fff;
+    font: 600 15px var(--sans);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .feats {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    align-self: stretch;
+    width: auto;
+    margin: 20px var(--rail-in) 150px;
+    padding-bottom: 0;
+  }
+  .feats article {
+    padding: 16px 18px 18px;
+    text-align: left;
+    border-right: 1px solid var(--hair);
+  }
+  .feats article:last-child { border-right: 0; }
+  .feats h3 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--copy);
+  }
+  .feats p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #6b726f;
+  }
+
+  #peek {
+    position: absolute;
+    left: var(--rail-in);
+    right: var(--rail-in);
+    top: auto;
+    bottom: -10px;
+    height: 168px;
+    z-index: 6;
+    display: grid;
+    grid-template-columns: 214px 1fr 220px;
+    gap: 10px;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e4e8e6;
+    border-bottom: 0;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 30px rgb(0 0 0 / .04);
+    font-size: 12px;
+  }
+  .reel {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #eef1ee;
+  }
+  .reel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .script {
+    font-family: var(--script);
+    color: #222;
+    padding: 8px 6px 0;
+    line-height: 1.45;
+  }
+  .script .slug { font-weight: 700; font-size: 11px; letter-spacing: .04em; }
+  .script p { margin: 8px 0 0; font-size: 12px; }
+  .side {
+    border-left: 1px solid #eef1ee;
+    padding: 8px 10px;
+    color: #6b726f;
+  }
+  .side .who { display: flex; gap: 6px; margin: 8px 0 12px; }
+  .dotc { width: 22px; height: 22px; border-radius: 99px; background: #cfd6d2; }
+  .side .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+
+  #stage.no-grid #grid { display: none; }
+  #stage.no-draw #draw { display: none; }
+  #stage.as-button #compose { display: none; }
+  #stage.as-button #cta { display: flex; }
+  #stage.no-peek #peek { display: none; }
+  #stage.no-peek .feats { margin-bottom: 24px; }
+
+  .timeline {
+    margin-top: 12px;
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 12px 14px 10px;
+  }
+  .timeline .now {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+    margin: 0 0 8px;
+  }
+  .timeline .now b {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -.03em;
+  }
+  .timeline .now span { color: var(--muted); font-size: 14px; }
+  .track {
+    position: relative;
+    height: 28px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    margin: 0 0 10px;
+  }
+  .track i.head {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--green);
+    left: 0;
+    pointer-events: none;
+  }
+  .track button.mk {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 12px;
+    margin-left: -6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .track button.mk::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--ink);
+    opacity: .55;
+  }
+  .times {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .times th, .times td {
+    text-align: left;
+    padding: 5px 8px 5px 0;
+    border-top: 1px solid rgba(28, 25, 20, .16);
+    vertical-align: top;
+  }
+  .times th {
+    font-family: ui-monospace, Menlo, monospace;
+    font-weight: 500;
+    width: 4.2em;
+    white-space: nowrap;
+  }
+  .times button {
+    all: unset;
+    cursor: pointer;
+    color: var(--green);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .times tr.is-on th { color: var(--green); }
+
+  #lab { margin-top: 22px; }
+  .lab-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .lab-cell {
+    position: relative;
+    border: 1px solid var(--ink);
+    background: var(--sheet);
+    min-height: 220px;
+    overflow: hidden;
+    padding-bottom: 44px;
+  }
+  .lab-cell .cap {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 4;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+  .lab-cell .cap b { color: var(--green); font-weight: 600; }
+  .lab-cell.wrong { background: #f3eee4; }
+  #lab .rail-x {
+    left: 0;
+    width: 100%;
+    margin-left: 0;
+    top: 88px;
+  }
+  #lab .rail-y {
+    top: 12px;
+    height: auto;
+    bottom: 44px;
+  }
+  #lab .rail-y, #lab .rail-x, #lab .wrong-line {
+    background: var(--ink);
+    opacity: .72;
+  }
+  #lab .pin {
+    background: var(--sheet);
+    border-color: var(--ink);
+    top: 88px;
+    left: 50%;
+  }
+  #lab .wrong-line {
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    bottom: 44px;
+    width: 1px;
+    opacity: 0;
+  }
+  #lab.is-play .wrong-line { animation: fade-wrong .9s linear both; }
+
+  .freeze {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0 0;
+  }
+  .freeze figure {
+    margin: 0;
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 12px 12px 10px;
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .strip {
+    position: relative;
+    height: 120px;
+    background: var(--sheet);
+    border: 1px solid var(--hair);
+  }
+  .strip i {
+    position: absolute;
+    left: 50%;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    margin-left: -.5px;
+    background: var(--ink);
+  }
+  .freeze figcaption { margin: 0; font-size: 13.5px; }
+  .freeze figcaption code {
+    display: block;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    margin: 4px 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .is-play #grid, .is-play .rail-y, .is-play .rail-x, .is-play .pin, #lab.is-play .wrong-line { animation: none !important; }
+    #grid { clip-path: none; }
+    .rail-y, .rail-x { clip-path: none; }
+    .pin, #lab .wrong-line { opacity: 1; }
+  }
+  @media (max-width: 900px) {
+    :root { --rail-out: 16px; --rail-in: 24px; }
+    .menu { display: none; }
+    .hero { padding: 36px 20px 0; }
+    .hero h2 { font-size: 26px; }
+    .feats { grid-template-columns: 1fr; margin: 16px 16px 0; }
+    .feats article { border-right: 0; border-top: 1px solid var(--hair); }
+    #peek { left: 12px; right: 12px; grid-template-columns: 1fr; top: auto; bottom: 0; height: 180px; }
+    .side { display: none; }
+    .lab-grid, .freeze { grid-template-columns: 1fr; }
+  }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 36px 24px 40px; }
+  .page h2 { font-weight: 500; font-size: 20px; color: var(--green); margin: 28px 0 10px; }
+  .page p { margin: 0 0 12px; }
+  .page a { color: var(--green); }
+  .page code, .page pre { font-family: ui-monospace, Menlo, monospace; }
+  .page pre {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .page ol.how { margin: 0 0 14px 1.15em; padding: 0; }
+  .page ol.how li { margin: 0 0 10px; }
+  .beats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .beats > div { border: 1px solid var(--ink); background: var(--cream); padding: 12px; }
+  .beats .n { font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .beats h3 { margin: 8px 0 6px; font-size: 16px; font-weight: 500; color: var(--green); }
+  .beats p { margin: 0; font-size: 14px; }
+  .warn {
+    border: 1px solid var(--ink);
+    background: #efe8d6;
+    padding: 12px 14px;
+    margin: 0 0 16px;
+  }
+  .warn p:last-child { margin-bottom: 0; }
+  .note { max-width: 720px; margin: 0 auto; padding: 0 24px 48px; font-size: 14px; color: var(--muted); }
+  footer.colophon { max-width: 720px; margin: 0 auto; padding: 0 24px 48px; font-size: 12.5px; color: var(--muted); }
+  @media (max-width: 760px) { .beats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">living / laper</div>
+  <h1>图纸还没画完</h1>
+  <p class="sub">纸已经画好。你看见的是窗帘拉开。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>拆开</h2>
+    <div class="toggles">
+      <button type="button" id="tog-grid" aria-pressed="true">网格</button>
+      <button type="button" id="tog-draw" aria-pressed="true">描线</button>
+      <button type="button" id="tog-card" aria-pressed="true">输入卡</button>
+      <button type="button" id="tog-peek" aria-pressed="true">探窗</button>
+      <button type="button" id="tog-slow" aria-pressed="false">慢放 ¼</button>
+      <button class="play" type="button" id="replay">再播</button>
+      <span id="clock">0.00s</span>
+    </div>
+  </div>
+
+  <div id="stage" class="is-play">
+    <div id="grid"></div>
+    <div class="glows" aria-hidden="true"></div>
+    <div class="fade-x" aria-hidden="true"></div>
+    <div id="draw" aria-hidden="true"></div>
+
+    <div class="nav">
+      <a class="brand" href="https://laper.ai/" aria-label="Laper">
+        <img src="assets/logo.png" alt="Laper" />
+      </a>
+      <div class="menu">
+        <span>Core Advantages</span>
+        <span>Blog</span>
+        <span>Docs</span>
+        <span>Pricing</span>
+        <span>Screenplays</span>
+        <span>More</span>
+      </div>
+      <div class="end">
+        <span class="lang">EN</span>
+        <span class="login">Login</span>
+      </div>
+    </div>
+
+    <div class="news">
+      <b>News</b>
+      <span>Explore the code-backed core advantages behind Laper’s AI screenwriting workflow. →</span>
+    </div>
+
+    <div class="hero">
+      <h2>AI Screenwriting Software,<br />Without the AI Aftertaste.<br />Advancing film and television production worldwide through intelligent technology.</h2>
+      <p class="lede">Laper knows why screenwriters hate generative AI. That’s why this AI script writer only helps where writers actually want it.</p>
+
+      <form id="compose" action="#" onsubmit="return false">
+        <div class="pad">
+          <textarea placeholder="Fix up your screenplay format, or start from a fresh idea?" rows="3"></textarea>
+        </div>
+        <div class="row">
+          <span class="add">+ Add files</span>
+          <button class="send" type="button" aria-label="Start now">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M7 11.5V2.5M7 2.5L3 6.3M7 2.5L11 6.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+      <button id="cta" type="button">Get started</button>
+
+      <div class="feats">
+        <article>
+          <h3>Screenplay format</h3>
+          <p>Keep industry layout automatic, so formatting stays tool work.</p>
+        </article>
+        <article>
+          <h3>Script structure visualization</h3>
+          <p>Scenes, characters, and beats become a readable structure.</p>
+        </article>
+        <article>
+          <h3>Real-time script collaboration</h3>
+          <p>Writers, directors, and producers work from one script source.</p>
+        </article>
+      </div>
+    </div>
+
+    <aside id="peek" aria-label="Laper editor product preview">
+      <div class="reel"><img src="assets/reel.jpg" alt="" /></div>
+      <div class="script">
+        <div class="slug">INT. ROOM — DAY</div>
+        <p>Two people at a table. The page already looks like a script before anyone presses a button.</p>
+        <div class="slug" style="margin-top:14px">CUT TO:</div>
+        <p>The editor is sitting under the drawing, not in a screenshot carousel.</p>
+      </div>
+      <div class="side">
+        <div class="k">Writing</div>
+        <div class="who"><span class="dotc"></span><span class="dotc"></span><span class="dotc"></span></div>
+        <div class="k">Not the product</div>
+        <p style="margin:8px 0 0;font-size:12px">这是探出来的窗。不要把整套编辑器搬进来。</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="timeline" id="clockbox">
+    <div class="now">
+      <b id="clock-big">0.00s</b>
+      <span id="caption">线在画。钉还看不见。点阵还没动。</span>
+    </div>
+    <div class="track" id="track" aria-hidden="true">
+      <button class="mk" type="button" data-ms="0" style="left:0%" title="0.00s"></button>
+      <button class="mk" type="button" data-ms="420" style="left:18.3%" title="0.42s"></button>
+      <button class="mk" type="button" data-ms="500" style="left:21.7%" title="0.50s"></button>
+      <button class="mk" type="button" data-ms="838" style="left:36.4%" title="0.84s"></button>
+      <button class="mk" type="button" data-ms="900" style="left:39.1%" title="0.90s"></button>
+      <button class="mk" type="button" data-ms="1180" style="left:51.3%" title="1.18s"></button>
+      <button class="mk" type="button" data-ms="2300" style="left:100%" title="2.30s"></button>
+      <i class="head" id="head"></i>
+    </div>
+    <table class="times">
+      <thead><tr><th>时间</th><td>眼睛看见什么</td></tr></thead>
+      <tbody>
+        <tr data-ms="0"><th><button type="button" data-ms="0">0.00s</button></th><td>竖线开始从上往下长。横线开始从左往右长。点阵和钉都还没有。</td></tr>
+        <tr data-ms="420"><th><button type="button" data-ms="420">0.42s</button></th><td>线已经画出约九成。曲线前段很快，不是匀速。钉开始计时，仍完全透明。</td></tr>
+        <tr data-ms="500"><th><button type="button" data-ms="500">0.50s</button></th><td>点阵窗帘开始从上往下拉。钉仍然看不见。</td></tr>
+        <tr data-ms="838"><th><button type="button" data-ms="838">0.84s</button></th><td>钉第一次露出来。0.42 + 0.76 × 55% = 0.838。线只剩收尾。</td></tr>
+        <tr data-ms="900"><th><button type="button" data-ms="900">0.90s</button></th><td>线停。钉还在变实。点阵才拉开一小截。</td></tr>
+        <tr data-ms="1180"><th><button type="button" data-ms="1180">1.18s</button></th><td>钉完全实。0.42 + 0.76 = 1.18。点阵还在拉。</td></tr>
+        <tr data-ms="2300"><th><button type="button" data-ms="2300">2.30s</button></th><td>点阵拉完。0.50 + 1.80 = 2.30。停。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section id="lab" class="is-play">
+    <div class="bar-row">
+      <h2>实验室 · 一根线</h2>
+      <button class="play" type="button" id="lab-replay">再播实验室</button>
+    </div>
+    <div class="lab-grid">
+      <div class="lab-cell" id="lab-y">
+        <span class="rail-y" style="left:50%"></span>
+        <div class="cap"><b>竖线</b>　从上往下</div>
+      </div>
+      <div class="lab-cell" id="lab-x">
+        <span class="rail-x"></span>
+        <div class="cap"><b>横线</b>　从左往右</div>
+      </div>
+      <div class="lab-cell" id="lab-pin">
+        <span class="rail-y" style="left:50%"></span>
+        <span class="rail-x"></span>
+        <span class="pin"></span>
+        <div class="cap"><b>钉</b>　前 55% 看不见</div>
+      </div>
+      <div class="lab-cell wrong" id="lab-wrong">
+        <span class="wrong-line"></span>
+        <div class="cap"><b>错的</b>　整根淡入</div>
+      </div>
+    </div>
+    <div class="freeze" id="freeze">
+      <figure>
+        <div class="strip"><i style="clip-path: inset(0 0 100% 0)"></i></div>
+        <figcaption>
+          挡住
+          <code>inset(0 0 100% 0)</code>
+          四个数是上、右、下、左，挡住多少。下面挡住 100%，什么都看不见。
+        </figcaption>
+      </figure>
+      <figure>
+        <div class="strip"><i style="clip-path: inset(0 0 50% 0)"></i></div>
+        <figcaption>
+          一半
+          <code>inset(0 0 50% 0)</code>
+          下面挡住 50%。只看见上半截。这就是「画到一半」。
+        </figcaption>
+      </figure>
+      <figure>
+        <div class="strip"><i style="clip-path: inset(0)"></i></div>
+        <figcaption>
+          全开
+          <code>inset(0)</code>
+          四处都不挡。整根线。动画就是从挡住走到全开。
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+</div>
+
+<div class="page">
+  <div class="beats">
+    <div>
+      <div class="n">01 纸</div>
+      <h3>网格会自己画出来</h3>
+      <p>7px 点阵，透明度 0.55。施工线是窗帘，不是淡入。钉是旋转 45° 的 7px 菱形，晚 420ms。</p>
+    </div>
+    <div>
+      <div class="n">02 字</div>
+      <h3>剧本字，不是海报衬线</h3>
+      <p>Courier 36 / 字重 300 / <code>#0fa958</code>。标题没有进场动画。UI 才是无衬线。</p>
+    </div>
+    <div>
+      <div class="n">03 入口</div>
+      <h3>输入卡，不是按钮</h3>
+      <p>白卡 628 × 145，圆角 32。关掉「输入卡」，才会长出 Get started。那是对照，不是原站。</p>
+    </div>
+  </div>
+
+  <h2>先忘掉淡入</h2>
+  <p>整页透明度从 0 到 1，那是另一台机器。这台不是。</p>
+  <p>纸在第 0 秒就已经画完。点阵在。竖线在。横线在。交点上的菱形钉也在。你看不见，是因为每样东西前面挡着一块窗帘。</p>
+  <p>动画做的唯一一件事：把窗帘拉开。竖线的窗帘从下往上收，所以你看见笔从上往下走。横线的窗帘从右往左收，所以你看见尺从左往右走。点阵跟竖线同一块窗帘，只是晚 0.50 秒才拉，拉 1.80 秒。</p>
+  <p>钉不用窗帘。它用透明。前 55% 的时间透明度保持 0，像盖章的手还没落下。线先穿过交点，章再生出来。</p>
+  <p>线不是匀速铅笔画。<code>cubic-bezier(.2, .7, .2, 1)</code> 前段很快。停在 0.42 秒，线已经露出约九成，下面只挡住大约 8%。所以钉这时开始倒计时，不会浮在空白里。</p>
+  <p>原站量过：竖线 30 根、横线 20 根，delay 全部是 0。没有一根比另一根晚。钉默认晚 0.42 秒。标题 <code>animation: none</code>。</p>
+
+  <h2>窗帘的四个数</h2>
+  <p><code>clip-path: inset(上 右 下 左)</code> 写的是挡住多少，不是露出多少。</p>
+  <p>竖线起点 <code>inset(0 0 100% 0)</code>：下面挡住整段高度，等于一条还没画的线。终点 <code>inset(0)</code>：四处都不挡。</p>
+  <p>横线起点 <code>inset(0 100% 0 0)</code>：右边挡住整段宽度。终点同样是 <code>inset(0)</code>。</p>
+  <p>上面实验室那三个小条是冻住的。它们不转。对照着抄。实验室的线画深一点，方便看窗帘。标本上的线仍然是浅灰，那是原站的弱化。</p>
+
+  <h2>按这个顺序写</h2>
+  <ol class="how">
+    <li>先画一根静止的 1 像素线。竖的就高 100%、宽 1px。先不要动画。你应该看见一根浅灰线。</li>
+    <li>给它加上 <code>clip-path: inset(0 0 100% 0)</code>。线应该消失。消失了，窗帘才是对的。</li>
+    <li>写关键帧：从 <code>inset(0 0 100% 0)</code> 到 <code>inset(0)</code>。动画 0.9 秒，曲线 <code>cubic-bezier(.2, .7, .2, 1)</code>，<code>both</code>。再播时线应该从上往下长，不是整根冒出来。</li>
+    <li>横线把第三步的挡住方向改成右边：<code>inset(0 100% 0 0)</code>。其它数不动。</li>
+    <li>在交点放一颗 7×7 的正方形，<code>transform: translate(-50%, -50%) rotate(45deg)</code>，底色跟纸一样，1px 浅灰边。先设 <code>opacity: 0</code>。</li>
+    <li>钉的关键帧：0% 和 55% 都是透明 0，100% 才是 1。动画 0.76 秒，<code>ease-out</code>，延迟 0.42 秒，<code>both</code>。没有 <code>both</code>，播完钉会消失。</li>
+    <li>点阵是另一块同款窗帘。7px 点，透明度 0.55。延迟 0.50 秒，拉 1.80 秒，曲线 <code>cubic-bezier(.16, 1, .3, 1)</code>。</li>
+  </ol>
+  <div class="warn">
+    <p>若线整根一起出现，你写的是透明度，不是窗帘。</p>
+    <p>若钉从第 0 秒就在闪，你漏了 55% 那段死透明，或者忘了 0.42 秒延迟。</p>
+    <p>若每根线依次出现，原站不是那样。原站 delay 全是 0。</p>
+    <p>若标题也在淡入，删掉。原站标题没有进场。</p>
+  </div>
+
+  <h2>可抄</h2>
+<pre>.line-y {
+  position: absolute; top: 0; width: 1px; height: 100%;
+  background: rgba(228,232,230,.68);
+  clip-path: inset(0 0 100% 0);
+  animation: landing-line-draw-y .9s cubic-bezier(.2,.7,.2,1) both;
+}
+.line-x {
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: rgba(228,232,230,.68);
+  clip-path: inset(0 100% 0 0);
+  animation: landing-line-draw-x .9s cubic-bezier(.2,.7,.2,1) both;
+}
+.pin {
+  position: absolute; width: 7px; height: 7px;
+  background: #fcfdfc;
+  border: 1px solid rgba(228,232,230,.68);
+  transform: translate(-50%, -50%) rotate(45deg);
+  opacity: 0;
+  animation: landing-pin-draw .76s ease-out .42s both;
+}
+.grid {
+  position: absolute; inset: 0; opacity: .55;
+  background-image: radial-gradient(rgba(107,115,112,.2) 1px, transparent 1px);
+  background-size: 7px 7px;
+  clip-path: inset(0 0 100% 0);
+  animation: landing-pattern-draw 1.8s cubic-bezier(.16,1,.3,1) .5s both;
+}
+@keyframes landing-line-draw-y {
+  from { clip-path: inset(0 0 100% 0); }
+  to   { clip-path: inset(0); }
+}
+@keyframes landing-line-draw-x {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0); }
+}
+@keyframes landing-pin-draw {
+  0%, 55% { opacity: 0; }
+  100%    { opacity: 1; }
+}
+@keyframes landing-pattern-draw {
+  from { clip-path: inset(0 0 100% 0); filter: saturate(.8); }
+  to   { clip-path: inset(0); filter: saturate(1); }
+}</pre>
+
+  <h2>不是把 laper.ai 搬过来</h2>
+  <p>原页 <a href="https://laper.ai/">laper.ai</a>。这一页只收第一屏这台机器。底下九千像素的功能墙、真编辑器、登录钮里 29×14 的 canvas，都不收。产品窗走 <a href="../creed/index.html">creed</a> 那种「窗坐在风景里」时，仍先问是不是图纸。</p>
+  <p>Logo 和片头帧是原站的图。网格、线、钉是抄他们的数画的，不是截一张静图。</p>
+  <p>第一屏四根竖轨：外 48，内 177。点「慢放 ¼」把 2.30 秒拉成墙上的 9.2 秒。点时间表上的秒数，会停在那一帧。</p>
+
+  <h2>配方</h2>
+<pre>底        #fcfdfc
+点阵      radial 1px / 7px 7px，透明度 .55，窗帘 1.8s 晚 .5s
+线        rgba(228,232,230,.68)，外轨 48，内轨 177
+描线      clip-path 窗帘，0.9s cubic-bezier(.2,.7,.2,1)，delay 0
+钉        7×7 旋转 45°，.76s ease-out，delay .42s，前 55% 透明
+标题      Courier New 36 / 300 / #0fa958，无进场
+输入卡    628×145，圆角 32，白底
+开关      网格 / 描线 / 输入卡 / 探窗 / 慢放
+产品窗    creed。文件夹翻皮 mosby。弹弓折纸 paper-echo。</pre>
+  <p>可拆。关掉哪一件，哪一件的贡献就露出来。实验室那根错的淡入，是对照，不要抄进产品。</p>
+</div>
+
+<section class="note">
+  活笔记。第一屏就是发明。描线必须能再播，必须能慢放。<br />
+  原则：Notion Will's S · Motion 动效要有目的、可选、短 · 动画建立心理模型（NN/g）· Progressive Disclosure · Emphasize by de-emphasizing。
+</section>
+<footer class="colophon">
+  <p>样本：<a href="https://laper.ai/">laper.ai</a>。货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const stage = document.getElementById("stage")
+  const lab = document.getElementById("lab")
+  const draw = document.getElementById("draw")
+  const peek = document.getElementById("peek")
+  const grid = document.getElementById("grid")
+  const clock = document.getElementById("clock")
+  const clockBig = document.getElementById("clock-big")
+  const caption = document.getElementById("caption")
+  const head = document.getElementById("head")
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+  let rate = 1
+  let t0 = 0
+  let raf = 0
+  let paused = false
+
+  function rails() {
+    const w = stage.clientWidth
+    const h = stage.clientHeight
+    const out = 48
+    const inn = Math.min(177, Math.round(w * 0.12))
+    const nav = 47
+    const news = 35
+    const fold = peek.offsetTop || Math.round(h * 0.86)
+    const xs = [out, inn, w - inn, w - out]
+    const ys = [6, nav, nav + news, fold, fold + 13]
+    const pinYs = [nav, nav + news, fold, fold + 13]
+    draw.innerHTML = ""
+    xs.forEach((x) => {
+      const el = document.createElement("span")
+      el.className = "rail-y"
+      el.style.left = x + "px"
+      draw.appendChild(el)
+    })
+    ys.forEach((y) => {
+      const el = document.createElement("span")
+      el.className = "rail-x"
+      el.style.top = y + "px"
+      draw.appendChild(el)
+    })
+    pinYs.forEach((y) => {
+      xs.forEach((x) => {
+        const p = document.createElement("span")
+        p.className = "pin"
+        p.style.left = x + "px"
+        p.style.top = y + "px"
+        draw.appendChild(p)
+      })
+    })
+  }
+
+  function anims() {
+    return document.getAnimations().filter((a) => {
+      const t = a.effect && a.effect.target
+      const name = a.animationName || ""
+      if (!t || !name) return false
+      if (name.indexOf("landing-") !== 0 && name !== "fade-wrong") return false
+      return stage.contains(t) || lab.contains(t)
+    })
+  }
+
+  function say(t) {
+    if (t < 0.42) return "线在画。钉还看不见。点阵还没动。"
+    if (t < 0.50) return "钉开始计时，仍完全透明。"
+    if (t < 0.838) return "点阵窗帘开始往下拉。钉仍看不见。"
+    if (t < 0.90) return "钉开始露。线快画完。"
+    if (t < 1.18) return "线已经画完。钉在变实。点阵还在拉。"
+    if (t < 2.30) return "钉实了。点阵窗帘还在往下拉。"
+    return "停。图纸画完。"
+  }
+
+  function setClock(t) {
+    const clipped = Math.max(0, Math.min(2.3, t))
+    const label = clipped.toFixed(2) + "s"
+    clock.textContent = label
+    clockBig.textContent = label
+    caption.textContent = say(clipped)
+    head.style.left = (clipped / 2.3 * 100) + "%"
+    document.querySelectorAll(".times tbody tr").forEach((row) => {
+      const ms = Number(row.getAttribute("data-ms"))
+      row.classList.toggle("is-on", Math.abs(clipped * 1000 - ms) < 80)
+    })
+  }
+
+  function applyRate() {
+    anims().forEach((a) => { a.playbackRate = rate })
+  }
+
+  function tick() {
+    if (paused) return
+    const t = (performance.now() - t0) / 1000 * rate
+    setClock(t)
+    if (t < 2.35) raf = requestAnimationFrame(tick)
+    else setClock(2.3)
+  }
+
+  function restart(play) {
+    paused = !play
+    cancelAnimationFrame(raf)
+    stage.classList.remove("is-play")
+    lab.classList.remove("is-play")
+    grid.style.animation = "none"
+    void stage.offsetWidth
+    grid.style.animation = ""
+    rails()
+    stage.classList.add("is-play")
+    lab.classList.add("is-play")
+    t0 = performance.now()
+    requestAnimationFrame(() => {
+      applyRate()
+      if (play) tick()
+    })
+  }
+
+  function replay() {
+    if (reduce) {
+      rails()
+      setClock(2.3)
+      return
+    }
+    restart(true)
+  }
+
+  function seek(ms) {
+    if (reduce) return
+    restart(false)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        anims().forEach((a) => {
+          a.playbackRate = rate
+          const end = Number(a.effect.getComputedTiming().endTime)
+          a.currentTime = Math.min(ms, isFinite(end) ? end : ms)
+          a.pause()
+        })
+        paused = true
+        setClock(ms / 1000)
+      })
+    })
+  }
+
+  function bind(id, cls) {
+    const btn = document.getElementById(id)
+    btn.addEventListener("click", () => {
+      const on = btn.getAttribute("aria-pressed") === "true"
+      btn.setAttribute("aria-pressed", on ? "false" : "true")
+      stage.classList.toggle(cls, on)
+      if (id === "tog-draw" && !on) replay()
+    })
+  }
+
+  bind("tog-grid", "no-grid")
+  bind("tog-draw", "no-draw")
+  bind("tog-card", "as-button")
+  bind("tog-peek", "no-peek")
+
+  document.getElementById("tog-slow").addEventListener("click", () => {
+    const btn = document.getElementById("tog-slow")
+    const on = btn.getAttribute("aria-pressed") === "true"
+    btn.setAttribute("aria-pressed", on ? "false" : "true")
+    rate = on ? 1 : 0.25
+    if (!paused) {
+      const shown = parseFloat(clock.textContent) || 0
+      t0 = performance.now() - shown * 1000 / rate
+    }
+    applyRate()
+  })
+
+  document.getElementById("replay").addEventListener("click", replay)
+  document.getElementById("lab-replay").addEventListener("click", replay)
+  document.querySelectorAll("button[data-ms]").forEach((el) => {
+    el.addEventListener("click", () => seek(Number(el.getAttribute("data-ms"))))
+  })
+  window.addEventListener("resize", () => { rails(); stage.classList.add("is-play") })
+  rails()
+  t0 = performance.now()
+  if (!reduce) tick()
+  else setClock(2.3)
+})()
+</script>
+</body>
+</html>

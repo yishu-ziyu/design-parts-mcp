@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>照片是章节 · Exposure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1c1914;
+    --paper: #f4efe4;
+    --cream: #fffdf7;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cover-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --reveal-ease: cubic-bezier(0.42, 0, 0.2, 0.99);
+    --lift-ease: cubic-bezier(0.77, 0.06, 0.12, 0.98);
+    --sans: "Instrument Sans", system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .cover {
+    position: relative;
+    height: calc(100svh - 48px);
+    overflow: hidden;
+    color: #fff;
+    background: #111;
+  }
+  .cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+    transform: scale(1.08);
+    will-change: transform;
+  }
+  .cover-img.is-in { transform: scale(1); transition: transform 1.2s var(--cover-ease); }
+  .cover.is-frozen .cover-img { transform: scale(1); transition: none; }
+  .veil {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.38);
+    pointer-events: none;
+  }
+  .titles {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    font-family: var(--sans);
+  }
+  .titles h1 {
+    margin: 0;
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 600;
+    letter-spacing: .08em;
+    line-height: 1.05;
+  }
+  .titles .sub {
+    margin: 14px 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(20px, 2.6vw, 28px);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .titles .by {
+    position: absolute;
+    bottom: 36px;
+    left: 0; right: 0;
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.85);
+  }
+
+  .hudbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--sans);
+  }
+  .hudbar button {
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .chapter {
+    background: #fff;
+    padding: 56px 0 80px;
+  }
+  .chapter .lede {
+    max-width: 38rem;
+    margin: 0 auto 36px;
+    padding: 0 24px;
+    font-size: 18px;
+    line-height: 1.65;
+    color: #292525;
+  }
+  .photos { max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+  .photos .wide { width: 100%; display: block; margin: 0 0 14px; }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+  .photos img { width: 100%; height: auto; display: block; }
+  .reveal {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  .reveal.on {
+    opacity: 1;
+    transform: none;
+    transition: transform 500ms var(--reveal-ease), opacity 500ms var(--reveal-ease);
+  }
+  .chapter.is-flat .reveal { opacity: 1; transform: none; transition: none; }
+
+  .hub-demo {
+    background: #fafafa;
+    padding: 48px 18px 56px;
+    border-top: 1px solid #ece8e0;
+  }
+  .hub-demo .inner { max-width: 980px; margin: 0 auto; }
+  .featured {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 36px;
+    align-items: center;
+  }
+  @media (max-width: 760px) { .featured { grid-template-columns: 1fr; } }
+  .shot {
+    overflow: hidden;
+    display: block;
+  }
+  .shot img {
+    width: 100%;
+    display: block;
+    transform: translateY(0);
+    transition: transform 500ms var(--lift-ease);
+  }
+  .hub-demo:not(.is-still) .shot:hover img { transform: translateY(-5px); }
+  .feat-title {
+    font-family: var(--serif);
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 400;
+    margin: 0 0 10px;
+    letter-spacing: -.01em;
+    transition: opacity 200ms cubic-bezier(0.42, 0, 0.585, 1.23);
+  }
+  .hub-demo:not(.is-still) .feat-title:hover { opacity: .5; }
+  .feat-by { font-style: italic; color: #666; margin: 0; }
+
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 8px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 20px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<section class="cover" id="cover">
+  <img class="cover-img" id="coverImg" src="assets/cover.jpg" alt="Niagara Falls cover" />
+  <div class="veil"></div>
+  <div class="titles">
+    <h1>NIAGARA FALLS</h1>
+    <div class="sub">The Power of Water</div>
+    <div class="by">By Jill Meyers · August 14th, 2026</div>
+  </div>
+</section>
+<div class="hudbar">
+  <button type="button" id="btnReplay">再播封面</button>
+  <button type="button" id="btnCover" aria-pressed="true">封面落下</button>
+  <button type="button" id="btnReveal" aria-pressed="true">图浮上来</button>
+  <button type="button" id="btnLift" aria-pressed="true">悬停抬起</button>
+</div>
+
+<section class="chapter" id="chapter">
+  <p class="lede">往下滚。图从下面 10 像素处、缩到 99%，用半秒浮上来。这不是装饰，是 Exposure 故事页每一张照片进场的方式。关掉「图浮上来」，它们会直接躺在那儿，味道就没了。</p>
+  <div class="photos">
+    <img class="wide reveal" src="assets/photo1.png" alt="" />
+    <div class="row">
+      <img class="reveal" src="assets/photo2.jpg" alt="" />
+      <img class="reveal" src="assets/photo3.jpg" alt="" />
+    </div>
+  </div>
+</section>
+
+<section class="hub-demo" id="hub">
+  <div class="inner">
+    <div class="featured">
+      <a class="shot" href="#cover">
+        <img src="assets/cover.jpg" alt="featured" />
+      </a>
+      <div>
+        <h2 class="feat-title">Niagara Falls</h2>
+        <p class="feat-by">By Jill Meyers</p>
+        <p style="margin-top:14px;max-width:28rem">货架上的卡片也在动：照片抬 5 像素，标题淡到一半。把鼠标放上去。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<header class="mast">
+  <h1>照片是章节。字坐在图上。</h1>
+  <p class="sub">样本：travel.exposure.co，以及点进去的 Niagara Falls。上面那些动是原站的数，不是气氛词。</p>
+</header>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>你打开的那一页</h3>
+      <p class="drop">先看见云和山，像一张没裁完的纸。「Travel Stories」用衬线写在风景上。主打故事是左边一张大图，右边一个标题。点进去，整屏被一张照片占满，标题压在暗罩上。再往下，照片一组一组来，像一本打开的画册。</p>
+      <p>上一份 Creed 笔记把动效写成了字，所以你看不见。这页反过来：封面落下、图浮上来、悬停抬起，都在上面自己播。看不见就按「再播封面」。</p>
+    </div>
+    <figure>
+      <img src="assets/hub.jpg" alt="travel.exposure.co 货架" />
+      <figcaption><strong>图 1.</strong> 货架。风景当纸，主打故事左图右字。</figcaption>
+    </figure>
+  </div>
+
+  <figure>
+    <img src="assets/story-cover.jpg" alt="Niagara Falls 故事封面" />
+    <figcaption><strong>图 2.</strong> 点进去的第一屏。暗罩不是滤镜预设，是为了让白字站住。</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3>三台在动的机器</h3>
+    <p><b>封面落下。</b>图先按 1.08 倍铺满，再在 1.2 秒里收到 1。缓动 <code>cubic-bezier(0.22, 1, 0.36, 1)</code>，原站注释写的是 GSAP <code>power3.out</code>。图一开始就以全不透明出现，所以最大那张图能当 LCP；动的是尺寸，不是淡入。</p>
+    <p><b>图浮上来。</b>ScrollReveal：距离 10 像素，缩到 0.99，时长 500 毫秒，曲线 <code>cubic-bezier(0.42, 0, 0.2, 0.99)</code>。几乎刚进视口就触发（viewFactor 0.01）。不是弹，是轻轻到位。</p>
+    <p><b>悬停抬起。</b>货架照片 <code>translateY(-5px)</code>，500 毫秒，<code>cubic-bezier(0.77, 0.06, 0.12, 0.98)</code>。标题 <code>hover-fade</code> 到 50% 透明，200 毫秒。抬得很少，所以像纸被掀了一角。</p>
+  </div>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>动效如果不能再播一遍，等于没写进笔记。打开就要看见；错过了要有按钮。
+  </aside>
+
+  <div class="recipe">
+    <h3>配方</h3>
+    <ol class="how">
+      <li>货架：一张浅风景当整页底。主打故事左图右衬线标题。其余故事用照片当章节封面，不要卡片阴影墙。</li>
+      <li>故事封面：一张图铺满 100svh。加一层约 38% 的黑罩。标题居中，大写、字距松开。作者沉底。</li>
+      <li>封面图 <code>scale(1.08)</code> 开场，1.2 秒收到 1。不要淡入，否则最大图会丢 LCP。</li>
+      <li>正文照片默认 <code>opacity:0; transform: translateY(10px) scale(0.99)</code>。进视口用 500 毫秒回到原位。</li>
+      <li>货架悬停只抬 5 像素。再多就跳。</li>
+    </ol>
+<pre>.cover-img { transform: scale(1.08); }
+.cover-img.is-in {
+  transform: scale(1);
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(10px) scale(0.99);
+}
+.reveal.on {
+  opacity: 1;
+  transform: none;
+  transition: transform 500ms cubic-bezier(0.42, 0, 0.2, 0.99),
+              opacity 500ms cubic-bezier(0.42, 0, 0.2, 0.99);
+}
+.shot img { transition: transform 500ms cubic-bezier(0.77, 0.06, 0.12, 0.98); }
+.shot:hover img { transform: translateY(-5px); }</pre>
+    <p>原站还有手机上的全宽视差。第一版先让封面落下和图浮上来成立。视差是第二台机器。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本：<a href="https://travel.exposure.co/">travel.exposure.co</a> · 故事：<a href="https://jillrmeyers.exposure.co/niagara-falls">Niagara Falls</a>。标题字体原是 GT Walsheim / ivypresto-headline，这页用 Instrument。</p>
+  <p>动效必须能看见：<a href="../stranger/index.html">拆开再装回去</a> · 货架：<a href="../index.html">living/</a></p>
+</footer>
+
+<script>
+(function () {
+  const cover = document.getElementById('cover')
+  const img = document.getElementById('coverImg')
+  const chapter = document.getElementById('chapter')
+  const hub = document.getElementById('hub')
+  const photos = [...chapter.querySelectorAll('.reveal')]
+  const flags = { cover: true, reveal: true, lift: true }
+
+  function playCover() {
+    if (!flags.cover) {
+      img.classList.add('is-in')
+      return
+    }
+    img.classList.remove('is-in')
+    void img.offsetWidth
+    requestAnimationFrame(() => img.classList.add('is-in'))
+  }
+
+  function revealTick() {
+    if (!flags.reveal) {
+      photos.forEach((p) => p.classList.add('on'))
+      return
+    }
+    const h = window.innerHeight
+    photos.forEach((p) => {
+      const r = p.getBoundingClientRect()
+      const inView = r.top < h * 0.99 && r.bottom > 0
+      if (inView) p.classList.add('on')
+    })
+  }
+
+  document.getElementById('btnReplay').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    playCover()
+  })
+  document.getElementById('btnCover').addEventListener('click', function () {
+    flags.cover = !flags.cover
+    this.setAttribute('aria-pressed', flags.cover ? 'true' : 'false')
+    cover.classList.toggle('is-frozen', !flags.cover)
+    if (flags.cover) playCover()
+    else img.classList.add('is-in')
+  })
+  document.getElementById('btnReveal').addEventListener('click', function () {
+    flags.reveal = !flags.reveal
+    this.setAttribute('aria-pressed', flags.reveal ? 'true' : 'false')
+    chapter.classList.toggle('is-flat', !flags.reveal)
+    if (!flags.reveal) photos.forEach((p) => p.classList.add('on'))
+    else {
+      photos.forEach((p) => p.classList.remove('on'))
+      revealTick()
+    }
+  })
+  document.getElementById('btnLift').addEventListener('click', function () {
+    flags.lift = !flags.lift
+    this.setAttribute('aria-pressed', flags.lift ? 'true' : 'false')
+    hub.classList.toggle('is-still', !flags.lift)
+  })
+
+  playCover()
+  revealTick()
+  window.addEventListener('scroll', revealTick, { passive: true })
+  window.addEventListener('resize', revealTick)
+})()
+</script>
+</body>
+</html>

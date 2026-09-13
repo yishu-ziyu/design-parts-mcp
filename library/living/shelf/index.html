@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>这一架子不是三维 · Chapter One</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #181515;
+    --cream: #f1f0ed;
+    --paper: #f4efe4;
+    --muted: #515151;
+    --paper-muted: #5c564c;
+    --green: #2f6b4f;
+    --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: "Instrument Sans", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .hero {
+    position: relative;
+    height: calc(100svh - 48px);
+    background: var(--cream);
+    overflow: hidden;
+    color: var(--ink);
+  }
+  .site-header {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    right: 28px;
+    z-index: 7;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .logo {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+  }
+  .site-header nav {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    gap: 28px;
+  }
+  .site-header span { white-space: nowrap; }
+  .site-header .contact { margin-left: auto; }
+  @media (max-width: 900px) {
+    .site-header nav, .site-header .contact { display: none; }
+  }
+
+  .hero__title {
+    position: absolute;
+    top: calc(27% - 10px);
+    left: 50%;
+    transform: translate(-50%);
+    text-align: center;
+    z-index: 5;
+  }
+  .hero__title h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 64px;
+    line-height: 1.35;
+    color: var(--ink);
+    margin: 0;
+  }
+  .hero__title p {
+    margin: 16px auto 0;
+    max-width: 335px;
+    font-family: var(--sans);
+    font-size: 20px;
+    line-height: 1.5;
+    letter-spacing: -0.8px;
+    color: var(--muted);
+  }
+
+  .hero__fan {
+    position: absolute;
+    left: -8%;
+    right: -8%;
+    bottom: calc(22% - 36px);
+    touch-action: pan-y;
+  }
+  .hero__train {
+    display: flex;
+    align-items: flex-end;
+    width: max-content;
+    will-change: transform;
+  }
+  .hero__book-wrap { position: relative; }
+  .hero:not(.is-spread) .hero__book-wrap + .hero__book-wrap { margin-left: -64px; }
+  .hero.is-spread .hero__book-wrap + .hero__book-wrap { margin-left: 10px; }
+  .hero__book-wrap.is-hovered { z-index: 10; }
+  .hero__book {
+    display: block;
+    width: 10.4vw;
+    min-width: 130px;
+    height: auto;
+    user-select: none;
+    pointer-events: none;
+    transition: transform .35s;
+  }
+  .hero__book-wrap.is-hovered .hero__book { transform: translateY(-18px); }
+
+  .hudbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--cream);
+    border-bottom: 1px solid var(--ink);
+  }
+  .hud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .hud button {
+    font-family: var(--sans);
+    font-size: 13px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hud button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--paper-muted);
+  }
+  .readout {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--paper-muted);
+    white-space: nowrap;
+  }
+  @media (max-width: 720px) {
+    .readout { display: none; }
+    .hero { height: calc(100svh - 56px); }
+  }
+
+  @media (max-width: 768px) {
+    .hero__title { top: 22%; width: 100%; padding: 0 24px; }
+    .hero__title h1 { font-size: clamp(38px, 11vw, 52px); }
+    .hero__title p { margin-top: 12px; max-width: 300px; font-size: 17px; letter-spacing: -.5px; }
+    .hero__fan { bottom: calc(17% - 20px); }
+    .hero__book { width: 26vw; min-width: 96px; }
+    .hero:not(.is-spread) .hero__book-wrap + .hero__book-wrap { margin-left: -44px; }
+  }
+
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 8px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--paper-muted); }
+  .page { max-width: 980px; margin: 0 auto; padding: 20px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .layers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 8px 0 18px;
+  }
+  .layers figure { margin: 0; background: var(--ink); }
+  .layers img { border: 0; height: 220px; width: 100%; object-fit: contain; background: transparent; }
+  .prose { max-width: 38rem; }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+    border: 1px solid var(--ink);
+  }
+  .recipe { border-top: 1px solid var(--ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--paper-muted);
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<section class="hero" id="hero">
+  <header class="site-header">
+    <svg class="logo" viewBox="0 0 36 36" aria-hidden="true">
+      <circle cx="18" cy="18" r="18" fill="#181515"/>
+      <path fill="#f1f0ed" d="M18 5.5l1.05 6.6 5.7-3.5-3.5 5.7 6.6 1.05-6.6 1.05 3.5 5.7-5.7-3.5L18 30.5l-1.05-6.6-5.7 3.5 3.5-5.7L8.15 20.6l6.6-1.05-3.5-5.7 5.7 3.5Z"/>
+    </svg>
+    <nav>
+      <span>Investments</span>
+      <span>Scout Program</span>
+      <span>Library</span>
+      <span>Reason to Exist</span>
+      <span>Our Team</span>
+    </nav>
+    <span class="contact">Contact Us</span>
+  </header>
+  <div class="hero__title">
+    <h1>Chapter One</h1>
+    <p>Investing in the founders authoring the future we want to live in.</p>
+  </div>
+  <div class="hero__fan" id="fan">
+    <div class="hero__train" id="train"></div>
+  </div>
+</section>
+<div class="hudbar">
+  <div class="readout" id="readout">十六张图 · 叠三次</div>
+  <div class="hud">
+    <button type="button" id="btnOverlap" aria-pressed="true">叠在一起</button>
+    <button type="button" id="btnRamp" aria-pressed="true">一边高一边低</button>
+    <button type="button" id="btnWalk" aria-pressed="true">自己走</button>
+  </div>
+</div>
+
+<header class="mast">
+  <h1>立体是烤出来的。架子是排出来的。</h1>
+  <p class="sub">Chapter One 首页。样本：chapterone.com</p>
+</header>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>你截的就是这个</h3>
+      <p class="drop">奶油色的整屏。标题停在上三分之一。底下那一排立体书像搁在看不见的弧形架子上。橙色那本被抬起来，左右让开一条缝。看起来像三维。打开这一页上面那段，它已经在走。</p>
+      <p>原站字体叫 Edict Display。这页用免费的 Instrument Serif 顶上。书还是他们烤好的那十六张图。</p>
+    </div>
+    <figure>
+      <img src="assets/source-page.jpg" alt="Chapter One 首页书架子" />
+      <figcaption><strong>图 1.</strong> 你丢过来的那屏。橙色 Formic 被抬起，左右被推开。缝不是建模，是平移。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>立体是一张图</h3>
+    <p>每一本书是一张透明底的 PNG，大约 623 × 1200。相机已经摆好：书脊朝左，封面朝右前方，同一套光。浏览器只是把图排成一排。没有 Three.js，没有旋转卡片，没有真实的架子模型。</p>
+    <p>下面四张单独看就是切出来的纸片。黑底是为了让你看见透明的边。把它们放到奶油色上，边就消失，只剩下书。</p>
+  </div>
+
+  <div class="layers">
+    <figure>
+      <img src="assets/supabase.png" alt="Supabase" />
+      <figcaption><strong>图 2.</strong> Supabase</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/flex.png" alt="Flex" />
+      <figcaption><strong>图 3.</strong> Flex</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/formic.png" alt="Formic" />
+      <figcaption><strong>图 4.</strong> Formic</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/superhuman.png" alt="Superhuman" />
+      <figcaption><strong>图 5.</strong> Superhuman</figcaption>
+    </figure>
+  </div>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>先别开三维引擎。先把书写成一张斜着的图，再让它们挤在一起。立体来自图，架子来自排法。
+  </aside>
+
+  <div class="prose">
+    <h3>三台小机器</h3>
+    <p>上面那一排同时开着三件事。页底三个按钮可以单独关掉。关掉哪一件，哪一件的贡献就露出来。</p>
+    <p><b>叠在一起。</b>书宽 10.4vw，最小 130 像素。下一本往左拉 64 像素。它们像手里的牌，不是并排放的字典。手机上改成拉 44 像素，书宽改成 26vw。</p>
+    <p><b>一边高一边低。</b>不是旋转。每一本的高度等于它此刻的横坐标乘上斜率。斜率是 <code>10 / 步宽</code>。左边的书在屏幕左边，纵坐标是负的，看起来翘起来；右边的书往下沉。合在一起，眼睛把它读成弧形架子。其实是一条斜线。</p>
+    <p><b>自己走。</b>十六张图复制三遍，排成一列火车。整列从 <code>-一圈宽</code> 滑到 <code>0</code>，速度大约每秒 50 像素，再无缝接上。所以你永远抽不完。</p>
+    <p>鼠标停在某一本上，火车停住。左边的书再往左挪 120 像素，右边往右挪 120 像素，这一本自己抬高 18 像素。图 1 里那条缝，就是这个。</p>
+  </div>
+
+  <div class="recipe">
+    <h3>配方</h3>
+    <ol class="how">
+      <li>整屏奶油底 <code>#F1F0ED</code>。标题绝对定位在大约 27% 高，衬线 64 像素。副标题无衬线 20 像素，颜色 <code>#515151</code>，字距 -0.8 像素，最宽 335 像素。</li>
+      <li>每本书一张透明 PNG。同一机位，同一画幅。文件名随便，朝向必须一致。</li>
+      <li>外层 <code>.hero__fan</code> 贴在底部，左右各探出 8%。里面一条 <code>display: flex; align-items: flex-end</code> 的火车。</li>
+      <li>书宽 <code>10.4vw</code>，最小 130。相邻两本 <code>margin-left: -64px</code>。</li>
+      <li>把同一份清单复制三遍。一圈的宽度 <code>N</code> 等于第 16 本的 <code>offsetLeft</code> 减第 0 本。</li>
+      <li>火车的 <code>x</code> 从 <code>-N</code> 走到 <code>0</code>，时长 <code>N / 50</code> 秒，线性，无限循环。</li>
+      <li>每本书 <code>y = (offsetLeft + x) * (10 / 步宽)</code>。步宽是相邻两本 <code>offsetLeft</code> 之差。不要给书加 <code>rotateY</code>。</li>
+      <li>悬停：停住火车。左边 <code>translateX(-120)</code>，右边 <code>+120</code>，当前这本 <code>translateY(-18)</code> 并抬高 <code>z-index</code>。</li>
+    </ol>
+<pre>.hero { position: relative; height: 100svh; background: #F1F0ED; overflow: hidden; }
+.hero__title { position: absolute; top: calc(27% - 10px); left: 50%; transform: translate(-50%); }
+.hero__fan { position: absolute; left: -8%; right: -8%; bottom: calc(22% - 36px); }
+.hero__train { display: flex; align-items: flex-end; width: max-content; }
+.hero__book-wrap + .hero__book-wrap { margin-left: -64px; }
+.hero__book { width: 10.4vw; min-width: 130px; }
+.hero__book-wrap.is-hovered .hero__book { transform: translateY(-18px); }
+
+/* 每帧 */
+const step = wraps[1].offsetLeft - wraps[0].offsetLeft
+const cycle = wraps[16].offsetLeft - wraps[0].offsetLeft
+const slope = 10 / step
+train.style.transform = `translateX(${x}px)`          // x: -cycle → 0
+wrap.style.transform = `translate(${split}px, ${ (wrap.offsetLeft + x) * slope }px)`</pre>
+    <p>原站用 GSAP 做火车和斜率。这页用 <code>requestAnimationFrame</code> 重写，数字一样。你要做自己的作品集，先换十六张自己的书，别先引三维库。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本：<a href="https://www.chapterone.com/">chapterone.com</a> 首页 <code>.hero</code>。字体原是 Edict Display，这页用 Instrument Serif 代替。</p>
+  <p>同一站点的宣言段：<a href="../chapter-one/index.html">图当词</a> · 货架：<a href="../index.html">living/</a> · 给 agent 的目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const BOOKS = [
+    ["supabase.png", "Supabase"],
+    ["epirus.png", "Epirus"],
+    ["helius.png", "Helius"],
+    ["erebor.png", "Erebor"],
+    ["together.png", "Together.ai"],
+    ["mach.png", "Mach Industries"],
+    ["flex.png", "Flex"],
+    ["mercury.png", "Ether.Fi"],
+    ["intuition.png", "General Intuition"],
+    ["formic.png", "Formic"],
+    ["superhuman.png", "Superhuman"],
+    ["misfits.png", "Misfits"],
+    ["ondo.png", "Ondo"],
+    ["glue.png", "Glue"],
+    ["moonpay.png", "Moonpay"],
+    ["quo.png", "Quo"]
+  ]
+  const COPIES = 3
+  const hero = document.getElementById("hero")
+  const train = document.getElementById("train")
+  const fan = document.getElementById("fan")
+  const readout = document.getElementById("readout")
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+
+  const flags = { overlap: true, ramp: true, walk: !reduce }
+
+  for (let copy = 0; copy < COPIES; copy++) {
+    for (const [file, name] of BOOKS) {
+      const wrap = document.createElement("div")
+      wrap.className = "hero__book-wrap"
+      const img = document.createElement("img")
+      img.className = "hero__book"
+      img.src = "assets/" + file
+      img.alt = copy === 0 ? name : ""
+      img.draggable = false
+      wrap.appendChild(img)
+      train.appendChild(wrap)
+    }
+  }
+
+  const wraps = [...train.children]
+  const split = wraps.map(() => 0)
+  let x = 0
+  let booted = false
+  let hover = null
+  let last = performance.now()
+
+  function measure() {
+    const step = wraps[1].offsetLeft - wraps[0].offsetLeft
+    const cycle = wraps[BOOKS.length].offsetLeft - wraps[0].offsetLeft
+    return { step, cycle, slope: step ? 10 / step : 0 }
+  }
+
+  function tick(now) {
+    const dt = Math.min(40, now - last) / 1000
+    last = now
+    const { step, cycle, slope } = measure()
+    if (cycle > 1) {
+      if (!booted) {
+        x = -cycle * 0.38
+        booted = true
+      }
+      if (flags.walk && hover === null) {
+        x += 50 * dt
+        if (x >= 0) x -= cycle
+      }
+      train.style.transform = "translateX(" + x + "px)"
+      wraps.forEach((w, i) => {
+        const target = hover === null ? 0 : i < hover ? -120 : i > hover ? 120 : 0
+        split[i] += (target - split[i]) * (1 - Math.exp(-dt * 8))
+        const y = flags.ramp ? (w.offsetLeft + x) * slope : 0
+        w.style.transform = "translate(" + split[i] + "px, " + y + "px)"
+        w.classList.toggle("is-hovered", hover === i)
+      })
+      readout.textContent =
+        "步宽 " + Math.round(step) +
+        " · 斜率 " + slope.toFixed(3) +
+        " · x " + Math.round(x)
+    }
+    requestAnimationFrame(tick)
+  }
+
+  function setPressed(btn, on) {
+    btn.setAttribute("aria-pressed", on ? "true" : "false")
+  }
+
+  const btnOverlap = document.getElementById("btnOverlap")
+  const btnRamp = document.getElementById("btnRamp")
+  const btnWalk = document.getElementById("btnWalk")
+  setPressed(btnWalk, flags.walk)
+
+  btnOverlap.addEventListener("click", () => {
+    flags.overlap = !flags.overlap
+    hero.classList.toggle("is-spread", !flags.overlap)
+    setPressed(btnOverlap, flags.overlap)
+  })
+  btnRamp.addEventListener("click", () => {
+    flags.ramp = !flags.ramp
+    setPressed(btnRamp, flags.ramp)
+  })
+  btnWalk.addEventListener("click", () => {
+    flags.walk = !flags.walk
+    setPressed(btnWalk, flags.walk)
+  })
+
+  if (fine) {
+    wraps.forEach((w, i) => {
+      w.addEventListener("mouseenter", () => { hover = i })
+    })
+    fan.addEventListener("mouseleave", () => { hover = null })
+  }
+
+  requestAnimationFrame(tick)
+})()
+</script>
+</body>
+</html>

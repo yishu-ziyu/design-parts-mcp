@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>一半是雾，一半是门</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --specimen: #ff5924;
+    --door: #fff;
+    --ease: cubic-bezier(0.25, 0.1, 0, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio {
+    max-width: 1100px;
+    margin: 18px auto 0;
+    padding: 0 16px;
+  }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    max-width: 1100px;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  button.play {
+    font: 600 13px -apple-system, system-ui, sans-serif;
+    padding: 8px 14px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  button.play:hover { background: var(--green); border-color: var(--green); }
+  button.play:active { transform: translateY(1px); }
+
+  #stage {
+    position: relative;
+    height: min(72vh, 680px);
+    min-height: 420px;
+    overflow: hidden;
+    border: 1px solid var(--ink);
+    background: #0c0a14;
+    container-type: size;
+  }
+  .fog {
+    position: absolute;
+    inset: -8%;
+    overflow: hidden;
+    will-change: transform;
+    z-index: 0;
+  }
+  .gl {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+  }
+  .grain {
+    position: absolute;
+    inset: 0;
+    background: url("assets/noise.png");
+    background-size: 80px 80px;
+    opacity: .6;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gradients {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    filter: brightness(1.3);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .aurora {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 88%;
+    height: auto;
+    max-width: none;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    will-change: transform;
+  }
+  .blob-slot {
+    position: absolute;
+    top: calc(50% - 28cqw);
+    left: 22%;
+    width: 56%;
+    height: 56cqw;
+    z-index: 3;
+    pointer-events: none;
+  }
+  #blob { width: 100%; height: 100%; display: block; overflow: visible; }
+  #blob path { fill: #fff; }
+  .door {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: min(48%, 520px);
+    background: var(--door);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 28px 24px;
+    z-index: 4;
+    will-change: transform;
+  }
+  .door h2 {
+    font-weight: 400;
+    font-size: clamp(36px, 7cqw, 80px);
+    line-height: 1;
+    letter-spacing: -.05em;
+    margin: 0 0 28px;
+    color: #000;
+    max-width: 400px;
+    overflow: hidden;
+  }
+  .door h2 span {
+    display: block;
+    will-change: transform;
+  }
+  .pills { display: flex; flex-direction: column; align-items: center; width: min(300px, 100%); }
+  .pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 300px;
+    max-width: 100%;
+    height: 50px;
+    border: 0;
+    border-radius: 25px;
+    margin: 12px 0 0;
+    cursor: pointer;
+    font: 400 18px/1.1 -apple-system, system-ui, "Nunito", sans-serif;
+    box-shadow: 5px 5px 10px rgb(0 0 0 / 10%);
+    transition: box-shadow .3s ease;
+    will-change: box-shadow;
+  }
+  .pill:hover { box-shadow: 10px 10px 20px rgb(0 0 0 / 15%); }
+  .pill:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .pill.loud { background: var(--specimen); color: #fff; }
+  .pill.quiet { background: #fff; color: #000; }
+  .door .foot {
+    margin: 10vh 0 0;
+    font: 400 14px/1.6 -apple-system, system-ui, sans-serif;
+    color: #748297;
+    letter-spacing: -.02em;
+  }
+  .door .foot b { color: var(--specimen); font-weight: 600; }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 80px;
+  }
+  .page h2 {
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--green);
+    margin: 28px 0 10px;
+  }
+  .page p { margin: 0 0 12px; }
+  .page a { color: var(--green); }
+  .beats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .beats > div {
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 12px;
+  }
+  .beats .n {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .beats h3 { margin: 8px 0 6px; font-size: 16px; font-weight: 500; color: var(--green); }
+  .beats p { margin: 0; font-size: 14px; }
+  .note {
+    max-width: 720px;
+    margin: 0 auto 40px;
+    padding: 0 24px 48px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .note code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  @media (max-width: 760px) {
+    .beats { grid-template-columns: 1fr; }
+    .studio { padding: 0 12px; }
+    #stage { height: 640px; }
+    .door {
+      top: auto;
+      left: 10px;
+      right: 10px;
+      width: auto;
+      height: 54%;
+    }
+    .blob-slot {
+      top: 16%;
+      left: 13%;
+      width: 74%;
+      height: auto;
+      aspect-ratio: 1;
+    }
+    .door h2 { font-size: clamp(32px, 11vw, 48px); margin-bottom: 16px; }
+    .door .foot { margin-top: 28px; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">living / oasis</div>
+  <h1>一半是雾，一半是门</h1>
+  <p class="sub">白洞会呼吸。雾里有焦散。把鼠标放上去。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>劈开</h2>
+    <button class="play" type="button" id="replay">再播</button>
+  </div>
+  <div id="stage">
+    <div class="fog" id="fog">
+      <canvas class="gl" id="gl"></canvas>
+      <div class="grain" aria-hidden="true"></div>
+      <div class="gradients">
+        <img class="aurora" id="aurora" src="assets/gradient.png" alt="" />
+      </div>
+    </div>
+    <div class="blob-slot">
+      <svg id="blob" viewBox="0 0 1000 1000" aria-hidden="true"><path id="path2" d=""></path></svg>
+    </div>
+    <aside class="door" id="door">
+      <h2 id="title"><span>进来</span><span>就安静</span></h2>
+      <div class="pills">
+        <button class="pill loud" type="button" id="enter">进来</button>
+        <button class="pill quiet" type="button" id="look">先看看</button>
+      </div>
+      <p class="foot">这不是登录。<b>先看看</b>会把门拿走。</p>
+    </aside>
+  </div>
+</div>
+
+<div class="page">
+  <div class="beats">
+    <div>
+      <div class="n">01 劈开</div>
+      <h3>门不铺在雾上</h3>
+      <p>右半是纸，inset 10px，圆角 10。雾从底下穿过去。表单不是盖在英雄图上的一层。</p>
+    </div>
+    <div>
+      <div class="n">02 白洞</div>
+      <h3>白洞会呼吸</h3>
+      <p>6 个点，半径 330–350，1.2–2s <code>sine.inOut</code> 来回。边是 cardinal。底下焦散从极光图的透明处爬出来。</p>
+    </div>
+    <div>
+      <div class="n">03 门</div>
+      <h3>一个响，一个静</h3>
+      <p>响的药丸才上色。影子 5→10，0.3s。不要 Google / Apple。原站字是 Louize，这里用笔记自己的衬线。</p>
+    </div>
+  </div>
+
+  <h2>不是把 mymind 搬过来</h2>
+  <p>原页 <a href="https://access.mymind.com/signin">access.mymind.com/signin</a>。登录态把 blob 时间轴 pause 了，底下焦散 shader 仍在走 <code>uTime</code>。颜色是带透明的 <code>gradient_global.png</code>，不是 JPEG，也不是 mix-blend。颗粒 80px，透明度 0.6，铺在 shader 上、白洞下。</p>
+  <p>不要抄思考者，不要接真登录。点舞台会给 shader 加 2 秒 <code>timeAdded</code>，跟原站 click 一样。</p>
+</div>
+
+<section class="note">
+  活笔记。第一屏就是发明。白洞必须在呼吸。鼠标在雾上会让开一点。<br />
+  原则：Notion Will's S · Craft / Delight · 不必填满整个屏幕 · Progressive Disclosure。
+</section>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="fog.js"></script>
+<script>
+  const door = document.getElementById("door");
+  const title = document.getElementById("title");
+  const lines = gsap.utils.toArray("#title span");
+  const blobEl = document.getElementById("blob");
+  let doorOpen = true;
+
+  const fog = initFog({
+    gsap,
+    canvas: document.getElementById("gl"),
+    path: document.getElementById("path2"),
+    img: document.getElementById("aurora"),
+    stage: document.getElementById("stage")
+  });
+
+  function playIn() {
+    doorOpen = true;
+    fog.restartBlob();
+    fog.pulse();
+    gsap.killTweensOf([door, blobEl, ...lines]);
+    gsap.set(blobEl, { scale: 0.86, opacity: 0, transformOrigin: "50% 50%" });
+    gsap.set(door, { xPercent: 18, opacity: 0 });
+    gsap.set(lines, { yPercent: 80, scale: 1.1, opacity: 0 });
+
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.to(blobEl, { scale: 1, opacity: 1, duration: 1.1 }, 0.08);
+    tl.to(door, { xPercent: 0, opacity: 1, duration: 0.85 }, 0.24);
+    tl.to(lines, {
+      yPercent: 0,
+      scale: 1,
+      opacity: 1,
+      stagger: 0.08,
+      duration: 1.15,
+      ease: "expo.inOut"
+    }, 0.32);
+  }
+
+  function showFog() {
+    doorOpen = false;
+    gsap.to(door, { xPercent: 110, opacity: 0, duration: 0.7, ease: "power3.inOut" });
+  }
+
+  function showDoor() {
+    doorOpen = true;
+    gsap.to(door, { xPercent: 0, opacity: 1, duration: 0.7, ease: "power3.inOut" });
+  }
+
+  document.getElementById("replay").addEventListener("click", (e) => {
+    e.stopPropagation();
+    playIn();
+  });
+  document.getElementById("look").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (doorOpen) showFog(); else showDoor();
+  });
+  document.getElementById("enter").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!doorOpen) showDoor();
+    fog.pulse();
+  });
+  playIn();
+</script>
+</body>
+</html>

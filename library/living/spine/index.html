@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>spine — 奕枢侧栏：脊柱条 + 滑动光点 + 合成音</title>
+<style>
+/* ===== token（视觉 token 摘自源 e13.css） ===== */
+:root{
+  --primary:#2684fc;
+  --high:#f8f8fa;
+  --low:#79808b;
+  --ease-in-out:cubic-bezier(.4,0,.2,1);
+  /* 弹簧曲线，数学曲线照抄源数值 */
+  --ease-spring:linear(0, .0018, .007 1.16%, .0264 2.32%, .065, .1161 5.23%, .2294 7.84%, .6219 15.97%, .7307 18.58%, .8142, .8845 23.23%, .9479, .9955 28.45%, 1.0159, 1.0323 31.35%, 1.0492, 1.0602 35.42%, 1.0666 37.74%, 1.0679 40.35%, 1.0651 42.68%, 1.059 45.29%, 1.028 54.87%, 1.0158 59.22%, 1.0071, 1.0011 67.35%, .997 72.29%, .9954 78.1%, .9991 99.87%);
+}
+@property --bar-height{syntax:"<length>";inherits:true;initial-value:10px}
+
+*{box-sizing:border-box;border:0 solid;margin:0;padding:0}
+button,input{font:inherit;color:inherit;background:none;border-radius:0}
+button{cursor:pointer}
+ul{list-style:none}
+a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+body{background:#0f0f0f;color:var(--high);font:500 13px/1.5 system-ui,-apple-system,"PingFang SC",sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:slashed-zero}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+.stage{min-height:100vh;display:flex;align-items:center;justify-content:center}
+
+/* ===== 540 方框 ===== */
+.frame{position:relative;width:540px;height:540px;background:#1F1F1F;isolation:isolate;overflow:hidden;display:flex;font-size:13px;font-weight:500;color:var(--high)}
+
+/* ===== 侧栏 ===== */
+.sidebar{width:256px;flex-shrink:0}
+.side-head{display:flex;align-items:center;justify-content:space-between;padding:20px}
+.logo{width:28px;height:28px;color:var(--high);display:block}
+/* 「+」多层阴影：照原版数值（复刻对象） */
+.plus{width:28px;height:28px;display:flex;color:var(--high);background:#333;border-radius:12px;
+  box-shadow:0 0 0 1px rgba(15,15,15,.3),0 13px 5px rgba(0,0,0,.02),0 7px 4px rgba(0,0,0,.07),0 3px 3px rgba(0,0,0,.13),0 1px 2px rgba(0,0,0,.15),inset 0 0 2px rgba(255,255,255,.08),inset 0 -2px 0 rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1)}
+.plus:active{translate:0 1px}
+.plus svg{margin:auto;width:12px;height:12px}
+
+#accordion{padding:0 12px;margin-top:20px}
+#accordion ul{display:flex;flex-direction:column;gap:1px}
+.item{display:flex;align-items:center;height:36px;border-radius:12px;padding:0 14px 0 12px;gap:10px;user-select:none;cursor:pointer}
+.item:hover{background:rgba(248,248,250,.07)}
+.item[data-current]{background:rgba(38,132,252,.15);color:var(--primary)}
+.ico{width:18px;height:18px;color:var(--low);flex-shrink:0}
+.item[data-current] .ico{color:var(--primary)}
+.chev{width:16px;height:16px;margin-left:auto;rotate:-90deg;transition:rotate .2s var(--ease-in-out)}
+[data-has-subnav][aria-expanded="true"] .chev{rotate:0deg;transition:rotate .3s var(--ease-spring)}
+
+/* ===== 手风琴子导航（高度用 interpolate-size 才能对 auto 做过渡） ===== */
+[data-subnav]{interpolate-size:allow-keywords;visibility:hidden;height:0;transition:height .1s var(--ease-in-out),visibility 0s .1s;overflow:hidden;position:relative}
+[data-subnav]>*{min-height:0}
+[data-has-subnav][aria-expanded="true"]+[data-subnav]{visibility:visible;height:auto;transition:height .3s var(--ease-spring),visibility 0s}
+.subitem{display:flex;align-items:center;height:36px;border-radius:12px;padding:0 14px 0 18px;gap:16px;user-select:none;cursor:pointer}
+.subitem:hover{background:rgba(248,248,250,.07)}
+.subitem[data-current]{background:rgba(38,132,252,.15);color:var(--primary)}
+.bullet{width:6px;height:6px;border-radius:999px;background:rgba(248,248,250,.2);flex-shrink:0}
+
+/* ===== 脊柱条：升高 .3s spring / 缩没 .1s ease-in-out（不对称） ===== */
+[data-bar]{width:10px;height:var(--bar-height);border-radius:999px;background:rgba(248,248,250,.1);
+  position:absolute;left:16px;top:14px;pointer-events:none;
+  opacity:0;transition:--bar-height .1s var(--ease-in-out),opacity .1s var(--ease-in-out)}
+[data-bar][data-visible]{opacity:1}
+[data-bar][data-visible]:not([data-instant]){transition:--bar-height .3s var(--ease-spring),opacity .2s var(--ease-in-out)}
+
+/* ===== 滑动光点：初次落位 instant，已显示才 .2s 滑动 ===== */
+[data-dot]{width:6px;height:6px;border-radius:999px;background:var(--primary);
+  box-shadow:0 0 10px rgba(38,132,252,.85),inset 0 1px rgba(255,255,255,.25);
+  position:absolute;left:18px;top:16px;pointer-events:none;
+  opacity:0;transition:opacity .2s var(--ease-in-out)}
+[data-dot][data-visible]{opacity:1}
+[data-dot][data-visible]:not([data-instant]){transition:translate .2s var(--ease-in-out),opacity .2s var(--ease-in-out)}
+
+/* ===== 主面板（多层阴影：照原版数值） ===== */
+.panel{background:#303030;width:444px;min-width:0;height:600px;margin-top:12px;flex-shrink:0;border-radius:16px;padding:4px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.07),0 73px 29px rgba(0,0,0,.01),0 41px 24px rgba(0,0,0,.05),0 18px 18px rgba(0,0,0,.09),0 5px 10px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.05)}
+.searchwrap{position:relative}
+.search{width:436px;background:#1F1F1F;border-radius:12px;height:36px;outline:none;padding-left:40px;
+  box-shadow:0 1px 0 rgba(211,221,238,.1),inset 0 1px 1px rgba(0,0,0,.25)}
+.search::placeholder{color:#595959}
+.searchicon{position:absolute;width:18px;height:18px;left:12px;top:50%;translate:0 -50%;color:#595959;pointer-events:none}
+.skeleton{padding-left:40px;padding-top:36px;display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.skel{background:#3D3D3D;height:14px;border-radius:6px;flex-shrink:0}
+.w64{width:64px}.w260{width:260px}.w170{width:170px}.w200{width:200px}.w50{width:50px}.w120{width:120px}.w190{width:190px}
+.skel-tall{height:27px;border-radius:8px;margin-block:24px}
+.skel-thin{height:1px}
+.skel-small{height:11px}
+.skel-drop{margin-top:24px}
+
+/* ===== 声音开关（右下角，极小，默认开） ===== */
+#sfx{position:fixed;right:12px;bottom:12px;font-size:11px;color:#8a8a8a;background:#1a1a1a;border:1px solid #2c2c2c;border-radius:999px;padding:4px 10px;user-select:none}
+
+/* ===== 页尾「可拆」 ===== */
+#notes{max-width:860px;margin:0 auto;padding:64px 32px 120px;color:#9a9a9a}
+#notes h3{font-size:14px;letter-spacing:.08em;color:#6f6f6f;font-weight:600;margin-bottom:20px}
+#notes dt{font-weight:600;color:#c9c9c9;margin-top:16px}
+#notes dd{margin-top:4px;font-size:12.5px;line-height:1.8}
+#notes code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#c9c9c9}
+
+/* ===== reduced-motion：全部直达终态，声音保留 ===== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:0s !important;transition-delay:0s !important;animation:none !important}
+}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="frame">
+
+    <aside class="sidebar">
+      <header class="side-head">
+        <!-- 自绘印记：印章框 + 回环结，40×40 currentColor，非原版结形 -->
+        <svg class="logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none" role="img" aria-label="奕枢印记">
+          <rect x="4" y="4" width="32" height="32" rx="9" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 20C12 15.5 17 15.5 20 20C23 24.5 28 24.5 28 20C28 15.5 23 15.5 20 20C17 24.5 12 24.5 12 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="20" r="1.4" fill="currentColor"/>
+        </svg>
+
+        <button class="plus" data-plus aria-label="新建会话">
+          <svg viewBox="0 0 12 12" aria-hidden="true">
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+              <line x1="10.75" y1="6" x2="1.25" y2="6"></line>
+              <line x1="6" y1="10.75" x2="6" y2="1.25"></line>
+            </g>
+          </svg>
+        </button>
+      </header>
+
+      <nav id="accordion" aria-label="奕枢导航">
+        <ul>
+          <li>
+            <a data-current href="#0" class="item">
+              <svg class="ico" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 8.5L9 3.5L15 8.5V14.5C15 15.33 14.33 16 13.5 16H4.5C3.67 16 3 15.33 3 14.5V8.5Z"/>
+                <path d="M7.5 16V11H10.5V16"/>
+              </g></svg>
+              <span>主页</span>
+            </a>
+          </li>
+
+          <li>
+            <a data-has-subnav aria-expanded="false" href="#0" class="item">
+              <svg class="ico" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4.5H13.5C14.33 4.5 15 5.17 15 6V14.5C15 15.33 14.33 16 13.5 16H4.5C3.67 16 3 15.33 3 14.5V6C3 5.17 3.67 4.5 4.5 4.5H6"/>
+                <rect x="6" y="2.75" width="6" height="3.5" rx="1"/>
+                <path d="M6.5 10H11.5"/><path d="M6.5 13H11.5"/>
+              </g></svg>
+              <span>任务</span>
+              <svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M10.75 7L8 9.75L5.25 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+
+            <div data-subnav inert>
+              <ul>
+                <li>
+                  <a href="#0" class="subitem"><span class="bullet"></span><span>进行中</span></a>
+                </li>
+                <li>
+                  <a href="#0" class="subitem"><span class="bullet"></span><span>已排队</span></a>
+                </li>
+                <li>
+                  <a href="#0" class="subitem"><span class="bullet"></span><span>已完成</span></a>
+                </li>
+              </ul>
+
+              <!-- 脊柱条 -->
+              <div id="spine" data-bar></div>
+              <!-- 滑动光点 -->
+              <div id="dot" data-dot></div>
+            </div>
+          </li>
+
+          <li>
+            <a href="#0" class="item">
+              <svg class="ico" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.5 2.5L4.5 10H8L7.5 15.5L13.5 8H10L9.5 2.5Z"/>
+              </g></svg>
+              <span>技能</span>
+            </a>
+          </li>
+
+          <li>
+            <a href="#0" class="item">
+              <svg class="ico" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 2.75L15.5 6L9 9.25L2.5 6L9 2.75Z"/>
+                <path d="M2.5 9.5L9 12.75L15.5 9.5"/>
+                <path d="M2.5 13L9 16.25L15.5 13"/>
+              </g></svg>
+              <span>记忆</span>
+            </a>
+          </li>
+
+          <li>
+            <a href="#0" class="item">
+              <svg class="ico" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="9" r="2.75"/>
+                <circle cx="9" cy="9" r="5.5"/>
+                <path d="M9 1.75V3.5M9 14.5V16.25M1.75 9H3.5M14.5 9H16.25M3.92 3.92L5.13 5.13M12.87 12.87L14.08 14.08M14.08 3.92L12.87 5.13M5.13 12.87L3.92 14.08"/>
+              </g></svg>
+              <span>设置</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="panel">
+      <div class="searchwrap">
+        <input type="text" class="search" placeholder="搜会话或技能" aria-label="搜会话或技能">
+        <svg class="searchicon" viewBox="0 0 18 18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15.75 15.75L11.64 11.64"/>
+          <circle cx="7.75" cy="7.75" r="5.5"/>
+        </g></svg>
+      </div>
+
+      <div class="skeleton" aria-hidden="true">
+        <div class="skel w64"></div>
+        <div class="skel w260 skel-tall"></div>
+        <div class="skel w260 skel-thin"></div>
+        <div class="skel w50 skel-small"></div>
+        <div class="skel w260"></div>
+        <div class="skel w170"></div>
+        <div class="skel w200"></div>
+        <div class="skel w260"></div>
+        <div class="skel w260 skel-thin skel-drop"></div>
+        <div class="skel w50 skel-small"></div>
+        <div class="skel w120"></div>
+        <div class="skel w190"></div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<button id="sfx" aria-pressed="true">声音 开</button>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#accordion</code></dt>
+    <dd>手风琴不对称时序：点「任务」toggle <code>aria-expanded</code>，子容器联动 <code>inert</code>。展开 300ms <code>ease-spring</code>（linear() 弹簧曲线），收起 200ms <code>ease-in-out</code>；子导航高度 <code>0 → auto</code> 过渡靠 <code>interpolate-size:allow-keywords</code>。收合箭头 <code>rotate:-90deg</code>，展开转正。</dd>
+    <dt><code>#spine</code></dt>
+    <dd>脊柱条：子导航左缘 10px 宽条，<code>--bar-height</code> 是注册过 <code>@property</code> 的长度，才能被 transition。悬停第 i 个子项长到三档 10/47/84px，升高走 0.3s spring、缩没走 0.1s ease-in-out；<code>pointerleave</code> 时先 <code>commitStyles()</code> 再 <code>cancel()</code> 取消进行中的过渡，防跳变。</dd>
+    <dt><code>#dot</code></dt>
+    <dd>滑动光点：6px primary 圆 + <code>box-shadow:0 0 10px</code> 辉光，translate 三档 0/37/74px 对应当前子项。初次出现或无当前项 = instant（<code>data-instant</code> 属性 + <code>offsetHeight</code> 强制 reflow）；已显示才 0.2s ease-in-out 平滑滑动。点叶子项 <code>data-current</code> 迁移，光点滑到新位。</dd>
+    <dt><code>#sfx</code></dt>
+    <dd>合成音：Web Audio 正弦超短包络，pop（400→200Hz 扫频，gain 0.1）= 父项开合、tap（1200Hz，gain 0.08）= 叶子选中、swoosh（600→1400Hz，gain 0.05）= 新建会话。AudioContext 首次手势惰性创建。右下角可关。</dd>
+  </dl>
+</section>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= 合成音（Web Audio，Minimal 正弦超短包络风格） =================
+   参数与源 /tmp/e13.js 的 Fe patch（「Minimal」，Raphael Salaja）一致：
+   pop    { sine 400→200Hz, attack 0,    decay .04,  release .012, gain .1  }
+   tap    { sine 1200Hz,    attack 0,    decay .012, release .004, gain .08 }
+   swoosh { sine 600→1400Hz,attack .005, decay .04,  release .015, gain .05 }
+   sustain 均为 0 → 包络：attack（0 则直接落位）→ setTargetAtTime 指数衰减回静音。 */
+var PATCH = {
+  pop:    { f0:400,  f1:200,  attack:0,     decay:0.04,  release:0.012, gain:0.1  },
+  tap:    { f0:1200, f1:1200, attack:0,     decay:0.012, release:0.004, gain:0.08 },
+  swoosh: { f0:600,  f1:1400, attack:0.005, decay:0.04,  release:0.015, gain:0.05 }
+};
+var GAIN_FLOOR = 1e-4;
+var actx = null, soundOn = true;
+
+function audioCtx(){
+  if(!actx || actx.state === "closed"){
+    actx = new (window.AudioContext || window.webkitAudioContext)({latencyHint:"interactive"});
+  }
+  if(actx.state === "suspended") actx.resume();
+  return actx;
+}
+
+function play(name){
+  if(!soundOn) return;
+  var p = PATCH[name];
+  if(!p) return;
+  var ac = audioCtx(), t = ac.currentTime;
+  var osc = ac.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(p.f0, t);
+  if(p.f1 !== p.f0){
+    osc.frequency.exponentialRampToValueAtTime(Math.max(p.f1, 1), t + p.attack + p.decay);
+  }
+  var g = ac.createGain();
+  if(p.attack > 0){
+    g.gain.setValueAtTime(GAIN_FLOOR, t);
+    g.gain.linearRampToValueAtTime(p.gain, t + p.attack);
+  }else{
+    g.gain.setValueAtTime(p.gain, t);
+  }
+  g.gain.setTargetAtTime(GAIN_FLOOR, t + p.attack, p.decay / 3);
+  osc.connect(g); g.connect(ac.destination);
+  osc.start(t);
+  osc.stop(t + p.attack + p.decay + 0.1);
+}
+
+var sfxBtn = document.getElementById("sfx");
+sfxBtn.addEventListener("click", function(){
+  soundOn = !soundOn;
+  sfxBtn.textContent = soundOn ? "声音 开" : "声音 关";
+  sfxBtn.setAttribute("aria-pressed", String(soundOn));
+});
+
+/* ================= 手风琴 + 脊柱条（与源等价） ================= */
+var BAR_HEIGHTS = ["10px", "47px", "84px"];
+
+document.querySelectorAll("[data-has-subnav]").forEach(function(parent){
+  var subnav = parent.nextElementSibling && parent.nextElementSibling.matches("[data-subnav]")
+    ? parent.nextElementSibling : null;
+  if(!subnav) return;
+  var bar = subnav.querySelector("[data-bar]");
+
+  function setBarHeight(h){ if(bar) bar.style.setProperty("--bar-height", h); }
+
+  function hideBar(){
+    if(!bar) return;
+    bar.getAnimations().forEach(function(a){
+      if(a.transitionProperty === "--bar-height"){ a.commitStyles(); a.cancel(); }
+    });
+    bar.setAttribute("data-instant", "");
+    bar.removeAttribute("data-visible");
+  }
+
+  function showBar(i){
+    if(!bar) return;
+    var h = BAR_HEIGHTS[i] != null ? BAR_HEIGHTS[i] : BAR_HEIGHTS[0];
+    if(!bar.hasAttribute("data-visible")){
+      bar.setAttribute("data-instant", "");
+      setBarHeight(h);
+      bar.offsetHeight; /* 强制 reflow：instant 落位 */
+      bar.setAttribute("data-visible", "");
+      return;
+    }
+    bar.removeAttribute("data-instant");
+    setBarHeight(h);
+  }
+
+  subnav.querySelectorAll(":scope > ul > li").forEach(function(li, i){
+    li.addEventListener("pointerenter", function(){ showBar(i); });
+  });
+  subnav.addEventListener("pointerleave", hideBar);
+
+  function setExpanded(open){
+    parent.setAttribute("aria-expanded", String(open));
+    subnav.toggleAttribute("inert", !open);
+    if(!open) hideBar();
+  }
+
+  parent.addEventListener("click", function(e){
+    e.preventDefault();
+    play("pop");
+    setExpanded(parent.getAttribute("aria-expanded") !== "true");
+  });
+});
+
+/* ================= 滑动光点（与源等价） ================= */
+var DOT_POS = ["0px", "37px", "74px"];
+
+function positionDot(subnav){
+  var dot = subnav.querySelector("[data-dot]");
+  if(!dot) return;
+  var leaves = Array.prototype.slice.call(subnav.querySelectorAll(":scope > ul > li"));
+  var idx = -1;
+  for(var i = 0; i < leaves.length; i++){
+    if(leaves[i].querySelector("[data-current]")){ idx = i; break; }
+  }
+  if(idx === -1){
+    dot.getAnimations().forEach(function(a){
+      if(a.transitionProperty === "translate"){ a.commitStyles(); a.cancel(); }
+    });
+    dot.setAttribute("data-instant", "");
+    dot.removeAttribute("data-visible");
+    return;
+  }
+  var pos = "0 " + DOT_POS[idx];
+  if(!dot.hasAttribute("data-visible")){
+    dot.setAttribute("data-instant", "");
+    dot.style.translate = pos;
+    dot.offsetHeight; /* 强制 reflow：初次落位 instant */
+    dot.setAttribute("data-visible", "");
+    return;
+  }
+  if(dot.style.translate !== pos){
+    dot.removeAttribute("data-instant");
+    dot.style.translate = pos;
+  }
+}
+
+/* ================= 选中联动 + tap 音（与源等价） ================= */
+var nav = document.querySelector("nav");
+nav.addEventListener("click", function(e){
+  var link = e.target.closest("a");
+  if(!link || link.hasAttribute("data-has-subnav")) return;
+  e.preventDefault();
+  play("tap");
+  nav.querySelectorAll("[data-current]").forEach(function(el){ el.removeAttribute("data-current"); });
+  link.setAttribute("data-current", "");
+  nav.querySelectorAll("[data-subnav]").forEach(positionDot);
+});
+
+/* 「+」= swoosh */
+document.querySelector("[data-plus]").addEventListener("click", function(){ play("swoosh"); });
+
+/* ================= ?demo= 参数：仅供无头截图核对交互终态，正常打开不受影响 ================= */
+var q = new URLSearchParams(location.search);
+if(q.get("demo")){ /* 兼容 ?demo=open=1 这种单键写法 */
+  var inner = new URLSearchParams(q.get("demo"));
+  inner.forEach(function(v, k){ if(!q.has(k)) q.set(k, v); });
+}
+var tasksLink = document.querySelector("[data-has-subnav]");
+var tasksSub = tasksLink ? tasksLink.nextElementSibling : null;
+if(tasksLink && tasksSub && (q.get("open") === "1" || q.get("dot") || q.get("hover"))){
+  tasksLink.setAttribute("aria-expanded", "true");
+  tasksSub.removeAttribute("inert");
+}
+if(tasksSub && q.get("dot")){
+  var n = parseInt(q.get("dot"), 10) - 1;
+  var leaves = tasksSub.querySelectorAll(":scope > ul > li > a");
+  if(leaves[n]){
+    nav.querySelectorAll("[data-current]").forEach(function(el){ el.removeAttribute("data-current"); });
+    leaves[n].setAttribute("data-current", "");
+    positionDot(tasksSub);
+  }
+}
+if(tasksSub && q.get("hover") === "1"){
+  var bar = tasksSub.querySelector("[data-bar]");
+  if(bar){
+    bar.style.setProperty("--bar-height", BAR_HEIGHTS[1]);
+    bar.setAttribute("data-instant", "");
+    bar.setAttribute("data-visible", "");
+  }
+}
+})();
+</script>
+</body>
+</html>

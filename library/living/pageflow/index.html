@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>工具藏在纸上</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #fefefe;
+    --ink: #111518;
+    --pdf: #1f3a5a;
+    --pdf-title: #0b0b10;
+    --line: #e5e7eb;
+    --glass: rgba(244, 246, 250, .66);
+    --hi: #ffe600a6;
+    --bm: #e6e9ee;
+    --cm: #d3d7de;
+    --note: #f4efe4;
+    --green: #2f6b4f;
+    --serif-note: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --sans: Inter, "Inter Fallback", "Noto Sans SC", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --pill-shadow:
+      inset 0 1px 0 rgba(255,255,255,.9),
+      inset 0 0 0 .5px rgba(255,255,255,.55),
+      0 0 0 .5px rgba(15,23,42,.08),
+      0 10px 26px -10px rgba(15,23,42,.34);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--page); }
+  body { color: var(--ink); font-family: var(--sans); }
+
+  .studio {
+    position: relative;
+    min-height: calc(100svh - 48px);
+    background: var(--page);
+    padding: 28px 24px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 22px;
+  }
+  .id img {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px #0f172a2e;
+  }
+  .id h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1;
+  }
+  .id p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #3c4e63;
+  }
+
+  .win {
+    position: relative;
+    width: min(1024px, 100%);
+    height: calc(100svh - 168px);
+    min-height: 320px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .chrome {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 40px;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease-in-out;
+  }
+  .win.is-on .chrome {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .traffic, .tab, .plus, .tools {
+    position: absolute;
+    top: 4px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    box-shadow: var(--pill-shadow);
+    color: #1a1a1a;
+  }
+  .traffic {
+    left: 4px;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,.25); }
+  .dot.r { background: #f85b5b; }
+  .dot.y { background: #f4c542; }
+  .dot.g { background: #4cc44c; }
+  .tab {
+    left: 92px;
+    gap: 8px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .tab b { font-weight: 500; filter: drop-shadow(0 .5px .5px rgba(255,255,255,.7)); }
+  .tab .x {
+    width: 20px; height: 20px;
+    border: 0; background: transparent;
+    border-radius: 6px;
+    color: rgba(26,26,26,.7);
+    cursor: default;
+  }
+  .plus {
+    left: 196px;
+    width: 34px;
+    justify-content: center;
+    border-radius: 8px;
+    border: 0;
+    font-size: 16px;
+    color: rgba(26,26,26,.7);
+  }
+  .tools {
+    right: 16px;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+  }
+  .tools button {
+    width: 20px; height: 20px;
+    border: 0;
+    background: transparent;
+    color: rgba(26,26,26,.8);
+    border-radius: 6px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  .tools svg { width: 12px; height: 12px; }
+  .tools .sep { width: 1px; height: 16px; background: rgba(0,0,0,.15); margin: 0 2px; }
+
+  .hint {
+    position: absolute;
+    left: 12px; right: 12px; top: 4px;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 150ms ease-in-out;
+  }
+  .win.is-on .hint { opacity: 0; }
+  .hint span {
+    display: block;
+    border-radius: 16px;
+    border: 2px dashed rgba(255,255,255,.65);
+    background: rgba(0,0,0,.25);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.2);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    padding: 16px 24px;
+  }
+
+  .sheet {
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 72px 48px 24px;
+  }
+  .paper {
+    max-width: 768px;
+    transform: scale(1.06);
+    text-align: justify;
+  }
+  .paper h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--pdf-title);
+  }
+  .paper p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.625;
+    color: var(--pdf);
+  }
+  .u { text-decoration: underline; text-decoration-color: #0b0b10; font-weight: 700; }
+  .u.thin { font-weight: 400; }
+  .hi, .bm, .cm {
+    border-radius: 6px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .hi { background: var(--hi); box-shadow: 0 0 0 2px var(--hi); }
+  .bm { background: var(--bm); box-shadow: 0 0 0 2px var(--bm); }
+  .cm { background: var(--cm); box-shadow: 0 0 0 2px var(--cm); }
+
+  .hudbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid #1c1914;
+    font-family: var(--serif-note);
+  }
+  .hudbar button, .readout { font-family: var(--mono); font-size: 12px; }
+  .hudbar button {
+    border: 1px solid #1c1914;
+    background: #1c1914;
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: #5c564c;
+  }
+  .readout { color: #5c564c; letter-spacing: .04em; }
+
+  .note {
+    background: var(--note);
+    color: #1c1914;
+    font-family: var(--serif-note);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .note main { max-width: 640px; margin: 0 auto; padding: 40px 24px 40px; }
+  .note h1 { font-weight: 400; font-size: 28px; letter-spacing: -.02em; margin: 0 0 8px; }
+  .note .sub { margin: 0 0 22px; font-style: italic; color: #5c564c; }
+  .note p { margin: 0 0 12px; }
+  .note h2 { font-size: 18px; font-weight: 500; color: var(--green); margin: 22px 0 8px; }
+  .note pre, .note code { font-family: var(--mono); }
+  .note pre {
+    background: #1c1914;
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .note ol { margin: 0 0 12px 1.15em; padding: 0; }
+  .note li { margin: 0 0 8px; }
+  .note a { color: inherit; }
+  .note figcaption { font-size: 13.5px; color: #5c564c; margin: 0 0 12px; }
+  footer.colophon {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    font-family: var(--serif-note);
+    font-size: 12.5px;
+    color: #5c564c;
+    background: var(--note);
+  }
+  @media (max-width: 720px) {
+    .traffic, .tab, .plus { display: none; }
+    .tools { left: 10px; right: 10px; }
+    .sheet { padding: 52px 20px 16px; }
+    .paper { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="studio">
+  <div class="id">
+    <img src="assets/icon.png" alt="" />
+    <div>
+      <h1>PageFlow</h1>
+      <p>Ultra-minimalistic PDF viewer</p>
+    </div>
+  </div>
+
+  <div class="win" id="win">
+    <div class="chrome" id="chrome" aria-hidden="true">
+      <div class="traffic">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      </div>
+      <div class="tab"><b>PageFlow</b><button class="x" tabindex="-1">×</button></div>
+      <button class="plus" tabindex="-1">+</button>
+      <div class="tools">
+        <button tabindex="-1" aria-label="Zoom out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="5.5"/><path d="M8 10.5h5"/><path d="m14.5 14.5 4 4"/></svg>
+        </button>
+        <button tabindex="-1" aria-label="Zoom in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="5.5"/><path d="M8 10.5h5M10.5 8v5"/><path d="m14.5 14.5 4 4"/></svg>
+        </button>
+        <span class="sep"></span>
+        <button tabindex="-1" aria-label="Underline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v6a5 5 0 0 0 10 0V3"/><path d="M5 21h14"/></svg>
+        </button>
+        <button tabindex="-1" aria-label="Highlight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 17 6.5-6.5 3 3L7 20H4z"/><path d="m14.5 7.5 2-2.5a1.5 1.5 0 0 1 2.3-.1l1.3 1.3a1.5 1.5 0 0 1-.1 2.3l-2.5 2z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="hint" id="hint"><span>Hover your cursor here</span></div>
+    <div class="sheet">
+      <div class="paper">
+        <h2>PageFlow for macOS</h2>
+        <p>PageFlow is a <span class="u">lightweight</span>, <span class="u">minimalistic</span> <span class="u">native macOS</span> PDF viewer built with Swift and PDFKit. PageFlow <span class="u">launches instantly</span>, and ships only the <span class="u">essentials</span>: <span class="hi">highlight</span>, <span class="u thin">underline</span>, <span class="bm">bookmark</span>, and <span class="cm">comment</span>. All tools <span class="u">stay invisible</span> until you need them. Everything stays on your Mac locally, no telemetry, no network calls.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hudbar">
+  <span class="readout" id="readout">工具栏藏着 · 150ms</span>
+  <button type="button" id="btnReveal" aria-pressed="false">再长出</button>
+  <button type="button" id="btnHide" aria-pressed="true">再藏起来</button>
+</div>
+
+<section class="note">
+  <main>
+    <h1>工具藏在纸上。</h1>
+    <p class="sub">pageflow.pinchen.me。落地页就是阅读器。工具栏先不在。</p>
+    <p>底是 <code>#fefefe</code>。下面那扇窗 <code>max-width: 64rem</code>，高 420，圆角 24，边 <code>#e5e7eb</code>。纸比窗略大，<code>scale(1.06)</code>。字是 <code>#1f3a5a</code>，16 / 1.625。要强调的词自己下划线。荧光笔是 <code>#ffe600a6</code>，书签 <code>#e6e9ee</code>，批注 <code>#d3d7de</code>。外扩 2 像素，圆角 6。</p>
+    <figure>
+      <figcaption>图 1. 第一眼没有红绿灯。顶上是一条虚线灰带，写 Hover your cursor here。圆角 16，<code>bg-black/25</code>，虚线 <code>white/65</code>。</figcaption>
+    </figure>
+    <p>鼠标放上去，灰带 150ms 褪掉。玻璃条长出来：红绿灯 <code>#f85b5b / #f4c542 / #4cc44c</code>，标签，放大镜，下划线，荧光笔。条子本身是 <code>rgba(244,246,250,.66)</code>，<code>blur(24px) saturate(150%)</code>。内沿一条白，底下一条软影子。不是另开一层 App 截图。</p>
+    <figure>
+      <figcaption>图 2. 产品自己的句子写在纸上。highlight 被涂黄，stay invisible 被划上。说明书和演示是同一段字。</figcaption>
+    </figure>
+    <h2>下次怎么用</h2>
+    <ol>
+      <li>阅读器、批注工具，落地页先放一张纸，不要先放工具栏。</li>
+      <li>顶上留一条会消失的提示。真正的窗框用玻璃条，高度 28，不要厚。</li>
+      <li>功能词就在正文里画出来。荧光笔、下划线、书签用不同底，不要另开图例。</li>
+      <li>显隐 150ms 就够。再快会闪，再慢就不像系统。</li>
+      <li>要能再藏、再长出。只写在说明书里不算。</li>
+    </ol>
+<pre>.win { height: 420px; border: 1px solid #e5e7eb; border-radius: 24px; }
+.hint { transition: opacity 150ms ease-in-out; }
+.chrome { opacity: 0; transition: opacity 150ms ease-in-out; }
+.win.is-on .hint { opacity: 0; }
+.win.is-on .chrome { opacity: 1; }
+.pill {
+  height: 28px;
+  background: rgba(244,246,250,.66);
+  backdrop-filter: blur(24px) saturate(150%);
+}
+.hi { background: #ffe600a6; box-shadow: 0 0 0 2px #ffe600a6; border-radius: 6px; }</pre>
+    <p>原站：<a href="https://pageflow.pinchen.me/">pageflow.pinchen.me</a>。顶栏另有一层 WebGL 液态玻璃，那是导航的事，不是这张纸。产品窗坐在风景里走 <a href="../creed/index.html">living/creed</a>。</p>
+  </main>
+</section>
+<footer class="colophon">
+  <p>范本：Pin Chen / PageFlow。数字从落地页的 Tailwind class 和计算样式读出。图标是原站 1024 压到 256。正文是原站演示段，不是另写的文案。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const win = document.getElementById('win')
+  const btnReveal = document.getElementById('btnReveal')
+  const btnHide = document.getElementById('btnHide')
+  const readout = document.getElementById('readout')
+  let sticky = false
+
+  function paint() {
+    const on = win.classList.contains('is-on')
+    btnReveal.setAttribute('aria-pressed', on ? 'true' : 'false')
+    btnHide.setAttribute('aria-pressed', on ? 'false' : 'true')
+    readout.textContent = on ? '工具栏在 · 150ms' : '工具栏藏着 · 150ms'
+  }
+
+  function show(on) {
+    win.classList.toggle('is-on', on)
+    paint()
+  }
+
+  function reveal() {
+    sticky = true
+    win.classList.remove('is-on')
+    void win.getBoundingClientRect()
+    requestAnimationFrame(() => { win.classList.add('is-on'); paint() })
+  }
+
+  win.addEventListener('mouseenter', () => { if (!sticky) show(true) })
+  win.addEventListener('mouseleave', () => { if (!sticky) show(false) })
+  btnReveal.addEventListener('click', reveal)
+  btnHide.addEventListener('click', () => { sticky = false; show(false) })
+  paint()
+})()
+</script>
+</body>
+</html>

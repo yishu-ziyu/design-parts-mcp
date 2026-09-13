@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>手不换这张纸</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --sheet: #f0e6d2;
+    --clay: #cbbda3;
+    --coral: #d4785a;
+    --navy: #1a2744;
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --snap: cubic-bezier(0.75, 0.01, 0.24, 0.98);
+    --pop: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .toolbar {
+    max-width: 980px;
+    margin: 14px auto 8px;
+    padding: 0 24px;
+    display: flex;
+    justify-content: center;
+  }
+  button.play {
+    font: 600 13px -apple-system, system-ui, sans-serif;
+    padding: 8px 14px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  button.play:hover { background: var(--green); border-color: var(--green); }
+  button.play:active { transform: translateY(1px); }
+  button.play.ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+  button.play.ghost:hover { background: var(--ink); color: var(--cream); }
+
+  .stage {
+    max-width: 980px;
+    margin: 12px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .cell {
+    position: relative;
+    min-height: 340px;
+    border: 1px solid var(--ink);
+    background: var(--navy);
+    color: var(--sheet);
+    overflow: hidden;
+  }
+  .cell-day { background: color-mix(in oklab, var(--navy) 55%, #3a4a6a); }
+  .tag {
+    position: absolute; top: 12px; left: 14px; z-index: 4;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: color-mix(in oklab, var(--sheet) 55%, transparent);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .replay {
+    position: absolute; top: 10px; right: 10px; z-index: 4;
+    height: 28px; padding: 0 10px;
+    border: 0; border-radius: 999px;
+    background: color-mix(in oklab, var(--sheet) 16%, transparent);
+    color: var(--sheet); font-size: 12px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .hint {
+    position: absolute; bottom: 12px; left: 12px; right: 12px;
+    text-align: center;
+    font-size: 11px; letter-spacing: 0.14em;
+    color: color-mix(in oklab, var(--sheet) 48%, transparent);
+    pointer-events: none;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .clay {
+    background: var(--sheet);
+    color: var(--ink);
+    box-shadow:
+      0 1px 0 rgba(255, 248, 238, 0.9),
+      0 8px 0 var(--clay),
+      0 18px 28px rgba(12, 20, 40, 0.32);
+  }
+  .chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--sheet);
+    color: var(--ink);
+    font-size: 13px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    box-shadow: 0 3px 0 #d2c4aa, 0 8px 14px rgba(12, 20, 40, 0.18);
+    user-select: none;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  /* 1 letter pop */
+  .title-stage { display: grid; place-items: center; height: 100%; padding: 48px 16px 36px; }
+  .wordmark {
+    margin: 0;
+    font-family: ui-rounded, "PingFang SC", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.2rem, 7vw, 3.4rem);
+    line-height: 0.84;
+    letter-spacing: 0.08em;
+    text-align: center;
+    color: var(--sheet);
+    text-shadow: 0 2px 0 #d9ccb4, 0 5px 0 #cbbda3, 0 12px 18px rgba(26, 39, 68, 0.35);
+  }
+  .wordmark .line { display: block; }
+  .ch {
+    display: inline-block;
+    transform-origin: 50% 80%;
+    opacity: 0;
+  }
+  .play-title .ch {
+    animation: letter-pop 560ms var(--pop) both;
+    animation-delay: calc(var(--i) * 55ms);
+  }
+  .subline {
+    margin: 18px 0 0;
+    overflow: hidden;
+    font-size: 15px;
+    letter-spacing: 0.32em;
+    color: color-mix(in oklab, var(--sheet) 70%, transparent);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .subline span { display: block; transform: translateY(110%); }
+  .play-title .subline span {
+    animation: clip-up 520ms var(--enter) 420ms both;
+  }
+  @keyframes letter-pop {
+    0%   { opacity: 0; transform: translateY(42%) scale(0.72, 1.18); }
+    62%  { opacity: 1; transform: translateY(-6%) scale(1.05, 0.94); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes clip-up {
+    from { transform: translateY(110%); }
+    to { transform: none; }
+  }
+
+  /* 2 compose */
+  .compose-stage {
+    height: 100%;
+    padding: 44px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .sheet {
+    position: relative;
+    width: min(88%, 240px);
+    height: 148px;
+    border-radius: 18px;
+    padding: 14px;
+  }
+  .sheet .label {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: color-mix(in oklab, var(--ink) 40%, transparent);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .on-paper { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; }
+  .on-paper .chip { background: color-mix(in oklab, #7a9a68 15%, var(--sheet)); }
+  .pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+  .pool .chip[data-used="1"] { opacity: 0.28; pointer-events: none; }
+  .landed { animation: chip-land 420ms var(--pop) both; }
+  .ghost-chip {
+    position: fixed; left: 0; top: 0; z-index: 40;
+    pointer-events: none; opacity: 0;
+    will-change: transform, opacity;
+  }
+  .ghost-chip.eat {
+    transition: transform 280ms var(--snap), opacity 200ms ease-out;
+  }
+  @keyframes chip-land {
+    0%   { transform: scale(0.2); opacity: 0; }
+    70%  { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* 3 fold */
+  .fold-stage {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 48px 16px 40px;
+    perspective: 720px;
+  }
+  .fold-sheet {
+    position: relative;
+    width: min(86%, 280px);
+    height: 196px;
+    transform-style: preserve-3d;
+    touch-action: none;
+    cursor: grab;
+  }
+  .fold-sheet:active { cursor: grabbing; }
+  .fold-base {
+    position: absolute; inset: 0; z-index: 0;
+    background: var(--sheet);
+    color: var(--ink);
+    filter:
+      drop-shadow(0 1px 0 #fff8ee)
+      drop-shadow(0 10px 0 #cbbda3)
+      drop-shadow(0 22px 36px rgba(12, 20, 40, 0.32));
+  }
+  .fold-letter {
+    position: absolute; inset: 16px;
+    font-size: 14px; line-height: 1.65;
+    color: color-mix(in oklab, var(--ink) 70%, transparent);
+  }
+  .fold-hinge {
+    position: absolute; top: 0;
+    transform-style: preserve-3d;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .fold-hinge-tr { right: 0; transform-origin: 0 0; }
+  .fold-hinge-tl { left: 0; transform-origin: 100% 0; }
+  .fold-flap {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .fold-flap-tl { clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .fold-flap-front {
+    background: linear-gradient(180deg, #fff8ee 0%, #f0e6d2 34%, #f0e6d2 100%);
+  }
+  .fold-flap-back {
+    transform: rotate3d(1, 1, 0, 180deg);
+    background: linear-gradient(45deg, #d4c4a4 0%, #c4b394 48%, #e8dcc4 100%);
+  }
+  .fold-hinge-tl .fold-flap-back { transform: rotate3d(-1, 1, 0, 180deg); }
+  .fold-letter-clone {
+    position: absolute; top: 0; padding: 16px;
+    pointer-events: none;
+    font-size: 14px; line-height: 1.65;
+    color: color-mix(in oklab, var(--ink) 70%, transparent);
+  }
+  .fold-cast, .fold-land, .fold-crease {
+    position: absolute; top: 0; pointer-events: none;
+  }
+  .fold-cast { z-index: 1; background: rgba(12, 20, 40, 0.28); filter: blur(10px); }
+  .fold-cast-tr { right: 0; clip-path: polygon(0 0, 0 100%, 100% 100%); transform-origin: 0 0; }
+  .fold-cast-tl { left: 0; clip-path: polygon(100% 0, 0 100%, 100% 100%); }
+  .fold-land {
+    z-index: 2;
+    background: #cbbda3;
+    background-image: linear-gradient(180deg, #c4b394 0%, #d4c4a4 48%, #e0d2b6 100%);
+  }
+  .fold-land-tr { right: 0; clip-path: polygon(0 0, 0 100%, 100% 100%); box-shadow: inset 4px 3px 10px rgba(36, 48, 68, 0.2); }
+  .fold-land-tl { left: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); box-shadow: inset -4px 3px 10px rgba(36, 48, 68, 0.2); }
+  .fold-crease { z-index: 4; }
+  .fold-crease-tr {
+    right: 0;
+    background: linear-gradient(135deg, rgba(36,48,68,0) calc(50% - 7px), rgba(36,48,68,0.22) 50%, rgba(36,48,68,0) calc(50% + 7px));
+  }
+  .fold-crease-tl {
+    left: 0;
+    background: linear-gradient(225deg, rgba(36,48,68,0) calc(50% - 7px), rgba(36,48,68,0.22) 50%, rgba(36,48,68,0) calc(50% + 7px));
+  }
+  .fold-grab {
+    position: absolute;
+    z-index: 6;
+    width: 1rem; height: 1rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--coral) 72%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--coral) 85%, transparent);
+    animation: fold-grab-pulse 1.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .fold-grab-tr { top: 0.65rem; right: 0.65rem; }
+  .fold-grab-tl { top: 0.65rem; left: 0.65rem; }
+  @keyframes fold-grab-pulse {
+    0%, 100% { transform: scale(0.92); opacity: 0.7; }
+    50% { transform: scale(1.08); opacity: 1; }
+  }
+  .fold-plane {
+    position: absolute; inset: 0;
+    display: none;
+    place-items: center;
+  }
+  .fold-sheet[data-folds="2"] .fold-plane { display: grid; }
+  .fold-sheet[data-folds="2"] .fold-base,
+  .fold-sheet[data-folds="2"] .fold-hinge,
+  .fold-sheet[data-folds="2"] .fold-cast,
+  .fold-sheet[data-folds="2"] .fold-land,
+  .fold-sheet[data-folds="2"] .fold-crease { display: none; }
+
+  /* 4 dive */
+  .dive-stage { height: 100%; }
+  .dive-stage svg { display: block; width: 100%; height: 100%; }
+
+  /* 5 return */
+  .return-stage {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 44px 16px 28px;
+    gap: 14px;
+  }
+  .slot {
+    position: relative;
+    width: min(86%, 240px);
+    height: 176px;
+    border-radius: 18px;
+    touch-action: none;
+    overflow: hidden;
+    cursor: grab;
+  }
+  .slot-layer {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 22px 20px;
+    transform: scale(0.2);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .slot[data-face="wing"] .layer-wing,
+  .slot[data-face="seal"] .layer-seal,
+  .slot[data-face="open"] .layer-open {
+    animation: slot-in 520ms var(--pop) both;
+  }
+  .slot.leaving .slot-layer.is-out {
+    animation: slot-out 280ms var(--snap) both;
+  }
+  .seal-kicker {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: color-mix(in oklab, var(--ink) 40%, transparent);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .seal-title { margin: 8px 0 0; font-size: 22px; }
+  .open-ink { margin: 0; font-size: 14px; line-height: 1.7; }
+  .draw-ink {
+    background: linear-gradient(var(--ink), var(--ink)) left bottom / 0% 1px no-repeat;
+  }
+  .slot[data-face="open"] .draw-ink {
+    animation: ink-draw 700ms var(--ease) 80ms both;
+  }
+  @keyframes slot-in {
+    0%   { opacity: 0; transform: scale(0.22); }
+    72%  { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slot-out {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.18); }
+  }
+  @keyframes ink-draw {
+    from { background-size: 0% 1px; opacity: 0.35; }
+    to { background-size: 100% 1px; opacity: 1; }
+  }
+  .drawer {
+    width: 168px;
+    height: 36px;
+    border-radius: 18px 18px 0 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    background: color-mix(in oklab, var(--sheet) 12%, transparent);
+    color: color-mix(in oklab, var(--sheet) 45%, transparent);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .drawer.hot {
+    background: color-mix(in oklab, var(--coral) 28%, transparent);
+    color: var(--coral);
+  }
+
+  /* 6 sling */
+  .sling-stage {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 44px 12px 36px;
+  }
+  .earth {
+    position: relative;
+    width: min(58%, 168px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 38% 32%, #4a5d4a 0 18%, transparent 19%),
+      radial-gradient(circle at 62% 58%, #3d4f3a 0 14%, transparent 15%),
+      radial-gradient(circle at 50% 50%, #243248 0 62%, #152033 100%);
+    box-shadow: 0 18px 36px rgba(8, 14, 28, 0.5), inset 0 0 0 2px color-mix(in oklab, var(--clay) 35%, transparent);
+    flex: none;
+  }
+  .win {
+    position: absolute;
+    width: 14px; height: 14px;
+    margin: -7px 0 0 -7px;
+    background: color-mix(in oklab, var(--sheet) 18%, transparent);
+    box-shadow: 0 0 10px color-mix(in oklab, #ffe7a8 0%, transparent);
+    transform: scale(0);
+    transform-origin: 50% 50%;
+  }
+  .sling-well {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    touch-action: none;
+    margin-top: 4px;
+  }
+  .sling-well svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .sling-post { fill: var(--sheet); opacity: 0.78; }
+  .sling-band { fill: none; stroke: var(--sheet); stroke-linecap: round; }
+  .craft {
+    position: absolute;
+    left: 50%;
+    top: 8px;
+    width: 56px; height: 64px;
+    margin-left: -28px;
+    will-change: transform;
+    cursor: grab;
+    touch-action: none;
+  }
+  .power {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    width: 120px;
+    height: 4px;
+    margin-left: -60px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--sheet) 18%, transparent);
+    overflow: hidden;
+  }
+  .power i {
+    display: block; height: 100%; width: 100%;
+    background: var(--coral);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+  }
+  .paper-plane {
+    width: 100%; height: 100%;
+    filter:
+      drop-shadow(0 1px 0 #fff8ee)
+      drop-shadow(0 5px 0 #cbbda3)
+      drop-shadow(0 14px 18px rgba(12, 20, 40, 0.32));
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 40px;
+  }
+  .page h2 {
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--green);
+    margin: 28px 0 10px;
+  }
+  .page p { margin: 0 0 12px; }
+  .page a { color: var(--green); }
+  .beats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .beats > div {
+    border: 1px solid var(--ink);
+    background: var(--cream);
+    padding: 12px;
+  }
+  .beats .n {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .beats h3 { margin: 8px 0 6px; font-size: 16px; font-weight: 500; color: var(--green); }
+  .beats p { margin: 0; font-size: 14px; }
+  .note {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 48px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .note code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  @media (max-width: 760px) {
+    .stage, .beats { grid-template-columns: 1fr; }
+    .toolbar, .stage { padding-left: 12px; padding-right: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .play-title .ch, .play-title .subline span, .landed,
+    .slot-layer, .draw-ink, .fold-grab {
+      animation: none !important;
+    }
+    .play-title .ch, .play-title .subline span { opacity: 1; transform: none; }
+    .draw-ink { background-size: 100% 1px; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">living / paper-echo</div>
+  <h1>手不换这张纸</h1>
+  <p class="sub">过线才提交。不够就弹回。点再播。</p>
+</header>
+
+<div class="toolbar">
+  <button class="play" type="button" id="replay-all">六格重来</button>
+</div>
+
+<div class="stage">
+  <section class="cell cell-day" id="pop" data-lab="pop">
+    <span class="tag">1 · 字母弹出</span>
+    <button class="replay" type="button" data-replay="pop">重播</button>
+    <div class="title-stage">
+      <div>
+        <h2 class="wordmark" aria-label="PAPER ECHO">
+          <span class="line" data-word="PAPER"></span>
+          <span class="line" data-word="ECHO"></span>
+        </h2>
+        <p class="subline"><span>纸上的回声</span></p>
+      </div>
+    </div>
+    <p class="hint">进场一次就停 · 不是循环</p>
+  </section>
+
+  <section class="cell" id="compose" data-lab="compose">
+    <span class="tag">2 · 散开 → 成标</span>
+    <button class="replay" type="button" data-replay="compose">清空</button>
+    <div class="compose-stage">
+      <div class="sheet clay" data-well>
+        <p class="label">今晚的一张</p>
+        <div class="on-paper" data-landed></div>
+      </div>
+      <div class="pool" data-pool>
+        <button class="chip" type="button">群里只回了收到</button>
+        <button class="chip" type="button">改到很晚</button>
+        <button class="chip" type="button">今天够了</button>
+        <button class="chip" type="button">灯还亮着</button>
+      </div>
+    </div>
+    <p class="hint">把碎片拖到纸上 · 松手才会吃进去</p>
+  </section>
+
+  <section class="cell" id="fold" data-lab="fold">
+    <span class="tag">3 · 3D 折角</span>
+    <button class="replay" type="button" data-replay="fold">展开</button>
+    <div class="fold-stage">
+      <div class="fold-sheet" data-fold data-folds="0" aria-label="对角折纸">
+        <div class="fold-base">
+          <p class="fold-letter">群里只回了收到。<br />改到很晚。</p>
+        </div>
+        <div class="fold-cast fold-cast-tr" data-cast="r"></div>
+        <div class="fold-hinge fold-hinge-tr" data-hinge="r">
+          <div class="fold-flap fold-flap-front" data-front="r">
+            <div class="fold-letter-clone" data-clone="r">群里只回了收到。<br />改到很晚。</div>
+          </div>
+          <div class="fold-flap fold-flap-back" data-back="r"></div>
+        </div>
+        <div class="fold-land fold-land-tr" data-land="r"></div>
+        <div class="fold-crease fold-crease-tr" data-crease="r"></div>
+        <div class="fold-left" hidden>
+          <div class="fold-cast fold-cast-tl" data-cast="l"></div>
+          <div class="fold-hinge fold-hinge-tl" data-hinge="l">
+            <div class="fold-flap fold-flap-front fold-flap-tl" data-front="l">
+              <div class="fold-letter-clone" data-clone="l">群里只回了收到。<br />改到很晚。</div>
+            </div>
+            <div class="fold-flap fold-flap-back fold-flap-tl" data-back="l"></div>
+          </div>
+          <div class="fold-land fold-land-tl" data-land="l"></div>
+          <div class="fold-crease fold-crease-tl" data-crease="l"></div>
+        </div>
+        <span class="fold-grab fold-grab-tr"></span>
+        <span class="fold-grab fold-grab-tl"></span>
+        <div class="fold-plane" aria-hidden>
+          <svg class="paper-plane" viewBox="0 0 100 96" width="88" height="84">
+            <path d="M50 8 L90 62 L62 58 Z" fill="#e0d0b0"/>
+            <path d="M50 8 L10 62 L38 58 Z" fill="#f0e6d2"/>
+            <path d="M50 8 L62 58 L70 90 L50 68 Z" fill="#d4c4a4"/>
+            <path d="M50 8 L38 58 L30 90 L50 68 Z" fill="#e4d6bb"/>
+            <path d="M38 58 L50 68 L62 58" fill="none" stroke="#c4b394" stroke-width="1.05"/>
+            <path d="M50 8 L50 68" fill="none" stroke="#c4b394" stroke-width="1.45"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <p class="hint" data-fold-hint>捏住右上角，往对角拉。不够就退。</p>
+  </section>
+
+  <section class="cell cell-day" id="dive" data-lab="dive">
+    <span class="tag">4 · 卡变成标枪</span>
+    <button class="replay" type="button" data-replay="dive">重播</button>
+    <div class="dive-stage">
+      <svg data-dive aria-hidden></svg>
+    </div>
+    <p class="hint">圆角卡 → 尖头。盖满后沿脊撕开</p>
+  </section>
+
+  <section class="cell cell-day" id="return" data-lab="return">
+    <span class="tag">5 · 同槽交接</span>
+    <button class="replay" type="button" data-replay="return">重来</button>
+    <div class="return-stage">
+      <div class="slot clay" data-slot data-face="wing">
+        <div class="slot-layer layer-wing">
+          <svg class="paper-plane" viewBox="0 0 100 96" width="72" height="52" style="margin:0 auto 10px">
+            <path d="M50 8 L90 62 L62 58 Z" fill="#e0d0b0"/>
+            <path d="M50 8 L10 62 L38 58 Z" fill="#fff6e8"/>
+            <path d="M50 8 L62 58 L70 90 L50 68 Z" fill="#d4c4a4"/>
+            <path d="M50 8 L38 58 L30 90 L50 68 Z" fill="#e4d6bb"/>
+          </svg>
+          <p class="seal-kicker" style="text-align:center">折回来了</p>
+        </div>
+        <div class="slot-layer layer-seal">
+          <p class="seal-kicker">里斯本</p>
+          <p class="seal-title">未拆的回声</p>
+          <p class="seal-kicker" style="margin-top:auto">往下拉</p>
+        </div>
+        <div class="slot-layer layer-open">
+          <p class="open-ink draw-ink">抽屉那包还在。你要是也有一包，先别扔。今晚这张纸会自己找回来。</p>
+        </div>
+      </div>
+      <div class="drawer" data-drawer>抽屉</div>
+    </div>
+    <p class="hint" data-return-hint>落地 → 未拆。过 28 拆开，再过 108 吞进抽屉</p>
+  </section>
+
+  <section class="cell" id="sling" data-lab="sling">
+    <span class="tag">6 · 弹弓 + 窗灯</span>
+    <button class="replay" type="button" data-replay="sling">重播</button>
+    <div class="sling-stage">
+      <div class="earth" data-earth>
+        <span class="win" data-win style="left:28%;top:34%"></span>
+        <span class="win" data-win style="left:62%;top:28%"></span>
+        <span class="win" data-win style="left:74%;top:52%"></span>
+        <span class="win" data-win style="left:48%;top:62%"></span>
+        <span class="win" data-win style="left:32%;top:58%"></span>
+        <span class="win" data-win style="left:58%;top:78%"></span>
+      </div>
+      <div class="sling-well" data-sling>
+        <svg viewBox="0 0 240 160" aria-hidden>
+          <circle class="sling-post" cx="78" cy="30" r="3.8"/>
+          <circle class="sling-post" cx="162" cy="30" r="3.8"/>
+          <path class="sling-band" data-band="l" d="M 78 30 Q 99 30 120 40"/>
+          <path class="sling-band" data-band="r" d="M 162 30 Q 141 30 120 40"/>
+        </svg>
+        <div class="craft" data-craft>
+          <svg class="paper-plane" viewBox="0 0 100 96">
+            <path d="M50 8 L90 62 L62 58 Z" fill="#e0d0b0"/>
+            <path d="M50 8 L10 62 L38 58 Z" fill="#f0e6d2"/>
+            <path d="M50 8 L62 58 L70 90 L50 68 Z" fill="#d4c4a4"/>
+            <path d="M50 8 L38 58 L30 90 L50 68 Z" fill="#e4d6bb"/>
+            <path d="M38 58 L50 68 L62 58" fill="none" stroke="#c4b394" stroke-width="1.05"/>
+            <path d="M50 8 L50 68" fill="none" stroke="#c4b394" stroke-width="1.45"/>
+          </svg>
+        </div>
+        <div class="power"><i data-power></i></div>
+      </div>
+    </div>
+    <p class="hint" data-sling-hint>灯先开。拉满再放。不够就弹回</p>
+  </section>
+</div>
+
+<div class="ghost-chip chip" id="ghost" aria-hidden></div>
+
+<div class="page">
+  <div class="beats">
+    <div>
+      <div class="n">01 跟手</div>
+      <h3>过线才算</h3>
+      <p>拉过阈值松开才走。不够就弹回。点一下不算。手一直拿着同一张纸。</p>
+    </div>
+    <div>
+      <div class="n">02 比喻</div>
+      <h3>纸就是纸</h3>
+      <p>折角露出纸背。字被盖住。弹弓会拉长。不要用切矩形冒充折。</p>
+    </div>
+    <div>
+      <div class="n">03 再播</div>
+      <h3>动效必须能再播</h3>
+      <p>截图只看到 1/3。字母弹出一次就停。不要循环当装饰。</p>
+    </div>
+  </div>
+
+  <h2>不是把整局游戏搬进来</h2>
+  <p>来源是黑客松 <code>AI PING / paper-echo</code>。产品还在那里。这里只收六块能单独抄的语法。拆字横滑仍走 <a href="../gsap/index.html">living/gsap</a>。文件夹翻皮仍走 <a href="../mosby/index.html">living/mosby</a>。</p>
+  <p>过线提交是底下那条手势，不单独占一格。折用主线的 3D 角，不用沙盒那条描边。</p>
+</div>
+
+<section class="note">
+  活笔记。第一屏就是发明。可拆：<code>#pop</code> <code>#compose</code> <code>#fold</code> <code>#dive</code> <code>#return</code> <code>#sling</code>。<br />
+  原则：Notion Will's S · Motion 动效设计 · Agency · Familiarity · Craft / Delight · Progressive Disclosure。动效应是可选的，不要当成唯一通道。
+</section>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function letters(el, word, start) {
+    el.textContent = "";
+    [...word].forEach((ch, i) => {
+      const s = document.createElement("span");
+      s.className = "ch";
+      s.style.setProperty("--i", start + i);
+      s.textContent = ch;
+      el.appendChild(s);
+    });
+  }
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function smooth(t) { const x = clamp(t, 0, 1); return x * x * (3 - 2 * x); }
+  function rubber(raw, limit) {
+    const d = Math.max(0, raw);
+    if (d <= limit) return d;
+    const extra = d - limit;
+    return limit + (extra * 36 * 0.55) / (36 + 0.55 * extra);
+  }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function tween(from, to, ms, onTick, onDone) {
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now) => {
+      const t = Math.min(1, (now - t0) / ms);
+      onTick(lerp(from, to, easeOut(t)));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else if (onDone) onDone();
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }
+
+  /* ---- 1 pop ---- */
+  const popCell = document.querySelector("[data-lab=pop]");
+  letters(document.querySelector('[data-word=PAPER]'), "PAPER", 0);
+  letters(document.querySelector('[data-word=ECHO]'), "ECHO", 5);
+  function playPop() {
+    popCell.classList.remove("play-title");
+    void popCell.offsetWidth;
+    if (!reduce) popCell.classList.add("play-title");
+    else {
+      popCell.querySelectorAll(".ch, .subline span").forEach((n) => {
+        n.style.opacity = "1";
+        n.style.transform = "none";
+      });
+    }
+  }
+  playPop();
+
+  /* ---- 2 compose ---- */
+  const well = document.querySelector("[data-well]");
+  const landed = document.querySelector("[data-landed]");
+  const ghost = document.getElementById("ghost");
+  let heldChip = null;
+  function moveGhost(x, y) {
+    ghost.style.opacity = "1";
+    ghost.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -120%)`;
+  }
+  function hideGhost() {
+    ghost.classList.remove("eat");
+    ghost.style.transition = "none";
+    ghost.style.opacity = "0";
+  }
+  function eat(text) {
+    const r = well.getBoundingClientRect();
+    ghost.classList.add("eat");
+    ghost.style.transform = `translate3d(${r.left + r.width / 2}px, ${r.top + r.height / 2}px, 0) translate(-50%, -50%) scale(0.15)`;
+    window.setTimeout(() => {
+      hideGhost();
+      const chip = document.createElement("span");
+      chip.className = "chip landed";
+      chip.textContent = text;
+      landed.appendChild(chip);
+    }, reduce ? 0 : 280);
+  }
+  function resetCompose() {
+    landed.replaceChildren();
+    document.querySelectorAll("[data-pool] .chip").forEach((c) => { c.dataset.used = "0"; });
+    hideGhost();
+    heldChip = null;
+  }
+
+  /* ---- 3 fold ---- */
+  const foldEl = document.querySelector("[data-fold]");
+  const foldLeft = foldEl.querySelector(".fold-left");
+  const foldHint = document.querySelector("[data-fold-hint]");
+  let folds = 0;
+  let foldBusy = false;
+  let pull = 0;
+  let idle = 14;
+  let idleDir = 1;
+  let foldCancel = null;
+  function liftOf(deg) { return Math.sin((clamp(deg, 0, 180) * Math.PI) / 180); }
+  function sizeFold() {
+    const w = foldEl.clientWidth;
+    const h = foldEl.clientHeight;
+    const s = Math.round(Math.min(w, h) * 0.46);
+    foldEl.style.setProperty("--fold-s", s + "px");
+    ["r", "l"].forEach((side) => {
+      ["hinge", "cast", "land", "crease"].forEach((k) => {
+        const n = foldEl.querySelector(`[data-${k}="${side}"]`);
+        if (n) { n.style.width = s + "px"; n.style.height = s + "px"; }
+      });
+      const clone = foldEl.querySelector(`[data-clone="${side}"]`);
+      if (clone) {
+        clone.style.width = w + "px";
+        clone.style.left = side === "r" ? -(w - s) + "px" : "0px";
+      }
+    });
+    const clip = folds >= 2
+      ? `polygon(${s}px 0, calc(100% - ${s}px) 0, 100% ${s}px, 100% 100%, 0 100%, 0 ${s}px)`
+      : `polygon(0 0, calc(100% - ${s}px) 0, 100% ${s}px, 100% 100%, 0 100%)`;
+    foldEl.querySelector(".fold-base").style.clipPath = clip;
+    const grabR = foldEl.querySelector(".fold-grab-tr");
+    const grabL = foldEl.querySelector(".fold-grab-tl");
+    if (grabR) grabR.style.display = folds === 0 ? "" : "none";
+    if (grabL) grabL.style.display = folds === 1 ? "" : "none";
+  }
+  function setFlap(side, deg) {
+    const hinge = foldEl.querySelector(`[data-hinge="${side}"]`);
+    const front = foldEl.querySelector(`[data-front="${side}"]`);
+    const back = foldEl.querySelector(`[data-back="${side}"]`);
+    const land = foldEl.querySelector(`[data-land="${side}"]`);
+    const crease = foldEl.querySelector(`[data-crease="${side}"]`);
+    const cast = foldEl.querySelector(`[data-cast="${side}"]`);
+    if (!hinge) return;
+    const axis = side === "r" ? "1, 1, 0" : "-1, 1, 0";
+    const signed = side === "r" ? -deg : deg;
+    hinge.style.transform = `rotate3d(${axis}, ${signed}deg)`;
+    hinge.style.zIndex = "3";
+    const k = liftOf(deg);
+    const down = 1 - k;
+    front.style.filter = `drop-shadow(${(-10 * k).toFixed(1)}px ${(8 + 14 * k).toFixed(1)}px ${(6 + 20 * k).toFixed(1)}px rgba(12,20,40,${(0.1 + 0.32 * k).toFixed(2)}))`;
+    const lifting = deg > 8;
+    front.style.opacity = lifting && deg < 92 ? "1" : "0";
+    back.style.opacity = lifting && deg < 88 ? "1" : "0";
+    const clone = foldEl.querySelector(`[data-clone="${side}"]`);
+    if (clone) clone.style.opacity = lifting ? "1" : "0";
+    land.style.opacity = String(deg < 88 ? 0 : Math.min(1, (deg - 88) / 52));
+    crease.style.opacity = String(Math.max(0, (deg - 100) / 80));
+    cast.style.opacity = String(k);
+  }
+  function paintFold() {
+    const live = pull * 180;
+    if (folds === 0) setFlap("r", Math.min(180, live + (pull > 0.02 ? 0 : idle)));
+    else if (folds === 1) {
+      setFlap("r", 180);
+      setFlap("l", Math.min(180, live + (pull > 0.02 ? 0 : idle)));
+    } else {
+      setFlap("r", 180);
+      setFlap("l", 180);
+    }
+  }
+  function setFolds(n) {
+    folds = n;
+    foldEl.dataset.folds = String(n);
+    foldLeft.hidden = n < 1;
+    sizeFold();
+    paintFold();
+    foldHint.textContent = n >= 2
+      ? "两折住了。纸变成飞机。"
+      : n === 1
+        ? "再折一刀。捏左上角。"
+        : "捏住右上角，往对角拉。不够就退。";
+  }
+  function resetFold() {
+    if (foldCancel) foldCancel();
+    foldBusy = false;
+    pull = 0;
+    idle = 14;
+    setFolds(0);
+  }
+  new ResizeObserver(sizeFold).observe(foldEl);
+  sizeFold();
+  setFolds(0);
+  (function idleLoop() {
+    if (!reduce && !foldBusy && folds === 0) {
+      idle += idleDir * 0.12;
+      if (idle > 24) idleDir = -1;
+      if (idle < 12) idleDir = 1;
+      paintFold();
+    }
+    requestAnimationFrame(idleLoop);
+  })();
+
+  /* ---- 4 dive / paper flow ---- */
+  const diveSvg = document.querySelector("[data-dive]");
+  let diveRaf = 0;
+  function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+  function mid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+  function mix(a, b, t) { return a.map((p, i) => ({ x: lerp(p.x, b[i].x, t), y: lerp(p.y, b[i].y, t) })); }
+  function cardPts(r) {
+    const { x, y, w, h } = r;
+    const rad = Math.min(22, w / 6, h / 8);
+    const cx = x + w / 2;
+    return [
+      { x: cx - w * 0.14, y }, { x: cx + w * 0.14, y },
+      { x: x + w, y: y + rad }, { x: x + w, y: y + h * 0.38 }, { x: x + w, y: y + h * 0.72 },
+      { x: x + w - rad, y: y + h }, { x: x + rad, y: y + h },
+      { x: x, y: y + h * 0.72 }, { x: x, y: y + h * 0.38 }, { x: x, y: y + rad }
+    ];
+  }
+  function foldPts(r) {
+    const { x, y, w, h } = r;
+    const cx = x + w / 2;
+    return [
+      { x: cx - w * 0.08, y: y + h * 0.12 }, { x: cx + w * 0.08, y: y + h * 0.12 },
+      { x: x + w - w * 0.02, y: y + 2 }, { x: x + w - w * 0.06, y: y + h * 0.26 },
+      { x: cx + w * 0.2, y: y + h * 0.6 }, { x: cx + 2.4, y: y + h + 18 },
+      { x: cx - 2.4, y: y + h + 18 }, { x: cx - w * 0.2, y: y + h * 0.6 },
+      { x: x + w * 0.06, y: y + h * 0.26 }, { x: x + w * 0.02, y: y + 2 }
+    ];
+  }
+  function dartPts(box) {
+    const { cx, top, bot, hw } = box;
+    const h = Math.max(1, bot - top);
+    const notch = h * 0.14;
+    const wingY = top + h * 0.22;
+    const stepY = top + h * 0.38;
+    const stepW = hw * 0.3;
+    const vW = Math.max(5, hw * 0.08);
+    return [
+      { x: cx - vW, y: top + notch }, { x: cx + vW, y: top + notch },
+      { x: cx + hw, y: top }, { x: cx + hw, y: wingY }, { x: cx + stepW, y: stepY },
+      { x: cx + 1.2, y: bot }, { x: cx - 1.2, y: bot },
+      { x: cx - stepW, y: stepY }, { x: cx - hw, y: wingY }, { x: cx - hw, y: top }
+    ];
+  }
+  function dartBoxOf(u, from, view) {
+    const t = smooth(Math.max(0, (u - 0.28) / 0.72));
+    const top = lerp(from.y, view.h * 0.07, t);
+    const bot = lerp(from.y + from.h, view.h * 0.78, t);
+    const h = Math.max(1, bot - top);
+    return {
+      cx: lerp(from.x + from.w / 2, view.w / 2, t),
+      top,
+      bot,
+      hw: lerp(from.w / 2, Math.min(view.w * 0.26, h * 0.28), t)
+    };
+  }
+  function flowEase(t) {
+    const x = clamp(t, 0, 1);
+    if (x < 0.5) return 0.4 * Math.pow(x / 0.5, 1.25);
+    return 0.4 + 0.6 * (1 - Math.pow(1 - (x - 0.5) / 0.5, 1.55));
+  }
+  function flowPoints(u, from, box) {
+    const t = clamp(u, 0, 1);
+    const card = cardPts(from);
+    const fold = foldPts(from);
+    const dart = dartPts(box || { cx: from.x + from.w / 2, top: from.y, bot: from.y + from.h + 56, hw: from.w * 0.38 });
+    if (t <= 0.4) return mix(card, fold, smooth(t / 0.4));
+    return mix(fold, dart, smooth((t - 0.4) / 0.6));
+  }
+  function pointsToPath(pts, radius) {
+    if (radius < 0.85) return `M ${pts[0].x} ${pts[0].y} ${pts.slice(1).map((p) => `L ${p.x} ${p.y}`).join(" ")} Z`;
+    const n = pts.length;
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      const prev = pts[(i - 1 + n) % n];
+      const curr = pts[i];
+      const next = pts[(i + 1) % n];
+      const d1 = dist(curr, prev) || 1;
+      const d2 = dist(curr, next) || 1;
+      const rad = Math.min(radius, d1 * 0.4, d2 * 0.4);
+      const a = { x: curr.x + ((prev.x - curr.x) / d1) * rad, y: curr.y + ((prev.y - curr.y) / d1) * rad };
+      const b = { x: curr.x + ((next.x - curr.x) / d2) * rad, y: curr.y + ((next.y - curr.y) / d2) * rad };
+      parts.push(i === 0 ? `M ${a.x} ${a.y}` : `L ${a.x} ${a.y}`);
+      parts.push(`Q ${curr.x} ${curr.y} ${b.x} ${b.y}`);
+    }
+    return parts.join(" ") + " Z";
+  }
+  function creaseOf(pts) {
+    const top = mid(pts[0], pts[1]);
+    const nose = mid(pts[5], pts[6]);
+    return `M ${top.x} ${top.y} L ${nose.x} ${nose.y}`;
+  }
+  function halfPath(pts, side) {
+    const top = mid(pts[0], pts[1]);
+    const nose = mid(pts[5], pts[6]);
+    const ring = side === "right"
+      ? [top, pts[1], pts[2], pts[3], pts[4], pts[5], nose]
+      : [top, pts[0], pts[9], pts[8], pts[7], pts[6], nose];
+    return pointsToPath(ring, 0);
+  }
+  function sheetMarkup(pts, u, half) {
+    const outline = half ? halfPath(pts, half) : pointsToPath(pts, lerp(22, 0, Math.min(1, u * 1.2)));
+    const shade = Math.max(0, (u - 0.32) / 0.45);
+    const crease = creaseOf(pts);
+    const left = half ? "" : `<path d="${halfPath(pts, "left")}" fill="#e4d6bb" opacity="${shade * 0.55}"/>`;
+    return `<path d="${outline}" fill="#f0e6d2" style="filter:drop-shadow(0 8px 0 #cbbda3) drop-shadow(0 14px 16px rgba(12,20,40,0.2))"/>${left}<path d="${crease}" fill="none" stroke="#c4b394" stroke-width="1.2" stroke-linecap="round" opacity="${Math.max(0, (u - 0.22) / 0.45)}"/>`;
+  }
+  function playDive() {
+    cancelAnimationFrame(diveRaf);
+    const host = diveSvg.parentElement;
+    const view = { w: host.clientWidth, h: host.clientHeight };
+    diveSvg.setAttribute("viewBox", `0 0 ${view.w} ${view.h}`);
+    const from = { x: view.w * 0.22, y: view.h * 0.22, w: view.w * 0.56, h: view.h * 0.38 };
+    const FLOW = reduce ? 0 : 1120;
+    const OPEN = reduce ? 0 : 560;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = FLOW ? Math.min(1, (now - start) / FLOW) : 1;
+      const u = flowEase(t);
+      const box = dartBoxOf(u, from, view);
+      const pts = flowPoints(u, from, box);
+      diveSvg.innerHTML = sheetMarkup(pts, u);
+      if (t < 1) { diveRaf = requestAnimationFrame(tick); return; }
+      const open0 = performance.now();
+      const split = (n) => {
+        const k = OPEN ? Math.min(1, (n - open0) / OPEN) : 1;
+        const e = 1 - Math.pow(1 - k, 3);
+        const dx = view.w * 0.14 * e;
+        const final = flowPoints(1, from, dartBoxOf(1, from, view));
+        diveSvg.innerHTML = `
+          <defs>
+            <clipPath id="dl"><rect x="0" y="0" width="${view.w / 2}" height="${view.h}"/></clipPath>
+            <clipPath id="dr"><rect x="${view.w / 2}" y="0" width="${view.w / 2}" height="${view.h}"/></clipPath>
+          </defs>
+          <g clip-path="url(#dl)" transform="translate(${-dx},0)">${sheetMarkup(final, 1, "left")}</g>
+          <g clip-path="url(#dr)" transform="translate(${dx},0)">${sheetMarkup(final, 1, "right")}</g>`;
+        if (k < 1) diveRaf = requestAnimationFrame(split);
+      };
+      diveRaf = requestAnimationFrame(split);
+    };
+    diveRaf = requestAnimationFrame(tick);
+  }
+  playDive();
+
+  /* ---- 5 return ---- */
+  const slot = document.querySelector("[data-slot]");
+  const drawer = document.querySelector("[data-drawer]");
+  const returnHint = document.querySelector("[data-return-hint]");
+  const faces = ["wing", "seal", "open"];
+  let face = 0;
+  let faceTimer = 0;
+  let swallow = false;
+  function setFace(i) {
+    const next = faces[clamp(i, 0, faces.length - 1)];
+    const prev = slot.querySelector(`.layer-${faces[face]}`);
+    slot.classList.add("leaving");
+    prev?.classList.add("is-out");
+    window.setTimeout(() => {
+      face = i;
+      slot.dataset.face = next;
+      slot.classList.remove("leaving");
+      slot.querySelectorAll(".slot-layer").forEach((n) => n.classList.remove("is-out"));
+    }, reduce ? 0 : 160);
+    drawer.classList.toggle("hot", i >= 2);
+    returnHint.textContent = i >= 2
+      ? "再往下，进抽屉"
+      : i === 1
+        ? "往下拉。过 28 拆开"
+        : "落地 → 未拆 → 再往下拉开正文";
+  }
+  function resetReturn() {
+    window.clearTimeout(faceTimer);
+    swallow = false;
+    slot.style.transform = "";
+    slot.style.opacity = "1";
+    face = 0;
+    slot.dataset.face = "wing";
+    drawer.classList.remove("hot");
+    drawer.textContent = "抽屉";
+    faceTimer = window.setTimeout(() => { if (face === 0) setFace(1); }, reduce ? 200 : 720);
+  }
+  resetReturn();
+
+  /* ---- 6 sling ---- */
+  const craft = document.querySelector("[data-craft]");
+  const earth = document.querySelector("[data-earth]");
+  const wins = [...document.querySelectorAll("[data-win]")];
+  const bandL = document.querySelector("[data-band=l]");
+  const bandR = document.querySelector("[data-band=r]");
+  const powerBar = document.querySelector("[data-power]");
+  const slingHint = document.querySelector("[data-sling-hint]");
+  const CHARGE = 72;
+  const FIRE = 0.22;
+  let slingReady = false;
+  let thrown = false;
+  let sling = { x: 0, y: 0, p: 0 };
+  let bloomTimer = 0;
+  function bloomPulse(t) {
+    const u = clamp(t, 0, 1);
+    if (u <= 0) return 0;
+    if (u < 0.34) return (u / 0.34) * 0.38;
+    if (u < 0.68) return 0.38 + ((u - 0.34) / 0.34) * 0.9;
+    return 1.28 - ((u - 0.68) / 0.32) * 0.28;
+  }
+  function squashX(stretchY) { return 1 / Math.max(0.72, stretchY); }
+  function slingPath(side, py, px) {
+    const bx = 120 + px * 0.55;
+    const by = 40 + Math.min(108, py * 0.7);
+    const cpx = 120 + side * 0.35 + px * 0.2;
+    const cpy = 30 + (by - 30) * 0.45;
+    return `M ${120 + side} 30 Q ${cpx} ${cpy} ${bx} ${by}`;
+  }
+  function paintSling() {
+    const stretch = 1 + sling.p * 0.24;
+    craft.style.transform = `translate(${sling.x}px, ${sling.y}px) rotate(${-sling.x * 0.18 - sling.p * 8}deg) scale(${squashX(stretch)}, ${stretch})`;
+    bandL.setAttribute("d", slingPath(-42, sling.y, sling.x));
+    bandR.setAttribute("d", slingPath(42, sling.y, sling.x));
+    const op = sling.p < 0.06 ? 0.15 : 0.7 + sling.p * 0.3;
+    bandL.style.opacity = bandR.style.opacity = slingReady ? String(op) : "0.12";
+    bandL.style.strokeWidth = bandR.style.strokeWidth = String(1.6 + sling.p * 1.8);
+    powerBar.style.transform = `scaleX(${sling.p})`;
+    earth.style.transform = `scale(${1 - sling.p * 0.055}) translateY(${sling.p * 8}px)`;
+  }
+  function lightWins(done) {
+    wins.forEach((w) => { w.style.transform = "scale(0)"; w.style.background = "color-mix(in oklab, var(--sheet) 18%, transparent)"; });
+    if (reduce) {
+      wins.forEach((w) => { w.style.transform = "scale(1)"; w.style.background = "#ffe7a8"; });
+      slingReady = true;
+      paintSling();
+      if (done) done();
+      return;
+    }
+    let i = 0;
+    const next = () => {
+      const w = wins[i++];
+      if (!w) {
+        slingReady = true;
+        slingHint.textContent = "拉满再放。不够就弹回";
+        paintSling();
+        if (done) done();
+        return;
+      }
+      const t0 = performance.now();
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / 220);
+        const k = bloomPulse(t);
+        w.style.transform = `scale(${k})`;
+        w.style.background = `color-mix(in oklab, #ffe7a8 ${40 + k * 60}%, transparent)`;
+        if (t < 1) requestAnimationFrame(step);
+        else bloomTimer = window.setTimeout(next, 100);
+      };
+      requestAnimationFrame(step);
+    };
+    slingHint.textContent = "灯是别人的窗。一盏一盏开。";
+    next();
+  }
+  function resetSling() {
+    window.clearTimeout(bloomTimer);
+    thrown = false;
+    slingReady = false;
+    sling = { x: 0, y: 0, p: 0 };
+    craft.style.opacity = "1";
+    paintSling();
+    lightWins();
+  }
+  resetSling();
+
+  /* ---- pointers ---- */
+  let drag = null;
+  document.querySelector("[data-pool]").addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest(".chip");
+    if (!btn || btn.dataset.used === "1") return;
+    e.preventDefault();
+    heldChip = btn;
+    ghost.textContent = btn.textContent;
+    ghost.style.transition = "none";
+    moveGhost(e.clientX, e.clientY);
+    btn.setPointerCapture?.(e.pointerId);
+  });
+  foldEl.addEventListener("pointerdown", (e) => {
+    if (folds >= 2 || foldBusy) return;
+    e.preventDefault();
+    foldBusy = true;
+    if (foldCancel) foldCancel();
+    drag = { kind: "fold", x: e.clientX, y: e.clientY };
+    foldEl.setPointerCapture?.(e.pointerId);
+  });
+  slot.addEventListener("pointerdown", (e) => {
+    if (face === 0 || swallow) return;
+    e.preventDefault();
+    drag = { kind: "return", y0: e.clientY, y: parseFloat(slot.style.getPropertyValue("--ty") || "0") };
+    slot.setPointerCapture?.(e.pointerId);
+  });
+  document.querySelector("[data-sling]").addEventListener("pointerdown", (e) => {
+    if (!slingReady || thrown) return;
+    e.preventDefault();
+    drag = { kind: "sling", x: e.clientX - sling.x, y: e.clientY - sling.y };
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (heldChip) moveGhost(e.clientX, e.clientY);
+    if (!drag) return;
+    if (drag.kind === "fold") {
+      const toward = folds === 0 ? drag.x - e.clientX : e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      pull = clamp((toward * 0.7 + dy) / 110, 0, 1);
+      paintFold();
+    } else if (drag.kind === "return") {
+      const raw = Math.max(0, e.clientY - drag.y0);
+      const y = Math.min(170, raw);
+      slot.style.transform = `translateY(${y}px)`;
+      drawer.classList.toggle("hot", y > 108);
+      drawer.textContent = y > 108 ? "松开，放进信柜" : "抽屉";
+      returnHint.textContent = y > 108 ? "松开，放进信柜" : y > 28 ? "松开，拆开" : "往下拉";
+    } else if (drag.kind === "sling") {
+      const rawY = Math.max(0, e.clientY - drag.y);
+      const rawX = e.clientX - drag.x;
+      const mappedY = Math.min(118, rubber(rawY, CHARGE));
+      sling.y = mappedY;
+      sling.x = clamp(rawX * 0.62, -64, 64);
+      sling.p = Math.min(1, mappedY / CHARGE);
+      paintSling();
+      slingHint.textContent = sling.p >= 0.86 ? "松手" : "拉满再放";
+    }
+  });
+  window.addEventListener("pointerup", (e) => {
+    if (heldChip) {
+      const btn = heldChip;
+      heldChip = null;
+      const r = well.getBoundingClientRect();
+      if (e.clientX >= r.left - 12 && e.clientX <= r.right + 12 && e.clientY >= r.top - 12 && e.clientY <= r.bottom + 12) {
+        btn.dataset.used = "1";
+        eat(btn.textContent);
+      } else hideGhost();
+    }
+    if (!drag) return;
+    const kind = drag.kind;
+    drag = null;
+    if (kind === "fold") {
+      if (pull > 0.42) {
+        foldCancel = tween(pull, 1, 180, (v) => { pull = v; paintFold(); }, () => {
+          pull = 0;
+          idle = 0;
+          setFolds(folds + 1);
+          foldBusy = false;
+        });
+      } else {
+        foldCancel = tween(pull, 0, 220, (v) => { pull = v; paintFold(); }, () => { foldBusy = false; });
+      }
+    } else if (kind === "return") {
+      const y = parseFloat((slot.style.transform.match(/translateY\(([-0-9.]+)px\)/) || [0, 0])[1]);
+      if (y > 108 && face >= 1) {
+        swallow = true;
+        drawer.classList.add("hot");
+        drawer.textContent = "进抽屉";
+        tween(y, y + 80, 280, (v) => { slot.style.transform = `translateY(${v}px) scale(${lerp(1, 0.62, (v - y) / 80)})`; }, () => {
+          slot.style.opacity = "0";
+        });
+      } else if (y > 28 && face === 1) {
+        setFace(2);
+        tween(y, 36, 220, (v) => { slot.style.transform = `translateY(${v}px)`; });
+      } else {
+        tween(y, face >= 2 ? 36 : 0, 220, (v) => { slot.style.transform = `translateY(${v}px)`; });
+        drawer.classList.toggle("hot", face >= 2);
+        drawer.textContent = "抽屉";
+      }
+    } else if (kind === "sling") {
+      if (sling.p > FIRE) {
+        thrown = true;
+        const earthR = earth.getBoundingClientRect();
+        const craftR = craft.getBoundingClientRect();
+        const aimX = earthR.left + earthR.width / 2 - (craftR.left + craftR.width / 2 - sling.x);
+        const aimY = earthR.top + earthR.height * 0.42 - (craftR.top + craftR.height / 2 - sling.y);
+        const from = { ...sling };
+        tween(0, 1, 520, (t) => {
+          sling.x = lerp(from.x, aimX, t);
+          sling.y = lerp(from.y, aimY, t);
+          sling.p = lerp(from.p, 0, t);
+          craft.style.opacity = String(1 - t * 0.85);
+          paintSling();
+        }, () => { slingHint.textContent = "没入那盏窗"; });
+      } else {
+        const from = { ...sling };
+        tween(0, 1, 280, (t) => {
+          sling.x = lerp(from.x, 0, t);
+          sling.y = lerp(from.y, 0, t);
+          sling.p = lerp(from.p, 0, t);
+          paintSling();
+        });
+        slingHint.textContent = "不够。再拉过线。";
+      }
+    }
+  });
+
+  if (reduce) {
+    foldEl.addEventListener("click", () => {
+      if (folds < 2) setFolds(folds + 1);
+    });
+  }
+
+  document.body.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-replay]");
+    if (!btn) return;
+    const which = btn.dataset.replay;
+    if (which === "pop") playPop();
+    if (which === "compose") resetCompose();
+    if (which === "fold") resetFold();
+    if (which === "dive") playDive();
+    if (which === "return") resetReturn();
+    if (which === "sling") resetSling();
+  });
+  document.getElementById("replay-all").addEventListener("click", () => {
+    playPop();
+    resetCompose();
+    resetFold();
+    playDive();
+    resetReturn();
+    resetSling();
+  });
+</script>
+</body>
+</html>

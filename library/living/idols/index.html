@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Idol Files — 贝克勒试版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=IBM+Plex+Mono:wght@400;700&family=Newsreader:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #191919;
+    --paper-ink: #fdfaf7;
+    --gray: #787a7f;
+    --sheet: #fffcf9;
+    --sheet-ink: #100f0a;
+    --ease: cubic-bezier(.33, 1, .68, 1);
+    --offset: 3.75rem;
+    --tag-h: 2.75rem;
+    --perspective: 3000px;
+    --tilt: -3deg;
+    --note: #f4efe4;
+    --green: #2f6b4f;
+    --serif-note: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+    --serif: Newsreader, "Noto Serif SC", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --blue: #1e4bd7;
+    --red: #d71e1e;
+    --teal: #0c7866;
+    --purple: #581e70;
+    --yellow: #ffe927;
+    --black: #000;
+    --container-offset: 32px;
+    --case: var(--green);
+    --first: var(--green);
+  }
+  @media (min-width: 1440px) { :root { --container-offset: 34px; } }
+  @media (min-width: 1920px) { :root { --container-offset: 48px; } }
+  @media (max-width: 768px) {
+    :root { --container-offset: 20px; --tag-h: 2.25rem; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--page); }
+  html.lenis, html.lenis body { height: auto; }
+
+  .studio {
+    position: relative;
+    min-height: calc(100svh - 48px);
+    height: calc(100svh - 48px);
+    background: var(--page);
+    color: var(--paper-ink);
+    overflow: hidden;
+    font-family: var(--serif);
+  }
+  .studio.is-case,
+  .studio.is-opening {
+    height: auto;
+    min-height: calc(100svh - 48px);
+    overflow: visible;
+  }
+  .studio.is-opening #cabinet {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .studio.is-opening #case {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+  }
+
+  .topbar {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 52px;
+    padding: 0 var(--container-offset);
+    background: #191919cc;
+    backdrop-filter: blur(100px);
+    -webkit-backdrop-filter: blur(100px);
+    border-bottom: 1px solid hsla(0, 0%, 100%, .1);
+  }
+  .studio.is-case .topbar { position: sticky; }
+  .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--paper-ink);
+    text-decoration: none;
+  }
+  .about {
+    font-family: var(--mono);
+    font-size: 1rem;
+    line-height: 2rem;
+    color: var(--paper-ink);
+    text-decoration: none;
+    opacity: .8;
+  }
+
+  .view { position: absolute; inset: 0; }
+  .studio.is-case .view { position: relative; inset: auto; }
+  .view[hidden] { display: none !important; }
+
+  .hero {
+    position: relative;
+    z-index: 2;
+    padding: 96px var(--container-offset) 0;
+    max-width: 100%;
+    text-align: center;
+  }
+  .hero h1 {
+    margin: 0 auto;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(1px, calc((100vw - var(--container-offset) * 2) * .119), 200px);
+    line-height: .8;
+    letter-spacing: -.01em;
+    text-transform: uppercase;
+    color: var(--paper-ink);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .hero p {
+    margin: 22px auto 0;
+    max-width: 46rem;
+    color: var(--gray);
+    font-size: clamp(1rem, .875rem + .417vw, 1.25rem);
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+
+  .files {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 48vh;
+    z-index: 4;
+    perspective: var(--perspective);
+    perspective-origin: 50% 140%;
+    padding-top: 8px;
+  }
+  .group {
+    position: absolute;
+    left: 0; right: 0;
+    top: calc(8px + var(--i) * var(--offset));
+    height: var(--offset);
+    z-index: var(--i);
+    transform-origin: bottom center;
+    transform: rotateX(var(--tilt)) translateY(48px);
+    opacity: 0;
+  }
+  .group.is-open { height: auto; bottom: 0; }
+  .group.is-ghost { visibility: hidden; }
+  .group.is-leaving {
+    transform: rotateX(var(--tilt)) translateY(120%) !important;
+    transition: transform .75s cubic-bezier(.16, 1, .3, 1) !important;
+  }
+  .files.is-in .group {
+    transform: rotateX(var(--tilt)) translateY(0);
+    opacity: 1;
+    transition: transform .65s var(--ease), opacity .5s var(--ease), height .65s var(--ease);
+  }
+  .studio.is-case #cabinet { display: none !important; }
+  .studio.is-case .folder {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+  }
+  .files.is-in .group:nth-child(1) { transition-delay: .00s; }
+  .files.is-in .group:nth-child(2) { transition-delay: .06s; }
+  .files.is-in .group:nth-child(3) { transition-delay: .12s; }
+  .files.is-in .group:nth-child(4) { transition-delay: .18s; }
+
+  .tabs {
+    position: absolute;
+    left: 10px;
+    top: -6px;
+    height: var(--tag-h);
+    display: flex;
+    align-items: stretch;
+    z-index: 3;
+  }
+  .tab {
+    height: 100%;
+    border: 0;
+    background: var(--tab);
+    color: var(--ink, #fff);
+    font-family: var(--serif);
+    font-size: clamp(15px, 1.4vw, 1.625rem);
+    font-weight: 400;
+    line-height: 1;
+    padding: 0 1.35rem .2rem;
+    margin-right: -10px;
+    border-radius: 18px 18px 0 0;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 -1px 8px rgba(0,0,0,.15);
+  }
+  .tab:focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 2px; }
+  .tab.is-yellow { color: #111; }
+  .tab[disabled] { cursor: default; opacity: .72; }
+
+  .body {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -1px 8px rgba(0,0,0,.15);
+    color: var(--paper-ink);
+    padding: 0 var(--container-offset);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .cat {
+    font-family: var(--mono);
+    font-size: clamp(.75rem, .833vw, 1rem);
+    height: var(--offset);
+    line-height: var(--offset);
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    cursor: pointer;
+    user-select: none;
+    background: none;
+    border: 0;
+    color: inherit;
+    padding: 0;
+  }
+  .cat i { font-style: normal; font-size: .95em; }
+  .cat i::before { content: "<"; }
+  .group.is-open .cat i::before { content: "▾"; }
+  .blurb {
+    display: none;
+    margin: 0;
+    max-width: 85vh;
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: clamp(.75rem, .833vw, 1rem);
+    line-height: 1.4;
+    text-wrap: balance;
+    padding: 4px 0 var(--container-offset);
+  }
+  .group.is-open .blurb { display: block; }
+
+  .case {
+    padding: 72px var(--container-offset) 0;
+  }
+  .case-hero-title {
+    margin: 0 0 18px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(3rem, 7vw, 7.5rem);
+    line-height: .8;
+    letter-spacing: -.02em;
+    text-transform: uppercase;
+    transform-origin: top left;
+  }
+  .case-hero-title .word { display: inline-block; }
+  .case-hero-title .char-mask {
+    display: inline-block;
+    overflow: hidden;
+    padding-bottom: .05em;
+  }
+  .case-hero-title .char {
+    display: inline-block;
+    will-change: transform;
+    color: var(--paper-ink);
+  }
+
+  .case-inner {
+    position: relative;
+    width: min(calc(100vw - var(--container-offset) * 2 - 2.75rem), 1448px);
+  }
+  .drag-bounds {
+    position: absolute;
+    left: 0; top: 0; bottom: -3rem;
+    width: 110%;
+    pointer-events: none;
+  }
+
+  .folder {
+    position: relative;
+    width: 100%;
+    min-height: 80vh;
+    perspective: var(--perspective);
+    transform-origin: top right;
+    transform-style: preserve-3d;
+  }
+  .folder-inner {
+    position: relative;
+    background: var(--case);
+    border-radius: 0 4px 4px 0;
+    padding: var(--container-offset);
+    padding-inline-start: 0;
+    box-shadow: 1px 0 8px rgba(0,0,0,.15);
+    min-height: 80vh;
+  }
+
+  .sheet {
+    position: relative;
+    z-index: 0;
+    background: var(--sheet);
+    color: var(--sheet-ink);
+    border-radius: 4px;
+    overflow: hidden;
+    aspect-ratio: 210 / 297;
+    width: 100%;
+  }
+  .sheet-overlay, .sheet-marks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-position: 50%;
+    background-size: 100% 100%;
+    border-radius: inherit;
+    z-index: 4;
+  }
+  .sheet-overlay {
+    background-image: url("assets/sheet_overlay.png");
+    mix-blend-mode: exclusion;
+    opacity: .4;
+  }
+  .sheet-marks {
+    background-image: url("assets/sheet_marks.png");
+    mix-blend-mode: exclusion;
+  }
+  .holes {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5rem;
+    border-right: 1px solid #b8b3ae;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .holes span {
+    width: clamp(10px, 1.33vw, 20px);
+    height: clamp(10px, 1.33vw, 20px);
+    border-radius: 50%;
+    background: var(--case);
+  }
+  .sheet-inner {
+    position: relative;
+    z-index: 3;
+    height: 100%;
+    padding: 2.6rem 2rem 1.2rem calc(5rem + 1rem);
+  }
+  @media (min-width: 1440px) {
+    .sheet-inner { padding: 4.2rem 2.4rem 1.4rem calc(5rem + 1.2rem); }
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.6rem;
+    height: 100%;
+    min-height: 0;
+  }
+  .left { width: 30%; display: flex; flex-direction: column; gap: 1.2rem; }
+  .right { width: 62%; overflow: hidden; }
+  .photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: .875;
+    transform: rotate(-1.5deg);
+    transform-origin: left bottom;
+    margin-top: -1.4rem;
+  }
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .clip {
+    position: absolute;
+    right: 2rem;
+    top: 0;
+    width: 28px;
+    height: 52px;
+    z-index: 2;
+    transform: translateY(-1rem);
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: .72rem;
+    line-height: 1.4;
+  }
+  .meta b { display: block; font-weight: 700; }
+  .desc {
+    font-family: var(--serif);
+    font-size: clamp(14px, 1.45vw, 24px);
+    line-height: 1.4;
+    text-shadow: 1px 1px 1px #fff;
+  }
+  .desc p { margin: 0 0 1.15em; }
+  .desc p + p { text-indent: 2.2em; }
+  .desc p:first-child::first-letter {
+    display: inline-block;
+    float: left;
+    font-size: 5em;
+    line-height: .425;
+    margin-right: .7rem;
+    margin-top: .21em;
+    font-family: var(--serif);
+  }
+
+  .cover {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transform: rotateY(0deg);
+    pointer-events: none;
+    border-radius: 0 4px 4px 0;
+  }
+  .cover-face {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .cover-front { background: var(--first); z-index: 2; }
+  .cover-front-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(0deg, #ffffff0d, #ffffff0d);
+  }
+  .cover-back {
+    background: var(--case);
+    transform: rotateX(180deg);
+  }
+  .cover-back-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #fff0, #ffffff0d);
+  }
+  .cover-shadow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 250px #00000080;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sidetabs {
+    position: absolute;
+    left: 100%;
+    top: 8%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 6;
+  }
+  .sidetabs .tab {
+    writing-mode: vertical-rl;
+    transform: none;
+    margin: 0;
+    height: auto;
+    padding: .85rem .55rem;
+    border-radius: 0 14px 14px 0;
+  }
+  .sidetabs .tab.sib { cursor: pointer; }
+
+  .scrapbook {
+    z-index: 2;
+    margin-bottom: var(--scrap-mb, 80rem);
+    min-height: 8rem;
+  }
+  .scrap {
+    position: absolute;
+    left: calc(var(--x) * 1%);
+    top: calc(var(--y) * 1%);
+    z-index: var(--z, 6);
+    transform: rotate(var(--r, 0deg));
+    transform-origin: var(--o, center);
+    cursor: grab;
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,.22));
+    width: min(42%, 560px);
+    min-width: 16rem;
+  }
+  .scrap.is-print {
+    width: calc(var(--w) * 1%);
+    min-width: 9rem;
+    max-width: min(44%, 620px);
+  }
+  .scrap.is-object {
+    width: 8rem;
+    min-width: 0;
+    max-width: 10rem;
+    filter: drop-shadow(0 12px 16px rgba(0,0,0,.35));
+  }
+  .scrap.is-print .photo-el img,
+  .scrap.is-print .stack-el img {
+    background: #111;
+    padding: 5px;
+  }
+  .scrap.is-object .photo-el img {
+    background: none;
+    padding: 0;
+  }
+  .scrap:has(.note-card),
+  .scrap:has(.stack-el .note-card) { width: max-content; max-width: 92%; min-width: 0; }
+  .scrap.is-dragging { cursor: grabbing; z-index: 40; }
+  .scrap-inner { position: relative; }
+
+  .piece {
+    width: calc(var(--w) * 1%);
+    z-index: var(--z, auto);
+    transform: rotate(var(--r, 0deg));
+    transform-origin: var(--o, center);
+  }
+  .piece:not(.is-xr) { left: calc(var(--x) * 1%); }
+  .piece.is-xr { left: auto; right: calc(var(--x) * 1%); }
+  .piece:not(.is-yr) { top: calc(var(--y) * 1%); }
+  .piece.is-yr { top: auto; bottom: calc(var(--y) * 1%); }
+
+  .scrap-inner > .photo-el,
+  .scrap-inner > .clip-el,
+  .scrap-inner > .stack-el { position: absolute; }
+  .scrap-inner > .note-card {
+    position: relative;
+    left: auto; top: auto; right: auto; bottom: auto;
+  }
+  .scrap-inner > .stack-el:has(.note-card) {
+    position: relative;
+    left: auto; top: auto; right: auto; bottom: auto;
+    width: max-content;
+  }
+  .scrap-inner:not(:has(.note-card)) > :first-child {
+    position: relative;
+    left: auto; top: auto; right: auto; bottom: auto;
+    width: 100%;
+  }
+
+  .photo-el img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+  .photo-el { margin: 0; }
+  .photo-el.has-play { position: relative; }
+  .play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    background: #fff8;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+  }
+  .play::after {
+    content: "";
+    position: absolute;
+    left: 38%; top: 28%;
+    border-style: solid;
+    border-width: .7rem 0 .7rem 1.1rem;
+    border-color: transparent transparent transparent #111;
+  }
+
+  .note-card {
+    background: var(--note-bg, #de96a1);
+    color: #100f0a;
+    border-radius: 4px;
+    opacity: .97;
+    padding: 3.4rem 2.4rem 4.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    box-sizing: border-box;
+    text-wrap: balance;
+  }
+  .note-card.ink-light { color: #fff; }
+  .note-card.note-xs { width: clamp(23.75rem, 5rem + 20.833vw, 30rem); }
+  .note-card.note-s { width: clamp(26.25rem, 0rem + 29.167vw, 35rem); }
+  .note-card.note-m { width: clamp(28.75rem, -1.25rem + 33.333vw, 38.75rem); }
+  .note-card.note-l { width: clamp(35rem, 14.375rem + 22.917vw, 41.875rem); }
+  .note-card.note-xl { width: clamp(37.5rem, 30rem + 8.333vw, 40rem); }
+  .note-card.note-xxl { width: clamp(41.875rem, .625rem + 45.833vw, 55.625rem); }
+  .note-year {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.4rem, 5vw, 4.2rem);
+    line-height: .8;
+    letter-spacing: -.02em;
+  }
+  .note-name {
+    font-size: clamp(1.15rem, 1.4vw, 1.5rem);
+    line-height: 1.2;
+  }
+  .note-body { font-size: clamp(.92rem, 1.05vw, 1.1rem); line-height: 1.35; }
+  .note-body p { margin: 0 0 .6em; }
+
+  .stack-el { position: absolute; }
+  .stack-el > .photo-el:first-child { position: relative; }
+  .stack-el > :not(:first-child) { position: absolute; }
+
+  .clip-el {
+    width: 28px;
+    height: 52px;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+  }
+  .clip-el svg { width: 100%; height: 100%; display: block; }
+
+  .next-folder {
+    margin: 10vh 0 -30vh;
+    display: none;
+  }
+  .studio.is-case .next-folder { display: block; }
+  .studio.is-case .next-folder[hidden] { display: none !important; }
+  .next-folder-inner {
+    background: var(--next, #1e4bd7);
+    color: var(--next-ink, #fff);
+    border-radius: 0 4px 0 0;
+    height: 55vh;
+    width: calc(80% - .2rem);
+    padding: var(--container-offset) var(--container-offset) 0;
+    position: relative;
+    cursor: pointer;
+  }
+  .next-folder-inner::before {
+    content: "";
+    position: absolute;
+    right: 100%; top: 0; bottom: 0;
+    width: 100%;
+    background: inherit;
+  }
+  .next-folder-inner .case-hero-title { font-size: clamp(2.4rem, 5vw, 4.5rem); margin: 0; }
+
+  .next-widget {
+    display: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  @media (min-width: 1025px) {
+    .studio.is-case .next-widget {
+      display: flex;
+      position: fixed;
+      bottom: var(--container-offset);
+      left: calc(var(--container-offset) + min(90vw, 1448px));
+      transform: translate(-100%);
+      z-index: 55;
+      transition: all .429s var(--ease);
+    }
+    .studio.is-case .next-widget.is-disabled {
+      transform: translate(-100%) translateY(calc(100% + 4rem));
+      pointer-events: none;
+    }
+    .studio.is-case .next-widget.is-disabled .next-info {
+      height: 3.5rem;
+      transform: translateY(4.5rem);
+    }
+    .studio.is-case .next-widget[hidden] { display: none !important; }
+  }
+  .next-info {
+    background: var(--next, #1e4bd7);
+    color: var(--next-ink, #fff);
+    border-radius: 1.25rem;
+    height: 11.25rem;
+    width: 13.75rem;
+    overflow: clip;
+    position: relative;
+    transition: all .65s var(--ease);
+  }
+  .next-info-inner {
+    position: absolute;
+    inset: 0;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .next-name { font-size: 1.25rem; }
+  .next-cat { font-family: var(--mono); font-size: .875rem; line-height: 1.4; }
+  .next-action {
+    background: var(--yellow);
+    color: #111;
+    border-radius: 1.25rem;
+    overflow: clip;
+    position: relative;
+    width: 10rem;
+    transition: width .65s var(--ease);
+  }
+  .next-action-inner {
+    display: flex;
+    align-items: center;
+    width: 23.75rem;
+    transform: translate(-13.75rem);
+    position: relative;
+    z-index: 5;
+    transition: transform .65s var(--ease);
+  }
+  .next-progress {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    transform: translateX(-100%);
+    z-index: 1;
+  }
+  .next-btn, .next-progress-text {
+    font-family: var(--mono);
+    font-size: 1rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .next-btn { width: 10rem; gap: .33em; }
+  .next-progress-text { width: 13.75rem; text-align: center; }
+  .next-widget.is-overscroll .next-info {
+    height: 3.5rem;
+    transform: translateY(4.5rem);
+  }
+  .next-widget.is-overscroll .next-action { width: 13.75rem; }
+  .next-widget.is-overscroll .next-action-inner { transform: translate(0); }
+
+  .case-temp {
+    display: none;
+    z-index: 15;
+    pointer-events: none;
+  }
+  .case-temp .folder { min-height: 0; height: 100%; }
+  .case-temp .folder-inner { min-height: 0; height: 100%; padding: 0; }
+  .case-temp .sheet,
+  .case-temp .scrapbook,
+  .case-temp .sidetabs,
+  .case-temp .next-folder { visibility: hidden; }
+
+  .hudbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid #1c1914;
+    font-family: var(--serif-note);
+  }
+  .hudbar button, .readout {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .hudbar button {
+    border: 1px solid #1c1914;
+    background: #1c1914;
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: #5c564c;
+  }
+  .hudbar button[disabled] { opacity: .45; cursor: wait; }
+  .readout { color: #5c564c; letter-spacing: .04em; }
+
+  .note {
+    background: var(--note);
+    color: #1c1914;
+    font-family: var(--serif-note);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .note main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 24px 40px;
+  }
+  .note h1 {
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  .note .sub { margin: 0 0 22px; font-style: italic; color: #5c564c; }
+  .note p { margin: 0 0 12px; }
+  .note h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--green);
+    margin: 22px 0 8px;
+  }
+  .note pre, .note code { font-family: ui-monospace, Menlo, monospace; }
+  .note pre {
+    background: #1c1914;
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .note ol { margin: 0 0 12px 1.15em; padding: 0; }
+  .note li { margin: 0 0 8px; }
+  .note a { color: inherit; }
+  footer.colophon {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    font-family: var(--serif-note);
+    font-size: 12.5px;
+    color: #5c564c;
+    background: var(--note);
+  }
+
+  @media (max-width: 760px) {
+    .hero h1 { white-space: normal; font-size: clamp(42px, 14vw, 88px); }
+    .hero p { width: 92%; }
+    .files { height: 50vh; }
+    .tab { font-size: 15px; padding: 0 .8rem; }
+    .blurb { display: none !important; }
+    .row { flex-direction: column; }
+    .left, .right { width: 100%; }
+    .photo { width: 42%; margin-top: 0; }
+    .holes { width: 2.5rem; }
+    .sheet-inner { padding: 1.4rem 1rem 1rem calc(2.5rem + .6rem); }
+    .desc p:first-child::first-letter { font-size: 3.2em; }
+    .sidetabs { display: none; }
+    .sheet { aspect-ratio: auto; min-height: 70vh; }
+    .scrap { position: relative; left: auto !important; top: auto !important; width: 86%; margin: 2rem 6%; transform: none; }
+    .scrapbook { margin-bottom: 4rem; display: flex; flex-direction: column; gap: 3rem; }
+    .note-xs, .note-s, .note-m, .note-l, .note-xl, .note-xxl { width: 100%; }
+    .next-folder { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="studio" id="studio">
+  <header class="topbar">
+    <a class="logo" href="#cabinet" id="logo">Idol Files</a>
+    <a class="about" href="../mosby/index.html">原机</a>
+  </header>
+
+  <section class="view" id="cabinet" aria-label="档案柜">
+    <div class="hero" id="hero">
+      <h1></h1>
+      <p></p>
+    </div>
+    <div class="files" id="files"></div>
+  </section>
+
+  <section class="view" id="case" hidden aria-label="卷宗">
+    <div class="case" id="caseMove">
+      <h1 class="case-hero-title" id="title"></h1>
+      <div class="case-inner" id="caseInner">
+        <div class="drag-bounds" id="dragBounds"></div>
+      </div>
+    </div>
+    <div class="next-folder" id="nextFolder">
+      <div class="next-folder-inner" id="nextFolderInner"></div>
+    </div>
+    <a class="next-widget is-disabled" id="nextWidget" href="#">
+      <div class="next-info">
+        <div class="next-info-inner">
+          <div class="next-name" id="nextName"></div>
+          <div class="next-cat" id="nextCat"></div>
+        </div>
+      </div>
+      <div class="next-action">
+        <div class="next-action-inner">
+          <div class="next-progress-text"><span>Keep scrolling for the next page</span></div>
+          <div class="next-btn"><span>Next</span> →</div>
+        </div>
+        <div class="next-progress" id="nextBar"></div>
+      </div>
+    </a>
+  </section>
+</div>
+
+<div class="case-temp" id="caseTemp" aria-hidden="true">
+  <div class="folder" id="folder3d">
+    <div class="folder-inner" id="folderInner"></div>
+    <div class="cover" id="cover">
+      <div class="cover-face cover-front"><div class="cover-front-overlay"></div></div>
+      <div class="cover-face cover-back"><div class="cover-back-overlay"></div></div>
+      <div class="cover-shadow" id="coverShadow"></div>
+    </div>
+    <div class="sidetabs" id="sidetabs"></div>
+  </div>
+</div>
+
+<div class="hudbar">
+  <span class="readout" id="readout">60px · 3000px · −3°</span>
+  <button type="button" id="btnCabinet" aria-pressed="true">档案柜</button>
+  <button type="button" id="btnCase" aria-pressed="false">打开</button>
+  <button type="button" id="btnReplay">再打开</button>
+  <button type="button" id="btnNext">下一案</button>
+</div>
+
+<section class="note">
+  <main>
+    <h1>第一份偶像卷宗。</h1>
+    <p class="sub">交互机是 Mosby 那套。点贝克勒的页签。抽屉走，同一块皮 Flip 到纸上，封面从左边翻过去。桌上是能单独拖开的照片、便签、剪刀、圆规。另外三格空着，不虚构人。</p>
+    <p>内容在 <code>cases.js</code>。动效不重写。这是试版：先看效果，再接到功能档案的房间海报。</p>
+    <p>GSAP Flip / Draggable 和 Lenis 都在 <code>vendor/</code>。封面还是 1.5 秒 <code>power3.inOut</code>。只有一份卷宗时，下一案小窗不出现。</p>
+    <h2>这次怎么换的</h2>
+    <ol>
+      <li>壳是 <a href="../mosby/index.html">living/mosby</a> 已验证过的交互机，不是 Codex 那版卡片墙式档案柜。</li>
+      <li>点开还是同一块皮。Preserve Context。</li>
+      <li>文件夹就是文件夹。Familiarity。空格写明「待归档」，不是坏了。</li>
+      <li>先柜子，再纸，再剪贴。渐进揭示。没有第二个人，就不假装有下一案。</li>
+      <li>颜色跟案子走。贝克勒是高地绿 <code>#2F6B4F</code>。不要蜡笔红。</li>
+    </ol>
+  </main>
+</section>
+<footer class="colophon">
+  <p>交互机：<a href="../mosby/index.html">living/mosby</a>。内容：贝克勒试版。照片来自 Wikimedia Commons（Katie Chan 伦敦马拉松；Cross de Itálica 2007；巴黎黄金联赛 2006；伦敦 2012；巴黎马拉松 2014；阿贝贝 / 格布雷西拉西耶；贝尔山）。1780 Bonne 阿比西尼亚地图公有领域。剪刀和圆规是桌上的物件。肖像从房间海报裁下。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a> · 数据：<a href="cases.js">cases.js</a></p>
+</footer>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/Flip.min.js"></script>
+<script src="vendor/Draggable.min.js"></script>
+<script src="vendor/lenis.min.js"></script>
+<script src="cases.js"></script>
+<script>
+(function () {
+  const DATA = window.MOSBY
+  const CDN = DATA.cdn || {}
+  const studio = document.getElementById('studio')
+  const files = document.getElementById('files')
+  const cabinet = document.getElementById('cabinet')
+  const caseView = document.getElementById('case')
+  const caseInner = document.getElementById('caseInner')
+  const caseTemp = document.getElementById('caseTemp')
+  const folder = document.getElementById('folder3d')
+  const folderInner = document.getElementById('folderInner')
+  const cover = document.getElementById('cover')
+  const coverShadow = document.getElementById('coverShadow')
+  const title = document.getElementById('title')
+  const sidetabs = document.getElementById('sidetabs')
+  const readout = document.getElementById('readout')
+  const btnCabinet = document.getElementById('btnCabinet')
+  const btnCase = document.getElementById('btnCase')
+  const btnReplay = document.getElementById('btnReplay')
+  const btnNext = document.getElementById('btnNext')
+  const nextWidget = document.getElementById('nextWidget')
+  const nextBar = document.getElementById('nextBar')
+  const caseMove = document.getElementById('caseMove')
+  const nextFolderInner = document.getElementById('nextFolderInner')
+  const ready = typeof gsap !== 'undefined' && typeof Flip !== 'undefined'
+  if (ready) {
+    gsap.registerPlugin(Flip)
+    if (typeof Draggable !== 'undefined') gsap.registerPlugin(Draggable)
+  }
+
+  const CLIP = '<svg viewBox="0 0 24 44" aria-hidden="true"><path d="M9 16v16a3.2 3.2 0 0 0 6.4 0V12.5a5 5 0 0 0-10 0V30" fill="none" stroke="#6e6e6e" stroke-width="2.4" stroke-linecap="round"/></svg>'
+  const ORDER = DATA.drawers.flatMap((d) => d.cases)
+
+  let groups = []
+  let busy = false
+  let onCase = false
+  let gen = 0
+  let current = ORDER[0] || ''
+  let openDrawer = DATA.drawers.length - 1
+  let lenis = null
+  let overAmount = 0
+  let nearBottom = false
+  let drags = []
+
+  function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]))
+  }
+  function light(hex) {
+    const n = String(hex || '').replace('#', '')
+    if (n.length < 6) return false
+    const r = parseInt(n.slice(0, 2), 16)
+    const g = parseInt(n.slice(2, 4), 16)
+    const b = parseInt(n.slice(4, 6), 16)
+    return (r * 299 + g * 587 + b * 114) / 1000 > 180
+  }
+  function img(name, alt) {
+    if (!name) return ''
+    const cdn = CDN[name] || ''
+    return `<img src="assets/${esc(name)}" alt="${esc(alt || '')}" data-cdn="${esc(cdn)}" onerror="if(this.dataset.cdn&&this.src!==this.dataset.cdn)this.src=this.dataset.cdn"/>`
+  }
+  function drawerOf(slug) {
+    return DATA.drawers.findIndex((d) => d.cases.includes(slug))
+  }
+  function nextSlug(slug) {
+    const i = ORDER.indexOf(slug)
+    return ORDER[(i + 1) % ORDER.length]
+  }
+  function caseOf(slug) { return DATA.cases[slug] }
+  function renderMeta(sheet) {
+    const rows = (sheet.meta && sheet.meta.length)
+      ? sheet.meta
+      : [
+          ['Born', sheet.born],
+          sheet.died ? ['Died', sheet.died] : null,
+          !sheet.died && sheet.from ? ['From', sheet.from] : null
+        ].filter((row) => row && row[1])
+    return rows.map(([k, v]) => `<p><b>${esc(k)}:</b></p><p>${esc(v)}</p>`).join('')
+  }
+  function hasNext() { return ORDER.length > 1 }
+  function splitTitle(name) {
+    return String(name || '').toUpperCase().split(/\s+/).map((word) => {
+      const chars = [...word].map((ch) => `<span class="char-mask"><span class="char">${esc(ch)}</span></span>`).join('')
+      return `<span class="word">${chars}</span>`
+    }).join(' ')
+  }
+  function styleT(t, xMul) {
+    const x = (Number(t.x) || 0) * (xMul || 1)
+    const y = Number(t.y) || 0
+    const w = t.w == null ? 100 : t.w
+    const r = t.r || 0
+    const z = t.z == null || t.z === '' ? 'auto' : t.z
+    const o = t.o || 'center'
+    const cls = []
+    if (t.xr) cls.push('is-xr')
+    if (t.yr) cls.push('is-yr')
+    return {
+      cls: cls.join(' '),
+      style: `--x:${x};--y:${y};--w:${w};--r:${r}deg;--z:${z};--o:${o}`
+    }
+  }
+  function renderKid(k) {
+    if (!k) return ''
+    const p = styleT(k)
+    if (k.t === 'photo') {
+      return `<figure class="photo-el piece ${p.cls}${k.play ? ' has-play' : ''}" style="${p.style}">${img(k.src, k.alt || '')}${k.play ? '<span class="play"></span>' : ''}</figure>`
+    }
+    if (k.t === 'note') {
+      const paras = (k.paras || []).map((x) => `<p>${esc(x)}</p>`).join('')
+      return `<aside class="note-card piece ${p.cls} note-${esc(k.size || 's')} ink-${esc(k.ink || 'dark')}" style="${p.style};--note-bg:${esc(k.bg || '#de96a1')}">${k.year ? `<div class="note-year">${esc(k.year)}</div>` : ''}${k.name ? `<div class="note-name">${esc(k.name)}</div>` : ''}<div class="note-body">${paras}</div></aside>`
+    }
+    if (k.t === 'clip') {
+      return `<div class="clip-el piece ${p.cls}" style="${p.style}">${CLIP}</div>`
+    }
+    if (k.t === 'stack') {
+      return `<div class="stack-el piece ${p.cls}" style="${p.style}">${(k.kids || []).map(renderKid).join('')}</div>`
+    }
+    return ''
+  }
+
+  function renderCabinet() {
+    const logo = document.getElementById('logo')
+    if (DATA.brand) logo.textContent = DATA.brand
+    if (DATA.about) {
+      const about = document.querySelector('.about')
+      if (about) {
+        about.href = DATA.about.href
+        about.textContent = DATA.about.label
+        about.removeAttribute('target')
+        about.removeAttribute('rel')
+      }
+    }
+    document.querySelector('#hero h1').textContent = DATA.hero.title
+    document.querySelector('#hero p').textContent = DATA.hero.blurb
+    files.innerHTML = DATA.drawers.map((d, i) => {
+      const tabs = d.cases.length
+        ? d.cases.map((slug) => {
+            const c = caseOf(slug)
+            const yellow = light(c.color) ? ' is-yellow' : ''
+            return `<button class="tab${yellow}" style="--tab:${c.color}" type="button" data-case="${slug}">${esc(c.name)}</button>`
+          }).join('')
+        : `<button class="tab${light(d.color) ? ' is-yellow' : ''}" style="--tab:${d.color}" type="button" disabled>待归档</button>`
+      return `<div class="group${i === openDrawer ? ' is-open' : ''}" data-drawer="${i}" style="--i:${i}; --bg:${d.color}">
+        <div class="tabs">${tabs}</div>
+        <div class="body">
+          <button class="cat" type="button" data-open="${i}">${esc(d.category)} <i></i></button>
+          <p class="blurb">${esc(d.blurb)}</p>
+        </div>
+      </div>`
+    }).join('')
+    groups = [...files.querySelectorAll('.group')]
+  }
+
+  function renderFolder(slug) {
+    const c = caseOf(slug)
+    if (!c) return
+    const di = drawerOf(slug)
+    const drawer = DATA.drawers[di]
+    const first = caseOf(drawer.cases[0])
+    current = slug
+    document.documentElement.style.setProperty('--case', c.color)
+    document.documentElement.style.setProperty('--first', first.color)
+    folder.style.setProperty('--scrap-mb', (c.offset || 80) + 'rem')
+    title.innerHTML = splitTitle(c.name)
+    title.setAttribute('aria-label', c.name)
+    const paras = (c.sheet.paras || []).map((p) => `<p>${esc(p)}</p>`).join('')
+    const scraps = (c.scrap || []).map((item) => {
+      const st = styleT(item, 1.1)
+      const kind = item.kind ? ` is-${esc(item.kind)}` : ''
+      return `<article class="scrap${kind}" style="${st.style}" data-name="${esc(item.name)}"><div class="scrap-inner">${(item.kids || []).map(renderKid).join('')}</div></article>`
+    }).join('')
+    folderInner.innerHTML = `
+      <article class="sheet">
+        <div class="sheet-overlay" aria-hidden="true"></div>
+        <div class="sheet-marks" aria-hidden="true"></div>
+        <div class="holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="sheet-inner">
+          <div class="row">
+            <div class="left">
+              <div class="photo">${img(c.sheet.photo, c.name)}${CLIP.replace('<svg', '<svg class="clip"')}</div>
+              <div class="meta">${renderMeta(c.sheet)}</div>
+            </div>
+            <div class="right"><div class="desc">${paras}</div></div>
+          </div>
+        </div>
+      </article>
+      <div class="scrapbook" aria-label="剪贴簿">${scraps}</div>`
+    sidetabs.innerHTML = drawer.cases.map((s) => {
+      const x = caseOf(s)
+      const yellow = light(x.color) ? ' is-yellow' : ''
+      const sib = s === slug ? '' : ' sib'
+      return `<button class="tab${yellow}${sib}" style="--tab:${x.color}" type="button" data-to="${s}">${esc(x.name)}</button>`
+    }).join('')
+    paintNext()
+  }
+
+  function paintNext() {
+    if (!hasNext()) {
+      nextWidget.hidden = true
+      nextWidget.classList.add('is-disabled')
+      document.getElementById('nextFolder').hidden = true
+      return
+    }
+    nextWidget.hidden = false
+    document.getElementById('nextFolder').hidden = false
+    const n = caseOf(nextSlug(current))
+    const di = drawerOf(n.slug)
+    nextWidget.style.setProperty('--next', n.color)
+    nextWidget.style.setProperty('--next-ink', light(n.color) ? '#111' : '#fff')
+    document.getElementById('nextName').textContent = n.name
+    document.getElementById('nextCat').textContent = DATA.drawers[di].category
+    nextFolderInner.style.setProperty('--next', n.color)
+    nextFolderInner.style.setProperty('--next-ink', light(n.color) ? '#111' : '#fff')
+    nextFolderInner.style.background = n.color
+    nextFolderInner.style.color = light(n.color) ? '#111' : '#fff'
+    nextFolderInner.innerHTML = `<h2 class="case-hero-title">${splitTitle(n.name)}</h2>`
+  }
+
+  function paint() {
+    btnCabinet.setAttribute('aria-pressed', onCase ? 'false' : 'true')
+    btnCase.setAttribute('aria-pressed', onCase ? 'true' : 'false')
+    const lock = !!busy
+    btnCabinet.disabled = lock
+    btnCase.disabled = lock
+    btnReplay.disabled = lock
+    btnNext.disabled = lock || !hasNext()
+    const c = caseOf(current)
+    readout.textContent = busy
+      ? 'Flip 1.5s · power3.inOut'
+      : onCase
+        ? (c.name + ' · rotateY −180°')
+        : '60px · 3000px · −3°'
+  }
+
+  function restack() {
+    groups.forEach((g, n) => {
+      g.hidden = false
+      g.classList.toggle('is-open', n === openDrawer)
+      g.classList.remove('is-ghost', 'is-leaving')
+      g.style.transitionDelay = ''
+    })
+    files.classList.remove('is-in')
+    void files.getBoundingClientRect()
+    requestAnimationFrame(() => files.classList.add('is-in'))
+  }
+
+  function slotEl() {
+    const i = drawerOf(current)
+    return groups[i] || groups[groups.length - 1]
+  }
+
+  function killDrag() {
+    drags.forEach((d) => { try { d.kill() } catch (e) {} })
+    drags = []
+  }
+
+  function bindDrag() {
+    killDrag()
+    if (!ready || typeof Draggable === 'undefined') return
+    if (window.innerWidth < 761) return
+    const bounds = document.getElementById('dragBounds')
+    drags.push(...Draggable.create(folder, {
+      type: 'x',
+      trigger: '.sheet, .cover',
+      bounds,
+      edgeResistance: 0.75,
+      inertia: false,
+      zIndexBoost: false
+    }))
+    folder.querySelectorAll('.scrap').forEach((el) => {
+      drags.push(...Draggable.create(el, {
+        type: 'x,y',
+        bounds,
+        edgeResistance: 0.65,
+        inertia: false,
+        zIndexBoost: true,
+        allowContextMenu: true,
+        onPress() { this.target.classList.add('is-dragging') },
+        onRelease() { this.target.classList.remove('is-dragging') }
+      }))
+    })
+  }
+
+  function bootLenis() {
+    if (typeof Lenis === 'undefined') return
+    if (lenis) return
+    lenis = new Lenis({ autoRaf: true, overscroll: true, lerp: 0.1 })
+    window.__lenis = lenis
+    lenis.on('scroll', (e) => {
+      const limit = e.limit || 0
+      const scroll = e.actualScroll ?? e.scroll ?? 0
+      nearBottom = onCase && limit > 0 && scroll >= limit - 100
+      if (!nearBottom) {
+        overAmount = 0
+        applyOverscroll(0)
+      }
+      nextWidget.classList.toggle('is-disabled', !(hasNext() && onCase && scroll > 300))
+    })
+  }
+  function stopLenis() {
+    if (!lenis) return
+    try { lenis.scrollTo(0, { immediate: true }) } catch (e) {}
+  }
+  function applyOverscroll(p) {
+    nextWidget.classList.toggle('is-overscroll', p > 0.02 && nearBottom)
+    nextBar.style.transform = `translateX(${-100 + 100 * p}%)`
+    if (ready) gsap.to(caseMove, { y: `${-5 * p}vh`, duration: 0.5, ease: 'none', overwrite: true })
+  }
+  window.addEventListener('wheel', (e) => {
+    if (!onCase || !nearBottom || busy || !hasNext()) return
+    if (e.deltaY > 0) overAmount = Math.min(overAmount + Math.min(e.deltaY, 100), 2000)
+    else overAmount = 0
+    const p = overAmount / 2000
+    applyOverscroll(p)
+    if (p >= 1) goTo(nextSlug(current), 'next')
+  }, { passive: true })
+
+  function parkInSlot() {
+    const slot = slotEl()
+    const r = slot.getBoundingClientRect()
+    caseTemp.style.display = 'block'
+    caseTemp.style.position = 'fixed'
+    caseTemp.style.left = r.left + 'px'
+    caseTemp.style.top = r.top + 'px'
+    caseTemp.style.width = r.width + 'px'
+    caseTemp.style.height = r.height + 'px'
+    caseTemp.style.overflow = 'hidden'
+    caseTemp.appendChild(folder)
+    if (ready) {
+      gsap.set(folder, { width: '100%', height: '100%', x: 0, y: 0, clearProps: 'transform' })
+      gsap.set(cover, { rotateY: 0 })
+      gsap.set(coverShadow, { opacity: 0 })
+      gsap.set('#title .char', { xPercent: -150, opacity: 0 })
+      gsap.set('.scrap', { y: '50vh', opacity: 0 })
+      gsap.set(sidetabs, { width: 0, overflow: 'hidden' })
+      gsap.set('.sidetabs .sib', { yPercent: 110 })
+    }
+  }
+
+  function showCabinetIdle() {
+    onCase = false
+    killDrag()
+    overAmount = 0
+    applyOverscroll(0)
+    nextWidget.classList.add('is-disabled')
+    studio.classList.remove('is-case', 'is-opening')
+    caseView.hidden = true
+    cabinet.hidden = false
+    caseTemp.style.display = 'none'
+    caseTemp.appendChild(folder)
+    if (ready) {
+      gsap.set(groups, { clearProps: 'yPercent,opacity,transform' })
+      gsap.set('#hero h1, #hero p', { clearProps: 'y,opacity' })
+      gsap.set(caseMove, { y: 0 })
+    }
+    restack()
+    paint()
+  }
+
+  async function openCase(slug) {
+    if (busy) return
+    if (slug) current = slug
+    openDrawer = Math.max(0, drawerOf(current))
+    renderFolder(current)
+    if (!ready) {
+      caseInner.appendChild(folder)
+      caseView.hidden = false
+      cabinet.hidden = true
+      studio.classList.add('is-case')
+      cover.style.transform = 'rotateY(-180deg)'
+      onCase = true
+      paint()
+      return
+    }
+    if (onCase) {
+      await replayCover()
+      return
+    }
+    const my = ++gen
+    busy = true
+    paint()
+    parkInSlot()
+    slotEl().classList.add('is-ghost')
+    caseView.hidden = false
+    studio.classList.add('is-opening')
+
+    const slot = slotEl()
+    const others = groups.filter((g) => g !== slot)
+    others.forEach((g, i) => {
+      g.style.transitionDelay = (i * 0.1) + 's'
+      g.classList.add('is-leaving')
+    })
+    gsap.to('#hero h1', { y: '2rem', opacity: 0, duration: 0.45, ease: 'power2.out' })
+    gsap.to('#hero p', { y: '2rem', opacity: 0, duration: 0.45, ease: 'power2.out' })
+
+    gsap.killTweensOf(folder)
+    if (lenis) lenis.scrollTo(0, { immediate: true })
+    else window.scrollTo(0, 0)
+    const state = Flip.getState(folder)
+    caseInner.appendChild(folder)
+    gsap.set(folder, { width: '', height: '' })
+    Flip.from(state, { duration: 1.5, ease: 'power3.inOut', absolute: true })
+
+    const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } })
+    tl.fromTo(cover, { rotateY: 0 }, { rotateY: -180, duration: 1.5 }, 0)
+    tl.to(coverShadow, { opacity: 1, duration: 0.35 }, 0.25)
+    tl.to(coverShadow, { opacity: 0, duration: 0.3 }, 0.6)
+    tl.to('#title .char', { xPercent: 0, opacity: 1, duration: 0.65, stagger: 0.025, ease: 'power2.out' }, 0.65)
+    tl.to('.sidetabs .sib', { yPercent: 0, duration: 0.75, ease: 'power3.out' }, 0.85)
+    tl.to('.scrap', { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out' }, 1)
+    tl.set(sidetabs, { clearProps: 'width,overflow' }, 1.45)
+
+    await Promise.race([tl.then(), new Promise((r) => setTimeout(r, 1700))])
+    tl.progress(1)
+    gsap.killTweensOf([cover, coverShadow, folder])
+    gsap.set(folder, { clearProps: 'transform,x,y,width,height,position,top,left,right,bottom' })
+    gsap.set('#title .char', { xPercent: 0, opacity: 1 })
+    gsap.set(cover, { rotateY: -180 })
+    gsap.set(sidetabs, { width: 'auto', overflow: 'visible' })
+    gsap.set('.scrap', { y: 0, opacity: 1 })
+    if (lenis) lenis.scrollTo(0, { immediate: true })
+    else window.scrollTo(0, 0)
+    if (my !== gen) return
+    cabinet.hidden = true
+    caseTemp.style.display = 'none'
+    studio.classList.remove('is-opening')
+    studio.classList.add('is-case')
+    onCase = true
+    busy = false
+    bindDrag()
+    nextWidget.classList.add('is-disabled')
+    overAmount = 0
+    applyOverscroll(0)
+    if (lenis) { try { lenis.resize(); lenis.scrollTo(0, { immediate: true }) } catch (e) {} }
+    paint()
+  }
+
+  async function closeCase() {
+    if (!onCase || !ready) return
+    killDrag()
+    gsap.killTweensOf([cover, coverShadow, folder])
+    gsap.killTweensOf('#title .char')
+    gsap.killTweensOf('.scrap')
+    const my = ++gen
+    busy = true
+    paint()
+    studio.classList.add('is-opening')
+    studio.classList.remove('is-case')
+    cabinet.hidden = false
+    restack()
+    slotEl().classList.add('is-ghost')
+    groups.filter((g) => g !== slotEl()).forEach((g) => g.classList.add('is-leaving'))
+    gsap.set('#hero h1, #hero p', { y: '2rem', opacity: 0 })
+
+    const r = slotEl().getBoundingClientRect()
+    caseTemp.style.display = 'block'
+    caseTemp.style.position = 'fixed'
+    caseTemp.style.left = r.left + 'px'
+    caseTemp.style.top = r.top + 'px'
+    caseTemp.style.width = r.width + 'px'
+    caseTemp.style.height = r.height + 'px'
+    caseTemp.style.overflow = 'hidden'
+
+    const closeTl = gsap.timeline({ defaults: { ease: 'power3.inOut' } })
+    closeTl.to('.scrap', { y: '50vh', opacity: 0, duration: 0.2, ease: 'power2.in' }, 0)
+    closeTl.to('#title .char', { xPercent: -150, opacity: 0, duration: 1.15, stagger: 0.035, ease: 'power2.inOut' }, 0)
+    closeTl.to(cover, { rotateY: 0, duration: 1.5 }, 0)
+    closeTl.to(coverShadow, { opacity: 1, duration: 1 }, 0)
+    closeTl.to(coverShadow, { opacity: 0, duration: 0.4 }, 1)
+
+    const state = Flip.getState(folder)
+    caseTemp.appendChild(folder)
+    gsap.set(folder, { width: '100%', height: '100%' })
+    Flip.from(state, { duration: 1.5, ease: 'power3.inOut', absolute: true })
+
+    await Promise.race([closeTl.then(), new Promise((r) => setTimeout(r, 1600))])
+
+    groups.filter((g) => g !== slotEl()).forEach((g, i) => {
+      g.style.transitionDelay = (i * 0.1) + 's'
+      g.classList.remove('is-leaving')
+    })
+    gsap.to('#hero h1, #hero p', { y: 0, opacity: 1, duration: 0.9, stagger: 0.2, ease: 'power4.out' })
+    await new Promise((r) => setTimeout(r, 950))
+
+    studio.classList.remove('is-opening', 'is-case')
+    caseView.hidden = true
+    caseTemp.style.display = 'none'
+    groups.forEach((g) => g.classList.remove('is-ghost', 'is-leaving'))
+    gsap.set('#hero h1, #hero p', { clearProps: 'all' })
+    if (ready) gsap.set(groups, { clearProps: 'yPercent,opacity,transform' })
+    if (my !== gen) return
+    onCase = false
+    busy = false
+    openDrawer = DATA.drawers.length - 1
+    restack()
+    if (lenis) { try { lenis.scrollTo(0, { immediate: true }); lenis.resize() } catch (e) {} }
+    else window.scrollTo(0, 0)
+    paint()
+  }
+
+  async function replayCover() {
+    if (!onCase || !ready) return
+    gsap.killTweensOf([cover, coverShadow])
+    gsap.killTweensOf('#title .char')
+    gsap.killTweensOf('.scrap')
+    const my = ++gen
+    busy = true
+    paint()
+    const tl = gsap.timeline()
+    tl.to('.scrap', { y: '50vh', opacity: 0, duration: 0.25, ease: 'power2.in' }, 0)
+    tl.to('#title .char', { xPercent: 150, opacity: 0, duration: 0.5, stagger: 0.02 }, 0.15)
+    tl.fromTo(cover, { rotateY: -180 }, { rotateY: 0, duration: 0.75, ease: 'power3.in' }, 0.15)
+    tl.fromTo(coverShadow, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.15)
+    tl.fromTo(cover, { rotateY: 0 }, { rotateY: -180, duration: 0.75, ease: 'power3.in' }, '>')
+    tl.fromTo('#title .char', { xPercent: 150, opacity: 0 }, {
+      xPercent: 0, opacity: 1, duration: 0.5, stagger: -0.025, ease: 'power2.out'
+    }, '<+0.2')
+    tl.fromTo('.scrap', { y: '50vh', opacity: 0 }, {
+      y: 0, opacity: 1, duration: 0.5, ease: 'power3.out'
+    }, '<+0.35')
+    tl.to(coverShadow, { opacity: 0, duration: 0.75 }, '<')
+    await tl.then()
+    if (my !== gen) return
+    gsap.set(cover, { rotateY: -180 })
+    gsap.set('#title .char', { xPercent: 0, opacity: 1 })
+    busy = false
+    paint()
+  }
+
+  async function goTo(slug, mode) {
+    if (!onCase || busy || slug === current) return
+    if (!ready) {
+      renderFolder(slug)
+      return
+    }
+    const my = ++gen
+    busy = true
+    paint()
+    killDrag()
+    overAmount = 0
+    applyOverscroll(0)
+    if (lenis) lenis.scrollTo(0, { immediate: true, force: true })
+    const leave = gsap.timeline({ defaults: { duration: 0.75, ease: 'power3.out' } })
+    leave.to('.scrap', { y: '50vh', opacity: 0, duration: 0.25, ease: 'power2.in' }, 0)
+    leave.to('#title .char', { xPercent: 150, opacity: 0, duration: 0.5, stagger: 0.02 }, 0.15)
+    leave.fromTo(cover, { rotateY: -180 }, { rotateY: 0, duration: 0.75, ease: 'power3.in' }, 0.15)
+    leave.fromTo(coverShadow, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.15)
+    await Promise.race([leave.then(), new Promise((r) => setTimeout(r, 900))])
+    if (my !== gen) return
+    renderFolder(slug)
+    gsap.set('#title .char', { xPercent: 150, opacity: 0 })
+    gsap.set('.scrap', { y: '50vh', opacity: 0 })
+    gsap.set(cover, { rotateY: 0 })
+    const enter = gsap.timeline({ defaults: { duration: 0.75, ease: 'power3.in' } })
+    enter.fromTo(cover, { rotateY: 0 }, { rotateY: -180 }, 0)
+    enter.fromTo('#title .char', { xPercent: 150, opacity: 0 }, {
+      xPercent: 0, opacity: 1, duration: 0.5, stagger: -0.025, ease: 'power2.out'
+    }, 0.2)
+    enter.fromTo('.scrap', { y: '50vh', opacity: 0 }, {
+      y: 0, opacity: 1, duration: 0.5, ease: 'power3.out'
+    }, 0.55)
+    enter.to(coverShadow, { opacity: 0, duration: 0.75 }, 0)
+    await Promise.race([enter.then(), new Promise((r) => setTimeout(r, 1100))])
+    if (my !== gen) return
+    gsap.set(cover, { rotateY: -180 })
+    gsap.set('#title .char', { xPercent: 0, opacity: 1 })
+    gsap.set('.scrap', { y: 0, opacity: 1 })
+    busy = false
+    bindDrag()
+    paint()
+  }
+
+  files.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-case]')
+    if (tab) { openCase(tab.getAttribute('data-case')); return }
+    const cat = e.target.closest('[data-open]')
+    if (!cat || onCase) return
+    openDrawer = Number(cat.getAttribute('data-open'))
+    groups.forEach((g, n) => {
+      g.classList.toggle('is-open', n === openDrawer)
+      g.hidden = n > openDrawer
+    })
+  })
+  sidetabs.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-to]')
+    if (t) goTo(t.getAttribute('data-to'), 'turn')
+  })
+  nextWidget.addEventListener('click', (e) => {
+    e.preventDefault()
+    goTo(nextSlug(current), 'next')
+  })
+  nextFolderInner.addEventListener('click', () => goTo(nextSlug(current), 'next'))
+  document.getElementById('logo').addEventListener('click', (e) => {
+    e.preventDefault()
+    if (onCase) closeCase()
+    else showCabinetIdle()
+  })
+  btnCabinet.addEventListener('click', () => {
+    if (onCase) closeCase()
+    else showCabinetIdle()
+  })
+  btnCase.addEventListener('click', () => {
+    if (onCase) replayCover()
+    else openCase(current)
+  })
+  btnReplay.addEventListener('click', () => {
+    if (onCase) replayCover()
+    else openCase(current)
+  })
+  btnNext.addEventListener('click', () => {
+    if (onCase) goTo(nextSlug(current), 'next')
+    else openCase(nextSlug(current))
+  })
+
+  renderCabinet()
+  bootLenis()
+  restack()
+  paint()
+})()
+</script>
+</body>
+</html>

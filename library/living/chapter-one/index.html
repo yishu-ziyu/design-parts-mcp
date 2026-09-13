@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图当词 · Chapter One</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #181515;
+    --cream: #f1f0ed;
+    --paper: #f4efe4;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .running {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 16px 20px 0;
+  }
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14px 24px 18px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+  header.mast .by { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+
+  /* the invention */
+  .op {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 12vh 0 16vh;
+  }
+  .op__text {
+    width: min(70%, 920px);
+    margin: 0 auto;
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(24px, 2.7vw, 40px);
+    line-height: 1.5;
+    letter-spacing: 0.8px;
+    color: var(--cream);
+  }
+  .op__text p { margin: 0; }
+  .op__text p + p { margin-top: 1.5em; }
+  .op__text strong { font-weight: 400; }
+  .op__word { opacity: .25; transition: opacity .35s ease; }
+  .op__word.is-on { opacity: 1; }
+  .op__img {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 .35em;
+  }
+  .op__img img {
+    display: inline-block;
+    width: auto;
+    height: 1.65em;
+  }
+  .op__cash img { height: 1.3em; }
+  .op__books {
+    position: relative;
+    height: 1.68em;
+    aspect-ratio: 1438 / 1225;
+  }
+  .op__books img {
+    position: absolute;
+    width: 43.185%;
+    height: auto;
+  }
+  .readout {
+    width: min(70%, 920px);
+    margin: 22px auto 0;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(241,240,237,.45);
+  }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .layers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 8px 0 18px;
+  }
+  .layers figure { margin: 0; background: var(--ink); }
+  .layers img { border: 0; height: 160px; width: 100%; object-fit: contain; }
+  .prose { max-width: 38rem; }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+    border: 1px solid var(--ink);
+  }
+  .recipe { border-top: 1px solid var(--ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="running">living / chapter-one · 往下滚，字会亮起来</div>
+<header class="mast">
+  <h1>图不是插图。图是一个词。</h1>
+  <p class="sub">Chapter One 宣言段。样本：chapterone.com</p>
+  <p class="by">2026-08-17 · 打开这页，下面那段话就是笔记</p>
+</header>
+
+<section class="op" id="op">
+  <div class="op__text" id="manifesto">
+    <p>
+      <span class="op__word">Chapter </span><span class="op__word">One </span>
+      <span class="op__word op__img op__books" aria-hidden="true">
+        <img src="assets/bookLayerYellow.png" alt="" style="left:0%;top:2.2%">
+        <img src="assets/bookLayerBlue.png" alt="" style="left:19.05%;top:0.82%">
+        <img src="assets/bookLayerOrange.png" alt="" style="left:37.97%;top:2.29%">
+        <img src="assets/bookLayerDark.png" alt="" style="left:56.82%;top:2.2%">
+      </span>
+      <span class="op__word">is </span><span class="op__word">the </span><span class="op__word">most </span>
+      <span class="op__word">product </span><span class="op__word">obsessed </span>
+      <span class="op__word">venture </span><span class="op__word">firm </span>
+      <span class="op__word op__img op__cash" aria-hidden="true"><img src="assets/dollarBillsParagraph.png" alt=""></span>
+      <span class="op__word">in </span><span class="op__word">the </span><span class="op__word">world. </span>
+      <span class="op__word">because </span><span class="op__word">product </span><span class="op__word">is </span>
+      <span class="op__word">how </span><span class="op__word">ambition </span><span class="op__word">becomes </span>
+      <span class="op__word">real.</span>
+    </p>
+    <p>
+      <span class="op__word">Venture </span><span class="op__word">was </span><span class="op__word">never </span>
+      <span class="op__word">about </span><span class="op__word">capital </span><span class="op__word">chasing </span>
+      <span class="op__word">code </span><span class="op__word">and </span><span class="op__word">pixels. </span>
+      <span class="op__word">It </span><span class="op__word">was </span><span class="op__word">about </span>
+      <span class="op__word">backing </span><span class="op__word">founders </span><span class="op__word">with </span>
+      <span class="op__word">the </span><span class="op__word">imagination </span><span class="op__word">to </span>
+      <span class="op__word">author </span>
+      <span class="op__word op__img" aria-hidden="true"><img src="assets/newspaper.png" alt=""></span>
+      <span class="op__word">a </span><span class="op__word">radically </span><span class="op__word">better </span>
+      <span class="op__word">future, </span><span class="op__word">along </span><span class="op__word">with </span>
+      <span class="op__word">the </span><span class="op__word">taste, </span><span class="op__word">speed </span>
+      <span class="op__word">and </span><span class="op__word">conviction </span><span class="op__word">to </span>
+      <span class="op__word">bring </span><span class="op__word">it </span><span class="op__word">into </span>
+      <span class="op__word">the </span><span class="op__word">world.</span>
+    </p>
+    <p>
+      <span class="op__word">Now </span><span class="op__word">that </span><span class="op__word">software </span>
+      <span class="op__word">is </span><span class="op__word">cheaper </span><span class="op__word">than </span>
+      <span class="op__word">ever </span><span class="op__word">to </span><span class="op__word">build </span>
+      <span class="op__word op__img" aria-hidden="true"><img src="assets/retroComputer.png" alt=""></span>
+      <span class="op__word">, </span><span class="op__word">venture </span><span class="op__word">is </span>
+      <span class="op__word">back </span><span class="op__word">to </span><span class="op__word">first </span>
+      <span class="op__word">principles: </span><span class="op__word">find </span><span class="op__word">the </span>
+      <span class="op__word">most </span><span class="op__word">ambitious </span><span class="op__word">people </span>
+      <span class="op__word">in </span><span class="op__word">the </span><span class="op__word">world. </span>
+      <span class="op__word">Give </span><span class="op__word">them </span><span class="op__word">the </span>
+      <span class="op__word">capital, </span><span class="op__word">product </span><span class="op__word">thinking, </span>
+      <span class="op__word">and </span><span class="op__word">belief </span><span class="op__word">to </span>
+      <strong>
+        <span class="op__word">build </span><span class="op__word">generational </span>
+        <span class="op__word">companies.</span>
+      </strong>
+    </p>
+  </div>
+  <div class="readout">往下滚 · 读到的词亮起来 · 没读到的停在 25%</div>
+</section>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>你截的就是这个</h3>
+      <p class="drop">暗底、斜体、奶油色的字。书、钞票、报纸、旧电脑不是贴在旁边的装饰，它们坐在句子里，占一个词那么宽，跟左右的字齐肩。读到哪，哪一段才亮。没读到的句子不是换了一种灰，是同一支奶油色停在四分之一透明。</p>
+      <p>原站字体叫 Edict Display Italic。这页用免费的 Instrument Serif Italic 顶上，骨架一样：大斜体、1.5 倍行高、0.8px 字距、栏宽大约七成。</p>
+    </div>
+    <figure>
+      <img src="assets/source.jpg" alt="Chapter One 宣言段原图" />
+      <figcaption><strong>图 1.</strong> 你丢过来的那屏。第一段亮着，后面两段发灰。灰是还没滚到。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>图是一个词</h3>
+    <p>每个词包在 <code>&lt;span class="op__word"&gt;</code> 里。物体也是一个 span，只是里面放图。CSS 把它变成 <code>inline-block</code>，高度大约 1.65 个 em，垂直居中。于是图跟大写的 C 一样高，跟着换行走，不会自己掉到下一行当插图。</p>
+    <p>钞票稍扁，高度收到 1.3em。书厚一点，单独给一个盒子，宽高比锁死，里面叠四张图。</p>
+  </div>
+
+  <div class="layers">
+    <figure>
+      <img src="assets/bookLayerYellow.png" alt="黄书" />
+      <figcaption><strong>图 2.</strong> 黄</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/bookLayerBlue.png" alt="蓝书" />
+      <figcaption><strong>图 3.</strong> 蓝</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/bookLayerOrange.png" alt="橙书" />
+      <figcaption><strong>图 4.</strong> 橙</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/bookLayerDark.png" alt="黑书" />
+      <figcaption><strong>图 5.</strong> 黑</figcaption>
+    </figure>
+  </div>
+  <p class="prose">上面四张单独看是书脊。塞进同一个词盒子里，每张宽 43%，左边依次错开 0%、19%、38%、57%。你看见的那一摞，是四张绝对定位，不是一张拼好的图。</p>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>不要把 PNG 当 emoji 往字号里塞。先当一个词排，再决定它有多高。高度跟行高走，宽度跟物体走。
+  </aside>
+
+  <div class="prose">
+    <h3>灰是还没读到</h3>
+    <p>原站用滚动把每个词的透明度从 0.25 推到 1。你截图里第二、第三段发灰，不是设计师另选了一支灰。同一支 <code>#F1F0ED</code>，乘上 25%。所以后面的句子像还在纸里，读到才浮出来。</p>
+    <p>这页上面那段已经接上了。滚它，词会亮。原站还用了更长的钉住滚动；要做宣言页，这套「读到才亮」就够用。</p>
+    <p>底是 <code>#181515</code>，不是纯黑。字是 <code>#F1F0ED</code>，不是纯白。差那一点，暗室才像油墨，不像显示器。</p>
+  </div>
+
+  <div class="recipe">
+    <h3>配方</h3>
+    <ol class="how">
+      <li>暗底 <code>#181515</code>。长句用斜体衬线，字号 <code>clamp(24px, 2.7vw, 40px)</code>，行高 1.5，字距 0.8px，栏宽约 70%。</li>
+      <li>每个词一个 span。物体也是一个 span。图 <code>height: 1.65em</code>，<code>vertical-align: middle</code>，左右留 0.35em。</li>
+      <li>要一摞书：一个相对定位的词盒子，四张图绝对定位，错开左边。</li>
+      <li>默认 <code>opacity: 0.25</code>。词的中线越过视口中线，就改成 1。</li>
+      <li>物体只替换名词。书替换「Chapter One」旁边那口气，钞票替换 firm，报纸替换 author，电脑替换 build。别在每个形容词后面都塞东西。</li>
+    </ol>
+    <pre>.op__text {
+  width: 70%;
+  margin: 0 auto;
+  font-family: "Edict Display", "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-size: clamp(24px, 2.7vw, 40px);
+  line-height: 1.5;
+  letter-spacing: 0.8px;
+  color: #F1F0ED;
+}
+.op__word { opacity: 0.25; }
+.op__img { display: inline-block; vertical-align: middle; margin: 0 0.35em; }
+.op__img img { height: 1.65em; width: auto; }
+.op__books { position: relative; height: 1.68em; aspect-ratio: 1438 / 1225; }
+.op__books img { position: absolute; width: 43.185%; height: auto; }</pre>
+    <p>原站还把每个词拆开给滚动时间轴。你要做自己的宣言，先让图坐进句子里。钉住滚动是第二台机器，不是这套味道的来源。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本：<a href="https://www.chapterone.com/">chapterone.com</a> 的 <code>.op</code> 段。字体原是 Edict Display Trial Italic，这页用 Instrument Serif 代替。</p>
+  <p>同一站点的首页架子：<a href="../shelf/index.html">这一架子不是三维</a> · 货架：<a href="../index.html">living/</a> · 给 agent 的目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const words = [...document.querySelectorAll('#manifesto .op__word')]
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduce) {
+    words.forEach((w) => w.classList.add('is-on'))
+    return
+  }
+  function tick() {
+    const mid = window.innerHeight * 0.62
+    for (const w of words) {
+      const r = w.getBoundingClientRect()
+      const c = (r.top + r.bottom) / 2
+      w.classList.toggle('is-on', c < mid)
+    }
+  }
+  tick()
+  window.addEventListener('scroll', tick, { passive: true })
+  window.addEventListener('resize', tick)
+})()
+</script>
+</body>
+</html>

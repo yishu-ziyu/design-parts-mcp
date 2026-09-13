@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图坐在栏里</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --note: #f4efe4;
+    --ink: #1c1914;
+    --green: #2f6b4f;
+    --muted: #5c564c;
+    --paper-ink: #111111;
+    --serif-paper: "Times New Roman", "Noto Serif SC", "Songti SC", Times, serif;
+    --cols: 2;
+    --gap: 21pt;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--note); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .stage {
+    padding: 12px 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .sheet {
+    overflow: hidden;
+  }
+  .paper {
+    width: 612pt;
+    height: 792pt;
+    background: #fff;
+    color: var(--paper-ink);
+    border: 1px solid var(--ink);
+    padding: 48pt 70pt 52pt 72pt;
+    position: relative;
+    font-family: var(--serif-paper);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .running {
+    position: absolute;
+    top: 32pt;
+    left: 72pt;
+    right: 70pt;
+    text-align: center;
+    font-size: 9pt;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .folio {
+    position: absolute;
+    bottom: 28pt;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 10pt;
+  }
+  .mast { text-align: center; flex: 0 0 auto; margin: 0 0 18pt; }
+  .mast h1 {
+    font-size: 36pt;
+    line-height: 1.05;
+    font-weight: 400;
+    margin: 0;
+    letter-spacing: -0.4pt;
+  }
+  .mast .sub {
+    font-size: 18pt;
+    font-weight: 400;
+    margin: 6pt 0 10pt;
+  }
+  .mast .by {
+    font-size: 12pt;
+    margin: 0;
+  }
+  .mast .aff {
+    font-size: 10pt;
+    font-style: italic;
+    margin: 2pt 0 0;
+  }
+
+  .cols {
+    flex: 1 1 auto;
+    min-height: 0;
+    column-count: var(--cols);
+    column-gap: var(--gap);
+    column-fill: auto;
+    font-size: 10pt;
+    line-height: 12pt;
+    text-align: justify;
+    text-justify: inter-ideograph;
+    hyphens: auto;
+  }
+  .paper.is-one { --cols: 1; }
+  .paper.is-one .cols { column-fill: balance; overflow: hidden; }
+  .cols p { margin: 0 0 12pt; }
+  .cols p + p { text-indent: 2em; }
+  .cols h2 + p { text-indent: 0; }
+  .open {
+    font-size: 14pt;
+    font-weight: 400;
+    font-style: normal;
+  }
+  .cols h2 {
+    font-size: 10pt;
+    font-weight: 700;
+    line-height: 12pt;
+    margin: 2pt 0 8pt;
+    break-after: avoid;
+    column-span: none;
+  }
+  .cols blockquote {
+    margin: 0 0 12pt;
+    padding: 0;
+    font-style: italic;
+    text-indent: 0;
+  }
+  figure.cut {
+    margin: 4pt 0 10pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  figure.cut img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1pt solid #111;
+  }
+  .paper.is-one figure.cut {
+    width: 58%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  figure.cut figcaption {
+    font-size: 9pt;
+    line-height: 11pt;
+    text-align: center;
+    margin-top: 5pt;
+    font-style: normal;
+  }
+  .paper.is-mute figcaption { display: none; }
+  table.token {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    line-height: 12pt;
+    margin: 4pt 0 10pt;
+    break-inside: avoid;
+  }
+  table.token caption {
+    caption-side: top;
+    text-align: center;
+    font-size: 9pt;
+    margin: 0 0 4pt;
+  }
+  table.token th, table.token td {
+    border: 0.6pt solid #111;
+    padding: 3pt 5pt;
+    text-align: center;
+  }
+  table.token th { background: #d0d0d0; font-weight: 700; }
+
+  .hudbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid var(--ink);
+  }
+  .hudbar button, .readout {
+    font-family: ui-monospace, Menlo, "IBM Plex Mono", monospace;
+    font-size: 12px;
+  }
+  .hudbar button {
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .readout { color: var(--muted); letter-spacing: .04em; }
+
+  header.note-mast {
+    max-width: 720px;
+    margin: 28px auto 8px;
+    padding: 0 24px;
+    text-align: center;
+  }
+  header.note-mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.note-mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+  .page { max-width: 980px; margin: 0 auto; padding: 20px 28px 96px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  .page h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  .page p { margin: 0 0 12px; }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--ink);
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 80px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+
+  @media print {
+    body { background: #fff; }
+    .hudbar, .note-mast, .page, footer.colophon { display: none !important; }
+    .stage { padding: 0; overflow: visible; }
+    .paper { border: 0; margin: 0; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="sheet">
+    <article class="paper" id="p1">
+      <header class="mast">
+        <h1>图坐在栏里</h1>
+        <p class="sub">小论文的双栏怎么排</p>
+        <p class="by">奕枢</p>
+        <p class="aff">排版笔记 · 范本 Jensen, Robert Bunsen’s Sweet Tooth</p>
+      </header>
+      <div class="cols" id="cols">
+        <p><span class="open">先</span>看见这一页。纸是 Letter，612 点乘 792 点。左右大约空出 72 点，也就是一寸。中间切成两栏，每栏 225 点，栏缝 21 点。正文用 Times 一系 10 点，行距 12 点。节标题和正文同一个字号，只加粗。图不跨两栏。图题写成「图 1.」再加一句完整的话。</p>
+        <p>屏幕上往下滚的长读是另一间房：一栏大约七十个字符，图可以比栏宽。你要印出来的文章、课堂作业、会场小论文，用这一页。两栏把一行截短，眼睛不用横扫整张纸。</p>
+        <figure class="cut">
+          <img src="assets/fig2.jpg" alt="Ralph Edward Oesper 在黑板前" />
+          <figcaption>图 1. 图坐在一栏里，旁边那栏继续走字。图题是一句完整的话，不是「示意图」。</figcaption>
+        </figure>
+        <p>不要做成两篇并排的短文。字先把左栏填满，满了才去右栏。标本笔记里「左一段、右一张图」是并置，用来拆发明。论文是一条河，切成两道往下流。</p>
+        <h2>栏怎么切</h2>
+        <p>左右等宽。缝大约 21 点，不要更宽，也不要贴死。段首空两字。段与段之间空一行。第一段开头两个字母，范本里只放大到 14 点，不是掉下来的巨大首字。中文放大第一个字即可。</p>
+        <figure class="cut">
+          <img src="assets/fig1.jpg" alt="Hauser 化学轶事书封面" />
+          <figcaption>图 2. 书影、肖像、仪器图都只占一栏。黑线框住，不要影子。</figcaption>
+        </figure>
+      </div>
+      <div class="folio">1</div>
+    </article>
+  </div>
+  <div class="sheet">
+    <article class="paper" id="p2">
+      <div class="running">图坐在栏里</div>
+      <div class="cols">
+        <blockquote>图有编号。图说是一句完整的话。字先走完左栏，再走右栏。</blockquote>
+        <h2>图怎么坐</h2>
+        <p>图是栏里的一块，打断的是这一栏，不是整页。图题 9 点，居中。表也坐在一栏里，表题同样是完整句。范本里没有通栏大图。除非刻度必须看清，不要把图拉成通栏墙。</p>
+        <figure class="cut">
+          <img src="assets/fig4.jpg" alt="青年本生铜版肖像" />
+          <figcaption>图 3. 范本里的本生。人像按同一套栏坐下，不单独开一页封面。</figcaption>
+        </figure>
+        <table class="token">
+          <caption>表 1. 这一页从范本量出来的数，不要只抄感觉。</caption>
+          <thead><tr><th>东西</th><th>数</th></tr></thead>
+          <tbody>
+            <tr><td>纸</td><td>Letter 612 × 792 pt</td></tr>
+            <tr><td>栏</td><td>225 pt × 2</td></tr>
+            <tr><td>缝</td><td>21 pt</td></tr>
+            <tr><td>正文</td><td>10 / 12 pt</td></tr>
+            <tr><td>图题</td><td>9 pt</td></tr>
+          </tbody>
+        </table>
+        <h2>下次写论文</h2>
+        <p>先定纸。Letter 或 A4 都可以，左右各留一寸，两栏等宽。中文用宋体一系，不要手写刷段落。引用用斜体，还在栏里，不要变成灰色卡片。印之前打开这一页对照。网页长读去另一页：字守栏，图破栏。</p>
+        <figure class="cut">
+          <img src="assets/fig3.jpg" alt="The Human Side of Scientists 书封面" />
+          <figcaption>图 4. 又一本书影，仍只占一栏。底下的按钮能把两栏合成一栏，一行就会扫过整张纸。</figcaption>
+        </figure>
+        <p>合成一栏之后，眼睛要横着走很远才换行。那就是为什么小论文要切两刀。图说关掉，图就变成装饰，不再教你什么。</p>
+      </div>
+      <div class="folio">2</div>
+    </article>
+  </div>
+</div>
+
+<div class="hudbar">
+  <span class="readout" id="readout">两栏 · 225pt · 缝 21pt · 10/12</span>
+  <button type="button" id="btnCols" aria-pressed="true">两栏</button>
+  <button type="button" id="btnCap" aria-pressed="true">图说</button>
+</div>
+
+<header class="note-mast" id="note">
+  <h1>要印的文章走这一页。</h1>
+  <p class="sub">网页长读仍是 70ch。论文、小论文、会场讲稿是两栏。</p>
+</header>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>和网页长读不是一间房</h3>
+      <p>网页文章要安静的一栏，图可以比字宽。印在纸上的论文要短行，图坐进栏里。两套都不要影子，都用全角中文标点。栏宽不能共用。</p>
+    </div>
+    <div>
+      <p>按「两栏」看字怎么先走左边。按成「一栏」，一行会扫过整张纸。按掉「图说」，图就变成装饰，不再教你什么。</p>
+    </div>
+  </div>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>图题不会写完整句，往往是这张图还没想清。先改图，再改标题。
+  </aside>
+
+  <div class="recipe" id="recipe">
+    <h3>配方 · 下次排一篇小论文</h3>
+    <ol class="how">
+      <li>先问：这页是要印的论文，还是屏幕上滚的长读。论文打开这一页。</li>
+      <li>纸用 Letter 或 A4。左右约 72pt。两栏等宽，缝约 21pt。</li>
+      <li>正文 10 点 / 行距 12 点。节标题还是 10 点，只加粗。中文宋体一系。</li>
+      <li>字先填左栏，满了再去右栏。不要做成左右两篇短文。</li>
+      <li>图和表只占一栏。黑线框。图题「图 1.」加一句完整的话，9 点居中。</li>
+      <li>段首空两字。引用斜体，还在栏里。不要卡片，不要 box-shadow。</li>
+    </ol>
+<pre>/* 论文 / 小论文 · Letter 实测 Jensen 2013 */
+.paper { width: 612pt; height: 792pt; padding: 48pt 70pt 52pt 72pt; }
+.cols {
+  column-count: 2;
+  column-gap: 21pt;
+  column-fill: auto;          /* 先左后右，不要左右抹平 */
+  font: 10pt/12pt "Times New Roman", "Noto Serif SC", serif;
+  text-align: justify;
+}
+.cols h2 { font-size: 10pt; font-weight: 700; }   /* 不加码 */
+.cols p + p { text-indent: 2em; }
+figure { break-inside: avoid; }
+figure img { width: 100%; border: 1pt solid #111; }
+figcaption { font-size: 9pt; text-align: center; }</pre>
+    <p>网页长读的 70ch 在 <a href="../type/index.html">living/type</a>。完整房间分工在 <a href="../../DESIGN.md">DESIGN.md §3</a>。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>范本：William B. Jensen, <i>Robert Bunsen’s Sweet Tooth</i>，Letter，Times 10/12。图从原 PDF 抽出。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const papers = [...document.querySelectorAll('.paper')]
+  const sheets = [...document.querySelectorAll('.sheet')]
+  const readout = document.getElementById('readout')
+  const btnCols = document.getElementById('btnCols')
+  const btnCap = document.getElementById('btnCap')
+  const cols = document.getElementById('cols')
+  const state = { two: true, cap: true }
+
+  function fit() {
+    const hud = 56
+    const pad = 24
+    const pw = 612 * 96 / 72
+    const ph = 792 * 96 / 72
+    const scale = Math.min(1, (window.innerWidth - pad) / pw, (window.innerHeight - hud - 16) / ph)
+    sheets.forEach((sheet) => {
+      const paper = sheet.querySelector('.paper')
+      sheet.style.width = (pw * scale) + 'px'
+      sheet.style.height = (ph * scale) + 'px'
+      if (paper) {
+        paper.style.transform = 'scale(' + scale + ')'
+        paper.style.transformOrigin = 'top left'
+      }
+    })
+    return scale
+  }
+
+  function paint() {
+    const scale = fit()
+    papers.forEach((paper) => {
+      paper.classList.toggle('is-one', !state.two)
+      paper.classList.toggle('is-mute', !state.cap)
+    })
+    btnCols.setAttribute('aria-pressed', state.two ? 'true' : 'false')
+    btnCols.textContent = state.two ? '两栏' : '一栏'
+    btnCap.setAttribute('aria-pressed', state.cap ? 'true' : 'false')
+    const box = cols ? cols.getBoundingClientRect().width / (scale || 1) : 470
+    const gap = 21 * 96 / 72
+    const colW = state.two ? Math.round((box - gap) / 2) : Math.round(box)
+    readout.textContent = (state.two ? '两栏' : '一栏') + ' · ' + colW + 'px/栏 · 10/12'
+  }
+
+  btnCols.addEventListener('click', () => { state.two = !state.two; paint() })
+  btnCap.addEventListener('click', () => { state.cap = !state.cap; paint() })
+  paint()
+  window.addEventListener('resize', paint)
+})()
+</script>
+</body>
+</html>

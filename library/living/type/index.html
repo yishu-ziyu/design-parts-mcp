@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>字守栏，图破栏</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #fbfbfb;
+    --note: #f4efe4;
+    --ink: #1c1914;
+    --article-ink: #1a1814;
+    --muted: #6b655d;
+    --green: #2f6b4f;
+    --blue: oklch(0.51 0.29 265);
+    --serif: "EB Garamond", "Noto Serif SC", "Songti SC", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --measure: 576px;
+    --lh: 1.8;
+    --fig: 755px;
+    --h3: 14px;
+    --h3w: 600;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--note); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+
+  .studio {
+    background: var(--paper);
+    color: var(--article-ink);
+    min-height: calc(100svh - 48px);
+    display: grid;
+    grid-template-columns: 246px 1fr;
+  }
+  @media (max-width: 860px) {
+    .studio { grid-template-columns: 1fr; }
+    .spine { display: none; }
+  }
+  .spine {
+    border-right: 1px solid #e6e2da;
+    padding: 28px 18px 40px;
+    font-family: var(--serif);
+  }
+  .spine .brand {
+    font-family: var(--mono);
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--blue);
+    margin: 0 0 22px;
+  }
+  .spine .part {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  .spine a {
+    display: block;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--article-ink);
+    text-decoration: none;
+    margin: 0 0 7px;
+  }
+  .spine a.now { color: var(--blue); }
+
+  .sheet {
+    padding: 80px 64px 72px;
+    overflow: hidden;
+  }
+  @media (max-width: 860px) { .sheet { padding: 36px 20px 48px; } }
+  .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 25px;
+    letter-spacing: .04em;
+    text-align: center;
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+  .sheet h1 {
+    font-family: var(--serif);
+    font-size: 36px;
+    line-height: 40px;
+    font-weight: 400;
+    letter-spacing: -0.9px;
+    margin: 0 0 12px;
+    max-width: 18ch;
+  }
+  .deck {
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 20px;
+    color: #6f6a63;
+    margin: 0 0 22px;
+    max-width: var(--measure);
+  }
+  .rule { border: 0; border-top: 1px solid #d9d4cb; width: var(--measure); margin: 0 0 28px; }
+  .fig {
+    width: min(var(--fig), 100%);
+    margin: 0 0 28px;
+  }
+  .studio.is-boxed .fig { width: min(var(--measure), 100%); }
+  .fig svg { display: block; width: 100%; height: auto; background: #f3efe6; border: 1px solid #1a1814; }
+  .figcaption {
+    font-family: var(--serif);
+    font-size: 12.5px;
+    line-height: 1.45;
+    padding: 7px 0 0;
+    max-width: var(--measure);
+  }
+  .col {
+    width: min(var(--measure), 100%);
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: var(--lh);
+    font-weight: 400;
+  }
+  .col h3 {
+    font-size: var(--h3);
+    line-height: 22px;
+    font-weight: var(--h3w);
+    margin: 28px 0 8px;
+  }
+  .studio.is-loud { --h3: 22px; --h3w: 400; }
+  .col p { margin: 0 0 24px; }
+  .col a { color: var(--blue); }
+
+  .hudbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    background: var(--note);
+    border-top: 1px solid var(--ink);
+  }
+  .studio { padding-bottom: 8px; }
+  .hudbar button, .readout {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .hudbar button {
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fffdf7;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .hudbar button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .readout { color: var(--muted); letter-spacing: .04em; }
+
+  header.mast {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 36px 24px 8px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 0 0 8px;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: #5c564c; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 20px 28px 96px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  .page h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  .page p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.3em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+  }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .roles {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 0 0 22px;
+  }
+  @media (max-width: 900px) { .roles { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .roles { grid-template-columns: 1fr; } }
+  .role {
+    border: 1px solid var(--ink);
+    background: #fffdf7;
+    padding: 12px;
+  }
+  .role .k { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #5c564c; }
+  .role h4 { margin: 8px 0 6px; font-weight: 500; font-size: 17px; }
+  .role p { margin: 0; font-size: 14.5px; }
+  pre, code { font-family: var(--mono); }
+  pre {
+    background: var(--ink);
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 80px;
+    font-size: 12.5px;
+    color: #5c564c;
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="studio" id="studio">
+  <aside class="spine">
+    <p class="brand">奕枢</p>
+    <p class="part">1. TYPE AND MEASURE</p>
+    <a class="now" href="#studio">字守栏，图破栏</a>
+    <a href="#note">标本笔记怎么排</a>
+    <a href="#recipe">配方</a>
+  </aside>
+  <div class="sheet">
+    <p class="meta">218 WORDS | 排版精髓</p>
+    <h1>字守栏。图破栏。</h1>
+    <p class="deck">长读不是把落地页拉长。栏宽、行高、两套字体，比任何组件库都先决定一页好不好读。</p>
+    <hr class="rule" />
+    <figure class="fig">
+      <svg viewBox="0 0 755 220" role="img" aria-label="栏网格">
+        <rect x="0" y="0" width="246" height="220" fill="#ece7dc"/>
+        <rect x="246" y="0" width="509" height="220" fill="#f7f4ec"/>
+        <rect x="278" y="36" width="288" height="148" fill="none" stroke="#1a1814" stroke-width="1.2"/>
+        <rect x="278" y="92" width="378" height="72" fill="none" stroke="#2f6b4f" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="18" y="28" font-family="IBM Plex Mono, monospace" font-size="11" fill="#6b655d">246</text>
+        <text x="288" y="56" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1a1814">576 · 70ch</text>
+        <text x="288" y="112" font-family="IBM Plex Mono, monospace" font-size="11" fill="#2f6b4f">图 755 · 破栏</text>
+      </svg>
+      <figcaption><strong>图 1.</strong> 字走实线框。图可以走出虚线，铺到大约 755。字不能跟着散成通栏墙。</figcaption>
+    </figure>
+    <div class="col">
+      <h3>栏是呼吸，不是装饰</h3>
+      <p>这一栏现在是 <span id="livePx">576</span> 像素，大约七十个字符。行高 <span id="liveLh">1.8</span>。中文用宋体一系，英文用 Garamond 一系。节标题和正文同一个字号，只加粗。底下的按钮能把栏收窄、拉宽、压扁行距、把图关进栏里、把节标题放大。每按一次，这一段话自己变形。</p>
+      <h3>两套字体，各做一件事</h3>
+      <p>等宽只管仪器：站名、部类编号、字数、代码。衬线只管叙事：标题、导语、正文、侧栏章名。文章页不要第三套手写或 Display。中文标点用全角。不要 box-shadow。链接只留一种语义色，这里是那条蓝。</p>
+    </div>
+  </div>
+</div>
+<div class="hudbar">
+  <span class="readout" id="readout">576px · 70ch · lh 1.8 · 图破栏</span>
+  <button type="button" id="btnNarrow" aria-pressed="false">50ch</button>
+  <button type="button" id="btnMeasure" aria-pressed="true">70ch</button>
+  <button type="button" id="btnWide" aria-pressed="false">90ch</button>
+  <button type="button" id="btnLh" aria-pressed="true">行高 1.8</button>
+  <button type="button" id="btnFig" aria-pressed="true">图破栏</button>
+  <button type="button" id="btnH3" aria-pressed="true">H3 同号</button>
+</div>
+
+<header class="mast" id="note">
+  <h1>排版先于组件。</h1>
+  <p class="sub">上面是文章页。下面是什么时候用哪一套。token 在 DESIGN.md §24，看见的是这一页。</p>
+</header>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>几间房，不要混着住</h3>
+      <p class="drop">落地页可以拼贴、可以戏剧。屏幕文章要安静的一栏。要印的论文走两栏。标本笔记要能拆开发明。共用「暖纸、全角标点、没有影子」，栏宽和字阶不能共用。</p>
+    </div>
+    <div>
+      <p>按 50ch，栏会挤。按 90ch，眼睛找下一行会丢。按掉「行高 1.8」，1.5 会让长读发堵。按掉「图破栏」，图缩进字的宽度，论证就矮了一截。按掉「H3 同号」，节标题一放大，页就吵。</p>
+    </div>
+  </div>
+
+  <div class="roles">
+    <div class="role">
+      <div class="k">屏幕文章</div>
+      <h4>这一页上面</h4>
+      <p>侧栏约 246。正文 65–72ch。14 / 1.8。衬线 + 等宽。图宽于字。见 DESIGN.md §24。</p>
+    </div>
+    <div class="role">
+      <div class="k">论文 / 小论文</div>
+      <h4>living/bunsen</h4>
+      <p>Letter 两栏各 225pt。图坐在栏里。图题完整句。字先走左栏。</p>
+    </div>
+    <div class="role">
+      <div class="k">标本笔记</div>
+      <h4>living/ 这些页</h4>
+      <p>暖纸 #F4EFE4。Iowan 16.5。图文并置。图题完整句。开关能拆发明。动效能再播。</p>
+    </div>
+    <div class="role">
+      <div class="k">落地 / 产品窗</div>
+      <h4>§1–§11 + 标本</h4>
+      <p>拼贴、风景窗、书架子。不要把 hero 和三列功能卡套进文章页。</p>
+    </div>
+  </div>
+
+  <aside class="tip">
+    <b>文明进步贴士：</b>先定栏和字阶，再摆组件。先摆卡片再往里倒字，字会变成装饰。
+  </aside>
+
+  <div class="recipe" id="recipe">
+    <h3>配方 · 下次排一页字</h3>
+    <ol class="how">
+      <li>先问这页是屏幕文章、要印的论文、标本，还是落地。四选一。</li>
+      <li>文章：正文 <code>width: 70ch</code>（约 576px），<code>font-size: 14px</code>，<code>line-height: 1.8</code>。H3 还是 14，只把字重加到 600。</li>
+      <li>衬线管叙事，等宽管仪器。中文正文 Noto Serif SC。不要手写刷段落。</li>
+      <li>图可以到约 755，比栏宽。图题用完整句子说明这张图在证明什么。</li>
+      <li>中文标点全角。不要 box-shadow。一种链接色。文章页不要真黑底。</li>
+      <li>标本笔记：暖纸、图坐在字旁边、开关、能再播。不要把 §24 的 14/1.8 硬套进发明页。</li>
+      <li>要印的论文：两栏等宽，图坐在栏里。打开 <a href="../bunsen/index.html">living/bunsen</a>，不要套 70ch。</li>
+      <li>落地页才用 Gochi Hand 和拼贴。不要把 hero 三列卡套进文章。</li>
+    </ol>
+<pre>/* 文章 / 长读 · DESIGN.md §24 */
+.col {
+  width: 70ch;          /* 硬区间 65–72ch，范本 576px */
+  font: 400 14px/1.8 "EB Garamond", "Noto Serif SC", serif;
+}
+h3 { font-size: 14px; font-weight: 600; }   /* 不加码 */
+.fig { width: min(755px, 100%); }           /* 图破栏，字不散 */
+.meta, .brand { font-family: "IBM Plex Mono", monospace; }
+
+/* 标本笔记 living/ · 不要套上面 14/1.8 */
+body.note {
+  background: #f4efe4;
+  color: #1c1914;
+  font: 400 16.5px/1.55 "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+}
+.pair { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; }
+.page { max-width: 980px; }
+.page h3 { color: #2f6b4f; font-weight: 500; font-size: 20px; }</pre>
+    <p>完整字阶和自检在 <a href="../../DESIGN.md">DESIGN.md §24.2</a>。做页面时打开这一页对照，不要只抄表。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>范本：Making Software 章页实测（2026-07-15）。字体原是 departureMono + arizona，这页用 IBM Plex Mono + EB Garamond / Noto Serif SC。</p>
+  <p>货架：<a href="../index.html">living/</a> · 目录：<a href="../INDEX.md">INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const studio = document.getElementById('studio')
+  const readout = document.getElementById('readout')
+  const livePx = document.getElementById('livePx')
+  const liveLh = document.getElementById('liveLh')
+  const btnNarrow = document.getElementById('btnNarrow')
+  const btnMeasure = document.getElementById('btnMeasure')
+  const btnWide = document.getElementById('btnWide')
+  const btnLh = document.getElementById('btnLh')
+  const btnFig = document.getElementById('btnFig')
+  const btnH3 = document.getElementById('btnH3')
+  const root = document.documentElement.style
+
+  const state = { measure: '70ch', lh: 1.8, fig: true, sameH3: true }
+
+  function paint() {
+    const map = { '50ch': '411px', '70ch': '576px', '90ch': '741px' }
+    root.setProperty('--measure', map[state.measure])
+    root.setProperty('--lh', String(state.lh))
+    root.setProperty('--fig', state.fig ? '755px' : '576px')
+    studio.classList.toggle('is-boxed', !state.fig)
+    studio.classList.toggle('is-loud', !state.sameH3)
+    btnNarrow.setAttribute('aria-pressed', state.measure === '50ch' ? 'true' : 'false')
+    btnMeasure.setAttribute('aria-pressed', state.measure === '70ch' ? 'true' : 'false')
+    btnWide.setAttribute('aria-pressed', state.measure === '90ch' ? 'true' : 'false')
+    btnLh.setAttribute('aria-pressed', state.lh === 1.8 ? 'true' : 'false')
+    btnLh.textContent = state.lh === 1.8 ? '行高 1.8' : '行高 1.5'
+    btnFig.setAttribute('aria-pressed', state.fig ? 'true' : 'false')
+    btnFig.textContent = state.fig ? '图破栏' : '图守栏'
+    btnH3.setAttribute('aria-pressed', state.sameH3 ? 'true' : 'false')
+    btnH3.textContent = state.sameH3 ? 'H3 同号' : 'H3 放大'
+    const col = document.querySelector('.col')
+    const px = col ? Math.round(col.getBoundingClientRect().width) : 576
+    livePx.textContent = String(px)
+    liveLh.textContent = String(state.lh)
+    readout.textContent = px + 'px · ' + state.measure + ' · lh ' + state.lh + ' · ' + (state.fig ? '图破栏' : '图守栏')
+  }
+
+  btnNarrow.addEventListener('click', () => { state.measure = '50ch'; paint() })
+  btnMeasure.addEventListener('click', () => { state.measure = '70ch'; paint() })
+  btnWide.addEventListener('click', () => { state.measure = '90ch'; paint() })
+  btnLh.addEventListener('click', () => { state.lh = state.lh === 1.8 ? 1.5 : 1.8; paint() })
+  btnFig.addEventListener('click', () => { state.fig = !state.fig; paint() })
+  btnH3.addEventListener('click', () => { state.sameH3 = !state.sameH3; paint() })
+  paint()
+  window.addEventListener('resize', paint)
+})()
+</script>
+</body>
+</html>
