@@ -37,7 +37,7 @@
 | [bento/index.html](living/bento/index.html) | 镜头在一块 bento 大画布上自己巡游，停在谁身上谁才动 | 产品落地页一屏讲多个能力、每张卡一段自己的时间轴。多卡分焦点仍按 creed 摆风景窗 |
 | [triage/index.html](living/triage/index.html) | 勾一行，批量工具条浮上来。三态复选、深色 tooltip、归档行折叠、计数递减 | 批量列表、先选后操作、核查队列。内容是 user-project 的待核查命题 |
 | [spine/index.html](living/spine/index.html) | 深色侧栏：点「任务」箭头弹簧旋开，悬停子项脊柱条弹到对应高度，点子项光点带辉光滑过去，每步一枚极轻合成音 | 树状子导航、当前项指示、要声音反馈的微交互。内容是奕枢。复刻 lab01.dev UI Experiment #09 |
-| [flycam/index.html](living/flycam/index.html) | 左边黄相机沿虚线飞进证据墙，右边是它眼里的画面；红绳拴着来源，末帧下判断 | 证据链叙事要「过程可见」、运镜讲一条推理线、同一进度驱动两窗格。复刻 KM 运镜演示，内容是 user-project |
+| [flycam/index.html](living/flycam/index.html) | 左边黄相机沿虚线飞进一面物件拼贴墙：简历、深圳明信片、面试日历，末帧停在「深圳见。」信封 | 一段旅程用实物物件讲完、运镜讲一条路、同一进度驱动两窗格。复刻 KM 运镜演示，内容是 job-journey |
 
 ## 零件
 
