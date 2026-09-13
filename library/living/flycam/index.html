@@ -3,212 +3,145 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>求职飞行</title>
+<title>可见相机穿行 · 真 three.js</title>
 <style>
   :root{
-    --yellow:#f2e33a;
-    --orange:#e8833a;
-    --red:#c0392b;
-    --green:#2e9e5b;
-    --ink:#17181c;
+    --bg:#0E0F12;          /* 深色工作室底 */
+    --panel:#14161B;
+    --line:#23262C;
+    --ink:#EDEAE3;
+    --mut:#8A8F98;
+    --accent:#E8A33D;      /* 唯一暖 accent：关键元素 + 视锥系 */
+    --rigbg:#0B0C0F;       /* 编辑视图底（略深一档） */
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body{ height:100%; }
   body{
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",sans-serif;
-    background:#101013; color:#e8e6e0; overflow:hidden;
+    background:var(--bg); color:var(--ink); overflow:hidden;
   }
   #app{ height:100vh; display:flex; flex-direction:column; }
 
-  /* 窗口条 */
+  /* ── 窗口条 ── */
   #chrome{
-    height:38px; flex:none; background:#1b1b1f;
+    height:38px; flex:none; background:#121419; border-bottom:1px solid var(--line);
     display:flex; align-items:center; padding:0 14px; gap:8px;
-    border-bottom:1px solid #2a2a30;
   }
   #chrome .dot{ width:12px; height:12px; border-radius:50%; }
-  #chrome .title{ margin:0 auto; font-size:12.5px; color:#8b8b93; letter-spacing:.06em; }
+  #chrome .title{
+    margin-left:12px; font-size:12px; letter-spacing:.18em; color:#9A9AA2;
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  #chrome .ver{
+    margin-left:auto; font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:11px; letter-spacing:.14em; color:#5E6270;
+  }
 
-  /* 两窗格 */
-  #panes{ flex:1; display:flex; min-height:0; }
-  .pane{ position:relative; width:50%; min-width:0; }
-  #rig{ background:#2e2e31; border-right:1px solid #3a3a3f; }
-  #rig svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* ── 两窗格：同一块 canvas，scissor 分左右 ── */
+  #panes{ flex:1; min-height:0; position:relative; display:flex; }
+  .pane{ flex:1 1 50%; min-width:0; position:relative; }
+  #panes::after{
+    content:""; position:absolute; left:50%; top:0; bottom:0; width:1px;
+    background:var(--line); z-index:3; pointer-events:none;
+  }
+  #gl{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; }
   .pane-tag{
-    position:absolute; top:10px; left:12px; font-size:11px; letter-spacing:.14em;
-    color:rgba(255,255,255,.34); z-index:5; pointer-events:none;
+    position:absolute; top:12px; left:14px; z-index:4; pointer-events:none;
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:10.5px; letter-spacing:.16em; color:rgba(255,255,255,.30);
   }
+  .pane-tag em{ font-style:normal; color:rgba(232,163,61,.55); }
 
-  /* 右窗格：真透视 */
-  #flight{
-    overflow:hidden; perspective:900px;
-    background:#faf8f3;
-    background-image:radial-gradient(#eae5d8 1px, transparent 1.4px);
-    background-size:24px 24px;
-  }
-  #sky{
-    position:absolute; inset:0; z-index:0; opacity:0;
-    background:linear-gradient(198deg, #b9d8f3 0%, #dcebf9 32%, rgba(250,248,243,0) 60%);
-  }
-  #scene{
-    position:absolute; inset:0; transform-style:preserve-3d; will-change:transform;
-  }
-  .c3d{
-    position:absolute; left:50%; top:50%;
-    box-shadow:0 8px 22px rgba(25,22,15,.12);
-    will-change:transform,opacity;
-  }
-  .pane-tag.dark{ color:rgba(40,36,26,.4); }
-
-  .card{ border-radius:12px; padding:20px 22px; }
-  .card .kicker{
-    font-size:12px; letter-spacing:.18em; font-weight:600; margin-bottom:10px;
-  }
-  .card .body{ font-size:19px; line-height:1.5; font-weight:600; }
-
-  /* —— 站 1：简历卡 —— */
-  .resume{
-    background:#fff; color:#2c2a26; width:340px; height:230px;
-    border-radius:6px; padding:30px 28px 22px;
-  }
-  .resume .r-line{ height:11px; border-radius:5px; background:#dcd9d0; margin-bottom:14px; }
-  .resume .r-line.l1{ width:62%; }
-  .resume .r-line.l2{ width:44%; }
-  .resume .r-line.l3{ width:53%; }
-  .resume .r-tag{ margin-top:20px; font-size:14px; font-weight:700; letter-spacing:.16em; color:#8a8478; }
-  .resume .r-clip{ position:absolute; top:-16px; right:32px; }
-
-  /* 图钉（红绳端点） */
-  .pin{ position:absolute; }
-  .resume .pin{ top:-10px; left:282px; }
-  .postcard .pin{ top:-18px; left:100px; }
-
-  /* —— 站 2：深圳明信片 + 车票卡 —— */
-  .postcard{
-    background:#fff; width:300px; height:210px;
-    border-radius:4px; padding:10px 10px 6px;
-  }
-  .postcard .pc-cap{ font-size:12px; line-height:17px; color:#9aa3ad; text-align:right; padding-right:4px; letter-spacing:.3em; }
-
-  .ticket{
-    background:#2f6bb0; color:#fff; width:190px; height:92px;
-    border-radius:8px; padding:0 14px;
-    display:flex; align-items:center; gap:10px;
-  }
-  .ticket .t-main{ font-size:19px; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
-  .ticket .t-sub{ font-size:10.5px; opacity:.85; letter-spacing:.14em; margin-top:5px; }
-  .ticket .t-tear{ align-self:stretch; margin:12px 0; border-left:2px dashed rgba(255,255,255,.45); }
-  .ticket .t-qr{ margin-left:auto; background:#fff; border-radius:4px; padding:4px; flex:none; }
-
-  /* —— 站 3：面试日历卡 —— */
-  .cal{
-    background:#fffdf7; color:#3c3a33; width:250px; height:230px;
-    border-radius:6px; padding:40px 22px 18px;
-  }
-  .cal .cal-head{ font-size:12px; letter-spacing:.22em; font-weight:700; color:#b04a3a; margin-bottom:12px; }
-  .cal .typed{ font-size:17.5px; line-height:1.7; font-weight:600; min-height:2.2em; }
-  .cal .typed .caret{
-    display:inline-block; width:2px; height:1.05em; background:#3c3a33;
-    vertical-align:-0.18em; margin-left:2px;
-  }
-  .cal .coffee{
-    position:absolute; right:10px; bottom:12px; width:72px; height:72px;
-    border-radius:50%; border:6px solid rgba(122,84,48,.26);
-  }
-  .cal .coffee::after{
-    content:""; position:absolute; inset:7px; border-radius:50%;
-    border:2px solid rgba(122,84,48,.18);
-  }
-  .cal .tape{
-    position:absolute; top:-11px; left:-20px; width:78px; height:24px;
-    background:rgba(250,247,235,.62); transform:rotate(-38deg);
-    box-shadow:0 1px 3px rgba(60,50,30,.12);
-  }
-  .cal .ring{ position:absolute; top:-8px; width:9px; height:17px; border:2.5px solid #9a958a; border-radius:5px; }
-  .cal .ring.a{ left:56px; }
-  .cal .ring.b{ left:98px; }
-
-  /* —— 站 4：牛皮纸信封（末帧焦点） —— */
-  .envelope{
-    background:linear-gradient(180deg,#cfa872,#c29a63); color:#43301a;
-    width:440px; height:300px; border-radius:10px;
-    text-align:center; overflow:hidden;
-  }
-  .envelope::before{
-    content:""; position:absolute; top:0; left:0; width:0; height:0;
-    border-left:220px solid transparent; border-right:220px solid transparent;
-    border-top:130px solid rgba(87,62,30,.14);
-  }
-  .envelope .e-big{ font-size:46px; font-weight:800; letter-spacing:.08em; margin-top:146px; color:#3f2d15; }
-  .envelope .e-sub{ margin-top:16px; font-size:14px; letter-spacing:.26em; color:#6b5432; }
-  .envelope .e-stamp{
-    position:absolute; top:16px; right:18px; width:52px; height:62px;
-    border:2px solid rgba(255,255,255,.8); border-radius:2px;
-    background:linear-gradient(#cfe3f4 55%, #b9cfe2 55%);
-  }
-  .envelope .e-stamp i{
-    position:absolute; left:9px; bottom:8px; width:8px; height:15px; background:#8fa3b8;
-    box-shadow:14px -5px 0 -1px #8fa3b8, 25px 3px 0 -3px #8fa3b8;
-  }
-
-  #strings{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
-  #strings line{ stroke:var(--red); stroke-width:2; stroke-linecap:round; opacity:.85; }
-
-  #replay{
-    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    z-index:8; border:0; cursor:pointer; border-radius:999px;
-    background:rgba(23,24,28,.88); color:#f2f0ea;
-    font-size:14px; letter-spacing:.2em; padding:13px 30px 13px 34px;
-    display:flex; align-items:center; gap:10px;
-    box-shadow:0 10px 30px rgba(20,18,12,.35);
-  }
-  #replay[hidden]{ display:none; }
-
-  /* 底部时间轴 */
+  /* ── 底部时间轴 ── */
   #timeline{
-    flex:none; height:78px; background:#1d1d21; border-top:1px solid #2c2c32;
-    display:flex; align-items:center; gap:16px; padding:0 18px;
+    flex:none; height:78px; background:#121419; border-top:1px solid var(--line);
+    display:flex; align-items:center; gap:16px; padding:0 18px; position:relative; z-index:6;
   }
   #playbtn{
-    flex:none; width:38px; height:38px; border-radius:50%; border:1px solid #3a3a42;
-    background:#26262c; color:#e8e6e0; cursor:pointer;
+    flex:none; width:38px; height:38px; border-radius:50%; border:1px solid #30343C;
+    background:#1B1E24; color:var(--ink); cursor:pointer;
     display:flex; align-items:center; justify-content:center;
   }
-  #playbtn:hover{ background:#303038; }
-  .tc{ flex:none; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; color:#9a9aa2; min-width:86px; }
-  .tc b{ color:#e8e6e0; font-weight:600; }
-  #track{
-    flex:1; position:relative; height:34px; cursor:pointer; touch-action:none;
+  #playbtn:hover{ background:#23272E; border-color:#3C414B; }
+  #playbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .tc{
+    flex:none; font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:12.5px; color:#6E7280; min-width:92px;
   }
+  .tc b{ color:var(--ink); font-weight:600; }
+  #track{ flex:1; position:relative; height:34px; cursor:pointer; touch-action:none; }
+  #track:focus-visible{ outline:2px solid var(--accent); outline-offset:4px; border-radius:4px; }
   #track .rail{
     position:absolute; left:0; right:0; top:50%; height:6px; transform:translateY(-50%);
-    background:#3a3a41; border-radius:99px;
+    background:#22252B; border-radius:99px;
   }
   #fill{
     position:absolute; left:0; top:50%; height:6px; transform:translateY(-50%);
-    background:var(--orange); border-radius:99px; width:0;
+    background:var(--accent); border-radius:99px; width:0;
   }
   #head{
-    position:absolute; top:2px; bottom:2px; width:3px; margin-left:-1.5px;
-    background:#5b8def; border-radius:2px; left:0;
+    position:absolute; top:1px; bottom:1px; width:2px; margin-left:-1px;
+    background:var(--ink); border-radius:2px; left:0;
   }
   #head::before{
-    content:""; position:absolute; top:-2px; left:50%; transform:translateX(-50%);
-    border:5px solid transparent; border-top-color:#5b8def; border-bottom:0;
+    content:""; position:absolute; top:-1px; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--ink); border-bottom:0;
   }
   .dia{
-    position:absolute; top:50%; width:13px; height:13px; margin:-6.5px 0 0 -6.5px;
-    background:#f4f2ec; transform:rotate(45deg); border-radius:2.5px;
+    position:absolute; top:50%; width:12px; height:12px; margin:-6px 0 0 -6px;
+    background:#3A3F48; transform:rotate(45deg); border-radius:2.5px;
     border:0; padding:0; cursor:pointer;
   }
-  .dia::after{
-    content:""; position:absolute; inset:3px; background:#1d1d21; border-radius:1.5px;
-  }
-  .dia.passed::after{ background:var(--orange); }
+  .dia::after{ content:""; position:absolute; inset:3px; background:#121419; border-radius:1.5px; }
+  .dia.passed{ background:var(--accent); }
+  .dia:hover{ background:#5A616D; }
+  .dia.passed:hover{ background:#F3B85C; }
   #kej{
-    flex:none; font-size:11px; letter-spacing:.22em; color:#55555e;
-    border:1px solid #33333b; border-radius:6px; padding:4px 9px;
+    flex:none; font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:10.5px; letter-spacing:.22em; color:#5E6270;
+    background:none; border:1px solid #2A2E36; border-radius:6px; padding:5px 10px; cursor:pointer;
   }
+  #kej:hover{ color:var(--accent); border-color:rgba(232,163,61,.5); }
+
+  /* ── 页尾「可拆」面板 ── */
+  #notes{
+    position:absolute; right:14px; bottom:88px; width:min(560px, 62vw); max-height:62vh;
+    overflow:auto; z-index:9;
+    background:rgba(18,20,25,.97); border:1px solid var(--line); border-radius:10px;
+    padding:18px 20px 20px; box-shadow:0 18px 50px rgba(0,0,0,.5);
+  }
+  #notes[hidden]{ display:none; }
+  #notes h3{
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:11px; letter-spacing:.22em; color:var(--accent); margin-bottom:12px; font-weight:600;
+  }
+  #notes dt{
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;
+    font-size:11.5px; color:var(--ink); margin-top:12px; letter-spacing:.04em;
+  }
+  #notes dd{ font-size:12.5px; line-height:1.75; color:#A9AEBA; margin-top:4px; }
+  #notes code{
+    font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:11.5px;
+    color:#D8C79E; background:#1B1E24; border-radius:3px; padding:1px 4px;
+  }
+  /* 报错条：看得见的那种错就在这 */
+  #err{
+    position:absolute; left:14px; bottom:88px; max-width:52vw; z-index:9;
+    background:#1B1214; border:1px solid #6E3A2A; color:#F2C9A8;
+    font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:11.5px; line-height:1.6;
+    padding:10px 12px; border-radius:8px; white-space:pre-wrap;
+  }
+  #err[hidden]{ display:none; }
+  /* 播完停末帧后正中给一颗重播（沿 v1 骨架） */
+  #replay{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    z-index:8; border:0; cursor:pointer; border-radius:999px;
+    background:rgba(18,20,26,.88); color:var(--ink);
+    font-size:13px; letter-spacing:.22em; padding:12px 26px 12px 30px;
+    display:flex; align-items:center; gap:9px; border:1px solid #2A2E36;
+  }
+  #replay:hover{ border-color:rgba(232,163,61,.6); color:var(--accent); }
+  #replay[hidden]{ display:none; }
   @media (prefers-reduced-motion: reduce){
     #playbtn{ display:none; }
   }
@@ -220,38 +153,23 @@
     <span class="dot" style="background:#ff5f57"></span>
     <span class="dot" style="background:#febc2e"></span>
     <span class="dot" style="background:#28c840"></span>
-    <span class="title">求职飞行</span>
+    <span class="title">FLYCAM · VISIBLE CAMERA RIG</span>
+    <span class="ver">THREE r147 · WEBGL</span>
   </header>
 
   <main id="panes">
-    <section class="pane" id="rig" aria-label="编辑视图">
-      <span class="pane-tag">编辑视图</span>
-      <svg id="rigsvg" viewBox="0 0 720 760" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <defs>
-          <pattern id="gdots" width="26" height="26" patternUnits="userSpaceOnUse">
-            <circle cx="1.2" cy="1.2" r="1.2" fill="#3c3c42"/>
-          </pattern>
-        </defs>
-        <rect width="720" height="760" fill="#2e2e31"/>
-        <rect width="720" height="760" fill="url(#gdots)"/>
-        <g id="wall"></g>
-        <g id="pathline" fill="none" stroke="#f2e33a" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9"></g>
-        <g id="frustum" fill="none" stroke="#f2e33a" stroke-width="2" stroke-linejoin="round"></g>
-        <g id="wpts"></g>
-      </svg>
+    <section class="pane" id="rig" aria-label="编辑视图：相机 rig">
+      <span class="pane-tag">编辑视图 · RIG</span>
     </section>
-
-    <section class="pane" id="flight" aria-label="相机渲染">
-      <div id="sky"></div>
-      <span class="pane-tag dark">相机渲染</span>
-      <div id="scene"></div>
-      <svg id="strings" aria-hidden="true"></svg>
+    <section class="pane" id="flight" aria-label="成片：相机渲染">
+      <span class="pane-tag">成片 · <em>CAMERA</em></span>
       <button id="replay" hidden>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M12 7a5 5 0 1 1-1.7-3.75"/><path d="M12 1v3h-3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>重播
       </button>
     </section>
+    <canvas id="gl" aria-hidden="true"></canvas>
   </main>
 
   <footer id="timeline">
@@ -261,366 +179,573 @@
       <svg id="icon-re" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none"><path d="M12 7a5 5 0 1 1-1.7-3.75"/><path d="M12 1v3h-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <span class="tc"><b id="tc-now">0:00.0</b> / 0:12.0</span>
-    <div id="track">
+    <div id="track" tabindex="0" role="slider" aria-label="时间轴（左右键微调，Home/End 到头）"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
       <div class="rail"></div>
       <div id="fill"></div>
       <div id="head"></div>
     </div>
-    <span id="kej">可拆</span>
+    <button id="kej" aria-expanded="false"
+      title="可拆：点开看零件清单（vendor three 接入 / 一个 renderer 两个窗格 / CameraHelper 视锥 / POV 铸镜头 / CanvasTexture 卡）">可拆</button>
   </footer>
+
+  <section id="notes" hidden>
+    <h3>可拆 · 零件清单</h3>
+    <dl>
+      <dt id="part-vendor">vendor/three.min.js</dt>
+      <dd>three.js <b>r147</b> 的 UMD 构建（构建期 <code>npm pack three@0.147.0</code>，解包取 <code>build/three.min.js</code>，608 KB）。普通 <code>&lt;script src="vendor/three.min.js"&gt;</code> 加载：<b>file:// 直开可用</b>，ES module 版会被 CORS 拦。运行时零网络。</dd>
+      <dt id="part-panes">#panes · 一个 renderer，两个窗格</dt>
+      <dd>一块 canvas 铺满两窗格，<code>setScissorTest(true)</code>，每帧两次 <code>setViewport + setScissor + render</code>：左 = 正交俯视 + rig 覆盖层，右 = 透视成片机位。选 scissor 而不是两个 renderer：一个 WebGL 上下文、几何/纹理只上传一次，代价只是多一遍 draw call；两窗格共用同一 scene、同一 <code>render(t)</code>。雾按相机深度算，逐遍改 <code>FOG.near/far</code>（编辑视图抬到 1e6）。</dd>
+      <dt id="part-camrig">#camrig · POV 铸镜头</dt>
+      <dd>起点 + 5 站共 6 个体位（位置 + lookAt 目标写在参数区），段长 <code>[0.20,0.16,0.24,0.20,0.20]</code>，总 12s。每帧 position 走段内 smoothstep；lookAt 目标在两站之间线性插值（前 62% 段长稳住看本站，62→82% 段长转头看下一站）。没有 parenting、没有 null：位置和朝向都是 t 的纯函数，scrub 到哪帧都对。</dd>
+      <dt id="part-rig">#rig · 真 CameraHelper 黄视锥</dt>
+      <dd>three.js 原生 <code>CameraHelper(shotCam)</code>：视锥线框 + 机身 + 朝向三角由它自己画。左窗格渲染时把 shotCam 的 near/far 收成 8/620——这样视锥是「一台相机」的形状而不是一根长针；<code>setColors()</code> 把原生红蓝白收成暖琥珀一套。航线 = <code>LineDashedMaterial</code> + <code>computeLineDistances()</code>，5 枚八面体路径点 <code>t ≥ 到达时刻</code> 从线框换实心，站号 01–05 是 Sprite。</dd>
+      <dt id="part-timeline">#timeline · 双向时间轴</dt>
+      <dd>播放/暂停/重播、拖拽 scrub、菱形刻度跳关键帧、<code>?demo=progress=X</code> 定帧；两窗格 + 时间轴同吃一个 <code>render(t)</code>。reduced-motion：无自动播放、t=1 终帧静态、时间轴仍可拖（<code>?rm=1</code> 等价，便于无头自检）。</dd>
+      <dt id="part-cards">#cards · CanvasTexture 排版</dt>
+      <dd>三张卡（MOTION / GRAPHICS · 001 / UI 面板）都是 CanvasTexture 现画：衬线大字 + 等宽小字 + 琥珀细节，<code>anisotropy</code> 拉满（斜看字不糊）。文字绕柱 = 实底画布上横向平铺的字（绕一圈出现两次）+ 画布自带柱面明暗，材质 <code>FrontSide</code>（DoubleSide 会从镂空里看见背面镜像字）。</dd>
+    </dl>
+  </section>
+
+  <div id="err" hidden></div>
 </div>
 
+<script src="vendor/three.min.js"></script>
 <script>
 (function(){
   "use strict";
   var $ = function(s){ return document.querySelector(s); };
   var clamp = function(v,a,b){ return Math.min(b, Math.max(a, v)); };
   var lerp = function(a,b,u){ return a + (b-a)*u; };
+  var smooth = function(u){ return u*u*(3-2*u); };
+  var DEG = Math.PI/180;
 
-  var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var DURATION = 12;          // 全程秒数
-  var PERSP = 900;            // 右窗格透视距离
-  var FADE_START = 320;       // z' 超过此值开始淡出
-  var FADE_END = 560;         // z' 超过此值隐藏（即将掠过相机）
-  var TYPE_START = 0.42, TYPE_END = 0.62;
-
-  /* —— 参数区：航线（相机世界坐标 x, y, z）与段节奏 —— */
-  var WPTS = [
-    [   0, -20,   950],   // 远景，整面物件墙
-    [   0, -20,  -300],   // 站 1 · 简历卡
-    [   0,-140,  -700],   // 站 2 · 明信片 + 车票
-    [ 330,  40, -1500],   // 站 3 · 面试日历
-    [   0, -10, -2650]    // 站 4 · 信封（末帧焦点）
-  ];
-  var SEGS = [0.22, 0.16, 0.28, 0.34]; // 段间节奏不同，末段放慢给信封
-
-  /* —— 卡片（世界坐标，z 越负越深） —— */
-  var PIN = '<svg class="pin" width="22" height="26" viewBox="0 0 22 26">' +
-    '<line x1="11" y1="9" x2="11" y2="24" stroke="#7d2f27" stroke-width="2"/>' +
-    '<circle cx="11" cy="8" r="7" fill="#c0392b"/>' +
-    '<circle cx="8.6" cy="5.6" r="2.2" fill="#e88a80"/></svg>';
-  var CLIP = '<svg class="r-clip" width="34" height="52" viewBox="0 0 34 52" fill="none" stroke="#8a8a92" stroke-width="3"><path d="M10 14v24a7 7 0 0 0 14 0V10a10 10 0 0 0-20 0v30" stroke-linecap="round"/></svg>';
-  var QR = '<svg width="22" height="22" viewBox="0 0 20 20"><g fill="#24466e"><rect width="6" height="6"/><rect x="14" width="6" height="6"/><rect y="14" width="6" height="6"/><rect x="8" y="8" width="4" height="4"/><rect x="15" y="14" width="4" height="4"/><rect x="8" y="1" width="3" height="2"/><rect x="1" y="8" width="2" height="3"/><rect x="14" y="8" width="2" height="3"/></g></svg>';
-
-  var CARDS = [
-    { id:"resume", x:0, y:-20, z:0, w:340, h:230, ry:2, cls:"resume",
-      html: CLIP + PIN +
-        '<div class="r-line l1"></div><div class="r-line l2"></div><div class="r-line l3"></div>' +
-        '<div class="r-tag">2026 届 · AI 产品</div>' },
-    { id:"postcard", x:0, y:-140, z:-500, w:300, h:210, ry:-5, rz:-2.5, cls:"postcard",
-      html: PIN +
-        '<svg class="pc-art" width="280" height="166" viewBox="0 0 280 166">' +
-          '<rect width="280" height="104" fill="#cfe3f4"/>' +
-          '<g fill="#8fa3b8">' +
-            '<rect x="16" y="52" width="15" height="52"/><rect x="40" y="34" width="20" height="70"/>' +
-            '<rect x="68" y="56" width="13" height="48"/><rect x="89" y="22" width="24" height="82"/>' +
-            '<rect x="130" y="30" width="17" height="74"/><polygon points="138.5,4 145,30 132,30"/>' +
-            '<rect x="156" y="48" width="15" height="56"/><rect x="180" y="36" width="20" height="68"/>' +
-            '<rect x="209" y="54" width="13" height="50"/><rect x="231" y="40" width="18" height="64"/>' +
-            '<rect x="257" y="58" width="12" height="46"/>' +
-          '</g>' +
-          '<rect y="104" width="280" height="62" fill="#b9cfe2"/>' +
-          '<rect y="104" width="280" height="8" fill="#a5c0d6"/>' +
-          '<rect y="120" width="280" height="7" fill="#c7daeb"/>' +
-          '<rect y="136" width="280" height="7" fill="#adc7dc"/>' +
-          '<rect y="152" width="280" height="14" fill="#cbdcec"/>' +
-        '</svg><div class="pc-cap">深圳湾</div>' },
-    { id:"ticket", x:-160, y:-150, z:-470, w:190, h:92, ry:9, rz:3, cls:"ticket",
-      html:'<div><div class="t-main">→ 深圳北</div><div class="t-sub">高铁 · 二等座</div></div>' +
-        '<div class="t-tear"></div><div class="t-qr">' + QR + '</div>' },
-    { id:"cal", x:300, y:60, z:-1200, w:250, h:230, ry:-9, cls:"cal", typed:true,
-      html:'<i class="ring a"></i><i class="ring b"></i><i class="tape"></i>' +
-        '<div class="cal-head">面试</div><div class="typed"></div><div class="coffee"></div>' },
-    { id:"envelope", x:0, y:-10, z:-2350, w:440, h:300, ry:0, cls:"envelope",
-      html:'<div class="e-stamp"><i></i></div><div class="e-big">深圳见。</div><div class="e-sub">AI 产品经理 · 在路上</div>' }
-  ];
-  var NOTE_TEXT = "周四 14:00 复试";
-
-  var CHIPS = [];
-
-  /* 红绳：图钉钉住，连简历卡与明信片 */
-  var STRINGS = [
-    { a:[ 123, -137,    0], b:[ -44, -245, -500] }
-  ];
-
-  /* —— 构建右窗格 DOM —— */
-  var scene = $("#scene"), flight = $("#flight");
-  CARDS.forEach(function(c){
-    var el = document.createElement("div");
-    el.className = "c3d " + c.cls;
-    el.style.width = c.w + "px";
-    el.style.height = c.h + "px";
-    el.style.marginLeft = (-c.w/2) + "px";
-    el.style.marginTop = (-c.h/2) + "px";
-    el.innerHTML = c.html;
-    if (c.typed) el.id = "typenote";
-    scene.appendChild(el);
-    c.el = el;
-    if (c.typed) c.typedEl = el.querySelector(".typed");
+  var errBox = $("#err");
+  window.addEventListener("error", function(e){
+    errBox.hidden = false;
+    errBox.textContent = "JS error: " + (e.message || e.type);
   });
-  CHIPS.forEach(function(ch){
-    var el = document.createElement("div");
-    el.className = "c3d chip";
-    el.innerHTML = "<em>来源</em>" + ch.t;
-    scene.appendChild(el);
-    ch.el = el;
+  if (!window.THREE){
+    errBox.hidden = false;
+    errBox.textContent = "three.js 没加载上：确认 vendor/three.min.js 与 index.html 同目录（用 file:// 直开即可）。";
+    return;
+  }
+
+  /* =====================================================================
+     参数区
+     ===================================================================== */
+  var ACCENT = 0xE8A33D;        // 唯一暖 accent
+  var BG     = 0x12141A;        // 成片底色（#0E0F12 级再提一档，免得成片压成黑）
+  var RIG_BG = 0x0F1116;        // 编辑视图底色（比成片再深一档）
+  var FOV    = 42;              // 成片机位视场角
+  var DURATION = 12;            // 全程秒数
+
+  // 段长（时间的比例），累加即各站到达时刻 TI=[0.20,0.36,0.60,0.80,1.00]
+  var SEGS = [0.20, 0.16, 0.24, 0.20, 0.20];
+  // 段内转头窗口：前 62% 稳住看本站内容，62%→82% 转头，之后锁下一站
+  var PAN_A = 0.62, PAN_B = 0.82;
+
+  // 内容（世界坐标，全部朝 +z 竖立；x/y 是留出掠过余量的偏置）
+  var CONTENT = {
+    MOTION:   { kind:'card', pos:[ -70,  30,     0], w:300, h:190, ry:  4 },
+    GRAPHICS: { kind:'card', pos:[   0, -10, -1411], w:290, h:180, ry: -5 },
+    UIPANEL:  { kind:'card', pos:[-140, -10, -2073], w:300, h:340, ry:  5 },
+    RING:     { kind:'ring', pos:[-250,  20, -2973], r:150, n:12, box:30 },
+    KNOT:     { kind:'knot', pos:[ 200, 120,  -600], r:46 },
+    CYL:      { kind:'cyl',  pos:[ 100,  10, -3943], r:105, h:300 },
+    GLOW:     { kind:'glow', pos:[   0, 120, -4620], w:3400, h:1900 }
+  };
+
+  // 5 个机位关键帧（站 1–5）+ 起点体位：位置 + lookAt 目标
+  var POSES = [
+    { p:[ 100, 250,  1080], look:'MOTION',   name:'起点'  },
+    { p:[-200, 150,   771], look:'MOTION',   name:'站 1'  },
+    { p:[ 230,  60,    39], look:'GRAPHICS', name:'站 2'  },
+    { p:[-220,  90, -1473], look:'UIPANEL',  name:'站 3'  },
+    { p:[ 230,  40, -2273], look:'RING',     name:'站 4'  },
+    { p:[-180,  70, -3383], look:'CYL',      name:'站 5'  }
+  ];
+  var TI = [0];
+  SEGS.forEach(function(w){ TI.push(TI[TI.length-1] + w); });
+
+  function v3(a){ return new THREE.Vector3(a[0], a[1], a[2]); }
+  // lookAt 目标解析到内容中心
+  POSES.forEach(function(pose){ pose.lookAt = CONTENT[pose.look].pos; });
+
+  /* =====================================================================
+     渲染器 / 场景 / 灯光 / 雾
+     ===================================================================== */
+  var canvas = $("#gl");
+  var renderer = new THREE.WebGLRenderer({ canvas:canvas, antialias:true });
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.setScissorTest(true);
+  var MAXANISO = renderer.capabilities.getMaxAnisotropy();
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(BG);
+  var FOG = new THREE.Fog(BG, 1500, 6500);
+  scene.fog = FOG;
+
+  scene.add(new THREE.HemisphereLight(0x93A1B8, 0x0F1116, 0.62));
+  var key = new THREE.DirectionalLight(0xFFF0D8, 1.15); key.position.set(700, 900, 1400); scene.add(key);
+  var rim = new THREE.DirectionalLight(0xE8A33D, 0.60); rim.position.set(-800, 240, -1300); scene.add(rim);
+
+  /* =====================================================================
+     内容：CanvasTexture 卡 ×3 + 真几何（环 / 结）+ 文字绕柱 + 渐变大面片
+     ===================================================================== */
+  var MONO = '"SF Mono", ui-monospace, Menlo, monospace';
+  var SERIF = 'Georgia, "Times New Roman", "Songti SC", serif';
+
+  function makeTex(w, h, draw){
+    var cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    draw(cv.getContext("2d"), w, h);
+    var t = new THREE.CanvasTexture(cv);
+    t.anisotropy = MAXANISO;
+    t.encoding = THREE.sRGBEncoding;
+    t.needsUpdate = true;
+    return t;
+  }
+  function rrect(g, x, y, w, h, r){
+    g.beginPath();
+    g.moveTo(x+r, y);
+    g.arcTo(x+w, y,   x+w, y+h, r);
+    g.arcTo(x+w, y+h, x,   y+h, r);
+    g.arcTo(x,   y+h, x,   y,   r);
+    g.arcTo(x,   y,   x+w, y,   r);
+    g.closePath();
+    return g;
+  }
+  function tracked(g, text, x, y, sp){          // 手动字距（canvas2d letterSpacing 不可靠）
+    var cx = x;
+    for (var i=0;i<text.length;i++){ g.fillText(text[i], cx, y); cx += g.measureText(text[i]).width + sp; }
+    return cx - sp;
+  }
+  function trackedW(g, text, sp){
+    var w = 0;
+    for (var i=0;i<text.length;i++) w += g.measureText(text[i]).width + sp;
+    return w - sp;
+  }
+
+  // ── 卡 A：MOTION（深色标题卡） ──
+  var texMOTION = makeTex(1024, 648, function(g, W, H){
+    g.clearRect(0,0,W,H);
+    var grad = g.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0, "#1A1D24"); grad.addColorStop(1, "#101216");
+    rrect(g, 10, 10, W-20, H-20, 30); g.fillStyle = grad; g.fill();
+    g.strokeStyle = "rgba(232,163,61,.55)"; g.lineWidth = 2; g.stroke();
+
+    g.fillStyle = "#8A8F98"; g.font = "600 26px " + MONO; g.textAlign = "left";
+    g.fillText("CAM · CAST 05", 62, 96);
+    g.textAlign = "right"; g.fillText("24 FPS", W-62, 96); g.textAlign = "left";
+
+    g.fillStyle = "#F2EEE7";
+    g.font = "400 186px " + SERIF;
+    var tw = trackedW(g, "MOTION", 16);
+    tracked(g, "MOTION", (W-tw)/2, 392, 16);
+
+    g.fillStyle = "#E8A33D"; g.fillRect(62, 452, 190, 7);
+    g.fillStyle = "#B9BEC7"; g.font = "500 28px " + MONO;
+    g.fillText("KEYFRAME STUDY / 001", 62, 556);
+    g.textAlign = "right"; g.fillStyle = "#7C818C";
+    g.fillText("MOTION GRAPHICS", W-62, 556); g.textAlign = "left";
   });
 
-  var stringsSvg = $("#strings");
-  stringsSvg.innerHTML = STRINGS.map(function(){ return '<line/>'; }).join("");
-  var stringEls = Array.prototype.slice.call(stringsSvg.querySelectorAll("line"));
+  // ── 卡 B：GRAPHICS · 001（暖纸卡） ──
+  var texGRAPHICS = makeTex(1024, 635, function(g, W, H){
+    g.clearRect(0,0,W,H);
+    rrect(g, 10, 10, W-20, H-20, 26);
+    g.fillStyle = "#EFE8D9"; g.fill();
+    g.strokeStyle = "rgba(20,22,26,.22)"; g.lineWidth = 2; g.stroke();
 
-  /* —— 左窗格（编辑视图）：斜投影 —— */
-  function eproj(x,y,z){
-    return [360 + x*0.5 + z*0.058, 320 + y*0.5 + z*0.026];
-  }
-  function poly(pts){
-    return pts.map(function(p){ return p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" ");
-  }
-  var wallG = $("#wall"), wptsG = $("#wpts"), frG = $("#frustum"), pathG = $("#pathline");
+    g.fillStyle = "#E8A33D"; g.fillRect(W-172, 62, 108, 12);
 
-  // 照片墙装饰：灰白调迷你照片（白框 + 灰阶简笔 + 胶带 + 微旋转）
-  var PHOTOS = [
-    { x:-390, y: 150, z: -260, w:130, h:150, r:-6, k:"mount"  },
-    { x: 410, y:-150, z: -430, w:150, h:110, r: 5, k:"coast"  },
-    { x: -60, y: 225, z: -680, w:110, h: 90, r: 3, k:"coast"  },
-    { x:-420, y:-120, z: -880, w:120, h:145, r: 4, k:"bldg"   },
-    { x: 430, y: 160, z:-1150, w:140, h:110, r:-5, k:"street" },
-    { x:-360, y: 170, z:-1560, w:120, h:150, r: 7, k:"coast"  },
-    { x: 400, y:-165, z:-1900, w:150, h:115, r:-4, k:"mount"  },
-    { x:-410, y: -55, z:-2260, w:125, h:145, r: 6, k:"bldg"   },
-    { x: 360, y: 170, z:-2520, w:135, h:105, r:-7, k:"street" }
-  ];
-  function photoArt(k, iw, ih){
-    var hw = iw/2, hh = ih/2;
-    if (k === "mount") return (
-      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="#d6d8dc"/>' +
-      '<circle cx="'+(hw*0.5)+'" cy="'+(-hh*0.45)+'" r="'+(iw/8).toFixed(1)+'" fill="#f4f4f6"/>' +
-      '<path d="M'+(-hw)+','+hh+' L'+(-hw*0.35)+','+(-hh*0.15)+' L'+(hw*0.18)+','+hh+' Z" fill="#71757e"/>' +
-      '<path d="M'+(-hw*0.1)+','+hh+' L'+(hw*0.42)+','+(-hh*0.5)+' L'+hw+','+hh+' Z" fill="#5a5e66"/>');
-    if (k === "coast") return (
-      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+hh+'" fill="#dadde2"/>' +
-      '<rect x="'+(-hw)+'" y="0" width="'+iw+'" height="'+hh+'" fill="#9ba3ae"/>' +
-      '<path d="M'+(-hw)+','+(hh/3)+' H'+hw+'" stroke="#e6e9ee" stroke-width="2" fill="none"/>' +
-      '<path d="M'+(-hw*0.6)+','+(hh*0.66)+' q'+(hw*0.25)+',-7 '+(hw*0.5)+',0" stroke="#c9cfd7" stroke-width="2" fill="none"/>' +
-      '<path d="M'+(hw*0.05)+','+(hh*0.85)+' q'+(hw*0.25)+',-7 '+(hw*0.5)+',0" stroke="#c9cfd7" stroke-width="2" fill="none"/>');
-    if (k === "bldg") return (
-      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="#d3d5da"/>' +
-      '<rect x="'+(-hw+6)+'" y="'+(-hh+ih*0.34)+'" width="'+(iw*0.2)+'" height="'+(ih*0.66)+'" fill="#6d717a"/>' +
-      '<rect x="'+(-hw+iw*0.28)+'" y="'+(-hh+ih*0.16)+'" width="'+(iw*0.24)+'" height="'+(ih*0.84)+'" fill="#585c64"/>' +
-      '<rect x="'+(-hw+iw*0.6)+'" y="'+(-hh+ih*0.44)+'" width="'+(iw*0.28)+'" height="'+(ih*0.56)+'" fill="#7d818a"/>' +
-      '<rect x="'+(-hw+iw*0.33)+'" y="'+(-hh+ih*0.24)+'" width="4" height="4" fill="#e8eaee"/>' +
-      '<rect x="'+(-hw+iw*0.42)+'" y="'+(-hh+ih*0.24)+'" width="4" height="4" fill="#e8eaee"/>' +
-      '<rect x="'+(-hw+iw*0.33)+'" y="'+(-hh+ih*0.36)+'" width="4" height="4" fill="#e8eaee"/>');
-    return ( // street
-      '<rect x="'+(-hw)+'" y="'+(-hh)+'" width="'+iw+'" height="'+ih+'" fill="#d3d5da"/>' +
-      '<rect x="'+(-hw+4)+'" y="'+(-hh+ih*0.1)+'" width="'+(iw*0.26)+'" height="'+(ih*0.55)+'" fill="#6d717a"/>' +
-      '<rect x="'+(hw*0.45)+'" y="'+(-hh+ih*0.2)+'" width="'+(iw*0.3)+'" height="'+(ih*0.48)+'" fill="#7d818a"/>' +
-      '<path d="M'+(-hw)+','+hh+' L'+(-hw*0.3)+','+(-hh*0.35)+' L'+(hw*0.3)+','+(-hh*0.35)+' L'+hw+','+hh+' Z" fill="#83878f"/>' +
-      '<rect x="-2.5" y="'+(ih*0.08)+'" width="5" height="'+(ih*0.15)+'" fill="#eceef0"/>' +
-      '<rect x="-2" y="'+(ih*0.34)+'" width="4" height="'+(ih*0.13)+'" fill="#eceef0"/>');
-  }
-  function photoSvg(p){
-    var c = eproj(p.x, p.y, p.z);
-    var iw = p.w-14, ih = p.h-14;
-    return '<g transform="translate('+c[0].toFixed(1)+','+c[1].toFixed(1)+') rotate('+p.r+')">' +
-      '<rect x="'+(-p.w/2)+'" y="'+(-p.h/2)+'" width="'+p.w+'" height="'+p.h+'" rx="2" fill="#eae8e2" stroke="#c8c6bf"/>' +
-      photoArt(p.k, iw, ih) +
-      '<rect x="-25" y="'+(-p.h/2-7)+'" width="50" height="14" rx="2" fill="rgba(252,250,242,.42)" stroke="rgba(185,183,173,.55)" stroke-width=".5" transform="rotate(-4)"/>' +
-      '</g>';
-  }
-  wallG.innerHTML = PHOTOS.map(photoSvg).join("");
+    g.fillStyle = "#6B6659"; g.font = "600 26px " + MONO; g.textAlign = "left";
+    g.fillText("02 / STUDIO EDITION", 62, 100);
 
-  // 航线虚线
-  pathG.innerHTML = '<polyline points="' + WPTS.map(function(w){ return eproj(w[0],w[1],w[2]).map(function(v){return v.toFixed(1);}).join(","); }).join(" ") + '"/>';
+    g.fillStyle = "#16181C";
+    g.font = "400 132px " + SERIF;
+    tracked(g, "GRAPHICS", 60, 330, 6);
+    g.font = "500 34px " + MONO;
+    g.fillStyle = "#4A463C";
+    g.fillText("· 001 — COMPOSITION", 62, 400);
 
-  // 路径点（六边形，空心→实心）
-  function hexPts(cx,cy,r){
-    var s = "";
-    for (var i=0;i<6;i++){
-      var a = Math.PI/6 + i*Math.PI/3;
-      s += (cx+r*Math.cos(a)).toFixed(1) + "," + (cy+r*Math.sin(a)).toFixed(1) + " ";
+    g.strokeStyle = "rgba(22,24,28,.20)"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(62, 470); g.lineTo(W-62, 470); g.stroke();
+
+    g.fillStyle = "#6B6659"; g.font = "500 26px " + MONO;
+    g.fillText("TEXT · LAYOUT · TIMELINE", 62, 522);
+    g.textAlign = "right"; g.fillText("A4", W-62, 522); g.textAlign = "left";
+  });
+
+  // ── 卡 C：UI 面板（假界面：标题行 + 三条滑块 + 折线图） ──
+  var texUI = makeTex(900, 1020, function(g, W, H){
+    g.clearRect(0,0,W,H);
+    rrect(g, 8, 8, W-16, H-16, 30);
+    g.fillStyle = "#14161B"; g.fill();
+    g.strokeStyle = "rgba(255,255,255,.07)"; g.lineWidth = 2; g.stroke();
+
+    // 标题行
+    g.fillStyle = "#4E5560";
+    [0,1,2].forEach(function(i){ g.beginPath(); g.arc(W-86+i*30, 78, 8, 0, 7); g.fill(); });
+    g.fillStyle = "#A9AEBA"; g.font = "600 27px " + MONO; g.textAlign = "left";
+    g.fillText("COMPOSITOR · POV", 56, 88);
+    g.strokeStyle = "rgba(255,255,255,.07)"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(40, 122); g.lineTo(W-40, 122); g.stroke();
+
+    // 三条滑块
+    var rows = [["SPEED", 0.62], ["EASE", 0.38], ["DOLLY", 0.80]];
+    rows.forEach(function(r, i){
+      var y = 196 + i*104;
+      g.fillStyle = "#7C818C"; g.font = "600 25px " + MONO; g.textAlign = "left";
+      g.fillText(r[0], 56, y);
+      g.textAlign = "right"; g.fillStyle = "#A9AEBA";
+      g.fillText(String(Math.round(r[1]*100)), W-56, y); g.textAlign = "left";
+      var tx = 56, tw = W-112, ty = y+34;
+      rrect(g, tx, ty, tw, 12, 6); g.fillStyle = "#23262C"; g.fill();
+      rrect(g, tx, ty, tw*r[1], 12, 6); g.fillStyle = "#E8A33D"; g.fill();
+      g.beginPath(); g.arc(tx + tw*r[1], ty+6, 17, 0, 7);
+      g.fillStyle = "#F2EEE7"; g.fill();
+      g.strokeStyle = "#0E0F12"; g.lineWidth = 4; g.stroke();
+    });
+
+    // 折线图
+    var gx = 56, gy = 560, gw = W-112, gh = 300;
+    rrect(g, gx, gy, gw, gh, 12); g.fillStyle = "#101216"; g.fill();
+    g.strokeStyle = "rgba(255,255,255,.06)"; g.lineWidth = 1.5;
+    for (var i=1;i<4;i++){
+      g.beginPath(); g.moveTo(gx, gy+gh*i/4); g.lineTo(gx+gw, gy+gh*i/4); g.stroke();
+      g.beginPath(); g.moveTo(gx+gw*i/4, gy); g.lineTo(gx+gw*i/4, gy+gh); g.stroke();
     }
-    return s.trim();
+    var pts = [[0,0.72],[0.18,0.60],[0.36,0.66],[0.52,0.38],[0.68,0.46],[0.84,0.20],[1,0.26]];
+    g.beginPath();
+    pts.forEach(function(p, i){
+      var px = gx + 16 + p[0]*(gw-32), py = gy + 20 + p[1]*(gh-52);
+      if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    });
+    g.strokeStyle = "#E8A33D"; g.lineWidth = 5; g.lineJoin = "round"; g.stroke();
+    g.lineTo(gx+gw-16, gy+gh-24); g.lineTo(gx+16, gy+gh-24); g.closePath();
+    var lg = g.createLinearGradient(0, gy, 0, gy+gh);
+    lg.addColorStop(0, "rgba(232,163,61,.30)"); lg.addColorStop(1, "rgba(232,163,61,0)");
+    g.fillStyle = lg; g.fill();
+    var last = pts[pts.length-1];
+    g.beginPath(); g.arc(gx+16+last[0]*(gw-32), gy+20+last[1]*(gh-52), 10, 0, 7);
+    g.fillStyle = "#F2EEE7"; g.fill();
+
+    g.fillStyle = "#5E6270"; g.font = "500 24px " + MONO; g.textAlign = "left";
+    g.fillText("TL · 12.0s · 24 FPS", 56, 940);
+    g.textAlign = "right"; g.fillStyle = "#8A8F98";
+    g.fillText("FRAME 0060", W-56, 940); g.textAlign = "left";
+  });
+
+  // ── 文字绕柱（横向平铺，绕一圈出现两次；画布自带柱面明暗） ──
+  var texCYL = makeTex(2048, 256, function(g, W, H){
+    g.clearRect(0,0,W,H);
+    var sg = g.createLinearGradient(0, 0, W, 0);           // 柱面假明暗：两侧压暗
+    sg.addColorStop(0.00, "#0C0E11");
+    sg.addColorStop(0.22, "#1B1F27");
+    sg.addColorStop(0.50, "#20242D");
+    sg.addColorStop(0.78, "#1B1F27");
+    sg.addColorStop(1.00, "#0C0E11");
+    g.fillStyle = sg; g.fillRect(0, 0, W, H);
+    g.textBaseline = "middle"; g.textAlign = "center";
+    g.font = "600 104px " + MONO;
+    g.fillStyle = "#E8A33D";
+    g.fillText("◆ TYPE CYLINDER", W*0.25, H*0.50);
+    g.fillStyle = "#EDEAE3";
+    g.fillText("◆ MOTION", W*0.75, H*0.50);
+  });
+
+  // ── 背景渐变大面片 ──
+  var texGLOW = makeTex(1024, 512, function(g, W, H){
+    var grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#20252E"); grad.addColorStop(0.55, "#171B23"); grad.addColorStop(1, "#101218");
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    var rg = g.createRadialGradient(W*0.5, H*0.56, 40, W*0.5, H*0.56, W*0.44);
+    rg.addColorStop(0, "rgba(232,163,61,.50)");
+    rg.addColorStop(0.45, "rgba(232,163,61,.15)");
+    rg.addColorStop(1, "rgba(232,163,61,0)");
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  });
+
+  // ── 站号（Sprite） ──
+  function texNum(i){
+    return makeTex(96, 72, function(g, W, H){
+      g.clearRect(0,0,W,H);
+      g.font = "600 44px " + MONO; g.fillStyle = "#E8A33D";
+      g.textAlign = "right"; g.textBaseline = "middle";
+      g.fillText(("0"+(i+1)).slice(-2), W-8, H/2);
+    });
   }
-  var TI = [0]; // 各路径点到达时刻
-  var acc = 0;
-  SEGS.forEach(function(w){ acc += w; TI.push(acc); });
-  wptsG.innerHTML = WPTS.map(function(w){
-    var e = eproj(w[0],w[1],w[2]);
-    return '<polygon points="' + hexPts(e[0], e[1], 8) + '" fill="none" stroke="#f2e33a" stroke-width="2.5"/>';
-  }).join("");
-  var wptEls = Array.prototype.slice.call(wptsG.querySelectorAll("polygon"));
 
-  // 视锥：apex + 四角 + 正面三角 + 机身六边形
-  frG.innerHTML = '<line/><line/><line/><line/><line/><line/>' +
-    '<polygon fill="none"/>' +
-    '<polygon fill="#f2e33a" stroke="none"/>' +
-    '<polygon fill="#f2e33a" stroke="none"/>';
-  var frLines = Array.prototype.slice.call(frG.querySelectorAll("line"));
-  var frPolys = frG.querySelectorAll("polygon");
-  var frFace = frPolys[0];
-  var frTri = frPolys[1];
-  var frBody = frPolys[2];
+  function addCard(spec, texture){
+    var mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(spec.w, spec.h),
+      new THREE.MeshBasicMaterial({ map:texture, transparent:true, fog:true })
+    );
+    mesh.position.set(spec.pos[0], spec.pos[1], spec.pos[2]);
+    mesh.rotation.y = (spec.ry || 0) * DEG;
+    scene.add(mesh);
+    return mesh;
+  }
+  addCard(CONTENT.MOTION, texMOTION);
+  addCard(CONTENT.GRAPHICS, texGRAPHICS);
+  addCard(CONTENT.UIPANEL, texUI);
 
-  /* —— 状态 —— */
-  var t = 0, playing = false, ended = false, dragging = false;
-  var DEMO = null;
-  try {
-    var q = new URLSearchParams(location.search);
-    var dv = q.get("demo");
-    if (dv != null){
-      var nested = new URLSearchParams(dv.indexOf("=") >= 0 ? dv : "progress=" + dv);
-      var pv = nested.get("progress") != null ? nested.get("progress") : q.get("progress");
-      if (pv != null && isFinite(parseFloat(pv))) DEMO = clamp(parseFloat(pv), 0, 1);
-    } else {
-      var pv2 = q.get("progress");
-      if (pv2 != null && isFinite(parseFloat(pv2))) DEMO = clamp(parseFloat(pv2), 0, 1);
-    }
-  } catch(e){ DEMO = null; }
+  // 环状排列的小方块（cloner 感，真几何）
+  var ringGroup = new THREE.Group();
+  ringGroup.position.set(CONTENT.RING.pos[0], CONTENT.RING.pos[1], CONTENT.RING.pos[2]);
+  scene.add(ringGroup);
+  var boxGeo  = new THREE.BoxGeometry(CONTENT.RING.box, CONTENT.RING.box, CONTENT.RING.box);
+  var boxMat  = new THREE.MeshStandardMaterial({ color:0x363D49, metalness:0.78, roughness:0.28 });
+  var boxMatA = new THREE.MeshStandardMaterial({ color:0xE8A33D, metalness:0.62, roughness:0.26, emissive:0x3A2408 });
+  var boxMat2 = new THREE.MeshStandardMaterial({ color:0x272C35, metalness:0.70, roughness:0.42 });
+  var ringBoxes = [], ringBoxesInner = [];
+  for (var i = 0; i < CONTENT.RING.n; i++){
+    var a = i / CONTENT.RING.n * Math.PI * 2;
+    var m = new THREE.Mesh(boxGeo, (i % 4 === 0) ? boxMatA : boxMat);
+    m.position.set(Math.cos(a) * CONTENT.RING.r, Math.sin(a) * CONTENT.RING.r, 0);
+    ringGroup.add(m); ringBoxes.push(m);
+    var m2 = new THREE.Mesh(boxGeo, boxMat2);
+    m2.scale.setScalar(0.55);
+    m2.position.set(Math.cos(a + 0.26) * (CONTENT.RING.r * 0.66), Math.sin(a + 0.26) * (CONTENT.RING.r * 0.66), 64);
+    ringGroup.add(m2); ringBoxesInner.push(m2);
+  }
 
-  /* —— 相机：段内 smoothstep（reduced-motion 线性） —— */
-  function camAt(tt){
-    var a = 0;
-    for (var i=0;i<SEGS.length;i++){
-      var w = SEGS[i];
-      if (tt <= a + w || i === SEGS.length-1){
-        var u = clamp((tt - a)/w, 0, 1);
-        if (!RM) u = u*u*(3-2*u);
-        var A = WPTS[i], B = WPTS[i+1];
-        return [lerp(A[0],B[0],u), lerp(A[1],B[1],u), lerp(A[2],B[2],u)];
+  // 环上掠过的真几何：torus knot（单枚暖琥珀）
+  var knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(CONTENT.KNOT.r, CONTENT.KNOT.r * 0.30, 128, 16),
+    new THREE.MeshStandardMaterial({ color:0xE8A33D, metalness:0.5, roughness:0.30, emissive:0x2A1A05 })
+  );
+  knot.position.set(CONTENT.KNOT.pos[0], CONTENT.KNOT.pos[1], CONTENT.KNOT.pos[2]);
+  scene.add(knot);
+
+  // 文字绕柱
+  var cyl = new THREE.Mesh(
+    new THREE.CylinderGeometry(CONTENT.CYL.r, CONTENT.CYL.r, CONTENT.CYL.h, 96, 1, true),
+    new THREE.MeshBasicMaterial({ map:texCYL, side:THREE.FrontSide, fog:true })
+  );
+  cyl.position.set(CONTENT.CYL.pos[0], CONTENT.CYL.pos[1], CONTENT.CYL.pos[2]);
+  scene.add(cyl);
+
+  // 背景渐变大面片
+  var glow = new THREE.Mesh(
+    new THREE.PlaneGeometry(CONTENT.GLOW.w, CONTENT.GLOW.h),
+    new THREE.MeshBasicMaterial({ map:texGLOW, fog:true })
+  );
+  glow.position.set(CONTENT.GLOW.pos[0], CONTENT.GLOW.pos[1], CONTENT.GLOW.pos[2]);
+  scene.add(glow);
+
+  /* =====================================================================
+     左窗格覆盖层（只在编辑视图可见）：网格 + 虚线航线 + 路径点 + CameraHelper
+     ===================================================================== */
+  var overlay = new THREE.Group();
+  scene.add(overlay);
+
+  var grid = new THREE.GridHelper(8000, 40, 0x333B48, 0x1D232B);
+  grid.position.set(-120, -320, -1300);
+  overlay.add(grid);
+
+  var route = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(POSES.map(function(p){ return v3(p.p); })),
+    new THREE.LineDashedMaterial({ color:ACCENT, dashSize:34, gapSize:22, transparent:true, opacity:0.9 })
+  );
+  route.computeLineDistances();
+  overlay.add(route);
+
+  var ptGeo   = new THREE.OctahedronGeometry(34, 0);
+  var ptWire  = new THREE.MeshBasicMaterial({ color:0x7A6335, wireframe:true });
+  var ptSolid = new THREE.MeshBasicMaterial({ color:ACCENT });
+  var routePts = [], routeNums = [];
+  for (var k = 1; k < POSES.length; k++){
+    var pm = new THREE.Mesh(ptGeo, ptWire);
+    pm.position.copy(v3(POSES[k].p));
+    overlay.add(pm); routePts.push(pm);
+
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:texNum(k-1), transparent:true, depthTest:false, opacity:0.5 }));
+    sp.position.set(POSES[k].p[0], POSES[k].p[1] + 92, POSES[k].p[2]);
+    sp.scale.set(104, 78, 1);
+    overlay.add(sp); routeNums.push(sp);
+  }
+
+  // 成片机位（透视）
+  var shotCam = new THREE.PerspectiveCamera(FOV, 1, 1, 9000);
+  // 编辑视图里的黄视锥：真 CameraHelper，只是把 near/far 收窄成「一台相机」的形状
+  var helper = new THREE.CameraHelper(shotCam);
+  helper.setColors(
+    new THREE.Color(ACCENT),
+    new THREE.Color(0xC98A32),
+    new THREE.Color(ACCENT),
+    new THREE.Color(0xF2EEE7),
+    new THREE.Color(0x2A2F37)
+  );
+  overlay.add(helper);
+  var HELPER_NEAR = 8, HELPER_FAR = 620;
+
+  // 编辑视图机位（正交俯视）
+  var rigCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 10, 30000);
+  var RIG_EYE = [1800, 4200, 2000];
+  var RIG_AT  = [-350, 0, -1400];
+  var RIG_FIT = ["MOTION","GRAPHICS","UIPANEL","RING","KNOT","CYL"];
+
+  function fitRigCamera(paneW, paneH){
+    rigCam.position.set(RIG_EYE[0], RIG_EYE[1], RIG_EYE[2]);
+    rigCam.up.set(0, 1, 0);
+    rigCam.lookAt(v3(RIG_AT));
+    rigCam.updateMatrixWorld(true);
+
+    var inv = new THREE.Matrix4().copy(rigCam.matrixWorld).invert();
+    var tmp = new THREE.Vector3();
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    var anchors = POSES.map(function(p){ return p.p; })
+      .concat(RIG_FIT.map(function(k){ return CONTENT[k].pos; }));
+    // 视锥（CameraHelper）的远平面四角也算进来，否则最后一站的锥体会顶出画面
+    var HW = Math.tan(FOV/2*DEG) * (paneW/paneH) * HELPER_FAR;
+    var HH = Math.tan(FOV/2*DEG) * HELPER_FAR;
+    POSES.forEach(function(pose){
+      var p = v3(pose.p), dir = v3(pose.lookAt).sub(p).normalize();
+      var right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0)).normalize();
+      var up2 = new THREE.Vector3().crossVectors(right, dir).normalize();
+      [-1,1].forEach(function(sx){
+        [-1,1].forEach(function(sy){
+          anchors.push(p.clone()
+            .add(dir.clone().multiplyScalar(HELPER_FAR))
+            .add(right.clone().multiplyScalar(sx*HW))
+            .add(up2.clone().multiplyScalar(sy*HH))
+            .toArray());
+        });
+      });
+    });
+    anchors.forEach(function(a){
+      tmp.set(a[0], a[1], a[2]).applyMatrix4(inv);
+      minX = Math.min(minX, tmp.x); maxX = Math.max(maxX, tmp.x);
+      minY = Math.min(minY, tmp.y); maxY = Math.max(maxY, tmp.y);
+    });
+    var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    var halfW = (maxX - minX) / 2 * 1.02 + 55;
+    var halfH = (maxY - minY) / 2 * 1.02 + 55;
+    var aspect = paneW / paneH;
+    if (halfW / aspect > halfH) halfH = halfW / aspect; else halfW = halfH * aspect;
+
+    rigCam.left = -halfW; rigCam.right = halfW;
+    rigCam.top  =  halfH; rigCam.bottom = -halfH;
+    rigCam.near = 10; rigCam.far = 30000;
+    rigCam.updateProjectionMatrix();
+
+    // 平移机位把 bbox 摆到画面中心（朝向不变，所以一次就够）
+    var right = new THREE.Vector3().setFromMatrixColumn(rigCam.matrixWorld, 0);
+    var up    = new THREE.Vector3().setFromMatrixColumn(rigCam.matrixWorld, 1);
+    rigCam.position.add(right.multiplyScalar(cx)).add(up.multiplyScalar(cy));
+    rigCam.updateMatrixWorld(true);
+  }
+
+  /* =====================================================================
+     相机运动（POV 铸镜头）：t 的纯函数
+     ===================================================================== */
+  function panEase(s){ return smooth(clamp((s - PAN_A) / (PAN_B - PAN_A), 0, 1)); }
+  function camAt(t){
+    for (var i = 0; i < SEGS.length; i++){
+      var a = TI[i], b = TI[i+1];
+      if (t <= b + 1e-9 || i === SEGS.length - 1){
+        var u = clamp((t - a) / (b - a), 0, 1);
+        var s = smooth(u), e = panEase(s);
+        var A = POSES[i], B = POSES[i+1];
+        return {
+          pos:  [lerp(A.p[0],B.p[0],s), lerp(A.p[1],B.p[1],s), lerp(A.p[2],B.p[2],s)],
+          look: [lerp(A.lookAt[0],B.lookAt[0],e), lerp(A.lookAt[1],B.lookAt[1],e), lerp(A.lookAt[2],B.lookAt[2],e)],
+          i:i, u:u, s:s, e:e
+        };
       }
-      a += w;
     }
-    return WPTS[WPTS.length-1].slice();
   }
 
-  /* —— 右窗格投影（与 CSS perspective 同式） —— */
-  var paneW = 720, paneH = 760;
-  function measure(){
-    var r = flight.getBoundingClientRect();
-    paneW = r.width; paneH = r.height;
-  }
-  window.addEventListener("resize", measure);
-  measure();
+  /* =====================================================================
+     render(t)：两窗格 + 时间轴，一个 t
+     ===================================================================== */
+  var paneW = 1, paneH = 1;
 
-  function rproj(wx,wy,wz,cam){
-    var zp = wz - cam[2];
-    var den = PERSP - zp;
-    if (den < 80) return null;
-    var k = PERSP/den;
-    return [paneW/2 + (wx-cam[0])*k, paneH/2 + (wy-cam[1])*k, k];
-  }
+  function render(t){
+    var c = camAt(t);
 
-  /* —— 渲染 —— */
-  var sky = $("#sky");
-  function render(tt){
-    measure();                      // 每帧重取窗格尺寸，红绳投影与 CSS 3D 中心严格对齐
-    var cam = camAt(tt);
-    var eyeZ = cam[2] + PERSP;
+    // 成片机位：位置 + 朝向每帧重算（scrub 精确，不用累积动画）
+    shotCam.position.set(c.pos[0], c.pos[1], c.pos[2]);
+    shotCam.lookAt(c.look[0], c.look[1], c.look[2]);
 
-    scene.style.transform = "translate3d(" + (-cam[0]) + "px," + (-cam[1]) + "px," + (-cam[2]) + "px)";
-    sky.style.opacity = clamp((tt - 0.8)/0.18, 0, 1).toFixed(3);
-
-    CARDS.forEach(function(c){
-      var zp = c.z - cam[2];
-      if (zp > FADE_END || zp < -PERSP*6){
-        c.el.style.visibility = "hidden";
-        return;
-      }
-      c.el.style.visibility = "visible";
-      var op = zp <= FADE_START ? 1 : 1 - (zp - FADE_START)/(FADE_END - FADE_START);
-      c.el.style.opacity = op.toFixed(3);
-      var dist = PERSP - zp;                       // 眼到卡距离
-      var tiltF = clamp((dist - 650)/750, 0, 1);   // 远处倾斜飞入，临近摆正
-      var dir = (c.x + c.y) >= 0 ? -1 : 1;
-      var ryv = c.ry + dir*tiltF*11;
-      var rxv = -6*tiltF;
-      c.el.style.transform = "translate3d(" + c.x + "px," + c.y + "px," + c.z + "px) rotateY(" + ryv.toFixed(2) + "deg) rotateX(" + rxv.toFixed(2) + "deg)" +
-        (c.rz ? " rotate(" + c.rz + "deg)" : "");
-      if (c.typed){
-        var n = Math.floor(clamp((tt - TYPE_START)/(TYPE_END - TYPE_START), 0, 1) * NOTE_TEXT.length + 0.0001);
-        var done = n >= NOTE_TEXT.length;
-        c.typedEl.innerHTML = NOTE_TEXT.slice(0, n) + (done ? "" : '<span class="caret"></span>');
-      }
-    });
-
-    CHIPS.forEach(function(ch){
-      var zp = ch.z - cam[2];
-      if (zp > FADE_END || zp < -PERSP*6){ ch.el.style.visibility = "hidden"; return; }
-      ch.el.style.visibility = "visible";
-      ch.el.style.opacity = (zp <= FADE_START ? 1 : 1 - (zp - FADE_START)/(FADE_END - FADE_START)).toFixed(3);
-      ch.el.style.transform = "translate3d(" + ch.x + "px," + ch.y + "px," + ch.z + "px)";
-    });
-
-    STRINGS.forEach(function(s, i){
-      var p1 = rproj(s.a[0], s.a[1], s.a[2], cam);
-      var p2 = rproj(s.b[0], s.b[1], s.b[2], cam);
-      var el = stringEls[i];
-      // 太远（k 小）或太近（将掠过）时不画，避免浮空短线
-      var kOk = function(p){ return p && p[2] > 0.55 && p[2] < 1.85; };
-      if (!kOk(p1) || !kOk(p2)){ el.style.display = "none"; return; }
-      el.style.display = "";
-      el.setAttribute("x1", p1[0].toFixed(1)); el.setAttribute("y1", p1[1].toFixed(1));
-      el.setAttribute("x2", p2[0].toFixed(1)); el.setAttribute("y2", p2[1].toFixed(1));
-    });
-
-    renderRig(cam);
-    renderTimeline(tt);
-  }
-
-  /* —— 左窗格 rig —— */
-  function renderRig(cam){
-    var apex = eproj(cam[0], cam[1], cam[2]);
-    var FL = 560, FW = 310, FH = 190;
-    var base = [
-      eproj(cam[0]-FW, cam[1]-FH, cam[2]-FL),
-      eproj(cam[0]+FW, cam[1]-FH, cam[2]-FL),
-      eproj(cam[0]+FW, cam[1]+FH, cam[2]-FL),
-      eproj(cam[0]-FW, cam[1]+FH, cam[2]-FL)
-    ];
-    for (var i=0;i<4;i++){
-      frLines[i].setAttribute("x1", apex[0]); frLines[i].setAttribute("y1", apex[1]);
-      frLines[i].setAttribute("x2", base[i][0]); frLines[i].setAttribute("y2", base[i][1]);
+    // 内容里的动作也全是 t 的纯函数
+    ringGroup.rotation.z = -0.5 - t * 0.9;
+    for (var i = 0; i < ringBoxes.length; i++){
+      ringBoxes[i].rotation.set(0.5 + t*1.7 + i*0.52, 0.4 + t*1.3 + i*0.31, 0);
+      ringBoxesInner[i].rotation.set(-0.4 - t*1.9 - i*0.41, 0.3 + t*1.1 + i*0.37, 0);
     }
-    frFace.setAttribute("points", poly(base));
-    // 对角线（源片正面有交叉线）
-    frLines[4].setAttribute("x1", base[0][0]); frLines[4].setAttribute("y1", base[0][1]);
-    frLines[4].setAttribute("x2", base[2][0]); frLines[4].setAttribute("y2", base[2][1]);
-    frLines[5].setAttribute("x1", base[1][0]); frLines[5].setAttribute("y1", base[1][1]);
-    frLines[5].setAttribute("x2", base[3][0]); frLines[5].setAttribute("y2", base[3][1]);
+    knot.rotation.set(0.6 + t*1.2, 0.2 + t*1.7, 0.1);
+    cyl.rotation.y = -0.9 + t*1.6;
 
-    // 朝向小三角：正面顶边中点，指向飞行方向
-    var topMid = eproj(cam[0], cam[1]-FH, cam[2]-FL);
-    var bcx = (base[0][0]+base[1][0]+base[2][0]+base[3][0])/4;
-    var bcy = (base[0][1]+base[1][1]+base[2][1]+base[3][1])/4;
-    var dx = bcx-apex[0], dy = bcy-apex[1];
-    var dl = Math.hypot(dx,dy) || 1; dx/=dl; dy/=dl;
-    var px = -dy, py = dx;
-    frTri.setAttribute("points",
-      (topMid[0]+dx*16).toFixed(1)+","+(topMid[1]+dy*16).toFixed(1)+" "+
-      (topMid[0]+px*9).toFixed(1)+","+(topMid[1]+py*9).toFixed(1)+" "+
-      (topMid[0]-px*9).toFixed(1)+","+(topMid[1]-py*9).toFixed(1));
+    // 路径点点火（第 i 枚 = 第 i+1 站的到达时刻）
+    for (var j = 0; j < routePts.length; j++){
+      var lit = t >= TI[j+1] - 1e-6;
+      routePts[j].material = lit ? ptSolid : ptWire;
+      routeNums[j].material.opacity = lit ? 0.95 : 0.45;
+    }
 
-    frBody.setAttribute("points", hexPts(apex[0], apex[1], 10));
+    // —— 左窗格：编辑视图（同一 scene，换正交机位 + 打开覆盖层） ——
+    // 雾按相机深度算：正交俯视机位离场 5–6k，不摘雾会把整场烤成背景色
+    FOG.near = 1e6; FOG.far = 2e6;
+    glow.material.color.setScalar(0.30);   // 编辑器视图里把背景大面片压暗，别抢航线
+    overlay.visible = true;
+    shotCam.near = HELPER_NEAR; shotCam.far = HELPER_FAR;
+    shotCam.updateProjectionMatrix();
+    helper.update();
+    renderer.setClearColor(RIG_BG, 1);
+    renderer.setViewport(0, 0, paneW, paneH);
+    renderer.setScissor(0, 0, paneW, paneH);
+    renderer.render(scene, rigCam);
 
-    wptEls.forEach(function(el, i){
-      var passed = t >= TI[i] - 0.001;
-      el.setAttribute("fill", passed ? "#f2e33a" : "none");
-    });
+    // —— 右窗格：成片 ——
+    FOG.near = 1500; FOG.far = 6500;
+    glow.material.color.setScalar(1);
+    overlay.visible = false;
+    shotCam.near = 1; shotCam.far = 9000;
+    shotCam.updateProjectionMatrix();
+    renderer.setClearColor(BG, 1);
+    renderer.setViewport(paneW, 0, paneW, paneH);
+    renderer.setScissor(paneW, 0, paneW, paneH);
+    renderer.render(scene, shotCam);
+
+    timelineSync(t);
+    dirty = false;
   }
 
-  /* —— 时间轴 —— */
-  var track = $("#track"), fill = $("#fill"), head = $("#head");
-  var tcNow = $("#tc-now");
-  TI.forEach(function(tt){
+  /* =====================================================================
+     尺寸
+     ===================================================================== */
+  var stageW = 1, stageH = 1;
+  function resize(){
+    var panes = $("#panes");
+    var r = panes.getBoundingClientRect();
+    stageW = Math.max(2, Math.round(r.width));
+    stageH = Math.max(2, Math.round(r.height));
+    paneW = Math.round(stageW / 2);
+    paneH = stageH;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(stageW, stageH, false);
+    shotCam.aspect = paneW / paneH;
+    shotCam.updateProjectionMatrix();
+    fitRigCamera(paneW, paneH);
+    dirty = true;
+  }
+  window.addEventListener("resize", resize);
+
+  /* =====================================================================
+     时间轴（沿用 v1 骨架）
+     ===================================================================== */
+  var track = $("#track"), fill = $("#fill"), head = $("#head"), tcNow = $("#tc-now");
+  TI.forEach(function(tt, i){
     var b = document.createElement("button");
-    b.className = "dia"; b.style.left = (tt*100) + "%";
-    b.setAttribute("aria-label", "跳到 " + Math.round(tt*100) + "%");
+    b.className = "dia"; b.style.left = (tt * 100) + "%";
+    b.setAttribute("aria-label", i === 0 ? "回到起点" : ("跳到" + POSES[i].name));
     b.addEventListener("click", function(ev){
       ev.stopPropagation();
-      t = tt; ended = false; setEnded(false);
-      render(t);
+      t = tt; ended = false; setEnded(false); render(t);
     });
     track.appendChild(b);
   });
@@ -630,37 +755,58 @@
     var s = tt * DURATION;
     return "0:" + (s < 10 ? "0" : "") + s.toFixed(1);
   }
-  function renderTimeline(tt){
-    fill.style.width = (tt*100) + "%";
-    head.style.left = (tt*100) + "%";
+  function timelineSync(tt){
+    fill.style.width = (tt * 100) + "%";
+    head.style.left = (tt * 100) + "%";
     tcNow.textContent = fmt(tt);
-    dias.forEach(function(d, i){
-      d.classList.toggle("passed", tt >= TI[i] - 0.001);
-    });
+    track.setAttribute("aria-valuenow", Math.round(tt * 100));
+    dias.forEach(function(d, i){ d.classList.toggle("passed", tt >= TI[i] - 1e-6); });
   }
+
+  /* =====================================================================
+     状态 / 播放 / 拖拽 / 定帧
+     ===================================================================== */
+  var t = 0, playing = false, ended = false, dragging = false, wasPlaying = false, dirty = true;
+  var RM = (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var DEMO = null;
+  try {
+    var q = new URLSearchParams(location.search);
+    if (q.get("rm") === "1") RM = true;                       // 无头自检用：?rm=1 等价 prefers-reduced-motion
+    var dv = q.get("demo");
+    if (dv != null){
+      var nested = new URLSearchParams(dv.indexOf("=") >= 0 ? dv : ("progress=" + dv));
+      var pv = nested.get("progress") != null ? nested.get("progress") : q.get("progress");
+      if (pv != null && isFinite(parseFloat(pv))) DEMO = clamp(parseFloat(pv), 0, 1);
+    } else {
+      var pv2 = q.get("progress");
+      if (pv2 != null && isFinite(parseFloat(pv2))) DEMO = clamp(parseFloat(pv2), 0, 1);
+    }
+  } catch(e){ DEMO = null; }
 
   function setEnded(v){
     ended = v;
-    $("#replay").hidden = !v;
-    $("#icon-play").style.display = (v || playing) ? "none" : "";
+    var rp = $("#replay"); if (rp) rp.hidden = !v;
+    $("#icon-play").style.display  = (v || playing) ? "none" : "";
     $("#icon-pause").style.display = (!v && playing) ? "" : "none";
-    $("#icon-re").style.display = v ? "" : "none";
+    $("#icon-re").style.display    = v ? "" : "none";
   }
 
   var playbtn = $("#playbtn");
   playbtn.addEventListener("click", function(){
     if (RM) return;
-    if (ended){ t = 0; setEnded(false); playing = true; setEnded(false); render(t); return; }
+    if (ended){ t = 0; ended = false; playing = true; setEnded(false); render(t); return; }
     playing = !playing;
     setEnded(false);
   });
+
   $("#replay").addEventListener("click", function(){
+    if (RM) return;
     t = 0; playing = true; setEnded(false); render(t);
   });
 
   function seekFromEvent(e){
     var r = track.getBoundingClientRect();
-    t = clamp((e.clientX - r.left)/r.width, 0, 1);
+    t = clamp((e.clientX - r.left) / r.width, 0, 1);
     if (ended && t < 1) setEnded(false);
     render(t);
   }
@@ -671,37 +817,67 @@
     seekFromEvent(e);
   });
   track.addEventListener("pointermove", function(e){ if (dragging) seekFromEvent(e); });
-  track.addEventListener("pointerup", function(e){
+  track.addEventListener("pointerup", function(){
     if (!dragging) return;
     dragging = false;
     if (wasPlaying && !ended && !RM) playing = true;
     setEnded(ended);
   });
-  var wasPlaying = false;
+  track.addEventListener("keydown", function(e){
+    var step = e.shiftKey ? 0.05 : 0.01;
+    if (e.key === "ArrowLeft")       t = clamp(t - step, 0, 1);
+    else if (e.key === "ArrowRight") t = clamp(t + step, 0, 1);
+    else if (e.key === "Home")       t = 0;
+    else if (e.key === "End")        t = 1;
+    else return;
+    e.preventDefault();
+    if (ended && t < 1) setEnded(false);
+    render(t);
+  });
 
-  /* —— 启动 —— */
+  // 页尾「可拆」
+  var kej = $("#kej"), notes = $("#notes");
+  kej.addEventListener("click", function(){
+    notes.hidden = !notes.hidden;
+    kej.setAttribute("aria-expanded", notes.hidden ? "false" : "true");
+  });
+  if (/^#(notes|part-)/.test(location.hash)){
+    notes.hidden = false;
+    kej.setAttribute("aria-expanded", "true");
+    var hit = document.getElementById(location.hash.slice(1));
+    if (hit) setTimeout(function(){ hit.scrollIntoView({ block:"nearest" }); }, 0);
+  }
+
+  /* =====================================================================
+     启动
+     ===================================================================== */
+  resize();
+
   if (DEMO != null){
     t = DEMO; playing = false;
-    (function dloop(){ render(t); requestAnimationFrame(dloop); })(); // 定帧循环重渲染（render 为 t 的纯函数），供无头截图
+    (function dloop(){ render(t); requestAnimationFrame(dloop); })();  // 定帧循环重渲染，供无头截图
     return;
   }
   if (RM){
-    t = 1; playing = false;         // 终帧布局，无自动运镜
+    t = 1; playing = false;                    // 终帧，无自动运镜
     setEnded(false);
     render(t);
   } else {
-    playing = true;
+    t = 0; playing = true;
     setEnded(false);
     render(t);
   }
+
   var last = performance.now();
   function loop(now){
+    var dt = (now - last) / 1000; last = now;
     if (playing && !dragging){
-      t += (now - last)/1000/DURATION;
+      t += dt / DURATION;
       if (t >= 1){ t = 1; playing = false; setEnded(true); }
       render(t);
+    } else if (dirty){
+      render(t);
     }
-    last = now;
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);

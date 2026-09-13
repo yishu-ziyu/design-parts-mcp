@@ -65,19 +65,46 @@ function main() {
 
   // 重建 living/
   fs.rmSync(path.join(DST, "living"), { recursive: true, force: true });
+  // 笔记目录里可分离的私有/过程文件：不入快照
+  const SKIP = new Set(["CONTRACT.md", "lessons.md", "_source"]);
   let copied = 0;
   let readmes = 0;
+  let assets = 0;
   for (const note of notes) {
+    const srcNote = path.join(srcLiving, note);
     const dstNote = path.join(DST, "living", note);
     fs.mkdirSync(dstNote, { recursive: true });
-    fs.copyFileSync(path.join(srcLiving, note, "index.html"), path.join(dstNote, "index.html"));
-    copied++;
-    const readme = path.join(srcLiving, note, "README.md");
-    if (fs.existsSync(readme)) {
-      if (copySanitized(readme, path.join(dstNote, "README.md"), `living/${note}/README.md`)) readmes++;
+    for (const entry of fs.readdirSync(srcNote, { withFileTypes: true })) {
+      if (SKIP.has(entry.name)) continue;
+      const src = path.join(srcNote, entry.name);
+      const dst = path.join(dstNote, entry.name);
+      if (entry.isDirectory()) {
+        // 资源目录（vendor/、fonts/ 等）整体拷入，保证 file:// 直开零网络
+        fs.cpSync(src, dst, { recursive: true });
+        assets++;
+        continue;
+      }
+      if (entry.name === "index.html") {
+        fs.copyFileSync(src, dst);
+        copied++;
+        continue;
+      }
+      if (entry.name === "README.md") {
+        if (copySanitized(src, dst, `living/${note}/README.md`)) readmes++;
+        continue;
+      }
+      // 其他散文件（图片、额外 html）：按扩展名判断——文本走 sanitize，二进制直接拷
+      const TEXT_EXT = new Set([".md", ".html", ".css", ".js", ".mjs", ".json", ".svg", ".txt"]);
+      const isText = TEXT_EXT.has(path.extname(entry.name).toLowerCase());
+      if (isText) {
+        if (copySanitized(src, dst, `living/${note}/${entry.name}`)) assets++;
+      } else {
+        fs.copyFileSync(src, dst);
+        assets++;
+      }
     }
   }
-  console.error(`[sync] 已拷贝 ${copied} 篇 index.html，${readmes} 篇 README.md`);
+  console.error(`[sync] 已拷贝 ${copied} 篇 index.html，${readmes} 篇 README.md，${assets} 个资源文件/目录`);
 
   // 重建 INDEX.md：用真源解析器过滤（外部链接/死链行自动剔除），链接改写为 living/ 前缀
   const parsed = parseIndex(source);

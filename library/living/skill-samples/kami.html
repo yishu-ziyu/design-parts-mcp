@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!-- ==================================================================
+     ONE-PAGER TEMPLATE · parchment design system
+     单页 A4 方案/报告/执行摘要
+     改完跑：python3 -c "from weasyprint import HTML; HTML('one-pager.html').write_pdf('out.pdf')"
+     目标：页数必须 == 1
+     ================================================================== -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>保留有用的技能</title>
+<meta name="author" content="技能体验样张">
+<meta name="description" content="先体验四种技能，再决定哪些需要常驻。">
+<meta name="keywords" content="技能,排版,交互,原型">
+<meta name="generator" content="Kami">
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 18mm 15mm 18mm;
+    background: #f5f4ed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --parchment: #f5f4ed;
+    --ivory:     #faf9f5;
+    --near-black:#141413;
+    --dark-warm: #3d3d3a;
+    --olive:     #504e49;
+    --stone:     #6b6a64;
+    --brand:     #1B365D;
+    --border:    #e8e6dc;
+    --border-soft:#e5e3d8;
+    --tag-bg:    #E4ECF5;
+    --serif: "TsangerJinKai02", "Source Han Serif SC", "Source Han Serif CN", "Noto Serif CJK SC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif;
+    --sans: var(--serif);
+  }
+
+  html, body { background: var(--parchment); }
+
+  @media screen {
+    body { max-width: 210mm; margin: 0 auto; padding: 15mm 18mm; }
+  }
+
+  body {
+    color: var(--near-black);
+    font-family: var(--serif);
+    font-size: 10pt;
+    line-height: 1.45;
+    letter-spacing: 0.3pt;
+  }
+
+  .serif {
+    font-family: var(--serif);
+  }
+
+  /* ========== HEADER ========== */
+  .header {
+    margin-bottom: 16pt;
+    padding-bottom: 12pt;
+    border-bottom: 0.5pt solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20pt;
+  }
+  .title-block {
+    flex: 1;
+  }
+  .eyebrow {
+    font-size: 9pt;
+    color: var(--brand);
+    letter-spacing: 1.5pt;
+    text-transform: uppercase;
+    margin-bottom: 7pt;
+    font-weight: 500;
+  }
+  /* CN locale tuning: TsangerJinKai glyphs are wider per character, so H1 sits
+     slightly smaller (24pt vs EN 26pt) with looser leading (1.15 vs EN 1.12)
+     to keep optical density aligned across the two locales. */
+  h1 {
+    font-family: var(--serif);
+    font-size: 24pt;
+    font-weight: 500;
+    color: var(--near-black);
+    line-height: 1.15;
+    margin-bottom: 5pt;
+  }
+  .subtitle {
+    font-size: 11pt;
+    color: var(--olive);
+    line-height: 1.4;
+  }
+  .meta {
+    font-size: 9pt;
+    color: var(--stone);
+    text-align: right;
+    line-height: 1.45;
+    white-space: nowrap;
+  }
+  /* 品牌 logo 槽(可选,来自 brand profile;默认无 logo,样式仅在取消注释后生效)。 */
+  .brand-logo {
+    height: 44px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    align-self: flex-start;
+  }
+
+  /* ========== METRICS ========== */
+  /* 横向 baseline 布局 - -  和 resume.html 一致的 kami native 姿态。
+     背景透明、无边框，用 typography 本身承担层次，不加容器。 */
+  .metrics {
+    display: flex;
+    gap: 14pt;
+    margin-bottom: 18pt;
+    padding: 4pt 0 6pt 0;
+    border-bottom: 0.3pt dotted var(--border);
+  }
+  .metric {
+    flex: 1;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 4pt;
+    break-inside: avoid;
+  }
+  .metric-value {
+    font-family: var(--serif);
+    font-size: 20pt;
+    font-weight: 500;
+    color: var(--brand);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    letter-spacing: -0.2pt;
+  }
+  .metric-label {
+    font-size: 9pt;
+    color: var(--olive);
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  /* ========== SECTIONS ========== */
+  /* PRODUCT SHOT (optional) - one real screenshot as the page's visual anchor.
+     Uncomment the <figure> in the body, point src at a local image, and tune
+     .frame height to fill the page. object-fit trims dead margin, not the window. */
+  .product-shot { margin-bottom: 16pt; break-inside: avoid; }
+  .product-shot .frame {
+    height: 110mm;
+    overflow: hidden;
+    border-radius: 5pt;
+    box-shadow: 0 1.5pt 6pt rgba(20, 20, 19, 0.16);
+  }
+  .product-shot .frame img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center; display: block;
+  }
+  .product-shot figcaption {
+    margin-top: 7pt; font-size: 8.5pt;
+    color: var(--stone); line-height: 1.45; text-align: center;
+  }
+  .product-shot figcaption .hl { color: var(--brand); font-weight: 500; }
+
+  section { margin-bottom: 18pt; break-inside: avoid; }
+  section:last-of-type { margin-bottom: 0; }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 16pt;
+    font-weight: 500;
+    color: var(--near-black);
+    margin-bottom: 6pt;
+  }
+  h2 .sub {
+    font-size: 9pt;
+    color: var(--stone);
+    font-weight: 400;
+    margin-left: 6pt;
+  }
+
+  p { margin-bottom: 6pt; line-height: 1.45; }
+  p:last-child { margin-bottom: 0; }
+
+  .lead {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: var(--dark-warm);
+    margin-bottom: 14pt;
+  }
+
+  .hl { color: var(--brand); font-weight: 500; }
+
+  /* ========== 2-column grid ========== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18pt;
+  }
+
+  /* ========== 短横线 list（代替默认 bullet） ========== */
+  ul.dash {
+    margin: 0;
+    padding-left: 16pt;
+  }
+  ul.dash li {
+    margin-bottom: 5pt;
+    line-height: 1.45;
+  }
+  ul.dash li:last-child { margin-bottom: 0; }
+  ul.dash li::marker { color: var(--brand); }
+
+  /* ========== Timeline (横向进度点) ========== */
+  .timeline {
+    display: flex;
+    gap: 12pt;
+    margin-top: 6pt;
+  }
+  .tl-step {
+    flex: 1;
+    break-inside: avoid;
+  }
+  .tl-year {
+    font-family: var(--serif);
+    font-size: 11pt;
+    font-weight: 500;
+    color: var(--brand);
+    margin-bottom: 2pt;
+  }
+  .tl-head {
+    font-size: 10pt;
+    font-weight: 500;
+    color: var(--near-black);
+    margin-bottom: 2pt;
+  }
+  .tl-body {
+    font-size: 9pt;
+    color: var(--olive);
+    line-height: 1.4;
+  }
+
+  /* ========== Tag ========== */
+  .tag {
+    display: inline-block;
+    background: var(--tag-bg);    /* 实色！不要 rgba */
+    color: var(--brand);
+    font-size: 9pt;
+    font-weight: 500;
+    padding: 1pt 5pt;
+    border-radius: 3pt;
+    letter-spacing: 0.3pt;
+    margin-right: 3pt;
+  }
+
+  /* ========== Callout / 高亮块 ========== */
+  /* 和 long-doc / equity-report 的 .callout 同形：ivory 填充与文字承担强调，
+     只有 padding 按各自密度收紧。 */
+  .callout {
+    background: var(--ivory);
+    border-radius: 3pt;
+    padding: 8pt 12pt;
+    margin: 10pt 0;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: var(--olive);
+    break-inside: avoid;
+  }
+  .callout .hl, .callout .em-brand { color: var(--brand); }
+
+  /* ========== TABLE (kami-table) ========== */
+  table, .kami-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin: 8pt 0;
+    break-inside: avoid;
+  }
+  table th, .kami-table th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--dark-warm);
+    padding: 5pt 6pt;
+    border-bottom: 0.6pt solid var(--border);
+    background: transparent;
+  }
+  table td, .kami-table td {
+    padding: 4pt 6pt;
+    border-bottom: 0.25pt solid var(--border);
+    vertical-align: top;
+  }
+  table.compact th, .kami-table.compact th { padding: 3pt 5pt; font-size: 8pt; }
+  table.compact td, .kami-table.compact td { padding: 2.5pt 5pt; font-size: 8pt; line-height: 1.4; }
+  table.financial td:not(:first-child), .kami-table.financial td:not(:first-child) {
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+  table.financial th:not(:first-child), .kami-table.financial th:not(:first-child) { text-align: right; }
+  table.striped tbody tr:nth-child(even) td, .kami-table.striped tbody tr:nth-child(even) td {
+    background: var(--ivory);
+  }
+  table .total td, .kami-table .total td {
+    font-weight: 500; border-top: 0.6pt solid var(--border); border-bottom: none; color: var(--near-black);
+  }
+
+  /* ========== FOOTER ========== */
+  .footer {
+    margin-top: 18pt;
+    padding-top: 6pt;
+    border-top: 0.3pt dotted var(--border);
+    font-size: 9pt;
+    color: var(--stone);
+    display: flex;
+    justify-content: space-between;
+    letter-spacing: 0.3pt;
+  }
+</style>
+</head>
+<body><div class="header"><div class="title-block"><div class="eyebrow">KAMI · 排版体验</div><h1>保留有用的技能</h1><div class="subtitle">先体验结果，再决定哪些需要常驻。</div></div><div class="meta">技能样张<br>2026.09.08<br>一页说明</div></div><div class="metrics"><div class="metric"><div class="metric-value">4</div><div class="metric-label">种技能体验</div></div><div class="metric"><div class="metric-value">3</div><div class="metric-label">种原型方向</div></div><div class="metric"><div class="metric-value">1</div><div class="metric-label">页排版成品</div></div></div><p class="lead">技能是否值得保留，要看它能否稳定产生你需要的结果。先用小任务体验交互、排版、方案比较与评审，再决定使用范围，能让配置取舍落在看得见的差别上。</p><section><h2>从结果判断用途</h2><ul class="dash"><li>apple-design 的示例是可拖动面板：观察跟手程度、松手回位，以及动作中途能否重新抓住。</li><li>prototype 为同一个阅读列表提供三种方向：紧凑列表、编辑精选和逐篇挑选；内容一致，布局和选择方式不同。</li><li>kami 用同一套纸色、字体层级与间距，把这份说明排成一页；这一页就是它的输出示例。</li><li>review-animations 对比一个菜单的修改前后，指出延迟、缩放起点和减少动态效果支持等具体问题。</li></ul></section><section><h2>你可以这样使用</h2><p>“用 kami 把这段方案排成一页，保留所有事实，给我看成品。”</p><p>适合短方案、简历和报告。先提供文字与真实材料，再选择文档类型。纸色和字体会形成统一风格，是否符合你的审美，需要看实际成品决定。</p></section><div class="callout">2026.09.08：四个技能均已体验并确认保留。此页作为 Kami 原模板的排版样张归档。</div><div class="footer"><span>示例内容 · 本地预览</span><a href="index.html">返回体验目录</a></div></body></html>

@@ -35,10 +35,10 @@
 | [handword/index.html](living/handword/index.html) | 印刷体里塞三个荧光手写词，关掉蒙版露出绿矩形 | 正文里的手写重音、个人站批注感、马克笔语义高亮 |
 | [orbit/index.html](living/orbit/index.html) | 滚动拧表盘：33 个标签跟着环歪，吸附段停稳换页 | 作品集 / 产品线 / 章节导航，要浏览仪式感 |
 | [bento/index.html](living/bento/index.html) | 镜头在一块 bento 大画布上自己巡游，停在谁身上谁才动 | 产品落地页一屏讲多个能力、每张卡一段自己的时间轴。多卡分焦点仍按 creed 摆风景窗 |
-| [triage/index.html](living/triage/index.html) | 勾一行，批量工具条浮上来。三态复选、深色 tooltip、归档行折叠、计数递减 | 批量列表、先选后操作、核查队列。内容是 user-project 的待核查命题 |
+| [triage/index.html](living/triage/index.html) | v2 重做：lab01 黑舞台上一只 540 方框，框下一行 meta 标字体/图标/三色票（点击复制）。框里勾一行，操作条带「已选 N 项」浮上来；行 = 三态复选 + 来源头像点 + 命题 + 证据读数；j/k/x/esc 键盘路径 | 批量列表、先选后操作、核查队列。要 Geist Mono + 18px 双层图标的像素工艺密度就照这里。内容是 user-project 的待核查命题 |
 | [spine/index.html](living/spine/index.html) | 深色侧栏：点「任务」箭头弹簧旋开，悬停子项脊柱条弹到对应高度，点子项光点带辉光滑过去，每步一枚极轻合成音 | 树状子导航、当前项指示、要声音反馈的微交互。内容是奕枢。复刻 lab01.dev UI Experiment #09 |
-| [flycam/index.html](living/flycam/index.html) | 左边黄相机沿虚线飞进一面物件拼贴墙：简历、深圳明信片、面试日历，末帧停在「深圳见。」信封 | 一段旅程用实物物件讲完、运镜讲一条路、同一进度驱动两窗格。复刻 KM 运镜演示，内容是 job-journey |
-| [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam，零件沿用 [#rig](flycam/index.html#rig) / [#flight](flycam/index.html#flight) / [#timeline](flycam/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
+| [flycam/index.html](living/flycam/index.html) | 左边黄视锥相机沿虚线航线在一块合成上空走位（真 three.js：MOTION 卡、GRAPHICS 卡、UI 面板、cloner 环、文字绕柱），右边是它看见的画面，末帧停在文字绕柱 | 要真 three.js 栈的「看得见的相机」：CameraHelper 视锥 + 虚线航线 + 路径点点火 + POV 铸镜头 + 一个 renderer 两个窗格。**v2**：WebGL 真栈重做（v1 是 CSS 3D 近似、内容是求职物件，已废）；溯源 mo1（three.js WebGPU 演示）。CSS 3D 版标本走 [nightflight](nightflight/index.html) / [rig](rig/index.html) |
+| [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam 的 **v1 系（CSS 3D）**，零件沿用 [#rig](nightflight/index.html#rig) / [#flight](nightflight/index.html#flight) / [#timeline](nightflight/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
 | [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
 
 ## 零件
@@ -90,8 +90,12 @@
 
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
-| 三态复选框驱动全选 / 部分横线 / 全清 | [triage](living/triage/index.html#tri-state) | 主框 `indeterminate` 显示横线。点主框：有勾全清，无勾全选（源 lab01 `syncMainFromItems / onMainChange`） |
-| 勾选才浮现的批量操作条 | [triage](living/triage/index.html#toolbar) | 有勾 `display:flex` + 子项 40ms 错峰上升，全取消收回。动作按钮 hover 出 tooltip |
+| 黑舞台 + 540 方框 + 框下 meta | [triage](living/triage/index.html#frame-plate) | 黑底一格 68px 极淡网格。框下 meta：`UI EXPERIMENT · 批量选择`、字体/图标标注、三色票 #F6F8FC / #868FA0 / #202124 点击复制（亮色 tooltip 出十六进制）、右下外链箭头 |
+| 真字体本地化 / 不联网也有字 | [triage](living/triage/index.html#font-local) | Geist Mono woff2 落在 `fonts/`，@font-face 相对路径 + 可变字重 100–900；中文回退系统字体。打开零请求 |
+| 三态复选框驱动全选 / 部分横线 / 全清 | [triage](living/triage/index.html#tri-state) | 18px、圆角 4、白底 + 1px ring；checked = 灰底 + 内侧高光 + 描边对勾；`indeterminate` = 一横。点主框：有勾全清，无勾全选（源 `syncMainFromItems / onMainChange`） |
+| 勾选才浮现的批量操作条 | [triage](living/triage/index.html#toolbar) | 有勾 `display:flex` + 子项 40ms 错峰上升（源同名 reveal，0.4s spring），全取消收回。条内含「已选 N 项」mono 读数 |
+| 行结构 / hover 浅底 / 来源头像点 | [triage](living/triage/index.html#row) | 行 = 复选框 + 域名首字母圆点（颜色按域名稳定散列）+ 命题 + meta 读数；hover #E8EDF7 过渡，勾选反色 #202124 |
+| 键盘路径 / 焦点描边 | [triage](living/triage/index.html#keys) | j/k 移焦点行（1px 深色描边，越界夹住不丢焦点）、x 切勾选、esc 清空；焦点与鼠标点行、复选框自身走同一套状态更新函数 |
 | 深色 tooltip / 缩放淡入 | [triage](living/triage/index.html#tooltip) | 按钮的兄弟 span。`scale .95→1 + opacity`，origin bottom，180ms，非瞬跳 |
 | 行折叠归档 / 队列计数递减 | [triage](living/triage/index.html#archive-collapse) | 先量高再收到 0、右移淡出后摘节点；侧栏计数同步减。reduced-motion 直达 |
 | 状态片脉动 / 派发后呼吸 | [triage](living/triage/index.html#toolbar) | 点「派发核查」状态片变「排查中」+ 1.8s 呼吸。reduced-motion 无脉动 |
@@ -201,10 +205,15 @@
 
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
-| 可见相机 rig / 视锥沿航线走、过点实心 | [rig](living/rig/index.html#rig) | 整页就是编辑视图：斜投影线框视锥 + 正面交叉线 + 朝向三角 + 六边形机身；路径点 `t ≥ 到达时刻` 从空心变实心，站号 01–05、起点只作航线端点。两窗格完整版在 [flycam](flycam/index.html) / [nightflight](nightflight/index.html) |
-| 真 3D 透视飞行 / 相机推进反算卡片位移 | [flycam](living/flycam/index.html#flight) | 外层 `perspective:900px` + 场景 `preserve-3d`；卡世界坐标固定，场景整体 `translate3d(-cam)`；缓动是 t 的纯函数，scrub 天然与播放一致 |
-| 便利贴逐字 / 打字进度换算 | [flycam](living/flycam/index.html#typenote) | 字符数 = t 在打字窗口内线性映射；窗口必须套着卡片在画面里的时段 |
-| 双向时间轴 / 拖动同步两窗格 | [flycam](living/flycam/index.html#timeline) | rAF 推 t；进度条 pointerdown/move 拖动，菱形刻度点跳；两窗格 + 时间轴同吃一个 `render(t)` |
+| 真 three.js 接入 / file:// 直开 / 本地 vendor | [flycam](living/flycam/index.html#part-vendor) | `vendor/three.min.js` = r147 UMD（`npm pack three@0.147.0` 取 `build/three.min.js`），普通 `<script src>`；ES module 会被 CORS 拦。运行时零网络 |
+| 一个 renderer 两个窗格 / scissor 双遍 | [flycam](living/flycam/index.html#part-panes) | 一块 canvas 铺满两窗格，`setScissorTest(true)` + 每帧两次 `setViewport/setScissor/render`；雾按相机深度算，逐遍改 `FOG.near/far`（编辑视图抬到 1e6） |
+| CameraHelper 黄视锥 / 视锥沿航线走 | [flycam](living/flycam/index.html#rig) | 原生 `CameraHelper(shotCam)`：左窗格渲染时把 shotCam 的 near/far 收成 8/620（不然是根长针），`setColors()` 收成单一暖色。CSS 版对照在 [rig](rig/index.html) |
+| 虚线航线 / 路径点点火 / 站号 | [flycam](living/flycam/index.html#part-rig) | `Line` + `LineDashedMaterial` + `computeLineDistances()`；5 枚八面体 `t ≥ 到达时刻` 换 material；站号 01–05 是 Sprite |
+| POV 铸镜头 / 时间轴驱动相机 | [flycam](living/flycam/index.html#part-camrig) | 6 个体位（位置 + lookAt 目标）+ 段长；position 段内 smoothstep、lookAt 线性插值（前 62% 稳住看本站，62→82% 转头看下一站）；无 null、无 parenting、scrub 精确 |
+| CanvasTexture 排版卡 / 假 UI / 文字绕柱 | [flycam](living/flycam/index.html#part-cards) | 卡与柱面字都是 canvas 现画（衬线大字 + 等宽小字 + 琥珀），anisotropy 拉满；柱面用实底画布 + FrontSide |
+| 双向时间轴 / 拖动同步两窗格 | [flycam](living/flycam/index.html#timeline) | rAF 推 t；拖拽 scrub、菱形跳关键帧、`?demo=progress=X` 定帧、`?rm=1` 拍 reduced-motion 帧；两窗格 + 时间轴同吃一个 `render(t)`。CSS 版同款在 [nightflight#timeline](nightflight/index.html#timeline) |
+| 真 3D 透视飞行（CSS 3D 版）/ 相机推进反算卡片位移 | [nightflight](living/nightflight/index.html#flight) | v1 系做法：外层 `perspective:900px` + 场景 `preserve-3d`；卡世界坐标固定，场景整体 `translate3d(-cam)`；缓动是 t 的纯函数，scrub 天然与播放一致 |
+| 便利贴逐字 / 打字进度换算 | [nightflight](living/nightflight/index.html#typenote) | 字符数 = t 在打字窗口内线性映射；窗口必须套着卡片在画面里的时段 |
 
 ### 方法 / 网点
 
