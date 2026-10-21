@@ -40,6 +40,7 @@
 | [flycam/index.html](living/flycam/index.html) | 左边黄视锥相机沿虚线航线在一块合成上空走位（真 three.js：MOTION 卡、GRAPHICS 卡、UI 面板、cloner 环、文字绕柱），右边是它看见的画面，末帧停在文字绕柱 | 要真 three.js 栈的「看得见的相机」：CameraHelper 视锥 + 虚线航线 + 路径点点火 + POV 铸镜头 + 一个 renderer 两个窗格。**v2**：WebGL 真栈重做（v1 是 CSS 3D 近似、内容是求职物件，已废）；溯源 mo1（three.js WebGPU 演示）。CSS 3D 版标本走 [nightflight](nightflight/index.html) / [rig](rig/index.html) |
 | [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam 的 **v1 系（CSS 3D）**，零件沿用 [#rig](nightflight/index.html#rig) / [#flight](nightflight/index.html#flight) / [#timeline](nightflight/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
 | [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
+| [fork/index.html](living/fork/index.html) | 米白页上一句问话、两张线框卡。拨「留白」块往上收，拨「暗示」卡会浮起、亮箭头；红标尺读出间距 | onboarding 二选一、角色/方案选择页。要极简灰阶 + 一处手绘插画就照这里。复刻 Claude Console 选择页，内容换成 By-Your-Side |
 
 ## 零件
 
@@ -220,3 +221,12 @@
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
 | 陌生网址或截图要做成活笔记 | [stranger](living/stranger/index.html) | 先问四句。第一屏先活 |
+
+### 选择页 / onboarding / 二选一
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 二选一大卡 / 角色选择 / Individual vs Organization | [fork](living/fork/index.html#cards) | 304 × 259，1px 浅线，圆角 12。插画 → 标题 → 两行灰说明 |
+| 卡上的手绘线条插画 | [fork](living/fork/index.html#solo) | 72 方、1.8px 圆头描边、一块浅灰实心，feDisplacementMap 出手抖 |
+| logo 钉顶、内容块掉太低 | [fork](living/fork/index.html#block) | 拨「留白」。块顶 0.24 × 视口高，中心落在 46% |
+| 静止的卡看不出能点 | [fork](living/fork/index.html#team) | 拨「暗示」。描边加深、上浮 2px、右上箭头。选中变墨色线 |

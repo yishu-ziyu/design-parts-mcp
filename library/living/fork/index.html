@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>两张卡，一句问话</title>
+<style>
+  :root {
+    --bg: #fcfcfb;
+    --line: #e4e4e3;
+    --line-hover: #b9b8b4;
+    --ink: #0b0b0b;
+    --muted: #52514e;
+    --fill: #e8e7e3;
+    --paper: #f3f1ec;
+    --mark: #e2572b;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Tiempos Headline", Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+    --spring: cubic-bezier(.34, 1.4, .64, 1);
+    --ease: cubic-bezier(.25, .1, 0, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+  code { font: 12.5px ui-monospace, "SF Mono", Menlo, monospace; background: #e9e6df; padding: 1px 5px; border-radius: 4px; }
+
+  header.mast { max-width: 980px; margin: 0 auto; padding: 48px 16px 8px; text-align: center; }
+  .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  header.mast h1 { font: 400 clamp(26px, 4vw, 38px)/1.2 var(--serif); letter-spacing: -.02em; margin: 10px 0 6px; }
+  header.mast .sub { margin: 0; color: var(--muted); }
+
+  .studio { max-width: 1120px; margin: 24px auto 0; padding: 0 16px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+  .seg { display: inline-flex; align-items: center; gap: 8px; }
+  .seg .lab { letter-spacing: .08em; }
+  .seg .opts { display: inline-flex; border: 1px solid var(--ink); border-radius: 999px; overflow: hidden; }
+  .seg button { font: 500 12.5px var(--sans); border: 0; background: transparent; color: var(--ink); padding: 5px 12px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .seg button:focus-visible { outline: 2px solid var(--mark); outline-offset: -2px; }
+  label.check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+  #stage { position: relative; width: 100%; border: 1px solid var(--ink); background: var(--bg); overflow: hidden; }
+  #stage .viewport { position: absolute; left: 0; top: 0; width: 1200px; height: 757px; transform-origin: 0 0; }
+
+  /* ---- 复刻页本体，按 1200 × 757 的视口写死 ---- */
+  .page { position: absolute; inset: 0; background: var(--bg); color: var(--ink); }
+  .page .brand { position: absolute; top: 24px; left: 0; right: 0; text-align: center; font: 400 21px/1.2 var(--serif); letter-spacing: -.01em; }
+  .page .block { position: absolute; left: 0; right: 0; top: var(--block-top, 264px); text-align: center; transition: top .7s var(--ease); }
+  .page h2 { margin: 0; font: 500 21px/1.3 var(--sans); letter-spacing: -.01em; }
+  .page .lede { margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
+  .page .cards { display: flex; justify-content: center; gap: 22px; margin-top: 30px; }
+
+  .card {
+    all: unset; box-sizing: border-box;
+    width: 304px; height: 259px; padding: 48px 28px 0;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: relative;
+    transition: border-color .2s var(--ease), transform .35s var(--spring), box-shadow .3s var(--ease);
+  }
+  .card .art { width: 72px; height: 72px; display: block; }
+  .card .art .ink { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .card .art .tone { fill: var(--fill); stroke: var(--ink); stroke-width: 1.8; }
+  .card .art g.wob { transform-origin: 36px 36px; transition: transform .45s var(--spring); }
+  .card h3 { margin: 26px 0 0; font: 500 16px/1.3 var(--sans); }
+  .card p { margin: 8px 0 0; font-size: 13px; line-height: 18px; color: var(--muted); }
+  .card .go {
+    position: absolute; top: 14px; right: 14px; width: 22px; height: 22px;
+    opacity: 0; transform: translate(-4px, 4px);
+    transition: opacity .2s var(--ease), transform .3s var(--spring);
+  }
+  .card .go path { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* 修过：可点的暗示只在 hint=fixed 时出现，原版保持纹丝不动 */
+  .hint-fixed .card { cursor: pointer; }
+  .hint-fixed .card:hover, .hint-fixed .card.is-hover { border-color: var(--line-hover); transform: translateY(-2px); box-shadow: 0 6px 18px -10px rgba(11,11,11,.18); }
+  .hint-fixed .card:hover .go, .hint-fixed .card.is-hover .go { opacity: 1; transform: none; }
+  .hint-fixed .card:hover g.wob, .hint-fixed .card.is-hover g.wob { transform: rotate(-6deg) scale(1.04); }
+  .hint-fixed .card:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .hint-fixed .card[aria-checked="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 .5px var(--ink); }
+  .hint-fixed .card[aria-checked="true"] .go { opacity: 1; transform: none; }
+
+  /* 量间距的标注层 */
+  .measure { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s; }
+  .measure.on { opacity: 1; }
+  .measure .gap { position: absolute; left: 330px; width: 1px; background: var(--mark); transition: top .7s var(--ease), height .7s var(--ease); }
+  .measure .gap::before, .measure .gap::after { content: ""; position: absolute; left: -6px; width: 13px; height: 1px; background: var(--mark); }
+  .measure .gap::before { top: 0; } .measure .gap::after { bottom: 0; }
+  .measure .tag { position: absolute; left: 342px; font: 600 12px ui-monospace, Menlo, monospace; color: var(--mark); transition: top .7s var(--ease); white-space: nowrap; }
+  .measure .mid { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--mark); opacity: .55; }
+  .measure .mid span { position: absolute; right: 16px; top: -18px; font: 11px ui-monospace, Menlo, monospace; color: var(--mark); }
+  .measure .ctr { position: absolute; left: 860px; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--mark); transition: top .7s var(--ease); }
+  .measure .ctr span { position: absolute; left: 14px; top: -6px; font: 11px ui-monospace, Menlo, monospace; color: var(--mark); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page .block, .card, .card .go, .card .art g.wob, .measure .gap, .measure .tag, .measure .ctr { transition: none; }
+  }
+
+  .notes { max-width: 860px; margin: 0 auto; padding: 36px 16px 80px; }
+  .beats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .beats .n { font-size: 11px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .beats h3 { margin: 4px 0 6px; font: 400 20px/1.3 var(--serif); }
+  .beats p { margin: 0; font-size: 14px; color: #34322e; }
+  .notes h2 { font: 400 24px/1.3 var(--serif); margin: 44px 0 10px; }
+  .notes p, .notes li { color: #34322e; }
+  ol.how { padding-left: 20px; }
+  ol.how li { margin: 6px 0; }
+  dl.parts dt { margin-top: 14px; font-weight: 600; }
+  dl.parts dd { margin: 3px 0 0; color: #34322e; }
+  .notes a { color: var(--ink); text-decoration-color: var(--mark); text-underline-offset: 3px; }
+  @media (max-width: 720px) { .beats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="kicker">onboarding · 二选一</div>
+  <h1>两张卡，一句问话</h1>
+  <p class="sub">整页只问一件事。先拨「留白」看那块空地，再拨「暗示」把鼠标放到卡上。</p>
+</header>
+
+<div class="studio">
+  <div class="controls">
+    <span class="seg" id="gap-seg"><span class="lab">留白</span><span class="opts">
+      <button type="button" data-v="orig" aria-pressed="true">原版</button>
+      <button type="button" data-v="fixed" aria-pressed="false">修过</button>
+    </span></span>
+    <span class="seg" id="hint-seg"><span class="lab">可点暗示</span><span class="opts">
+      <button type="button" data-v="orig" aria-pressed="true">原版</button>
+      <button type="button" data-v="fixed" aria-pressed="false">修过</button>
+    </span></span>
+    <label class="check"><input type="checkbox" id="measure-toggle" checked /> 量间距</label>
+  </div>
+
+  <div id="stage">
+    <div class="viewport" id="viewport">
+      <div class="page" id="page">
+        <div class="brand" id="brand">By-Your-Side</div>
+        <div class="block" id="block">
+          <h2 id="q">你打算怎么用 By-Your-Side？</h2>
+          <p class="lede">它替你接管浏览器里的活——说一句，它去点、去填、去翻页。</p>
+          <div class="cards" id="cards" role="radiogroup" aria-labelledby="q">
+            <button class="card" id="solo" role="radio" aria-checked="false" type="button">
+              <svg class="go" viewBox="0 0 22 22" aria-hidden="true"><path d="M7 15 15 7M9 7h6v6" /></svg>
+              <svg class="art" viewBox="0 0 72 72" aria-hidden="true">
+                <g class="wob" filter="url(#hand)">
+                  <path class="tone" d="M38 6h22a7 7 0 0 1 7 7v11a7 7 0 0 1-7 7H48l-7 6.5V31h-3a7 7 0 0 1-7-7V13a7 7 0 0 1 7-7Z" />
+                  <path class="ink" d="M42 18.5h.01M49 18.5h.01M56 18.5h.01" style="stroke-width:2.6" />
+                  <path class="ink" transform="translate(13 30) scale(1.3)" d="M0 0 L0 24 L6 18.4 L10.2 27.6 L13.8 26 L9.7 17 L17.8 16.6 Z" />
+                </g>
+              </svg>
+              <h3>自己用</h3>
+              <p>一个人开会话，自己管麦克风<br />权限、登录过的网站和用量。</p>
+            </button>
+            <button class="card" id="team" role="radio" aria-checked="false" type="button">
+              <svg class="go" viewBox="0 0 22 22" aria-hidden="true"><path d="M7 15 15 7M9 7h6v6" /></svg>
+              <svg class="art" viewBox="0 0 72 72" aria-hidden="true">
+                <g class="wob" filter="url(#hand)">
+                  <path class="tone" d="M27 5h18a7 7 0 0 1 7 7v9a7 7 0 0 1-7 7h-5l-4 5-4-5h-5a7 7 0 0 1-7-7v-9a7 7 0 0 1 7-7Z" />
+                  <path class="ink" d="M29.5 16.5h.01M36 16.5h.01M42.5 16.5h.01" style="stroke-width:2.6" />
+                  <path class="ink" transform="translate(12 38) scale(1.1)" d="M0 0 L0 24 L6 18.4 L10.2 27.6 L13.8 26 L9.7 17 L17.8 16.6 Z" />
+                  <path class="ink" transform="translate(60 38) scale(-1.1 1.1)" d="M0 0 L0 24 L6 18.4 L10.2 27.6 L13.8 26 L9.7 17 L17.8 16.6 Z" />
+                </g>
+              </svg>
+              <h3>和团队一起用</h3>
+              <p>邀请同事，共用一套技能和站点<br />登录，用量在一处统一管。</p>
+            </button>
+          </div>
+        </div>
+
+        <div class="measure" id="measure">
+          <div class="gap" id="m-gap"></div>
+          <div class="tag" id="m-tag"></div>
+          <div class="mid" style="top:378.5px"><span>视口中线 378</span></div>
+          <div class="ctr" id="m-ctr"><span id="m-ctr-t"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="hand" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="7" />
+    <feDisplacementMap in="SourceGraphic" scale="1.6" />
+  </filter>
+</svg>
+
+<div class="notes">
+  <div class="beats">
+    <div>
+      <div class="n">01 克制</div>
+      <h3>颜色只有灰阶</h3>
+      <p>底 <code>#FCFCFB</code>，描边 <code>#E4E4E3</code>，字 <code>#0B0B0B</code> 和 <code>#52514E</code>。层级全靠字号和灰度。卡没有阴影，只有 1px 线和 12px 圆角。</p>
+    </div>
+    <div>
+      <div class="n">02 情绪</div>
+      <h3>性格全给了插画</h3>
+      <p>线条 1.8px，和正文笔画差不多粗，所以有手感但不抢。每幅只有一块浅灰实心，形状只用一个意思：一只光标 + 一句话；两只光标 + 同一句话 <code>#E8E7E3</code>。手抖来自一层 <code>feDisplacementMap</code>，不是手画路径。</p>
+    </div>
+    <div>
+      <div class="n">03 毛病</div>
+      <h3>空和哑</h3>
+      <p>块被居中在页眉以下的剩余空间里：标题离 logo 两百多 px，块中心比视口中线低近 60px（上面标尺读的是真实位置）。卡静止时看不出能点。修过：块上移到 182，hover 给描边、上浮 2px、右上箭头。</p>
+    </div>
+  </div>
+
+  <h2>从截图量出来的</h2>
+  <p>原截图 2810 × 1774，按 1200 宽折算。logo 衬线约 21px 居中顶部；问句 21px 中黑，副句 13.5px 灰；两卡 304 × 259、缝 22；插画 72 方、离卡顶 48；卡标题 16px，说明 13px、行高 18。块的顶 264 正好等于「页眉 110 以下剩余空间居中」，所以那块空不是故意的留白，是居中算法的副产品。</p>
+  <p>内容换成 By-Your-Side。不用原页的手绘手和衬线字标：插画是这里自己画的两只光标，字标用系统衬线。</p>
+
+  <h3 id="detach">可拆</h3>
+  <dl class="parts">
+    <dt><code>#cards</code> 二选一卡</dt>
+    <dd>304 × 259，1px <code>#E4E4E3</code>，圆角 12px，内垫 48px / 28px，插画 → 标题 16px → 两行 13px 灰说明（行高 18px），两卡缝 22px。</dd>
+    <dt><code>#solo</code> 线条插画</dt>
+    <dd>72px 方，描边 1.8px 圆头，只有一块 <code>#E8E7E3</code> 实心；<code>feTurbulence</code> 0.06 + <code>feDisplacementMap</code> 1.6 出手抖。</dd>
+    <dt><code>#block</code> 块的落点</dt>
+    <dd>别在页眉下的剩余空间里居中。块顶 = 0.24 × 视口高（757 → 182px），块中心落在视口 46% 左右。</dd>
+    <dt><code>#team</code> 可点暗示</dt>
+    <dd>hover 描边加深到 <code>#B9B8B4</code>、上浮 2px（弹簧 <code>cubic-bezier(.34,1.4,.64,1)</code> 350ms）、右上箭头淡入、插画转 −6deg；选中描边变墨色。</dd>
+    <dt><code>#measure</code> 量间距层</dt>
+    <dd>标注读真实 DOM 位置，切档位时跟着动 700ms，截图自检用。</dd>
+  </dl>
+
+  <h3>下次怎么用</h3>
+  <ol class="how">
+    <li>一页只问一件事时，删到只剩灰阶，把情绪全交给一处插画，插画线宽对齐正文笔画。</li>
+    <li>logo 钉顶、内容块居中，一定量一下中间那段空。超过块高的一半就不是留白，是掉下去了。</li>
+    <li>静止的卡也要看得出能点：右上一个小箭头或一条稍深的线，hover 再给动作。</li>
+  </ol>
+</div>
+
+<script>
+(() => {
+  const H = 757, FIXED_TOP = 182, ORIG_TOP = 264;
+  const stage = document.getElementById('stage');
+  const vp = document.getElementById('viewport');
+  const page = document.getElementById('page');
+  const block = document.getElementById('block');
+  const brand = document.getElementById('brand');
+  const q = document.getElementById('q');
+  const measure = document.getElementById('measure');
+  const params = new URLSearchParams(location.search);
+  const state = { gap: params.get('gap') || 'orig', hint: params.get('hint') || 'orig' };
+
+  function fit() {
+    const s = stage.clientWidth / 1200;
+    vp.style.transform = `scale(${s})`;
+    stage.style.height = `${H * s}px`;
+  }
+
+  function drawMeasure() {
+    const top = state.gap === 'fixed' ? FIXED_TOP : ORIG_TOP;
+    const brandBottom = brand.offsetTop + brand.offsetHeight;
+    const gap = top - brandBottom;
+    const blockH = block.offsetHeight;
+    const center = Math.round(top + blockH / 2);
+    const g = document.getElementById('m-gap');
+    g.style.top = brandBottom + 'px';
+    g.style.height = gap + 'px';
+    const tag = document.getElementById('m-tag');
+    tag.style.top = (brandBottom + gap / 2 - 8) + 'px';
+    tag.textContent = `logo → 问句 ${gap}px`;
+    const c = document.getElementById('m-ctr');
+    c.style.top = center + 'px';
+    document.getElementById('m-ctr-t').textContent =
+      `块中心 ${center}（${Math.round(center / H * 100)}%，${center - 378 >= 0 ? '低' : '高'} ${Math.abs(center - 378)}px）`;
+  }
+
+  function apply() {
+    block.style.setProperty('--block-top', (state.gap === 'fixed' ? FIXED_TOP : ORIG_TOP) + 'px');
+    page.classList.toggle('hint-fixed', state.hint === 'fixed');
+    for (const [id, key] of [['gap-seg', 'gap'], ['hint-seg', 'hint']]) {
+      document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === state[key])));
+    }
+    drawMeasure();
+  }
+
+  for (const [id, key] of [['gap-seg', 'gap'], ['hint-seg', 'hint']]) {
+    document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener('click', () => { state[key] = b.dataset.v; apply(); }));
+  }
+
+  const mt = document.getElementById('measure-toggle');
+  if (params.get('measure') === '0') mt.checked = false;
+  const syncMeasure = () => measure.classList.toggle('on', mt.checked);
+  mt.addEventListener('change', syncMeasure);
+
+  document.querySelectorAll('.card').forEach(card => card.addEventListener('click', () => {
+    if (state.hint !== 'fixed') return;
+    document.querySelectorAll('.card').forEach(c => c.setAttribute('aria-checked', String(c === card)));
+  }));
+
+  const hover = params.get('hover');
+  if (hover) document.getElementById(hover)?.classList.add('is-hover');
+
+  new ResizeObserver(fit).observe(stage);
+  fit(); apply(); syncMeasure();
+})();
+</script>
+</body>
+</html>
