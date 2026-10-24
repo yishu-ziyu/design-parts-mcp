@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Space Map</title>
+<meta name="color-scheme" content="dark">
+<style>
+  @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/barlow-condensed-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/barlow-condensed-latin-700-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Barlow"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/barlow-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Barlow"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/barlow-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  :root {
+    --page-bg: #05070c;
+    --page-fg: #e0e2e8;
+    --ctrl-bg: rgba(10, 13, 20, 0.72);
+    --ctrl-line: rgba(255, 255, 255, 0.12);
+    --ctrl-accent: #f8bd66;
+  }
+  html, body { margin: 0; background: var(--page-bg); color: var(--page-fg); }
+  body { overflow-x: hidden; }
+  .hero { position: relative; height: 100vh; height: 100svh; }
+  #stage { position: absolute; inset: 0; }
+
+  /* ---- effect styles (all sizes are set from JS in reference px × scale) ---- */
+  .gs-root { position: absolute; inset: 0; overflow: hidden; background: #05070c; user-select: none; -webkit-user-select: none; }
+  .gs-root canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .gs-ui { position: absolute; inset: 0; pointer-events: none; }
+  .gs-ui svg { position: absolute; inset: 0; overflow: visible; }
+  .gs-chapter { position: absolute; display: flex; align-items: center; white-space: nowrap; }
+  .gs-chapter .n { font-family: var(--gs-mono); font-weight: 500; color: var(--gs-accent); }
+  .gs-chapter .l { background: var(--gs-accent); opacity: .85; }
+  .gs-chapter .t { font-family: var(--gs-ui); font-weight: 600; color: var(--gs-text); letter-spacing: .19em; }
+  .gs-label { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform, opacity; }
+  .gs-label .main, .gs-label .sub { display: block; line-height: 1; }
+  .gs-label.backdrop::before { content: ''; position: absolute; inset: -55% -14%; z-index: -1; pointer-events: none;
+                               background: radial-gradient(closest-side, rgba(3,4,8,.62), rgba(3,4,8,0)); }
+  .gs-label .sub { font-family: var(--gs-mono); font-weight: 400; }
+  .gs-label.right .main, .gs-label.right .sub { text-align: left; }
+  .gs-label.left .main, .gs-label.left .sub { text-align: right; }
+  .gs-ch { display: inline-block; white-space: pre; will-change: opacity, filter, transform; }
+  .gs-word { display: inline-block; white-space: nowrap; }
+  .gs-caption { position: absolute; left: 50%; text-align: center; line-height: 1.05; transform: translateX(-50%);
+                font-family: var(--gs-display); font-weight: 700; white-space: normal; }
+
+  /* ---- demo shell ---- */
+  .shell { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 5;
+           display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 999px;
+           background: var(--ctrl-bg); border: 1px solid var(--ctrl-line); backdrop-filter: blur(8px);
+           font: 500 12px/1 'JetBrains Mono', ui-monospace, monospace; color: var(--page-fg);
+           width: min(560px, calc(100vw - 32px)); box-sizing: border-box; transition: opacity .4s; }
+  .shell.idle { opacity: 0; }
+  .shell button { appearance: none; border: 0; background: transparent; color: var(--page-fg); cursor: pointer;
+                  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .shell button:hover { background: rgba(255,255,255,.08); }
+  .shell button:focus-visible, .shell input:focus-visible { outline: 2px solid var(--ctrl-accent); outline-offset: 2px; }
+  .shell input[type=range] { flex: 1; min-width: 0; accent-color: var(--ctrl-accent); }
+  .shell .time { flex: none; opacity: .75; min-width: 5.2em; text-align: right; }
+  .shell .to-notes { flex: none; padding: 0 6px; color: var(--page-fg); opacity: .75; text-decoration: none; white-space: nowrap; }
+  .shell .to-notes:hover { opacity: 1; }
+  .shell .to-notes:focus-visible { outline: 2px solid var(--ctrl-accent); outline-offset: 2px; border-radius: 4px; }
+  html.capture .shell { display: none; }
+
+  /* ---- page-end notes ---- */
+  #notes { max-width: 1000px; padding: 72px 24px 120px; margin: 0 auto; box-sizing: border-box;
+           font: 500 14px/1.8 'Barlow', system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+           color: rgba(224, 226, 232, 0.66); }
+  #notes h3 { margin: 0; font: 500 13px/1.4 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .08em; color: var(--page-fg);
+              padding-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.14); }
+  #notes dl { margin: 0; }
+  #notes dt { margin-top: 26px; }
+  #notes dt code { font: 500 13px/1.4 'JetBrains Mono', ui-monospace, monospace; color: var(--ctrl-accent); }
+  #notes dd { margin: 4px 0 0; }
+  #notes dd code { font: 400 12.5px/1 'JetBrains Mono', ui-monospace, monospace; color: var(--page-fg); background: rgba(255, 255, 255, 0.06); padding: 0 0.25em; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div id="stage"></div>
+  <div class="shell" id="shell" role="group" aria-label="Playback">
+    <button id="playBtn" type="button" aria-label="Pause">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path id="playIcon" d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg>
+    </button>
+    <input id="scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="Timeline">
+    <span class="time" id="time">0:00.0</span>
+    <a class="to-notes" href="#notes" lang="zh-CN">可拆 ↓</a>
+  </div>
+</div>
+
+<section id="notes" lang="zh-CN">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#stage</code></dt>
+    <dd>故事时间轴：<code>createGameSpace(container, options)</code> 挂在这里，options 深合并到 <code>CONFIG</code>。40 s（视频时钟 52.4–92.4 s）全是故事时间 t 的纯函数，<code>seek(t)</code> 精确回到任意一帧。镜头绕目标转：17 个关键帧，每帧给 <code>target</code>（点名或坐标）、<code>dist</code>（按对数插值）、<code>az</code> / <code>el</code>（度）和 <code>at</code>（目标落在 1280×720 参考帧的哪个像素），一段的缓动由终点那一帧定。景深 9 帧（光圈 0.002，钻进点云时 0.024），点云亮度 10 帧（65.30–65.42 s 在 0.12 s 内亮起）。67.72 s 硬切：所有点被拉进一个以 (−0.26, 0.03, −0.17) 为心的球，半径 0.03 → 0.12 → 0.5 → 0.95 → 2.6，每点再乘 0.82–1.18 的随机数，70.75 s 放开。坍缩在顶点着色器里做，数据不动。</dd>
+    <dt><code>#cloud</code></dt>
+    <dd>点云：189,495 个点一个 <code>THREE.Points</code>、一次绘制，加法混合，不写深度、不排序。点大小 0.009 世界单位（云半径约 1）× 0.55–1.45 随机 × 透视；超过 3.4 px 后只按 0.3 的斜率继续变大并加柔化，再叠景深弥散圈，按面积压亮度，所以镜头钻进去时是彩色颗粒，不是一片白雾。换真数据：<code>setData({ positions, colors?, groups?, palette?, names?, normalized? })</code>，positions 是 3N 个原始坐标（比如降到 3 维的 UMAP），不标 normalized 就按均值居中、95% 分位半径缩到 1；没有 colors 按 <code>groups</code> 在 11 色 palette 里取色，都没有就按方向取色。剧情按 <code>names</code> 找点，缺的跳过。默认是合成数据：22 个大块（68% 在外壳）→ 200 个子团 → 520 条贴壳弯带 → 340 个亮小结 → 外缘短须和 24 个离群小岛。</dd>
+    <dt><code>#labels</code></dt>
+    <dd>标签：点上一个半径 3.8–4 的圈（焦点和对照不画）→ 斜线到偏移 (dx, dy) → 水平短线 20–23 → 空 7–8 → 字，偏移和字号都按 1280×720 参考像素写，运行时乘缩放。线 0.22 s 画完，字在线画到 60% 时逐字出：每字隔 0.02 s，0.26 s 内从 1.32 倍、下沉 0.16em、模糊 0.14em 落位。五种样式：焦点 Barlow Condensed 700 25.5 px <code>#f8bd66</code>；近邻 Barlow 600 17.5 px <code>#a8f1d7</code>，下面一行 9.6 px 等宽 <code>#7c808a</code> 的 similarity；游戏名 14.5 px 白；类型 20.5 px，颜色和所在区域的点同一色系，逐个写在 CONFIG 里；对照 40 px <code>#f6759a</code>，5/4 虚线连回焦点，相似度小字先出。标签量自己的宽度，出画就换到另一边，两边都不够就贴边留 8 px。</dd>
+    <dt><code>#look</code></dt>
+    <dd>画面质感，三个后处理 pass：先把每像素钳到 1.8（坍缩成小球时十几万个点叠在一起，不钳的话 bloom 的 mip 会出方块），再 <code>UnrealBloomPass</code>（强度 0.62、半径 0.32、阈值 0.2），最后一个自写 pass：按最大通道压亮度的保色相色调映射（曝光 1.35，和逐通道映射按 65 / 35 混），密处变亮但不发白；底色上 <code>#070b12</code> 下 <code>#040507</code> 的竖向渐变用 screen 叠上；暗角最深压 19%；每像素颗粒 0.022 加 0.8% 的亮噪点，每秒换 24 次。渲染目标是半浮点。</dd>
+    <dt><code>#chapter</code></dt>
+    <dd>章节标签和字幕：左上 <code>02</code> JetBrains Mono 500 12 px <code>#f8bd66</code>，一条 30×1 px 的线，标题 Barlow 600 13 px、字距 0.19em、<code>#e0e2e8</code>，中线在 (47, 51)；硬切时藏起，68.85–69.6 s 淡回。字幕居中，Barlow Condensed 700 58 px、字距 −0.035em、行高 1.05，中线在 y = 598；前两句冷白 <code>#f3fbff</code> 加两层蓝色外发光（7 / 20 px），第三句 52 px、y = 613、暖白 <code>#fff9f4</code> 加暗投影。逐字 0.033 s 一个、每字 0.32 s，淡出 0.35 s；字号不超过画面宽 7.5%，最宽 90%，窄屏折行。</dd>
+  </dl>
+</section>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/CopyShader.js"></script>
+<script src="vendor/LuminosityHighPassShader.js"></script>
+<script src="vendor/EffectComposer.js"></script>
+<script src="vendor/RenderPass.js"></script>
+<script src="vendor/ShaderPass.js"></script>
+<script src="vendor/UnrealBloomPass.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+ * CONFIG — content, data, colours, sizes, timings.
+ * UI sizes are authored in px for a 1280×720 frame and scaled at runtime.
+ * Story times are seconds on the original video's clock (52.4 s – 92.4 s),
+ * so frames can be compared 1:1 with the source.
+ *
+ * DATA SHAPE (CONFIG.data or space.setData(data)):
+ * {
+ *   positions:  Float32Array | number[]   x,y,z per game, length 3N (e.g. 3-D UMAP of the embeddings)
+ *   colors?:    Float32Array | number[]   r,g,b 0..1 per game, length 3N
+ *   groups?:    Uint16Array  | number[]   palette index per game (used when colors is missing), length N
+ *   palette?:   string[]                  hex colours for groups (defaults to CONFIG.palette)
+ *   names?:     { [gameName]: index }     the story finds its points by these names; missing names are skipped
+ *   normalized?: boolean                  true = already centred with radius ≈ 1; otherwise auto-normalised
+ * }
+ * CONFIG.data = null builds a synthetic map with the same structure (CONFIG.synthetic).
+ *
+ * API: createGameSpace(container, options) → { play(), pause(), seek(t), setData(d), destroy(),
+ *      onTime(fn), project(name), ready, time, playing, start, end, duration }
+ * options are deep-merged over CONFIG (arrays replace).
+ * ===================================================================== */
+const CONFIG = {
+  data: null,
+
+  synthetic: {
+    count: 189495,
+    seed: 20261022,
+    shape: [1.04, 1.12, 0.85],  // x,y,z stretch of the body
+    lobes: 22,
+    lobeSpread: 0.68,
+    shell: 0.68,              // share of lobes on the outer shell (UMAP maps of this kind look hollow)
+    lobeColors: ['violet', 'pink', 'cyan', 'blue', 'magenta', 'mint', 'pink', 'orange', 'rose', 'cyan', 'blue', 'green', 'violet', 'amber', 'pink', 'lime', 'magenta', 'cyan', 'rose', 'mint', 'blue', 'orange'],
+    subClusters: 200,
+    strands: 520,
+    strandShare: 0.5,
+    filaments: 64,
+    filamentShare: 0.05,
+    islands: 24,
+    islandShare: 0.008,
+    islandRadius: [0.75, 1.5],
+    haze: 0.012,
+    knots: 340,
+    knotShare: 0.12,
+    // story points: explicit positions, or pinned to a reference-frame pixel at a story time
+    // (z = distance from the camera, depth = offset from the camera's target distance)
+    pins: [
+      { name: 'Stardew Valley', at: [0.50, -0.26, 0.48] },
+      { name: 'Rivergrain Vale', t: 61.5, sx: 672, sy: 394, depth: -0.006 },
+      { name: 'STORY OF SEASONS: A Wonderful Life', t: 61.5, sx: 622, sy: 363, depth: 0.004 },
+      { name: 'Story of Leaves', t: 61.5, sx: 600, sy: 338, depth: -0.012 },
+      { name: 'Sprout Valley', t: 61.5, sx: 646, sy: 425, depth: 0.010 },
+      { name: 'Harvest Hollow', t: 61.5, sx: 672, sy: 370, depth: 0.018 },
+      { name: 'Doom Eternal', t: 65.2, sx: 525, sy: 278, depth: 0.09 },
+      // pins are resolved in order: anything a later camera key targets must come first
+      { name: '#HORROR', t: 83.5, sx: 848, sy: 374, depth: -0.05 },
+      { name: '#VISUAL NOVELS', t: 83.5, sx: 812, sy: 350, depth: -0.30 },
+      { name: '#SHOOTERS', t: 91.0, sx: 543, sy: 268, depth: -0.10 },
+      { name: '#TACTICS', t: 91.0, sx: 705, sy: 234, depth: 0.10 },
+      { name: '#DECKBUILDERS', t: 91.0, sx: 730, sy: 208, depth: -0.20 },
+      { name: '#FARMING SIMS', t: 91.0, sx: 731, sy: 355, depth: 0.20 },
+      { name: '#RACING', t: 91.0, sx: 496, sy: 359, depth: -0.15 },
+      { name: '#CATS', t: 91.0, sx: 670, sy: 439, depth: -0.25 },
+      { name: '#HORROR (near)', t: 79.0, sx: 723, sy: 352, z: 0.42 },
+      { name: 'Rust', t: 75.2, sx: 613, sy: 213, depth: -0.35 },
+      { name: 'Counter-Strike 2', t: 75.2, sx: 845, sy: 243, depth: -0.25 },
+      { name: "Tom Clancy's Rainbow Six Siege", t: 75.2, sx: 837, sy: 216, depth: -0.05 },
+      { name: 'ELDEN RING', t: 77.0, sx: 380, sy: 117, z: 0.62 },
+      { name: 'Red Dead Redemption 2', t: 77.0, sx: 856, sy: 188, z: 0.70 },
+      { name: 'Phasmophobia', t: 77.0, sx: 819, sy: 292, z: 0.78 },
+      { name: 'Among Us', t: 77.0, sx: 1045, sy: 341, z: 0.66 },
+      { name: 'The Forest', t: 78.2, sx: 669, sy: 55, z: 0.52 },
+    ],
+    // named neighbourhoods get a dense cluster in the given palette colour
+    anchors: [
+      { name: '#SHOOTERS', color: 'pink', n: 2600, sigma: 0.07 },
+      { name: '#TACTICS', color: 'cyan', n: 1700, sigma: 0.06 },
+      { name: '#DECKBUILDERS', color: 'violet', n: 1900, sigma: 0.05 },
+      { name: '#FARMING SIMS', color: 'amber', n: 1800, sigma: 0.06 },
+      { name: '#RACING', color: 'rose', n: 2100, sigma: 0.06 },
+      { name: '#CATS', color: 'mint', n: 1500, sigma: 0.06 },
+      { name: '#HORROR', color: 'violet', n: 3000, sigma: 0.08 },
+      { name: '#HORROR (near)', color: 'blue', n: 900, sigma: 0.05 },
+      { name: '#VISUAL NOVELS', color: 'pink', n: 2600, sigma: 0.08 },
+      { name: 'Stardew Valley', color: 'rose', n: 900, sigma: 0.035 },
+      { name: 'Counter-Strike 2', color: 'violet', n: 1200, sigma: 0.05 },
+    ],
+    bands: [
+      { through: '#HORROR (near)', from: [-0.55, -0.2, 0.08], via: [-0.2, 0.06, 0.0], to: [0.08, 0.0, -0.04], thick: 0.04, n: 14000, colors: ['pink', 'rose', 'blue', 'violet', 'cyan', 'mint'] },
+    ],
+  },
+
+  palette: {
+    pink: '#ff5fa8', rose: '#ff7c8c', orange: '#ff9a52', amber: '#ffcb52', lime: '#bdf25c',
+    green: '#52f08c', mint: '#52f0c8', cyan: '#52d8ff', blue: '#6a8cff', violet: '#a070ff', magenta: '#e05cff',
+  },
+
+  colors: {
+    background: '#05070c',
+    backgroundTop: '#070b12',     // the frame is lit slightly from the top
+    backgroundBottom: '#040507',
+    accent: '#f8bd66',
+    text: '#e0e2e8',
+    mint: '#a8f1d7',
+    mintLine: '#78cfb2',
+    muted: '#7c808a',
+    white: '#f6f8fc',
+    compare: '#f6759a',
+    captionCool: '#f3fbff',
+    captionWarm: '#fff9f4',
+  },
+
+  fonts: {
+    display: "'Barlow Condensed', 'DIN Condensed', 'Arial Narrow', sans-serif",
+    ui: "'Barlow', 'DIN Alternate', 'Helvetica Neue', Arial, sans-serif",
+    mono: "'JetBrains Mono', ui-monospace, Menlo, monospace",
+  },
+
+  // label / caption styles in reference px (1280×720)
+  styles: {
+    chapter: { x: 47, y: 51, num: 12, line: 30, gap: 10, title: 13 },
+    caption: { size: 58, y: 598, stagger: 0.033, dur: 0.32, fadeOut: 0.35, tracking: -0.035 },
+    focus: { font: 'display', weight: 700, size: 25.5, color: 'accent', line: 'accent', ring: 0, stub: 22, gap: 7, glow: 0.45, backdrop: true, tracking: -0.03 },
+    neighbor: { font: 'ui', weight: 600, size: 17.5, color: 'mint', line: 'mintLine', ring: 3.8, stub: 20, gap: 8, sub: 9.6, subColor: 'muted', glow: 0.25 },
+    game: { font: 'ui', weight: 600, size: 14.5, color: 'white', line: 'white', ring: 3.8, stub: 23, gap: 7, glow: 0.3 },
+    cluster: { font: 'display', weight: 700, size: 20.5, color: 'white', line: null, ring: 4, stub: 23, gap: 7, glow: 0.4, backdrop: true },
+    compare: { font: 'display', weight: 700, size: 40, color: 'compare', line: 'compare', ring: 0, stub: 22, gap: 8, sub: 20, subColor: 'compare', glow: 0.35, subFirst: true, backdrop: true },
+    labelStagger: 0.02, labelDur: 0.26, labelFade: 0.25, lineDraw: 0.22,
+  },
+
+  render: {
+    maxPixelRatio: 2,
+    fovRef: 40,             // vertical fov at 16:9
+    minAspect: 1.25,        // narrower frames widen the fov so this aspect stays in view
+    pointSize: 0.009,      // world units (cloud radius ≈ 1)
+    pointGain: 0.19,
+    minPointPx: 1.15,
+    capPointPx: 3.4,        // px; points bigger than this grow slower and are drawn softer
+    maxPointPx: 96,
+    exposure: 1.35,
+    fog: 1.1,               // far points fade so the near layer keeps its colour (per world unit behind the cloud centre)
+    bloom: { strength: 0.62, radius: 0.32, threshold: 0.2 },
+    grain: 0.022,
+    vignette: 0.55,
+  },
+
+  story: {
+    start: 52.4,
+    end: 92.4,
+    poster: 91.0,           // frame shown for prefers-reduced-motion
+    chapter: { num: '02', title: 'SIMILARITY MAP', hide: [67.72, 68.85, 69.6] },
+
+    // camera rig: orbit (az/el in degrees) around a target; `at` = where the target sits on the 1280×720 frame
+    camera: [
+      { t: 52.4,  target: 'Stardew Valley', dist: 0.300, az: 16, el: 7, at: [640, 360] },
+      { t: 64.72, target: 'Stardew Valley', dist: 0.308, az: 18, el: 7, at: [640, 360], ease: 'linear' },
+      { t: 65.26, target: 'Stardew Valley', dist: 1.30, az: 21, el: -6, at: [743, 437], ease: 'inOut' },
+      { t: 66.0,  target: 'Stardew Valley', dist: 1.52, az: 23, el: -8, at: [750, 444], ease: 'out' },
+      { t: 67.72, target: 'Stardew Valley', dist: 1.70, az: 25, el: -9, at: [752, 450], ease: 'linear' },
+      { t: 67.73, target: [0, 0, 0], dist: 4.6, az: -38, el: 10, at: [600, 420], ease: 'step' },
+      { t: 68.5,  target: [0, 0, 0], dist: 4.0, az: -36, el: 10, at: [600, 405], ease: 'inOut' },
+      { t: 69.4,  target: [0, 0, 0], dist: 2.45, az: -33, el: 10, at: [610, 385], ease: 'in' },
+      { t: 69.95, target: [0, 0, 0], dist: 2.15, az: -30, el: 9, at: [640, 360], ease: 'out' },
+      { t: 70.8,  target: [0, 0, 0], dist: 3.0, az: -27, el: 9, at: [655, 362], ease: 'inOut' },
+      { t: 74.4,  target: [0, 0, 0], dist: 3.2, az: -18, el: 8, at: [660, 350], ease: 'linear' },
+      { t: 75.2,  target: [0, 0, 0], dist: 3.0, az: -16, el: 8, at: [665, 345], ease: 'in' },
+      { t: 76.6,  target: [0.06, 0.02, 0.12], dist: 0.85, az: -10, el: 7, at: [660, 360], ease: 'inOut' },
+      { t: 79.0,  target: [0.06, 0.02, 0.12], dist: 0.50, az: -5, el: 6, at: [650, 360], ease: 'out' },
+      { t: 82.15, target: [0.06, 0.02, 0.12], dist: 0.40, az: 1, el: 6, at: [650, 360], ease: 'linear' },
+      { t: 83.15, target: [0, 0, 0], dist: 3.05, az: 6, el: 8, at: [650, 350], ease: 'out' },
+      { t: 92.4,  target: [0, 0, 0], dist: 4.55, az: 26, el: 8, at: [650, 345], ease: 'out' },
+    ],
+    // depth of field: aperture in world units; focus = distance (null → camera target distance)
+    lens: [
+      { t: 52.4, aperture: 0.002, focus: null },
+      { t: 67.72, aperture: 0.002, focus: null },
+      { t: 67.73, aperture: 0.11, focus: 1.2, ease: 'step' },
+      { t: 68.5, aperture: 0.012, focus: null, ease: 'out' },
+      { t: 69.6, aperture: 0.004, focus: null, ease: 'out' },
+      { t: 74.4, aperture: 0.004, focus: null },
+      { t: 77.0, aperture: 0.024, focus: null, ease: 'inOut' },
+      { t: 82.15, aperture: 0.024, focus: null },
+      { t: 83.15, aperture: 0.004, focus: null, ease: 'out' },
+    ],
+    cloud: [
+      { t: 52.4, opacity: 0 },
+      { t: 65.30, opacity: 0 },
+      { t: 65.42, opacity: 1, ease: 'out' },
+      { t: 68.6, opacity: 0.7, ease: 'inOut' },
+      { t: 69.4, opacity: 0.48, ease: 'inOut' },
+      { t: 70.6, opacity: 1, ease: 'inOut' },
+      { t: 75.6, opacity: 1 },
+      { t: 77.0, opacity: 0.85, ease: 'inOut' },
+      { t: 82.15, opacity: 0.85 },
+      { t: 83.0, opacity: 1, ease: 'inOut' },
+    ],
+    // big-bang reveal: every point is pulled inside a sphere of radius r (keyed) around origin; the sphere grows
+    expand: { origin: [-0.26, 0.03, -0.17], keys: [
+      { t: 67.73, r: 0.03 }, { t: 68.5, r: 0.12, ease: 'in' }, { t: 69.4, r: 0.5, ease: 'in' }, { t: 69.95, r: 0.95, ease: 'out' }, { t: 70.75, r: 2.6, ease: 'linear' },
+    ] },
+    focusPoints: [
+      { name: 'Stardew Valley', color: '#ff6a3a', size: 13, t0: 52.45, t1: 67.72 },
+      { name: 'Rivergrain Vale', color: '#9fdcc0', size: 7, t0: 58.05, t1: 65.32 },
+      { name: 'STORY OF SEASONS: A Wonderful Life', color: '#9fdcc0', size: 7, t0: 58.4, t1: 65.32 },
+      { name: 'Story of Leaves', color: '#8fe0b8', size: 7, t0: 57.82, t1: 65.32 },
+      { name: 'Sprout Valley', color: '#9fdcc0', size: 7, t0: 58.3, t1: 65.32 },
+      { name: 'Harvest Hollow', color: '#ff6f9a', size: 9, t0: 58.15, t1: 65.32 },
+      { name: 'Doom Eternal', color: '#e070ff', size: 7, t0: 64.75, t1: 67.72 },
+    ],
+    labels: [
+      { name: 'Stardew Valley', kind: 'focus', text: 'STARDEW VALLEY', t0: 52.42, t1: 64.72, dx: -60, dy: -71, side: 'left' },
+      { name: 'Story of Leaves', kind: 'neighbor', text: 'Story of Leaves', sub: 'similarity 0.76', t0: 57.85, t1: 64.72, dx: 80, dy: -60, side: 'right' },
+      { name: 'Rivergrain Vale', kind: 'neighbor', text: 'Rivergrain Vale', sub: 'similarity 0.75', t0: 58.1, t1: 64.72, dx: -85, dy: -59, side: 'left' },
+      { name: 'Sprout Valley', kind: 'neighbor', text: 'Sprout Valley', sub: 'similarity 0.75', t0: 58.4, t1: 64.72, dx: 80, dy: 124, side: 'right' },
+      { name: 'STORY OF SEASONS: A Wonderful Life', kind: 'neighbor', text: 'STORY OF SEASONS: A Wonderful Life', sub: 'similarity 0.75', t0: 58.45, t1: 64.72, dx: -80, dy: 123, side: 'left' },
+      { name: 'Stardew Valley', kind: 'focus', text: 'STARDEW VALLEY', t0: 64.9, t1: 67.45, dx: -60, dy: -74, side: 'left', instant: true },
+      { name: 'Doom Eternal', kind: 'compare', text: 'DOOM ETERNAL', sub: 'similarity to Stardew: 0.30', t0: 64.95, t1: 67.45, mainAt: 65.33, side: 'left',
+        offsets: [{ t: 65.2, dx: -55, dy: 45 }, { t: 65.36, dx: -99, dy: 100, ease: 'step' }] },
+      { name: 'Counter-Strike 2', kind: 'game', text: 'Counter-Strike 2', t0: 73.95, t1: 76.3, dx: -25, dy: -24, side: 'left' },
+      { name: "Tom Clancy's Rainbow Six Siege", kind: 'game', text: "Tom Clancy's Rainbow Six Siege", t0: 74.12, t1: 76.3, dx: 24, dy: -23, side: 'right' },
+      { name: 'Rust', kind: 'game', text: 'Rust', t0: 74.5, t1: 76.75, dx: -26, dy: -24, side: 'left' },
+      { name: 'Stardew Valley', kind: 'game', text: 'Stardew Valley', t0: 74.95, t1: 75.95, dx: 25, dy: -23, side: 'right' },
+      { name: 'Red Dead Redemption 2', kind: 'game', text: 'Red Dead Redemption 2', t0: 75.45, t1: 77.7, dx: -24, dy: -25, side: 'left' },
+      { name: 'ELDEN RING', kind: 'game', text: 'ELDEN RING', t0: 75.85, t1: 77.5, dx: 26, dy: -24, side: 'right' },
+      { name: 'Phasmophobia', kind: 'game', text: 'Phasmophobia', t0: 76.3, t1: 78.6, dx: 28, dy: -25, side: 'right' },
+      { name: 'Among Us', kind: 'game', text: 'Among Us', t0: 76.4, t1: 78.6, dx: -25, dy: -23, side: 'left' },
+      { name: 'The Forest', kind: 'game', text: 'The Forest', t0: 77.55, t1: 78.6, dx: 26, dy: -22, side: 'right' },
+      { name: '#HORROR (near)', kind: 'cluster', text: 'HORROR', color: '#f5c27a', t0: 78.3, t1: 82.2, dx: 47, dy: 46, side: 'right' },
+      { name: '#HORROR', kind: 'cluster', text: 'HORROR', color: '#f5c27a', t0: 82.25, t1: 85.2, dx: 47, dy: 46, side: 'right', instant: true, size: 26.5 },
+      { name: '#VISUAL NOVELS', kind: 'cluster', text: 'VISUAL NOVELS', color: '#f6809f', t0: 81.4, t1: 85.2, dx: -42, dy: -50, side: 'left', size: 26.5 },
+      { name: '#RACING', kind: 'cluster', text: 'RACING', color: '#a5edd1', t0: 85.15, t1: 92.4, dx: -46, dy: 46, side: 'left' },
+      { name: '#DECKBUILDERS', kind: 'cluster', text: 'DECKBUILDERS', color: '#86d7ef', t0: 85.4, t1: 92.4, dx: 42, dy: -53, side: 'right' },
+      { name: '#FARMING SIMS', kind: 'cluster', text: 'FARMING SIMS', color: '#f5c27a', t0: 85.6, t1: 92.4, dx: 44, dy: -53, side: 'right' },
+      { name: '#SHOOTERS', kind: 'cluster', text: 'SHOOTERS', color: '#f6839d', t0: 85.85, t1: 92.4, dx: -48, dy: -53, side: 'left' },
+      { name: '#CATS', kind: 'cluster', text: 'CATS', color: '#f6f8fc', t0: 86.55, t1: 92.4, dx: 47, dy: 47, side: 'right' },
+      { name: '#TACTICS', kind: 'cluster', text: 'TACTICS', color: '#7fd7f5', t0: 87.55, t1: 92.4, dx: -45, dy: -53, side: 'left' },
+    ],
+    links: [
+      { from: 'Doom Eternal', to: 'Stardew Valley', t0: 64.98, t1: 67.45, draw: 0.75, color: 'compare', dash: [5, 4], opacity: 0.8 },
+    ],
+    captions: [
+      { text: 'EACH DESCRIPTION BECOMES A POINT', t0: 52.12, t1: 56.95, tone: 'cool' },
+      { text: 'ONE DOT PER STEAM GAME', t0: 69.85, t1: 73.2, tone: 'cool' },
+      { text: 'GENRES SHOW UP AS DENSE REGIONS', t0: 75.55, t1: 78.2, tone: 'warm', size: 52, y: 613 },
+    ],
+  },
+
+  interactive: false,
+  autoplay: true,
+  loop: true,
+};
+
+/* ---------------- small utilities ---------------- */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, u) => a + (b - a) * u;
+const EASE = {
+  linear: (u) => u,
+  in: (u) => u * u * u,
+  out: (u) => 1 - Math.pow(1 - u, 3),
+  inOut: (u) => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2),
+  expo: (u) => (u <= 0 ? 0 : u >= 1 ? 1 : (Math.pow(2, 10 * u - 10) - 0.0009765625) / 0.9990234375),
+  step: () => 1,
+};
+const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v) && !ArrayBuffer.isView(v);
+function merge(base, over) {
+  if (!isObj(over)) return over === undefined ? base : over;
+  const out = Array.isArray(base) ? base.slice() : { ...base };
+  for (const k of Object.keys(over)) out[k] = isObj(base?.[k]) && isObj(over[k]) ? merge(base[k], over[k]) : over[k];
+  return out;
+}
+function hexRgb(hex) {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+}
+function rgba(hex, a) { const [r, g, b] = hexRgb(hex); return `rgba(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${a})`; }
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* keyframe sampling: value of `prop` at time t; the destination key's ease shapes each segment */
+function sampleKeys(keys, t, read, mix) {
+  if (t <= keys[0].t) return read(keys[0]);
+  const last = keys[keys.length - 1];
+  if (t >= last.t) return read(last);
+  let i = 0;
+  while (i < keys.length - 2 && t >= keys[i + 1].t) i++;
+  const a = keys[i], b = keys[i + 1];
+  const u = (EASE[b.ease || 'inOut'] || EASE.inOut)(clamp((t - a.t) / Math.max(1e-6, b.t - a.t), 0, 1));
+  return mix(read(a), read(b), u);
+}
+
+/* ---------------- camera rig (pure function of story time) ---------------- */
+function cameraAt(story, t, resolve, fovRef) {
+  const keys = story.camera;
+  const target = sampleKeys(keys, t, (k) => resolve(k.target), (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)]);
+  const dist = sampleKeys(keys, t, (k) => Math.log(k.dist), lerp);
+  const az = sampleKeys(keys, t, (k) => k.az, lerp) * Math.PI / 180;
+  const el = sampleKeys(keys, t, (k) => k.el, lerp) * Math.PI / 180;
+  const at = sampleKeys(keys, t, (k) => k.at || [640, 360], (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u)]);
+  const fov = sampleKeys(keys, t, (k) => k.fov || fovRef, lerp);
+  return { target, dist: Math.exp(dist), az, el, at, fov };
+}
+
+/* place a THREE camera from a rig state; `at` shifts the view so the target lands on that reference pixel */
+function applyRig(cam, rig, tanScale) {
+  const d = rig.dist, ce = Math.cos(rig.el);
+  const off = new THREE.Vector3(ce * Math.sin(rig.az), Math.sin(rig.el), ce * Math.cos(rig.az)).multiplyScalar(d);
+  const tgt = new THREE.Vector3().fromArray(rig.target);
+  cam.position.copy(tgt).add(off);
+  cam.up.set(0, 1, 0);
+  cam.lookAt(tgt);
+  const tanRef = Math.tan(rig.fov * Math.PI / 360);
+  const f = 360 / tanRef; // reference px per unit at distance 1
+  const right = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 0);
+  const up = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 1);
+  const sx = (rig.at[0] - 640) / f * d * tanScale, sy = -(rig.at[1] - 360) / f * d * tanScale;
+  const shift = right.multiplyScalar(-sx).add(up.multiplyScalar(-sy));
+  cam.position.add(shift);
+  cam.updateMatrixWorld(true);
+  return tgt.add(shift);
+}
+
+/* ---------------- synthetic dataset ---------------- */
+function synthesizeMap(cfg) {
+  const S = cfg.synthetic, story = cfg.story;
+  const R = mulberry32(S.seed);
+  const gauss = () => { let u = 0, v = 0; while (u === 0) u = R(); while (v === 0) v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const palNames = Object.keys(cfg.palette);
+  const pal = palNames.map((k) => hexRgb(cfg.palette[k]));
+  const palIndex = (name) => Math.max(0, palNames.indexOf(name));
+
+  // resolve pins (explicit positions first, then screen pins through the story camera at 16:9)
+  const names = {};
+  const pinPos = {};
+  const resolve = (v) => (Array.isArray(v) ? v : pinPos[v] || [0, 0, 0]);
+  for (const p of S.pins) if (p.at) pinPos[p.name] = p.at.slice();
+  const cam = new THREE.PerspectiveCamera(cfg.render.fovRef, 16 / 9, 0.001, 100);
+  for (const p of S.pins) {
+    if (p.at) continue;
+    const rig = cameraAt(story, p.t, resolve, cfg.render.fovRef);
+    cam.fov = rig.fov; cam.updateProjectionMatrix();
+    applyRig(cam, rig, 1);
+    const z = p.z != null ? p.z : rig.dist + (p.depth || 0);
+    const tanH = Math.tan(rig.fov * Math.PI / 360);
+    const nx = (p.sx / 1280) * 2 - 1, ny = 1 - (p.sy / 720) * 2;
+    const v = new THREE.Vector3(nx * tanH * (16 / 9) * z, ny * tanH * z, -z).applyMatrix4(cam.matrixWorld);
+    pinPos[p.name] = [v.x, v.y, v.z];
+  }
+
+  const N = S.count;
+  const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  let n = 0;
+  const put = (x, y, z, c, bright) => {
+    if (n >= N) return -1;
+    pos[n * 3] = x; pos[n * 3 + 1] = y; pos[n * 3 + 2] = z;
+    const b = bright != null ? bright : 0.55 + 0.6 * R();
+    col[n * 3] = c[0] * b; col[n * 3 + 1] = c[1] * b; col[n * 3 + 2] = c[2] * b;
+    return n++;
+  };
+  const randDir = () => { const z = R() * 2 - 1, a = R() * Math.PI * 2, r = Math.sqrt(1 - z * z); return [r * Math.cos(a), z, r * Math.sin(a)]; };
+  const shape = S.shape;
+  const gaussBlob = (Cn, sig, count, c, aniso, bright) => {
+    const ax = aniso || [1, 1, 1];
+    for (let k = 0; k < count; k++) {
+      const tail = R() < 0.06 ? 1.8 : 1;
+      put(Cn[0] + gauss() * sig * ax[0] * tail, Cn[1] + gauss() * sig * ax[1] * tail, Cn[2] + gauss() * sig * ax[2] * tail, c, bright ? bright() : undefined);
+    }
+  };
+  const mixColor = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+
+  // UMAP-like structure: a few big lobes, each made of many sub-clusters, so density is patchy with dark gaps
+  const lobes = [];
+  for (let l = 0; l < S.lobes; l++) {
+    const d = randDir();
+    const rr = S.lobeSpread * (R() < S.shell ? 0.78 + 0.27 * R() : 0.45 * R());
+    lobes.push({
+      c: [d[0] * rr * shape[0], d[1] * rr * shape[1], d[2] * rr * shape[2]],
+      sig: 0.11 + 0.09 * R(),
+      w: Math.exp(gauss() * 0.6),
+      col: pal[palIndex(S.lobeColors[l % S.lobeColors.length])],
+    });
+  }
+  const nearestLobe = (P) => {
+    let best = lobes[0], bd = Infinity;
+    for (const L of lobes) { const d = (P[0] - L.c[0]) ** 2 + (P[1] - L.c[1]) ** 2 + (P[2] - L.c[2]) ** 2; if (d < bd) { bd = d; best = L; } }
+    return best;
+  };
+
+  // named points (exact positions) + their neighbourhood clusters
+  for (const p of S.pins) {
+    const P = pinPos[p.name];
+    const i = put(P[0], P[1], P[2], nearestLobe(P).col, 1.0);
+    if (i >= 0) names[p.name] = i;
+  }
+  for (const a of S.anchors) {
+    const P = pinPos[a.name];
+    if (!P) continue;
+    gaussBlob(P, a.sigma, a.n, mixColor(pal[palIndex(a.color)], nearestLobe(P).col, 0.25), [1, 0.7 + 0.5 * R(), 0.6 + 0.6 * R()]);
+  }
+  // bands: curved bridges through a pin whose colour shifts along the curve (a genre fading into the next)
+  for (const b of S.bands || []) {
+    const P = pinPos[b.through];
+    if (!P) continue;
+    const c0 = [P[0] + b.from[0], P[1] + b.from[1], P[2] + b.from[2]];
+    const c1 = [P[0] + b.via[0], P[1] + b.via[1], P[2] + b.via[2]];
+    const c2 = [P[0] + b.to[0], P[1] + b.to[1], P[2] + b.to[2]];
+    const cols = b.colors.map((k) => pal[palIndex(k)]);
+    for (let i = 0; i < b.n; i++) {
+      const u = R(), A = (1 - u) * (1 - u), B = 2 * u * (1 - u), Cc = u * u;
+      const ci = u * (cols.length - 1), j = Math.min(cols.length - 2, Math.floor(ci));
+      const th = b.thick * (0.6 + 0.8 * Math.sin(u * Math.PI)) * (R() < 0.1 ? 2.2 : 1);
+      put(A * c0[0] + B * c1[0] + Cc * c2[0] + gauss() * th, A * c0[1] + B * c1[1] + Cc * c2[1] + gauss() * th,
+          A * c0[2] + B * c1[2] + Cc * c2[2] + gauss() * th, mixColor(cols[j], cols[j + 1], ci - j));
+    }
+  }
+
+  const nFil = Math.round(N * S.filamentShare), nIsl = Math.round(N * S.islandShare), nHaze = Math.round(N * S.haze);
+  const nStr = Math.round(N * S.strandShare), nKnot = Math.round(N * S.knotShare);
+  const clusterBudget = N - n - nFil - nIsl - nHaze - nStr - nKnot;
+
+  // strands: curved bands lying mostly along the shell, which gives the sponge-like texture
+  const sw0 = [];
+  for (let k = 0; k < S.strands; k++) sw0.push(Math.exp(gauss() * 0.7));
+  const swSum = sw0.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < S.strands; k++) {
+    const onShell = R() < S.shell;
+    const d0 = randDir();
+    const tang = randDir();
+    const span = 0.25 + 0.6 * R();
+    const d2 = [d0[0] + tang[0] * span, d0[1] + tang[1] * span, d0[2] + tang[2] * span];
+    const l2 = Math.hypot(...d2); d2[0] /= l2; d2[1] /= l2; d2[2] /= l2;
+    const r0 = onShell ? S.lobeSpread * (0.85 + 0.3 * R()) : S.lobeSpread * 0.7 * R();
+    const r2 = onShell ? S.lobeSpread * (0.85 + 0.3 * R()) : S.lobeSpread * 0.7 * R();
+    const p0 = [d0[0] * r0 * shape[0], d0[1] * r0 * shape[1], d0[2] * r0 * shape[2]];
+    const p2 = [d2[0] * r2 * shape[0], d2[1] * r2 * shape[1], d2[2] * r2 * shape[2]];
+    const bulge = (R() - 0.3) * 0.25;
+    const m = [(p0[0] + p2[0]) / 2, (p0[1] + p2[1]) / 2, (p0[2] + p2[2]) / 2];
+    const ml = Math.hypot(...m) || 1;
+    const p1 = [m[0] + m[0] / ml * bulge, m[1] + m[1] / ml * bulge, m[2] + m[2] / ml * bulge];
+    const L = nearestLobe(p1);
+    const c = R() < 0.88 ? L.col : mixColor(L.col, pal[Math.floor(R() * pal.length)], 0.5);
+    const thick = 0.008 + 0.035 * Math.pow(R(), 1.5);
+    const count = Math.round(nStr * sw0[k] / swSum);
+    for (let i = 0; i < count; i++) {
+      const u = R(), a = (1 - u) * (1 - u), b = 2 * u * (1 - u), cc = u * u;
+      const th = thick * (0.5 + Math.sin(u * Math.PI));
+      put(a * p0[0] + b * p1[0] + cc * p2[0] + gauss() * th,
+          a * p0[1] + b * p1[1] + cc * p2[1] + gauss() * th,
+          a * p0[2] + b * p1[2] + cc * p2[2] + gauss() * th, c);
+    }
+  }
+  const lw = lobes.reduce((s, L) => s + L.w, 0);
+  const subs = [];
+  for (let k = 0; k < S.subClusters; k++) {
+    let u = R() * lw, L = lobes[0];
+    for (const LL of lobes) { u -= LL.w; if (u <= 0) { L = LL; break; } }
+    const Cn = [L.c[0] + gauss() * L.sig, L.c[1] + gauss() * L.sig, L.c[2] + gauss() * L.sig];
+    const other = pal[Math.floor(R() * pal.length)];
+    subs.push({ c: Cn, w: Math.exp(gauss() * 0.7), sig: 0.04 + 0.09 * Math.pow(R(), 1.2), col: R() < 0.88 ? L.col : mixColor(L.col, other, 0.4 + 0.4 * R()) });
+  }
+  const sw = subs.reduce((s, q) => s + q.w, 0);
+  for (const q of subs) gaussBlob(q.c, q.sig, Math.round(clusterBudget * q.w / sw), q.col, [0.5 + R(), 0.5 + R(), 0.5 + R()]);
+
+  // knots: small dense groups (near-duplicate games) that read as bright coloured specks
+  const kw = []; for (let k = 0; k < S.knots; k++) kw.push(Math.exp(gauss() * 0.9));
+  const kSum = kw.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < S.knots; k++) {
+    const q = subs[Math.floor(R() * subs.length)];
+    const Cn = [q.c[0] + gauss() * q.sig * 1.4, q.c[1] + gauss() * q.sig * 1.4, q.c[2] + gauss() * q.sig * 1.4];
+    const c = R() < 0.5 ? q.col : pal[Math.floor(R() * pal.length)];
+    gaussBlob(Cn, 0.005 + 0.016 * R(), Math.round(nKnot * kw[k] / kSum), c, [1, 0.3 + 0.9 * R(), 0.3 + 0.9 * R()], () => 0.8 + 0.4 * R());
+  }
+
+  // tendrils: short thin streaks hanging off outer sub-clusters
+  const outer = subs.filter((q) => Math.hypot(...q.c) > S.lobeSpread * 0.55);
+  for (let f = 0; f < S.filaments; f++) {
+    const q = outer[Math.floor(R() * outer.length)] || subs[0];
+    const out = q.c.map((v) => v / (Math.hypot(...q.c) || 1));
+    const tang = randDir();
+    const dir = [out[0] + tang[0] * 0.8, out[1] + tang[1] * 0.8, out[2] + tang[2] * 0.8];
+    const dl = Math.hypot(...dir); dir[0] /= dl; dir[1] /= dl; dir[2] /= dl;
+    const bend = randDir();
+    const len = 0.05 + 0.3 * Math.pow(R(), 1.6);
+    const count = Math.round(nFil / S.filaments * (0.3 + 1.4 * R()));
+    const thick = 0.004 + 0.01 * R();
+    const c = R() < 0.6 ? q.col : pal[Math.floor(R() * pal.length)];
+    for (let k = 0; k < count; k++) {
+      const s = Math.pow(R(), 1.3), w = s * len;
+      put(q.c[0] + dir[0] * (w + q.sig) + bend[0] * w * w * 1.5 + gauss() * thick,
+          q.c[1] + dir[1] * (w + q.sig) + bend[1] * w * w * 1.5 + gauss() * thick,
+          q.c[2] + dir[2] * (w + q.sig) + bend[2] * w * w * 1.5 + gauss() * thick, c);
+    }
+  }
+  // islands: small detached groups around the body
+  for (let k = 0; k < S.islands; k++) {
+    const d = randDir();
+    const rr = S.islandRadius[0] + (S.islandRadius[1] - S.islandRadius[0]) * Math.pow(R(), 1.6);
+    const Cn = [d[0] * rr * shape[0], d[1] * rr * shape[1], d[2] * rr * shape[2]];
+    const count = Math.round(nIsl / S.islands * Math.exp(gauss() * 0.9));
+    gaussBlob(Cn, 0.006 + 0.022 * R(), count, pal[Math.floor(R() * pal.length)], [1, 0.35 + R(), 0.35 + R()]);
+  }
+  // haze: sparse games spread around the lobes
+  while (n < N) {
+    const L = lobes[Math.floor(R() * lobes.length)];
+    const s = L.sig * 1.0;
+    put(L.c[0] + gauss() * s, L.c[1] + gauss() * s, L.c[2] + gauss() * s, L.col, 0.3 + 0.5 * R());
+  }
+  return { positions: pos, colors: col, names, normalized: true };
+}
+
+/* ---------------- shaders ---------------- */
+const POINT_VS = `
+  uniform float uPx, uSize, uGain, uMinPx, uMaxPx, uCapPx, uFocus, uAperture, uExpandR, uExpandOn, uOpacity, uFog, uFogStart;
+  uniform vec3 uOrigin;
+  attribute vec3 color;
+  attribute float aRand;
+  varying vec3 vColor;
+  varying float vAlpha;
+  void main() {
+    vec3 p = position;
+    if (uExpandOn > 0.5) {
+      vec3 d = p - uOrigin;
+      float L = length(d);
+      p = uOrigin + d * min(1.0, uExpandR * (0.82 + 0.36 * aRand) / max(L, 1e-5));
+    }
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    float z = max(-mv.z, 1e-4);
+    float sRaw = uSize * (0.55 + 0.9 * aRand) * uPx / z;
+    // close points grow slower than 1/z so a fly-through stays speckled instead of turning to cotton
+    float s0 = sRaw > uCapPx ? uCapPx + (sRaw - uCapPx) * 0.3 : sRaw;
+    float coc = uAperture * abs(z - uFocus) / z * uPx;
+    // points larger than uCapPx are drawn as defocused blobs: same light, spread wider, so close-ups look like nebula, not discs
+    float soft = max(0.0, s0 - uCapPx) * 0.8;
+    float s = max(sqrt(s0 * s0 + coc * coc + soft * soft), uMinPx);
+    float e = min(s0 * sRaw / (s * s), 2.0);
+    vAlpha = uOpacity * uGain * min(1.0, e) * smoothstep(0.015, 0.09, z) * exp(-uFog * max(0.0, z - uFogStart));
+    gl_PointSize = min(s, uMaxPx);
+    vColor = color;
+    gl_Position = projectionMatrix * mv;
+  }`;
+const POINT_FS = `
+  varying vec3 vColor;
+  varying float vAlpha;
+  void main() {
+    vec2 c = gl_PointCoord * 2.0 - 1.0;
+    float r2 = dot(c, c);
+    if (r2 > 1.0) discard;
+    float a = exp(-r2 * 3.2) * (1.0 - r2 * r2 * 0.3);
+    gl_FragColor = vec4(vColor * a * vAlpha * 1.9, 1.0);
+  }`;
+const FOCUS_VS = `
+  uniform float uScale;
+  attribute vec3 color;
+  attribute float aSize;
+  attribute float aAlpha;
+  varying vec3 vColor;
+  varying float vAlpha;
+  void main() {
+    vColor = color; vAlpha = aAlpha;
+    gl_PointSize = aSize * uScale;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }`;
+const FOCUS_FS = `
+  varying vec3 vColor;
+  varying float vAlpha;
+  void main() {
+    vec2 c = gl_PointCoord * 2.0 - 1.0;
+    float r = length(c);
+    if (r > 1.0) discard;
+    float core = smoothstep(0.42, 0.18, r);
+    float halo = exp(-r * r * 5.0) * 0.55;
+    vec3 col = mix(vColor, vec3(1.0, 0.9, 0.8), core * 0.25);
+    gl_FragColor = vec4(col * (core + halo) * vAlpha, 1.0);
+  }`;
+const FINAL_SHADER = {
+  uniforms: {
+    tDiffuse: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uSeed: { value: 0 },
+    uExposure: { value: 1.3 }, uGrain: { value: 0.04 }, uVignette: { value: 0.5 },
+    uBg0: { value: new THREE.Vector3() }, uBg1: { value: new THREE.Vector3() },
+  },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform vec2 uRes; uniform float uSeed, uExposure, uGrain, uVignette;
+    uniform vec3 uBg0, uBg1;
+    varying vec2 vUv;
+    float hash(vec2 p) { p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
+    void main() {
+      vec3 src = texture2D(tDiffuse, vUv).rgb;
+      // hue-preserving tone map: dense regions saturate in brightness without washing to white
+      float L = max(max(src.r, src.g), src.b);
+      vec3 col = src / max(L, 1e-4) * (1.0 - exp(-L * uExposure));
+      col = mix(col, 1.0 - exp(-src * uExposure), 0.35);
+      vec2 q = (vUv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
+      float d = length(q);
+      vec3 bg = mix(uBg0, uBg1, pow(vUv.y, 1.3)) * (1.0 - 0.1 * pow(abs(vUv.x - 0.5) * 2.0, 2.0));
+      col = bg + col * (1.0 - bg);
+      col *= 1.0 - uVignette * 0.35 * smoothstep(0.45, 1.1, d);
+      vec2 px = floor(vUv * uRes);
+      float g = hash(px + uSeed * 17.0) - 0.5;
+      float speck = step(0.992, hash(px * 1.37 + uSeed * 5.0));
+      col += (g * uGrain + speck * uGrain * 0.8) * (1.0 - col);
+      gl_FragColor = vec4(col, 1.0);
+    }`,
+};
+
+/* =====================================================================
+ * createGameSpace(container, options) → { play, pause, seek, setData, destroy, ... }
+ * ===================================================================== */
+function createGameSpace(container, options = {}) {
+  const cfg = merge(CONFIG, options);
+  const story = cfg.story, R = cfg.render, ST = cfg.styles, C = cfg.colors;
+  const reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+  /* ---- DOM ---- */
+  const root = document.createElement('div');
+  root.className = 'gs-root';
+  root.style.setProperty('--gs-display', cfg.fonts.display);
+  root.style.setProperty('--gs-ui', cfg.fonts.ui);
+  root.style.setProperty('--gs-mono', cfg.fonts.mono);
+  root.style.setProperty('--gs-accent', C.accent);
+  root.style.setProperty('--gs-text', C.text);
+  root.style.background = C.background;
+  container.appendChild(root);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!cfg.preserveDrawingBuffer });
+  renderer.setClearColor(0x000000, 1);
+  root.appendChild(renderer.domElement);
+  const gl = renderer.getContext();
+  const maxPointHW = (gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) || [1, 64])[1];
+
+  const ui = document.createElement('div'); ui.className = 'gs-ui'; root.appendChild(ui);
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg'); ui.appendChild(svg);
+  const chapterEl = document.createElement('div'); chapterEl.className = 'gs-chapter';
+  chapterEl.innerHTML = '<span class="n"></span><span class="l"></span><span class="t"></span>';
+  chapterEl.querySelector('.n').textContent = story.chapter.num;
+  chapterEl.querySelector('.t').textContent = story.chapter.title;
+  ui.appendChild(chapterEl);
+
+  /* ---- three scene ---- */
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(R.fovRef, 16 / 9, 0.005, 60);
+  const cloudMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uPx: { value: 1 }, uSize: { value: R.pointSize }, uGain: { value: R.pointGain }, uMinPx: { value: R.minPointPx },
+      uMaxPx: { value: R.maxPointPx }, uFocus: { value: 3 }, uAperture: { value: 0 }, uExpandR: { value: 10 },
+      uExpandOn: { value: 0 }, uOpacity: { value: 1 }, uOrigin: { value: new THREE.Vector3() },
+      uFog: { value: R.fog }, uFogStart: { value: 3 }, uCapPx: { value: R.capPointPx },
+    },
+    vertexShader: POINT_VS, fragmentShader: POINT_FS,
+    transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+  });
+  let cloud = null, data = null, nameIndex = {};
+  const focusMat = new THREE.ShaderMaterial({
+    uniforms: { uScale: { value: 1 } }, vertexShader: FOCUS_VS, fragmentShader: FOCUS_FS,
+    transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+  });
+  let focus = null;
+
+  const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
+  const composer = new THREE.EffectComposer(renderer, rt);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  // clamp before bloom: the collapsed big-bang ball sums to huge values that make the bloom mips blocky
+  const clampPass = new THREE.ShaderPass({
+    uniforms: { tDiffuse: { value: null }, uMax: { value: 1.8 } },
+    vertexShader: FINAL_SHADER.vertexShader,
+    fragmentShader: 'uniform sampler2D tDiffuse; uniform float uMax; varying vec2 vUv; void main(){ gl_FragColor = vec4(min(texture2D(tDiffuse, vUv).rgb, vec3(uMax)), 1.0); }',
+  });
+  composer.addPass(clampPass);
+  const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), R.bloom.strength, R.bloom.radius, R.bloom.threshold);
+  composer.addPass(bloom);
+  const finalPass = new THREE.ShaderPass(FINAL_SHADER);
+  finalPass.uniforms.uBg0.value.fromArray(hexRgb(C.backgroundBottom));
+  finalPass.uniforms.uBg1.value.fromArray(hexRgb(C.backgroundTop));
+  finalPass.uniforms.uExposure.value = R.exposure;
+  finalPass.uniforms.uGrain.value = R.grain;
+  finalPass.uniforms.uVignette.value = R.vignette;
+  composer.addPass(finalPass);
+
+  /* ---- data ---- */
+  function normalise(d) {
+    const P = Float32Array.from(d.positions);
+    const N = P.length / 3;
+    if (!d.normalized) {
+      let cx = 0, cy = 0, cz = 0;
+      for (let i = 0; i < N; i++) { cx += P[i * 3]; cy += P[i * 3 + 1]; cz += P[i * 3 + 2]; }
+      cx /= N; cy /= N; cz /= N;
+      const step = Math.max(1, Math.floor(N / 20000)), rs = [];
+      for (let i = 0; i < N; i += step) rs.push(Math.hypot(P[i * 3] - cx, P[i * 3 + 1] - cy, P[i * 3 + 2] - cz));
+      rs.sort((a, b) => a - b);
+      const s = 1 / (rs[Math.floor(rs.length * 0.95)] || 1);
+      for (let i = 0; i < N; i++) { P[i * 3] = (P[i * 3] - cx) * s; P[i * 3 + 1] = (P[i * 3 + 1] - cy) * s; P[i * 3 + 2] = (P[i * 3 + 2] - cz) * s; }
+    }
+    let Ccol = d.colors ? Float32Array.from(d.colors) : null;
+    if (!Ccol) {
+      const pal = (d.palette || Object.values(cfg.palette)).map(hexRgb);
+      Ccol = new Float32Array(N * 3);
+      for (let i = 0; i < N; i++) {
+        let c;
+        if (d.groups) c = pal[d.groups[i] % pal.length];
+        else { // colour by direction when nothing else is given
+          const a = Math.atan2(P[i * 3 + 2], P[i * 3]) / (2 * Math.PI) + 0.5 + P[i * 3 + 1] * 0.25;
+          c = pal[Math.floor(((a % 1) + 1) % 1 * pal.length)];
+        }
+        Ccol[i * 3] = c[0] * 0.85; Ccol[i * 3 + 1] = c[1] * 0.85; Ccol[i * 3 + 2] = c[2] * 0.85;
+      }
+    }
+    return { positions: P, colors: Ccol, names: d.names || {}, count: N };
+  }
+  function buildCloud(d) {
+    if (cloud) { scene.remove(cloud); cloud.geometry.dispose(); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(d.colors, 3));
+    const rnd = new Float32Array(d.count);
+    const r = mulberry32(7);
+    for (let i = 0; i < d.count; i++) rnd[i] = r();
+    g.setAttribute('aRand', new THREE.BufferAttribute(rnd, 1));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 50);
+    cloud = new THREE.Points(g, cloudMat);
+    cloud.frustumCulled = false;
+    scene.add(cloud);
+  }
+  function buildFocus() {
+    if (focus) { scene.remove(focus); focus.geometry.dispose(); }
+    const items = story.focusPoints.filter((f) => pointOf(f.name));
+    const g = new THREE.BufferGeometry();
+    const P = new Float32Array(items.length * 3), Cc = new Float32Array(items.length * 3), Sz = new Float32Array(items.length), A = new Float32Array(items.length);
+    items.forEach((f, i) => { P.set(pointOf(f.name), i * 3); Cc.set(hexRgb(f.color), i * 3); Sz[i] = f.size * 2.4; });
+    g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(Cc, 3));
+    g.setAttribute('aSize', new THREE.BufferAttribute(Sz, 1));
+    g.setAttribute('aAlpha', new THREE.BufferAttribute(A, 1));
+    focus = new THREE.Points(g, focusMat);
+    focus.frustumCulled = false;
+    focus.userData.items = items;
+    scene.add(focus);
+  }
+  const pointOf = (name) => {
+    if (Array.isArray(name)) return name;
+    const i = nameIndex[name];
+    if (i == null || !data) return null;
+    return [data.positions[i * 3], data.positions[i * 3 + 1], data.positions[i * 3 + 2]];
+  };
+  const resolveTarget = (v) => pointOf(v) || [0, 0, 0];
+
+  /* ---- overlay: labels, links, captions ---- */
+  const charsOf = (el, text) => {
+    const spans = [];
+    text.split(' ').forEach((word, wi, arr) => {
+      const w = document.createElement('span'); w.className = 'gs-word';
+      for (const ch of word) { const s = document.createElement('span'); s.className = 'gs-ch'; s.textContent = ch; w.appendChild(s); spans.push(s); }
+      el.appendChild(w);
+      if (wi < arr.length - 1) { const sp = document.createElement('span'); sp.className = 'gs-ch'; sp.textContent = ' '; el.appendChild(sp); spans.push(sp); }
+    });
+    return spans;
+  };
+  const colorOf = (key, fallback) => (key && key.startsWith('#') ? key : C[key] || fallback);
+  const labels = story.labels.map((L) => {
+    const st = ST[L.kind];
+    const color = L.color || colorOf(st.color, C.white);
+    const lineColor = L.color || colorOf(st.line, color);
+    const el = document.createElement('div');
+    el.className = 'gs-label ' + L.side + (st.backdrop ? ' backdrop' : '');
+    el.style.opacity = '0';
+    const main = document.createElement('span'); main.className = 'main';
+    main.style.color = color;
+    main.style.fontFamily = cfg.fonts[st.font];
+    main.style.fontWeight = st.weight;
+    if (st.tracking) main.style.letterSpacing = `${st.tracking}em`;
+    const mainChars = charsOf(main, L.text);
+    let sub = null, subChars = [];
+    if (L.sub) {
+      sub = document.createElement('span'); sub.className = 'sub';
+      sub.style.color = colorOf(st.subColor, C.muted);
+      subChars = charsOf(sub, L.sub);
+    }
+    if (sub && st.subFirst) { el.appendChild(main); el.appendChild(sub); } else { el.appendChild(main); if (sub) el.appendChild(sub); }
+    ui.appendChild(el);
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('fill', 'none'); path.setAttribute('stroke', lineColor); path.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(path);
+    let ring = null;
+    if (st.ring) {
+      ring = document.createElementNS(svgNS, 'circle');
+      ring.style.opacity = '0';
+      ring.setAttribute('fill', rgba(color, 0.12)); ring.setAttribute('stroke', color);
+      svg.appendChild(ring);
+    }
+    return { L, st, el, main, sub, mainChars, subChars, path, ring, color, glow: st.glow };
+  });
+  const links = story.links.map((K) => {
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('stroke', colorOf(K.color, C.white));
+    svg.insertBefore(line, svg.firstChild);
+    return { K, line };
+  });
+  const captions = story.captions.map((c) => {
+    const el = document.createElement('div');
+    el.className = 'gs-caption';
+    el.style.color = c.tone === 'warm' ? C.captionWarm : C.captionCool;
+    el.style.opacity = '0';
+    if (ST.caption.tracking) el.style.letterSpacing = `${ST.caption.tracking}em`;
+    const chars = charsOf(el, c.text);
+    ui.appendChild(el);
+    return { c, el, chars };
+  });
+
+  /* per-character reveal: fade + de-blur + settle from a slightly larger scale */
+  function revealChars(chars, t, t0, stagger, dur, cache) {
+    for (let i = 0; i < chars.length; i++) {
+      const p = clamp((t - t0 - i * stagger) / dur, 0, 1);
+      const key = Math.round(p * 60);
+      if (cache[i] === key) continue;
+      cache[i] = key;
+      const e = EASE.out(p), s = chars[i].style;
+      s.opacity = p.toFixed(3);
+      s.filter = p >= 1 ? 'none' : `blur(${((1 - e) * 0.14).toFixed(3)}em)`;
+      s.transform = p >= 1 ? 'none' : `translateY(${((1 - e) * 0.16).toFixed(3)}em) scale(${(1 + (1 - e) * 0.32).toFixed(3)})`;
+    }
+  }
+
+  /* ---- layout ---- */
+  let W = 1, H = 1, dpr = 1, tanScale = 1, k = 1, kText = 1;
+  function layout() {
+    const r = container.getBoundingClientRect();
+    W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+    dpr = Math.min(window.devicePixelRatio || 1, R.maxPixelRatio);
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(W, H, false);
+    composer.setPixelRatio(dpr);
+    composer.setSize(W, H);
+    bloom.resolution.set(W * dpr, H * dpr);
+    const aspect = W / H;
+    tanScale = Math.max(1, R.minAspect / aspect);
+    k = (H / 720) / tanScale;
+    kText = Math.max(k, Math.min(1, 0.62 * (H / 720) + 0.25, 0.75 * (W / 1280) + 0.45));
+    camera.aspect = aspect;
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    finalPass.uniforms.uRes.value.set(W * dpr, H * dpr);
+    const CH = ST.chapter;
+    chapterEl.style.left = `${CH.x * k}px`;
+    chapterEl.style.top = `${CH.y * k}px`;
+    chapterEl.style.transform = 'translateY(-50%)';
+    chapterEl.style.gap = `${CH.gap * kText}px`;
+    chapterEl.querySelector('.n').style.fontSize = `${CH.num * kText}px`;
+    const ln = chapterEl.querySelector('.l'); ln.style.width = `${CH.line * kText}px`; ln.style.height = `${Math.max(1, kText)}px`;
+    chapterEl.querySelector('.t').style.fontSize = `${CH.title * kText}px`;
+    for (const lb of labels) {
+      lb.main.style.fontSize = `${(lb.L.size || lb.st.size) * kText}px`;
+      lb.main.style.textShadow = `0 0 ${8 * kText}px ${rgba(lb.color, lb.glow)}`;
+      if (lb.sub) { lb.sub.style.fontSize = `${Math.max(7.5, lb.st.sub * kText)}px`; lb.sub.style.marginTop = `${(lb.L.kind === 'compare' ? 12 : 7) * kText}px`; }
+      lb.path.setAttribute('stroke-width', (1.1 * Math.max(0.8, kText)).toFixed(2));
+      if (lb.ring) { lb.ring.setAttribute('r', (lb.st.ring * kText).toFixed(2)); lb.ring.setAttribute('stroke-width', (1.3 * Math.max(0.8, kText)).toFixed(2)); }
+    }
+    for (const L of links) L.line.setAttribute('stroke-width', (1.3 * kText).toFixed(2));
+    const CS = ST.caption;
+    for (const c of captions) {
+      c.el.style.fontSize = `${Math.min((c.c.size || CS.size) * kText, W * 0.075)}px`;
+      c.el.style.top = `${(c.c.y || CS.y) / 720 * H}px`;
+      c.el.style.maxWidth = `${W * 0.9}px`;
+      c.el.style.width = 'max-content';
+      c.el.style.textShadow = c.c.tone === 'warm'
+        ? `0 0 ${10 * kText}px rgba(255,236,220,.32), 0 ${2 * kText}px ${14 * kText}px rgba(0,0,0,.55)`
+        : `0 0 ${7 * kText}px rgba(140,212,255,.75), 0 0 ${20 * kText}px rgba(80,170,255,.42)`;
+    }
+    for (const lb of labels) { lb.cache = null; lb.w = lb.el.offsetWidth; }
+  }
+
+  /* ---- frame ---- */
+  const v3 = new THREE.Vector3();
+  let yaw = 0, pitch = 0;
+  function project(p) {
+    v3.set(p[0], p[1], p[2]).project(camera);
+    return [(v3.x + 1) / 2 * W, (1 - v3.y) / 2 * H, v3.z];
+  }
+  const windowAlpha = (t, t0, t1, fin, fout) => clamp((t - t0) / fin, 0, 1) * (1 - clamp((t - t1) / fout, 0, 1));
+
+  function renderAt(t) {
+    if (!data) return;
+    const rig = cameraAt(story, t, resolveTarget, R.fovRef);
+    rig.az += yaw; rig.el = clamp(rig.el + pitch, -1.4, 1.4);
+    camera.fov = 2 * Math.atan(Math.tan(rig.fov * Math.PI / 360) * tanScale) * 180 / Math.PI;
+    camera.updateProjectionMatrix();
+    applyRig(camera, rig, tanScale);
+
+    const u = cloudMat.uniforms;
+    u.uPx.value = (H * dpr / 2) / Math.tan(camera.fov * Math.PI / 360);
+    u.uOpacity.value = sampleKeys(story.cloud, t, (kf) => kf.opacity, lerp);
+    const lens = sampleKeys(story.lens, t, (kf) => [kf.aperture, kf.focus == null ? -1 : kf.focus], (a, b, uu) => [lerp(a[0], b[0], uu), b[1] < 0 || a[1] < 0 ? (uu < 0.5 ? a[1] : b[1]) : lerp(a[1], b[1], uu)]);
+    u.uAperture.value = lens[0];
+    u.uFocus.value = lens[1] < 0 ? rig.dist : lens[1];
+    u.uMaxPx.value = Math.min(R.maxPointPx * dpr, maxPointHW);
+    u.uFogStart.value = camera.position.length() - 0.35; // fade only the far half of the (centred) cloud
+    u.uMinPx.value = R.minPointPx * dpr;
+    u.uCapPx.value = R.capPointPx * dpr;
+    const X = story.expand;
+    if (X && t >= X.keys[0].t && t < X.keys[X.keys.length - 1].t) {
+      u.uExpandOn.value = 1;
+      u.uExpandR.value = sampleKeys(X.keys, t, (kf) => kf.r, lerp);
+      u.uOrigin.value.fromArray(resolveTarget(X.origin));
+    } else u.uExpandOn.value = 0;
+
+    if (focus) {
+      const A = focus.geometry.attributes.aAlpha;
+      focus.userData.items.forEach((f, i) => { A.array[i] = windowAlpha(t, f.t0, f.t1, 0.25, 0.08); });
+      A.needsUpdate = true;
+      focusMat.uniforms.uScale.value = dpr * kText;
+    }
+
+    const hide = story.chapter.hide;
+    let chA = 1;
+    if (hide && t >= hide[0]) chA = t < hide[1] ? 0 : clamp((t - hide[1]) / (hide[2] - hide[1]), 0, 1);
+    chapterEl.style.opacity = chA.toFixed(3);
+
+    for (const lb of labels) {
+      const L = lb.L, st = lb.st;
+      const P = pointOf(L.name);
+      const fade = 1 - clamp((t - L.t1) / ST.labelFade, 0, 1);
+      const live = P && t >= L.t0 - 0.01 && fade > 0;
+      if (!live) {
+        if (lb.on) { lb.el.style.opacity = '0'; lb.path.style.opacity = '0'; if (lb.ring) lb.ring.style.opacity = '0'; lb.on = false; }
+        continue;
+      }
+      lb.on = true;
+      const [px, py, pz] = project(P);
+      if (pz > 1) { lb.el.style.opacity = '0'; lb.path.style.opacity = '0'; if (lb.ring) lb.ring.style.opacity = '0'; continue; }
+      const off = L.offsets ? sampleKeys(L.offsets, t, (kf) => [kf.dx, kf.dy], (a, b, uu) => [lerp(a[0], b[0], uu), lerp(a[1], b[1], uu)]) : [L.dx, L.dy];
+      let sgn = L.side === 'left' ? -1 : 1;
+      const reach = (Math.abs(off[0]) + st.stub + st.gap) * kText + (lb.w || 0);
+      const pad = 8;
+      // narrow frames: mirror a label that would leave the frame, if the other side has room
+      if (sgn < 0 && px - reach < pad && px + reach < W - pad) sgn = 1;
+      else if (sgn > 0 && px + reach > W - pad && px - reach > pad) sgn = -1;
+      const dx = sgn === (L.side === 'left' ? -1 : 1) ? off[0] : -off[0];
+      const ex = px + dx * kText, ey = py + off[1] * kText;
+      const sx = ex + sgn * st.stub * kText;
+      const draw = L.instant ? 1 : clamp((t - L.t0) / ST.lineDraw, 0, 1);
+      const segA = Math.hypot(ex - px, ey - py), segB = Math.abs(sx - ex), total = segA + segB;
+      lb.path.setAttribute('d', `M${px.toFixed(1)},${py.toFixed(1)}L${ex.toFixed(1)},${ey.toFixed(1)}L${sx.toFixed(1)},${ey.toFixed(1)}`);
+      lb.path.style.strokeDasharray = `${total.toFixed(1)} ${total.toFixed(1)}`;
+      lb.path.style.strokeDashoffset = (total * (1 - EASE.out(draw))).toFixed(1);
+      lb.path.style.opacity = (0.82 * fade).toFixed(3);
+      if (lb.ring) { lb.ring.setAttribute('cx', px.toFixed(1)); lb.ring.setAttribute('cy', py.toFixed(1)); lb.ring.style.opacity = (fade * clamp((t - L.t0) / 0.15, 0, 1)).toFixed(3); }
+      let gx = sx + sgn * st.gap * kText;
+      const w = lb.w || 0;
+      gx = sgn < 0 ? Math.max(gx, w + pad) : Math.min(gx, W - w - pad);
+      // the first line's vertical centre sits on the stub
+      lb.el.style.transform = `translate(${(sgn < 0 ? gx - w : gx).toFixed(1)}px, ${ey.toFixed(1)}px) translateY(-${((L.size || st.size) * kText * 0.5).toFixed(1)}px)`;
+      lb.el.style.opacity = fade.toFixed(3);
+      if (!lb.cache) lb.cache = { m: [], s: [] };
+      const t0Text = L.t0 + (L.instant ? -10 : ST.lineDraw * 0.6);
+      if (lb.sub && st.subFirst) {
+        revealChars(lb.subChars, t, L.t0, ST.labelStagger * 0.12, ST.labelDur * 1.4, lb.cache.s);
+        revealChars(lb.mainChars, t, L.mainAt != null ? L.mainAt : t0Text + 0.38, ST.labelStagger, ST.labelDur, lb.cache.m);
+      } else {
+        revealChars(lb.mainChars, t, t0Text, ST.labelStagger, ST.labelDur, lb.cache.m);
+        if (lb.sub) revealChars(lb.subChars, t, t0Text, ST.labelStagger * 0.2, ST.labelDur, lb.cache.s);
+      }
+    }
+    for (const L of links) {
+      const K = L.K, a = pointOf(K.from), b = pointOf(K.to);
+      const al = a && b ? windowAlpha(t, K.t0, K.t1, 0.3, ST.labelFade) : 0;
+      L.line.style.opacity = (al * (K.opacity || 1)).toFixed(3);
+      if (al <= 0) continue;
+      const pb = project(b), pf = project(a);
+      const dp = EASE.inOut(clamp((t - K.t0) / (K.draw || 0.01), 0, 1));
+      const pa = [lerp(pb[0], pf[0], dp), lerp(pb[1], pf[1], dp)];
+      L.line.setAttribute('x1', pa[0].toFixed(1)); L.line.setAttribute('y1', pa[1].toFixed(1));
+      L.line.setAttribute('x2', pb[0].toFixed(1)); L.line.setAttribute('y2', pb[1].toFixed(1));
+      L.line.setAttribute('stroke-dasharray', K.dash ? K.dash.map((d) => d * kText).join(' ') : 'none');
+    }
+    for (const c of captions) {
+      const CS = ST.caption;
+      const out = 1 - clamp((t - c.c.t1) / CS.fadeOut, 0, 1);
+      const live = t >= c.c.t0 && out > 0;
+      c.el.style.opacity = live ? out.toFixed(3) : '0';
+      if (!live) { c.cache = null; continue; }
+      if (!c.cache) c.cache = [];
+      revealChars(c.chars, t, c.c.t0, CS.stagger, CS.dur, c.cache);
+      c.el.style.transform = 'translateX(-50%) translateY(-50%)';
+    }
+
+    finalPass.uniforms.uSeed.value = reduceMotion.matches ? 0 : Math.floor(t * 24) % 997;
+    composer.render();
+  }
+
+  /* ---- playback ---- */
+  let time = story.start, playing = false, raf = 0, lastNow = 0, destroyed = false;
+  const listeners = new Set();
+  const emit = () => listeners.forEach((fn) => fn(time));
+  function tick(now) {
+    if (!playing || destroyed) return;
+    const dt = Math.min(0.25, (now - lastNow) / 1000);
+    lastNow = now;
+    time += dt;
+    if (time >= story.end) { if (cfg.loop) time = story.start; else { time = story.end; playing = false; } }
+    renderAt(time); emit();
+    if (playing) raf = requestAnimationFrame(tick);
+  }
+  function play() { if (playing || destroyed) return; playing = true; lastNow = performance.now(); raf = requestAnimationFrame(tick); emit(); }
+  function pause() { playing = false; cancelAnimationFrame(raf); emit(); }
+  function seek(t) { time = clamp(+t || 0, story.start, story.end); renderAt(time); emit(); return time; }
+  function setData(d) {
+    data = normalise(d);
+    nameIndex = data.names;
+    buildCloud(data);
+    buildFocus();
+    renderAt(time);
+  }
+
+  /* ---- interaction (optional): drag to orbit, double-click to reset ---- */
+  let drag = null;
+  const onDown = (e) => { drag = { x: e.clientX, y: e.clientY, yaw, pitch }; root.setPointerCapture?.(e.pointerId); };
+  const onMove = (e) => {
+    if (!drag) return;
+    yaw = drag.yaw - (e.clientX - drag.x) / Math.max(200, W) * 3.2;
+    pitch = clamp(drag.pitch + (e.clientY - drag.y) / Math.max(200, H) * 2.2, -1.2, 1.2);
+    if (!playing) renderAt(time);
+  };
+  const onUp = () => { drag = null; };
+  const onDbl = () => { yaw = 0; pitch = 0; if (!playing) renderAt(time); };
+  if (cfg.interactive) {
+    root.style.touchAction = 'none';
+    root.style.cursor = 'grab';
+    root.addEventListener('pointerdown', onDown);
+    root.addEventListener('pointermove', onMove);
+    root.addEventListener('pointerup', onUp);
+    root.addEventListener('pointercancel', onUp);
+    root.addEventListener('dblclick', onDbl);
+  }
+
+  const ro = new ResizeObserver(() => { layout(); renderAt(time); });
+  layout();
+  setData(cfg.data || synthesizeMap(cfg));
+  ro.observe(container);
+
+  const fontsReady = document.fonts && document.fonts.load
+    ? Promise.all([
+      document.fonts.load(`700 20px ${cfg.fonts.display}`), document.fonts.load(`600 20px ${cfg.fonts.ui}`),
+      document.fonts.load(`400 12px ${cfg.fonts.mono}`), document.fonts.load(`500 12px ${cfg.fonts.mono}`),
+    ]).catch(() => {}) : Promise.resolve();
+  const ready = fontsReady.then(() => { if (destroyed) return; layout(); renderAt(time); });
+
+  const startT = reduceMotion.matches ? story.poster : story.start;
+  seek(startT);
+  if (cfg.autoplay && !reduceMotion.matches) play();
+  const onMotionPref = () => { if (reduceMotion.matches) { pause(); seek(story.poster); } };
+  reduceMotion.addEventListener?.('change', onMotionPref);
+
+  function destroy() {
+    destroyed = true; pause(); ro.disconnect();
+    reduceMotion.removeEventListener?.('change', onMotionPref);
+    if (cloud) cloud.geometry.dispose();
+    if (focus) focus.geometry.dispose();
+    cloudMat.dispose(); focusMat.dispose();
+    bloom.dispose?.(); rt.dispose(); composer.renderTarget2?.dispose();
+    renderer.dispose(); renderer.forceContextLoss?.();
+    root.remove(); listeners.clear();
+  }
+
+  return {
+    play, pause, seek, setData, destroy, ready,
+    get time() { return time; },
+    get playing() { return playing; },
+    get start() { return story.start; },
+    get end() { return story.end; },
+    get duration() { return story.end - story.start; },
+    onTime(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+    project: (nameOrXYZ) => { const p = pointOf(nameOrXYZ); return p ? project(p).slice(0, 2) : null; },
+  };
+}
+createGameSpace.defaults = CONFIG;
+createGameSpace.synthesize = (opts) => synthesizeMap(merge(CONFIG, opts || {}));
+window.createGameSpace = createGameSpace;
+
+/* =====================================================================
+ * Demo shell (not part of the effect)
+ * ===================================================================== */
+const params = new URLSearchParams(location.search);
+const capture = params.has('t');
+if (capture) document.documentElement.classList.add('capture');
+const stageEl = document.getElementById('stage');
+const space = createGameSpace(stageEl, { autoplay: !capture, interactive: !capture });
+
+// ids the 可拆 list at the end of the page points to
+const gsRoot = stageEl.querySelector('.gs-root');
+gsRoot.id = 'look';
+gsRoot.querySelector('canvas').id = 'cloud';
+gsRoot.querySelector('.gs-ui').id = 'labels';
+gsRoot.querySelector('.gs-chapter').id = 'chapter';
+
+// the page scrolls on to the notes: stop rendering while the stage is out of view, and leave the keys to the page there
+let inView = true, resumeInView = false;
+// a threshold above 0: with 0, a stage whose bottom edge just touches the viewport still counts as visible
+new IntersectionObserver(([e]) => {
+  inView = e.intersectionRatio >= 0.05;
+  if (!inView && space.playing) { resumeInView = true; space.pause(); }
+  else if (inView && resumeInView) { resumeInView = false; space.play(); }
+}, { threshold: 0.05 }).observe(stageEl);
+
+const btn = document.getElementById('playBtn'), icon = document.getElementById('playIcon');
+const scrub = document.getElementById('scrub'), timeEl = document.getElementById('time'), shell = document.getElementById('shell');
+scrub.min = space.start; scrub.max = space.end;
+const fmt = (t) => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s.toFixed(1).padStart(4, '0')}`; };
+const syncShell = (t) => {
+  scrub.value = t; timeEl.textContent = fmt(t);
+  icon.setAttribute('d', space.playing ? 'M3 2h3v10H3zM8 2h3v10H8z' : 'M3 1.5l9 5.5-9 5.5z');
+  btn.setAttribute('aria-label', space.playing ? 'Pause' : 'Play');
+};
+space.onTime(syncShell);
+syncShell(space.time);
+btn.addEventListener('click', () => (space.playing ? space.pause() : space.play()));
+let resumeAfterScrub = false;
+scrub.addEventListener('pointerdown', () => { resumeAfterScrub = space.playing; space.pause(); });
+scrub.addEventListener('input', () => space.seek(+scrub.value));
+scrub.addEventListener('change', () => { if (resumeAfterScrub) space.play(); });
+document.addEventListener('keydown', (e) => {
+  if (e.target instanceof HTMLInputElement || !inView) return;
+  if (e.code === 'Space') { e.preventDefault(); space.playing ? space.pause() : space.play(); }
+  if (e.code === 'ArrowRight') space.seek(space.time + 1);
+  if (e.code === 'ArrowLeft') space.seek(space.time - 1);
+});
+let idleTimer = 0;
+const wake = () => { shell.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => shell.classList.add('idle'), 2600); };
+['pointermove', 'pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, wake, { passive: true }));
+wake();
+
+// capture mode for frame comparisons: ?t=61.5 renders that frame; #t=… seeks again without reloading
+const seekTo = (t) => space.ready.then(() => { space.pause(); space.seek(t); document.documentElement.dataset.frame = String(t); });
+if (capture) seekTo(parseFloat(params.get('t')));
+window.addEventListener('hashchange', () => { const m = location.hash.match(/t=([\d.]+)/); if (m) seekTo(parseFloat(m[1])); });
+})();
+</script>
+</body>
+</html>

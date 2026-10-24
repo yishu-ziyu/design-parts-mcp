@@ -48,6 +48,7 @@
 | [beacon/index.html](living/beacon/index.html) | 三张海报是同一张字形表排的。灯塔从下往上长，2.5s 后光束扫过表格，字变成 0/1 格子。两张浪从左往右长，然后只剩状态灯在闪 | 一组封面要成套：先定字形表和 9 秒先长后停的节奏，每张只换一张密度图。只留一个一直在动的东西，让它演产品的动作。品牌 skerry 是虚构的 |
 | [reliefkit/index.html](living/reliefkit/index.html) | 左边手机主屏九个暖灰塑料小机器，悬停时光跟着偏。右边放大一个，在图上拖，影子、高光和印字一起跟着光源转 | 要一组像产品照的图标：一个机身配方套全家，光从原作截图拟合，不凭眼睛调。正视 3D 感用 SDF 高度场算，不建模，加图标只写数据。品牌 ORDO 是自拟的。手法来自鹿言 & Zhiyi Zhang《Rams System Icons》 |
 | [doodlecard/index.html](living/doodlecard/index.html) | 照片闪一下白光，弹出一张蜡笔涂鸦卡，连做五次。然后照片越切越快地叠上来，停在 App 画面，最后一把纸卡落在木地板上。19 秒、24 fps，帧号逐帧对着原片 | 「照片进去、结果出来」的产品宣传片或揭晓动画；照片变平涂蜡笔小画；日记卡布局。品牌 LOOP、文案和替身场景是自己的。要卡通抖仍走 doodle。复刻 @JaejinBong |
+| [gamespace/index.html](living/gamespace/index.html) | 黑底上一个橙点 Stardew Valley，四个近邻带相似度小字逐字出来。拉远后 18.9 万个彩色点亮起，硬切坍成小球再炸开，镜头钻进去，退出来标出八个类型 | 讲 embedding / 相似度：先一个熟悉的点和近邻，再全景，再标区域。动画是时间 t 的纯函数，能按参考视频逐秒对。数据是合成的，`setData` 换真坐标。复刻 @re_skob |
 
 ## 零件
 
@@ -316,3 +317,15 @@
 | 手机弹入 / App 里换卡、翻牌 | [doodlecard](living/doodlecard/index.html#app) | 0.5 → 0.73 → 0.9 → 1 三帧弹入，带竖向拖影。卡每 2 帧换一张，再横向翻牌，推近到 1.9 倍 |
 | 卡片落到桌面 / 俯拍收尾 / 增量缓存 | [doodlecard](living/doodlecard/index.html#table) | 空中 4 张大卡模糊 9px 往下掉；俯拍 17 张从 2.35 倍用 5 帧落定。地板和已落地的卡画进一张缓存位图，一张只画一次 |
 | 粗糙字标 / 结尾徽章 / 缓慢缩小 | [doodlecard](living/doodlecard/index.html#end) | 字标按 3 倍画，模糊后加噪声再阈值。徽章 130×38。字标和工作室名每帧缩 0.09% |
+
+### 点云 / embedding 地图 / 讲解镜头
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 十几万点的点云 / 换成真 embedding | [gamespace](living/gamespace/index.html#cloud) | 一个 `THREE.Points`，加法混合不排序。`setData` 收原始 3D 坐标，按均值居中、95% 分位半径缩到 1。按 groups 在 11 色里上色。剧情里的名字查不到就跳过 |
+| 镜头钻进点云不糊成白雾 / 点云景深 | [gamespace](living/gamespace/index.html#cloud) | 点超过 3.4 px 后只按 0.3 斜率变大并柔化，叠弥散圈后按面积压亮度。远半边按 exp(−1.1Δz) 变暗 |
+| 点 → 折线 → 字的标签 / 相似度小字 | [gamespace](living/gamespace/index.html#labels) | 圈 3.8 → 斜线到偏移 → 短线 20–23 → 空 7–8 → 字，都是 1280×720 参考像素。线 0.22 s 画完，字 0.02 s 一个，从 1.32 倍、模糊落位。出画换边 |
+| 讲解镜头时间轴 / seek 到任意一帧 | [gamespace](living/gamespace/index.html#stage) | 轨道镜头关键帧：target、对数插值的 dist、az / el、`at` 落点像素。景深、点云亮度也是关键帧。按原视频同一秒截图对比 |
+| 硬切坍成小球再炸开 | [gamespace](living/gamespace/index.html#stage) | 顶点着色器把点限制在半径 r ×（0.82–1.18）的球里，r 0.03 → 0.12 → 0.5 → 0.95 → 2.6，共 3 s。数据不动 |
+| 加法点云不发白 / 保色相色调映射 / 颗粒 | [gamespace](living/gamespace/index.html#look) | 钳 1.8 → bloom 0.62 / 0.32 / 0.2 → 按最大通道压亮度，和逐通道映射 65 / 35 混。上下渐变底 screen 叠上。颗粒 0.022，每秒换 24 次 |
+| 章节标签 / 逐字发光字幕 | [gamespace](living/gamespace/index.html#chapter) | 编号 JetBrains Mono 12 + 30 px 线 + Barlow 600 13、字距 0.19em。字幕 Barlow Condensed 700 58，0.033 s 一字，冷白加两层蓝色外发光 |
