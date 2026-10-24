@@ -69,6 +69,7 @@
 | [lotus/index.html](living/lotus/index.html) | 页面底部一整块 canvas 荷塘：粉白黄三种荷花、立叶、圆石，上沿白雾融进页面，鼠标划过水面起椭圆涟漪。正文里一句手写注释旁的像素图标点开是一个小岛，骑士和羊都是代码画的点阵 | 作品集底部要一块会回应鼠标的「风景」，又不抢首屏。静的部分烘焙一次，只动摇摆的。复刻 @nexvyn |
 | [caustics/index.html](living/caustics/index.html) | 从水底往上看：一团发虚的日光、浑浊的青绿水体、上方水面的焦散亮斑、淡淡的光柱和悬浮物。2.39:1 画框，一个着色器画完，没有贴图 | 要一个写实水下氛围镜头当头图或转场，但不想放视频。复刻 @Yuki_1t0 Houdini 合集里 16 s 的水下仰拍 |
 | [extrude/index.html](living/extrude/index.html) | 一个平面像素小怪逐行刷出、腿掉下来落定，再沿 Z 轴拉成体素，镜头转到四分之三侧，最后体素缝消失变成一整块。9 s 一循环，可拖时间轴逐拍看 | 角色出场要从「平面图标」过渡到「有体积的东西」。一个厚度变量驱动整只角色，换角色只换一张 ASCII 像素图。复刻 @LexnLin |
+| [peel/index.html](living/peel/index.html) | 一张像素贴纸页：按住往里拖，贴纸从边上翻起露出灰背面和模切孔，撕过一半跟手，贴到待办纸上。撕的沙沙声是 WebAudio 现合成的，拖得快就响、撕得开就高 | 拟物交互的手感一半在声音：声音不排进动画时间线，直接挂在指针速度和进度上。复刻 @workcinprogress |
 
 ## 零件
 
@@ -547,3 +548,13 @@
 | 开场前景光标 / 景深硬切 | [extrude](living/extrude/index.html#caret) | 前景 `>` 2.3→2.55 倍、blur 递减慢推，2.2 s 硬切成远景 0.62 倍 |
 | 平面阶段的底光 / 地面接手 | [extrude](living/extrude/index.html#glow) | 同色径向光 3.1–3.8 s 亮，4.4–5.4 s 退；地面同时淡入，第一层黑椭圆当软影 |
 | 逐拍对照 / 节拍表跳转 | [extrude](living/extrude/index.html#beats) | 6 拍起止时间，点一下 pause + seek 到那一拍 +0.6 s |
+
+### 贴纸 / 撕开 / 拖拽音效
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 撕贴纸 / 折页 / 翻角 | [peel](living/peel/index.html#peel-layer) | 折线 = 抓点和指针的中垂线。P 侧画正面，G 侧用反射矩阵 `I − 2nnᵀ` 翻过去画背面，带 8px 投影。最底下先画模切孔 |
+| 拖拽跟手的音效 / 速度控音量 | [peel](living/peel/index.html#sound) | 白噪声 → 高通 400 → 带通。音量 = 速度/0.9 px·ms⁻¹，带通 700→3400Hz 跟撕开比例走。每次 move 随机 ±25% 出颗粒感 |
+| 贴纸板 / 像素贴纸 / 模切白边 | [peel](living/peel/index.html#sheet) | 412×415 板、3×3 格。12×12 字符画 × 6px，24 方向平移叠白边。撕过 50% 脱离，`back.out(3)` 落下随机 ±10° |
+| 横线待办纸 / 手账感 | [peel](living/peel/index.html#note) | 行距 56、蓝线 `#c9d4e8`、红边线、转 −3.5°。Playfair Display Italic 23px，勾选加删除线 |
+| 一键复位 / 依次飞回 | [peel](living/peel/index.html#reset) | 间隔 0.05s、0.6s `power3.inOut` 飞回原位，落位时孔消失、各响一个上行小音 |
