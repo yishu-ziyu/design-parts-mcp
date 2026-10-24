@@ -264,8 +264,9 @@ function sample(src,o={}){
   const km=kmeans(pts.map(p=>p.c),o.colors||32);pts.forEach((p,i)=>p.b=km.lab[i]);
   return{pts,pal:km.pal}}
 function fromUpload(img){const c=canvas(),x=c.getContext('2d');const s=Math.min(W*.82/img.width,H*.7/img.height);const w=img.width*s,h=img.height*s;x.drawImage(img,(W-w)/2,(H-h)/2+40,w,h);
+  // An image without alpha (a photo or a JPEG on white) fills its own fitted box, so measure coverage against that box, not the canvas
   const id=x.getImageData(0,0,W,H),d=id.data;let opaque=0;for(let i=3;i<d.length;i+=4)if(d[i]>250)opaque++;
-  if(opaque>W*H*.6){for(let i=0;i<d.length;i+=4){const lum=(d[i]+d[i+1]+d[i+2])/3;if(lum>232)d[i+3]=0}x.putImageData(id,0,0)}
+  if(opaque>w*h*.6){for(let i=0;i<d.length;i+=4){const lum=(d[i]+d[i+1]+d[i+2])/3;if(lum>232)d[i+3]=0}x.putImageData(id,0,0)}
   return c}
 
 /* ---------- watercolour dot sprites ---------- */
