@@ -67,6 +67,7 @@
 | [launchreel/index.html](living/launchreel/index.html) | 一片白色键帽铺满地面，蓝键沿对角线升起成轨迹、拼出像素数字、一圈圈涟漪扩开；每幕一行短句从遮罩里升上来，一词强调色。声音全是 WebAudio 合成 | 发布短片的画面、文字、声音都读同一张时间表，拖到哪一帧都对得上。复刻 @LexnLin 的 Cinetic v1.1 发布视频 |
 | [pictionary/index.html](living/pictionary/index.html) | 你画一个词，右边 7 个彩色小生物排成一列抢着猜，猜错划线，第一个猜中的那张卡亮起来，整页换成它的颜色 | 多个 AI 同时作答的比赛界面。每回合换底色，白卡片 + 浮起的白纸，进度按墨量推进。复刻 @nutlope |
 | [lotus/index.html](living/lotus/index.html) | 页面底部一整块 canvas 荷塘：粉白黄三种荷花、立叶、圆石，上沿白雾融进页面，鼠标划过水面起椭圆涟漪。正文里一句手写注释旁的像素图标点开是一个小岛，骑士和羊都是代码画的点阵 | 作品集底部要一块会回应鼠标的「风景」，又不抢首屏。静的部分烘焙一次，只动摇摆的。复刻 @nexvyn |
+| [caustics/index.html](living/caustics/index.html) | 从水底往上看：一团发虚的日光、浑浊的青绿水体、上方水面的焦散亮斑、淡淡的光柱和悬浮物。2.39:1 画框，一个着色器画完，没有贴图 | 要一个写实水下氛围镜头当头图或转场，但不想放视频。复刻 @Yuki_1t0 Houdini 合集里 16 s 的水下仰拍 |
 
 ## 零件
 
@@ -524,3 +525,14 @@
 | 白雾收边 / 无边框画布 | [lotus](living/lotus/index.html#pond) | 最后在上沿 30% 盖白到透明渐变，canvas 与白页面之间没有线 |
 | 像素小游戏 / 字符串点阵精灵 | [lotus](living/lotus/index.html#game) | 160×90 逻辑分辨率 + `pixelated`。精灵是字符串 + 调色板，按脚底 y 排序画。点击或方向键走 |
 | 藏起来的彩蛋入口 | [lotus](living/lotus/index.html#game-toggle) | 正文末句旁一行手写体注释 + 22 px 像素图标，点开才展开游戏 |
+
+### 水下 / 光照氛围 / 程序化着色器
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 水下仰拍 / 日光透水 / 整幅着色器 | [caustics](living/caustics/index.html#shot) | 深 `#10382F` → 中 `#4A958A` 竖向渐变，光晕横向拉宽 1/0.75、乘低频 fbm，中心混 45% 近白。和原片 8×4 色块每通道平均差 11.5 |
+| 光柱 / god rays | [caustics](living/caustics/index.html#rays) | 以太阳为原点取角度，fbm(角度 × 7 + t × 0.12)，2.4 次方，只在太阳下方，按 exp(-1.5r) 衰减。强度 0.2，原片里几乎看不出 |
+| 水面焦散 / 斯涅尔窗 | [caustics](living/caustics/index.html#surface) | 上部 30%，迭代三角焦散 4 次、8 次方留细线，纵向压 2.4 倍做透视；离太阳远的水面压暗 |
+| 悬浮颗粒 / 散景点 | [caustics](living/caustics/index.html#motes) | 三层网格哈希（9 / 18 / 34 格），只 18% 的格子有点，亮度乘光照，背光处看不见 |
+| 图层开关调试着色器 | [caustics](living/caustics/index.html#layers) | 按钮直接把某层 uniform 置 0，`setLayer(name, on)` |
+| 宽银幕片名条 | [caustics](living/caustics/index.html#caption) | 2.39:1 画框下一行小号大写，字距 0.18em，和画框同宽 |
