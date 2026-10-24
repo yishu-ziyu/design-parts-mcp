@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sketchbook — page-curl sketchbook viewer</title>
+<script>
+/* CONFIG — every word and page on this page lives here. Pages are drawn in code (sketchbook.js → SUBJECTS). */
+window.CONFIG = {
+  viewAll: 'All books',
+  book: {
+    maxWidth: 920,          // px, open spread
+    widthRatio: 0.48,       // spread width / viewport width on desktop
+    pageWidth: 1,           // world units
+    pageHeight: 1.01,
+    segments: 28,           // columns in each page mesh
+    curlPeak: 1.15,         // curl (1/radius) at mid-turn
+    flipWeight: 1.6,        // rotation easing exponent
+    fov: 48,
+    spring: { stiffness: 55, damping: 18, mass: 1.2 },
+    drag: { completeThreshold: 0.5, flickVelocity: 1.4 },
+    shadowMax: 0.22,
+    cornerRadius: 0.05,
+    paper: '#f1eee7'
+  },
+  spreads: [
+    { place: 'Field notes', date: '01/03/2026', note: 'a new book, a new pen',
+      left: { draw: 'title', title: 'field notes', sub: 'vol. 7 — mostly pencil' }, right: { draw: 'plant' } },
+    { place: 'Kitchen table', date: '01/09/2026', note: 'the teapot never sits still',
+      left: { draw: 'notes', lines: ['tue — rain', 'tea, too strong', 'draw the pot again', 'shadow is warmer than I think'] }, right: { draw: 'teapot', paper: '#f3ede2' } },
+    { place: 'Studio window', date: '01/15/2026', note: 'six forty and still light out',
+      left: { draw: 'studies' }, right: { draw: 'window' } },
+    { place: 'River road', date: '02/02/2026', note: 'quick wash before the bus',
+      left: { draw: 'hills', paper: '#f4f0e6' }, right: { draw: 'bike' } },
+    { place: 'Saturday market', date: '02/14/2026', note: 'three fruit, one bag',
+      left: { draw: 'notes', lines: ['persimmon x2', 'lemons', 'one plum, ate it'] }, right: { draw: 'fruit', paper: '#f5efe3' } },
+    { place: 'Back porch', date: '03/01/2026', note: 'monstera has a new leaf',
+      left: { draw: 'plant' }, right: { draw: 'studies' } },
+    { place: 'Hill trail', date: '03/22/2026', note: 'ran out of green halfway',
+      left: { draw: 'bike' }, right: { draw: 'hills', paper: '#f3efe5' } },
+    { place: 'Night desk', date: '04/05/2026', note: 'last pages, first light',
+      left: { draw: 'teapot' }, right: { draw: 'notes', lines: ['next book:', 'bigger paper', 'more color', 'fewer rules'] } }
+  ]
+};
+</script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #0e0e0e;
+    --muted: #62625f;
+    --faint: #8b8b88;
+    --tick: #d2cfda;
+    --band: #75688f;
+    --band-hi: #9a8cab;
+    --band-lo: #4f4259;
+    --rule: #ececec;
+    --sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { overflow-x: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+  #viewer { position: relative; height: 100vh; height: 100svh; min-height: 520px; overflow: hidden; outline: none; }
+  .sb-top { position: absolute; inset: 0 0 auto 0; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; z-index: 3; }
+  .sb-viewall { font-size: 14px; letter-spacing: 0.02em; color: var(--faint); }
+  .sb-viewall:hover { color: var(--ink); }
+  .sb-close { width: 28px; height: 28px; display: grid; place-items: center; color: var(--faint); }
+  .sb-close:hover { color: var(--ink); }
+  .sb-close svg { width: 12px; height: 12px; }
+
+  #dial { position: absolute; left: clamp(16px, 6.4vw, 120px); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 9px; z-index: 3; }
+  .sb-tick { width: 13px; height: 2px; background: var(--tick); transition: width .3s, background-color .3s; position: relative; }
+  .sb-tick::before { content: ""; position: absolute; inset: -4px -6px; }
+  .sb-tick.is-on { width: 19px; background: var(--ink); }
+  .sb-tick:hover { background: #9d98aa; }
+  .sb-tick.is-on:hover { background: var(--ink); }
+
+  .sb-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+  #stage { position: relative; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+  #stage:active { cursor: grabbing; }
+  .sb-shadow { position: absolute; inset: 0; border-radius: 2.5% / 5%; box-shadow: 0 26px 70px rgba(44, 36, 66, 0.10), 0 6px 18px rgba(44, 36, 66, 0.06); }
+  #curl { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 2; }
+  .sb-band { position: absolute; left: 100%; top: 27%; height: 46%; width: auto; aspect-ratio: 70 / 200; margin-left: -2px; z-index: 1; overflow: visible; }
+
+  #caption { position: absolute; left: 0; right: 0; top: calc(100% + 48px); display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .sb-loc { font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin: 0; }
+  .sb-date { display: block; margin-top: 8px; font-size: 14px; letter-spacing: 0.02em; color: var(--muted); }
+  .sb-note { font-size: 15px; letter-spacing: 0.02em; color: var(--muted); margin: 0; text-align: right; }
+  .sb-nogl #stage::after { content: "WebGL is off — pages can't be shown."; position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 639px) {
+    #dial { left: 50%; top: auto; bottom: 28px; transform: translateX(-50%); flex-direction: row; align-items: flex-end; }
+    .sb-tick { width: 2px; height: 13px; }
+    .sb-tick.is-on { width: 2px; height: 19px; }
+    #caption { top: calc(100% + 32px); }
+    .sb-note { font-size: 14px; }
+  }
+
+  #notes { max-width: 860px; margin: 0 auto; padding: 72px 20px 96px; border-top: 1px solid var(--rule); font-size: 15px; line-height: 1.7; color: #2a2a2a; }
+  #notes h3 { font-size: 13px; letter-spacing: 0.08em; color: var(--faint); font-weight: 500; margin: 0 0 24px; }
+  #notes dt { margin-top: 20px; }
+  #notes dd { margin: 4px 0 0; color: var(--muted); }
+  #notes code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .sb-tick { transition: none; } }
+</style>
+</head>
+<body>
+<section id="viewer" tabindex="0" aria-label="Sketchbook viewer. Drag or click a page, or use the arrow keys.">
+  <div class="sb-top">
+    <button class="sb-viewall" type="button" data-sb-viewall></button>
+    <button class="sb-close" type="button" aria-label="Close"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l10 10M11 1L1 11"/></svg></button>
+  </div>
+  <nav id="dial" data-sb-dial aria-label="Spreads"></nav>
+  <div class="sb-center">
+    <div id="stage" data-sb-stage>
+      <div class="sb-shadow" data-sb-shadow></div>
+      <svg class="sb-band" data-sb-band viewBox="0 0 70 200" aria-hidden="true">
+        <path d="M-6 10 C34 6 60 34 60 100 C60 166 34 194 -6 190" fill="none" stroke="var(--band)" stroke-width="13" stroke-linecap="round"/>
+        <path d="M-6 16 C28 14 50 40 52 100" fill="none" stroke="var(--band-lo)" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+        <path d="M-6 7 C32 4 56 32 56 100" fill="none" stroke="var(--band-hi)" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+      </svg>
+      <canvas id="curl"></canvas>
+      <div id="caption" data-sb-caption aria-live="polite">
+        <div><p class="sb-loc" data-sb-loc></p><span class="sb-date" data-sb-date></span></div>
+        <p class="sb-note" data-sb-note></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="notes" lang="zh-CN"><h3>可拆</h3><dl>
+  <dt><code>#curl</code></dt>
+  <dd>翻页曲面：每页一条 28 列的平面网格，顶点着色器里按到书脊的距离 x 弯成一段圆柱：<code>x' = sin(xk)/k</code>，<code>z' = (1 − cos xk)/k</code>，再绕书脊转 <code>−π·r</code>。曲率 <code>k = 1.15·sin(πt)</code>，翻到一半最弯、两头摊平；<code>r = tᵂ/(tᵂ+(1−t)ᵂ)</code>，W = 1.6。页面抬离纸面 <code>0.004 + 0.02·sin(πt)</code>。正反面用弯曲后的法线判断，不用 <code>gl_FrontFacing</code>。</dd>
+  <dt><code>#stage</code></dt>
+  <dd>手势：在右半页按下拖向左是往后翻，左半页拖向右是往前翻；进度 = 拖动距离 / 书宽。松手时进度过半或甩动速度超过 1.4 书宽/秒就翻过去，否则弹回。弹簧 stiffness 55、damping 18、mass 1.2，略过阻尼，约 1 秒停稳。只点不拖就直接翻一页；方向键也行。</dd>
+  <dt><code>#viewer</code></dt>
+  <dd>版式：纯白底，书居中，宽 = min(920, 48vw)（手机 = 屏宽 − 32），单页宽高比 1 : 1.01。只有外侧两角是圆角（页宽 5%），书脊一侧直角。书下面一层很淡的大阴影，右边一根紫色橡皮筋从书背绕出来，高度约书高 46%。</dd>
+  <dt><code>#dial</code></dt>
+  <dd>左侧刻度：每个跨页一根 13×2 的浅灰紫刻度 <code>#d2cfda</code>，间距 11px；当前页变成 19px 黑色。点刻度会一页一页连续翻过去，而不是直接跳。手机上改成底部横排。</dd>
+  <dt><code>#caption</code></dt>
+  <dd>说明文字跟着书的左右边缘对齐，书下 48px：左边地点大写 14px、字距 0.04em，下面一行灰色日期；右边一句灰色备注 15px。翻页一开始就换成目标页的文字。</dd>
+</dl></section>
+
+<script src="sketchbook.js"></script>
+<script>
+  (function () {
+    var C = window.CONFIG;
+    var root = document.getElementById('viewer');
+    root.querySelector('[data-sb-viewall]').textContent = C.viewAll;
+    var opts = Object.assign({}, C.book, { spreads: C.spreads });
+    window.sketchbook = createSketchbook(root, opts);
+  })();
+</script>
+</body>
+</html>

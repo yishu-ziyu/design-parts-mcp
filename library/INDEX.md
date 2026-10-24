@@ -61,6 +61,7 @@
 | [asciimmo/index.html](living/asciimmo/index.html) | 整个小世界用彩色等宽字画：草被风吹成一道道 `/`，塘里有倒影，队友跟着走，陌生玩家闲逛放技能，左上角黑底组队面板 | 想做「字符画游戏世界」时，地形、倒影、角色、法术和 HUD 怎么用同一套格子画出来。复刻 TikTok @Ansenjeo（经 @Ekimko 转帖） |
 | [traces/index.html](living/traces/index.html) | AI 干活时的轨迹列表：状态头跟着当前步骤换字，步骤一条条往下长，结果卡片开两张收一张，最后整段折成一行摘要「Ran 2 searches and read 3 sources」。自己写的书店晨报内容 | 让人看见 agent 在做什么，又不被过程淹没。复刻 @dimitroweb |
 | [genie/index.html](living/genie/index.html) | 作品集首页一列不带框的作品，点开一件，所有作品像 macOS 最小化一样斜着变薄、缩成一条，吸进顶部胶囊 Dock，页面换成暖灰作品页 | 作品集要在"列表"和"单个作品"之间有一个能看懂去向的过渡。0.68 s、右缘先动、过 38% 才淡出。复刻 @dmcgco（dmcg.co） |
+| [sketchbook/index.html](living/sketchbook/index.html) | 白底正中一本摊开的速写本，拖右页往左就翻，页面按圆柱弯起来，松手弹簧落下。下面一行地点日期，左边一列刻度跳页。页面全是代码画的铅笔水彩 | 作品集里放手绘本：翻页本身就是展示，不用再配轮播。复刻 @jeanxcrj |
 
 ## 零件
 
@@ -458,3 +459,13 @@
 | 顶部胶囊 Dock / 作品切换条 | [genie](living/genie/index.html#dock) | 高 52 px、顶 10 px、半透明白 + 14 px 背景模糊，关闭圆钮放在胶囊左外侧，每格 42 px |
 | 无框作品列 / 上下渐隐 | [genie](living/genie/index.html#stack) | 作品不带卡片，竖排居中，滚动容器上下 120 px mask 渐隐；动画期间去掉 mask，否则飞进 Dock 的作品被吃掉 |
 | 作品页 / 标题压图 | [genie](living/genie/index.html#case) | 底色 #F0EFEB，粗衬线标题横向放宽 1.12，主图上移 64 px 压住标题下半 |
+
+### 翻页 / 书本 / WebGL 曲面
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 圆柱翻页曲面 / 页面弯曲着色器 | [sketchbook](living/sketchbook/index.html#curl) | 28 列网格。`x' = sin(xk)/k`、`z' = (1 − cos xk)/k`，再绕书脊转 `−π·r`。`k = 1.15·sin(πt)`，正反面用弯后法线判断 |
+| 拖拽翻页 / 过半或甩动才翻 | [sketchbook](living/sketchbook/index.html#stage) | 进度 = 拖动 / 书宽。过 0.5 或甩速 > 1.4 书宽/秒就翻。弹簧 55 / 18 / 1.2，约 1 秒停稳 |
+| 白底查看器版式 / 书 + 橡皮筋 | [sketchbook](living/sketchbook/index.html#viewer) | 书宽 min(920, 48vw)，单页 1 : 1.01，外侧圆角 5%。淡大阴影，右边紫灰橡皮筋占书高 46% |
+| 竖排刻度导航 | [sketchbook](living/sketchbook/index.html#dial) | 13×2、间距 11px、`#d2cfda`，当前 19px 黑。点了一页一页连续翻过去 |
+| 书下说明行 | [sketchbook](living/sketchbook/index.html#caption) | 书下 48px，对齐书的左右边。地点 14px 大写字距 0.04em，日期灰，右边备注 15px |
