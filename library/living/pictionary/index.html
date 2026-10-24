@@ -399,6 +399,7 @@ function createPictionary(container, options = {}) {
 
   function scriptDraw(si) {
     if (!state || state.over || state.mode !== 'demo') return;
+    const mine = state; // callbacks from an earlier round must not touch the new one
     const s = state.R.strokes[si];
     if (!s) { pencil.classList.remove('on'); return; }
     const done = [s[0]], idx = state.strokes.length; state.strokes.push(done);
@@ -407,7 +408,7 @@ function createPictionary(container, options = {}) {
     let last = performance.now();
     pencil.classList.add('on');
     const step = now => {
-      if (!alive || !state || state.over || state.mode !== 'demo') return;
+      if (!alive || state !== mine || state.over || state.mode !== 'demo') return;
       let budget = reduced ? Infinity : (now - last) * cfg.drawSpeed / Math.max(size, 1); last = now;
       let tip = null;
       while (seg < s.length && budget > 0) {
@@ -421,7 +422,7 @@ function createPictionary(container, options = {}) {
       pencil.style.transform = `translate(${tip[0] * size}px, ${tip[1] * size - 34}px)`;
       redraw(); feed(state.ink / state.total);
       if (seg < s.length) requestAnimationFrame(step);
-      else later(() => scriptDraw(si + 1), reduced ? 120 : 260);
+      else later(() => { if (state === mine) scriptDraw(si + 1); }, reduced ? 120 : 260);
     };
     requestAnimationFrame(step);
   }
