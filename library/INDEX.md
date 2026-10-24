@@ -52,6 +52,7 @@
 | [paperwave/index.html](living/paperwave/index.html) | 一张纸在点阵地面上起伏，纯 SVG 每帧把点投影到屏幕。按住纸往上拉，松手后鼓包沿纸跑到另一头再弹回。底部五个药丸左右拖改振幅、波长、速度、转角、俯角 | 不想引 3D 库又要有空间感：正交投影 + 细带按深度排序，辅助线和影子随高度变化来交代离地多高。真 3D 网格走 cutpath / flycam。复刻 @gabriell_lab |
 | [devicegallery/index.html](living/devicegallery/index.html) | 白底上一格格设备浮着，往哪拖都拖不到头。四条边像透镜一样弯，拖得越快弯得越狠、带色散。悬停时设备外面亮一圈慢慢转的彩虹光，点开从格子里飞到页中。开场是设备飞进来聚成一个球，镜头穿进网格 | 产品 / 硬件 / 作品图鉴要让人「逛」：内容只占中间，手感都在边缘那层光里，UI 退到四角。数据在页内 JSON，换真照片只改 `visual.src`。16 台设备是虚构的。复刻 @openmys |
 | [orbitshelf/index.html](living/orbitshelf/index.html) | 14 件抠图小物绕着衬线大标题慢慢转，前排大而清楚，后排小、淡、糊，边缘一圈磨砂雾 | 落地页首屏要一个安静的动态主视觉，不用 3D 也有景深。一个 cos θ 驱动缩放、透明度、层级、模糊。复刻 @Tanjim38 的 knowspace.si |
+| [artatlas/index.html](living/artatlas/index.html) | 一个风格图鉴站：三列 16:10 卡片、搜索加分类胶囊实时过滤、点开是同页详情（大图、看点、可复制提示词、参考作品）。14 张缩略图全是 canvas 程序画的 | 要做「一类东西的图鉴 / 参考库」时，一种卡片、一种比例、两级灰字就够撑起整站。复刻 @onefifthblue 的 Game Art Style |
 
 ## 零件
 
@@ -364,3 +365,12 @@
 | 边缘磨砂 / 中间挖空的模糊层 | [orbitshelf](living/orbitshelf/index.html#haze) | 一整层 `backdrop-filter: blur(14px)`，径向遮罩 64% 透明、80% 半遮、100% 全遮。字在雾上面 |
 | 抠图物品统一摆放 | [orbitshelf](living/orbitshelf/index.html#objects) | 168px 盒 × 各自长宽比，contain，统一 `drop-shadow(0 18px 24px rgba(30,28,22,.1))` |
 | 亮台面底色 + 衬线标题分段入场 | [orbitshelf](living/orbitshelf/index.html#hero) | `#f8f8f6` 上两层白色径向光。Newsreader 360 / 0.98 / −0.035em。品牌 0.85 s、标题组 1 s 上浮 10px |
+
+### 图鉴 / 卡片网格 / 过滤
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 图鉴首页头 / 实时计数 | [artatlas](living/artatlas/index.html#collection) | 眉题 9px 字距 1.8px，标题 Inter 40/50 500 字距 -1.6px；右侧 44px 数字随过滤变，和标题居中对齐 |
+| 搜索框 + 分类胶囊 | [artatlas](living/artatlas/index.html#filters) | 搜索框 40px 高 `#EEEFE9` 圆角 3px；胶囊 12px padding 9/13，选中墨底纸字；窄屏胶囊行内横滚 |
+| 16:10 卡片 / hover 放大 + 箭头 | [artatlas](living/artatlas/index.html#grid) | 三列列距 28px，占位底 `#E8E8E1`；图 `scale(1.035)` 0.5s，箭头淡入并从 -6px 滑回；9 / 19 / 11px 三层字 |
+| 同页详情 / hash 路由 | [artatlas](living/artatlas/index.html#detail) | `#style/<id>` 切换不刷新；左标题右描述，16:9 大图占 76% 宽，四栏看点，衬线提示词框，两列参考卡复用画法换种子 |
