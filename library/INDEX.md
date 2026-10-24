@@ -57,6 +57,7 @@
 | [retroprint/index.html](living/retroprint/index.html) | 一张金属产品照变成粉纸上的蓝墨点，疏密跟着原来的明暗走，暗部带白色细纹。六个 pass 可以逐个点开看，能拖自己的图进来 | 要把照片做成复古单色印刷，不想开 Photoshop。每一步一个 pass，参数和 Photoshop 面板一一对应。复刻 @DesignSpot_Jap |
 | [diagrams/index.html](living/diagrams/index.html) | 左边逐字打出 Mermaid 风格文本，右边每打一个字整张 SVG 重画：流程图、桑基图、柱状图，暖白底配 8 个系列色 | 想让“文本即图”看起来干净、能换主题时用。数值全部取自 Pele 源码。复刻 @kepano |
 | [stitch/index.html](living/stitch/index.html) | 一个小木屋三维模型，拖着转，实时降采样成 115 格宽的十字绣图样；右栏是滑杆、线色表、DMC 色号、针数和 14ct 成品尺寸 | 把任何矢量或三维内容变成「能绣出来」的格子图，同时算出要买几束线、绣出来多大。复刻 @LottieCoxon |
+| [filmtype/index.html](living/filmtype/index.html) | 电影字体档案站：暗色开场轮播三部片，一滚主帧撑满再上推，进到浅色大列表。悬停片名两侧出「+」、第 4 列展开一帧；点开横向一帧一帧走，底部时间码尺跟着点亮。14 部虚构电影、每帧用免费字体画 | 做一个「按条目浏览图片资料」的档案站，要开场有仪式感、列表克制、单条能逐帧翻。复刻 fontsinmovies.com（@VibeEverything 推荐） |
 
 ## 零件
 
@@ -415,3 +416,13 @@
 | X 形针脚 + Aida 布面 | [stitch](living/stitch/index.html#pattern) | 底针左下到右上、加深 22%；面针左上到右下，线宽 0.36 格，内缩 0.16 格；格大于 5px 加高光。布面 2.8% 黑网格 + 格角小孔 |
 | 线色表 / 束数 / 成品尺寸 | [stitch](living/stitch/index.html#key) | hex + RGB 最近 DMC 号 + 针数 + 每束 1,600 针算束数。尺寸 = 格数 / 14 英寸，× 2.54 厘米。点色块换色 |
 | 底部工具浮条 | [stitch](living/stitch/index.html#dock) | 白底 6px 圆角、4px 内边距，按钮 11px 字，激活态深棕 `#2F2A22`。Spin 自转、Smoke 烟圈、Reset view |
+
+### 档案站 / 列表悬停预览 / 逐帧浏览
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 开场轮播 + 撑满上推 | [filmtype](living/filmtype/index.html#intro) | 6 列 × `1fr 2fr 1fr`，主帧占 3–5 列中行，背后同帧模糊压暗。1 s 交叉淡入换片；滚一下主帧 1 s 撑满，再 1.2 s `cubic-bezier(.6,0,0,1)` 上推 |
+| 一行大字铺满刊头 | [filmtype](living/filmtype/index.html#masthead) | 三个词 `space-between`，12.1vw、字距 -0.04em |
+| 列表行悬停弹预览 / 十字标 | [filmtype](living/filmtype/index.html#list) | 5 等分，片名跨 2–4 列 37.4px。预览宽 1 列，`clip-path: inset(50% 0 50% 0)` → `inset(0)` 0.5 s `(.66,0,.34,1)`；「+」从内往外滑 |
+| 列表 / 图片视图切换与排序 | [filmtype](living/filmtype/index.html#toolbar) | 图片视图 3 列 `gap 60 20`。当前排序项变灰，再点反向；切换 0.167 s 淡出淡入 |
+| 横向逐帧 + 时间码尺 | [filmtype](living/filmtype/index.html#film) | 当前帧钉 44.7vw，滚轮节流一帧，1 s 平移；尺上每帧一点，当前点红，时间码标签跟随 |
