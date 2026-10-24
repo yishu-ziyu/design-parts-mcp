@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch Derby</title>
+<style>
+  @font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+  @font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+  @font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+
+  :root {
+    --room: #6fe3b0;
+    --ink: #16130f;
+    --ink-2: rgb(22 19 15 / 0.66);
+    --ink-3: rgb(22 19 15 / 0.42);
+    --ink-4: rgb(22 19 15 / 0.22);
+    --card: #fff;
+    --close: #b45309;
+    --close-soft: #fff1d6;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --lift: 0 1px 0 rgb(22 19 15 / 0.04), 0 1px 2px rgb(22 19 15 / 0.06), 0 8px 24px -12px rgb(22 19 15 / 0.22);
+    --lift-hi: 0 1px 0 rgb(22 19 15 / 0.04), 0 2px 4px rgb(22 19 15 / 0.06), 0 16px 36px -14px rgb(22 19 15 / 0.32);
+    --float: 0 2px 0 rgb(22 19 15 / 0.05), 0 30px 70px -28px rgb(22 19 15 / 0.45), 0 12px 24px -16px rgb(22 19 15 / 0.2);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: clip; }
+  body {
+    background: var(--room); color: var(--ink);
+    font-family: "Bricolage", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.7s var(--ease-out);
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+
+  .pill { display: inline-flex; align-items: center; gap: 0.4rem; height: 2.5rem; padding: 0 0.95rem; border-radius: 999px;
+    background: var(--card); font-size: 0.875rem; font-weight: 600; letter-spacing: -0.01em; box-shadow: var(--lift);
+    transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-out), background 0.2s, opacity 0.2s; white-space: nowrap; }
+  .pill:hover { transform: translateY(-1.5px); box-shadow: var(--lift-hi); }
+  .pill:active { transform: scale(0.95); transition-duration: 0.08s; }
+  .pill:disabled { opacity: 0.45; pointer-events: none; }
+  .pill-ghost { background: rgb(255 255 255 / 0.32); box-shadow: none; }
+  .pill-ghost:hover { background: rgb(255 255 255 / 0.6); box-shadow: none; }
+  .pill svg { width: 15px; height: 15px; flex: none; }
+
+  .derby { padding: 14px 34px 40px; }
+  .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 52px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.03em; }
+  .brand svg { width: 26px; height: 26px; }
+  .nav-right { display: flex; gap: 6px; }
+
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 395px); gap: 32px; align-items: start; max-width: 1060px; margin: 18px auto 0; }
+  .paper-col { width: min(100%, max(400px, calc(100dvh - 230px))); justify-self: end; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+  .word { font-size: clamp(2.4rem, 1.6rem + 2.6vw, 3.4rem); line-height: 0.95; font-weight: 800; letter-spacing: -0.045em; transform: scaleX(0.9); transform-origin: left bottom; }
+  .word span { display: inline-block; animation: rise 0.5s var(--ease-spring) both; }
+  @keyframes rise { from { transform: translateY(0.5em); opacity: 0; } }
+  .clock { display: inline-flex; align-items: center; gap: 8px; height: 2.5rem; padding: 0 14px 0 10px; border-radius: 999px; background: var(--card); box-shadow: var(--lift); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .clock svg { width: 20px; height: 20px; transform: rotate(-90deg); }
+  .clock.urgent { color: #c2271b; }
+
+  .paper { position: relative; aspect-ratio: 1; border-radius: 28px; background: #fff; overflow: hidden; box-shadow: var(--float); touch-action: none; cursor: crosshair; }
+  .paper::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .35 0 0 0 0 .3 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .paper canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pencil { position: absolute; left: 0; top: 0; width: 34px; height: 34px; pointer-events: none; transform-origin: 0 100%; opacity: 0; transition: opacity 0.2s; }
+  .pencil.on { opacity: 1; }
+  .banner { position: absolute; left: 50%; bottom: 18px; transform: translate(-50%, 20px); opacity: 0; display: flex; align-items: center; gap: 8px;
+    padding: 6px 16px 6px 6px; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 700; font-size: 0.95rem; white-space: nowrap;
+    transition: transform 0.45s var(--ease-spring), opacity 0.25s; pointer-events: none; }
+  .banner.on { transform: translate(-50%, 0); opacity: 1; }
+  .hint { position: absolute; inset: auto 0 22px; text-align: center; font-size: 0.8125rem; font-weight: 500; color: var(--ink-3); pointer-events: none; transition: opacity 0.3s; }
+  .tools { display: flex; align-items: center; justify-content: space-between; min-height: 2.5rem; margin-top: 14px; gap: 8px; }
+  .tools > div { display: flex; gap: 8px; }
+
+  .field-head { display: flex; justify-content: space-between; align-items: center; margin: 8px 2px 10px; font-size: 0.8125rem; font-weight: 650; color: var(--ink-2); }
+  .live { display: inline-flex; align-items: center; gap: 6px; }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: #00a870; box-shadow: 0 0 0 3px rgb(0 168 112 / 0.18); }
+  .lanes { list-style: none; display: grid; gap: 9px; }
+  .lane { position: relative; display: flex; align-items: center; gap: 12px; padding: 13px 14px 13px 12px; border-radius: 20px; background: var(--card); box-shadow: var(--lift);
+    transition: transform 0.3s var(--ease-spring), opacity 0.4s, box-shadow 0.3s; }
+  .lane.dim { opacity: 0.55; }
+  .lane.win { box-shadow: 0 0 0 2.5px var(--c), var(--lift-hi); transform: scale(1.015); }
+  .critter { width: 40px; height: 40px; flex: none; }
+  .critter.hop { animation: hop 0.42s var(--ease-spring); }
+  .critter.shake { animation: shake 0.4s ease-in-out; }
+  .critter.jump { animation: jump 0.7s var(--ease-spring); }
+  @keyframes hop { 40% { transform: translateY(-5px) scale(1.04, 0.96); } }
+  @keyframes shake { 25% { transform: translateX(-3px) rotate(-6deg); } 75% { transform: translateX(3px) rotate(6deg); } }
+  @keyframes jump { 35% { transform: translateY(-10px) rotate(-8deg) scale(1.08); } 70% { transform: translateY(0) scale(0.94, 1.06); } }
+  .critter .lid { transform-box: fill-box; transform-origin: center; animation: blink 4.2s infinite; }
+  @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+  .who { min-width: 0; flex: 1; }
+  .name { display: flex; align-items: baseline; gap: 6px; font-size: 0.9375rem; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+  .name small { font-size: 0.8125rem; font-weight: 500; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; }
+  .line { display: flex; align-items: center; gap: 10px; height: 1.6rem; margin-top: 3px; min-width: 0; }
+  .guess { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 62%; flex: none; }
+  .guess.idle { color: var(--ink-4); }
+  .guess.new { animation: pop 0.38s var(--ease-spring); }
+  @keyframes pop { from { transform: translateY(6px); opacity: 0; } }
+  .guess.wrong { position: relative; color: var(--ink-3); }
+  .guess.wrong::after { content: ""; position: absolute; left: 0; right: 0; top: 54%; height: 2px; border-radius: 2px; background: currentColor; transform-origin: left; animation: strike 0.35s var(--ease-out) both; }
+  @keyframes strike { from { transform: scaleX(0); } }
+  .guess.right { color: var(--c); }
+  .trail { display: flex; gap: 6px; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); mask-image: linear-gradient(90deg, #000 70%, transparent); }
+  .trail span { flex: none; padding: 1px 8px; border-radius: 999px; background: #f6f3ee; font-size: 0.75rem; font-weight: 600; color: var(--ink-3); text-decoration: line-through; }
+  .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; align-self: flex-start; padding-top: 2px; min-width: 40px; }
+  .think { display: flex; align-items: center; gap: 3px; height: 24px; padding: 0 8px; border-radius: 999px; background: color-mix(in oklab, var(--c) 14%, white); }
+  .think i { width: 5px; height: 5px; border-radius: 50%; background: var(--c); animation: think 0.9s ease-in-out infinite; }
+  .think i:nth-child(2) { animation-delay: 130ms; } .think i:nth-child(3) { animation-delay: 260ms; }
+  @keyframes think { 0%, 100% { transform: translateY(0); opacity: 0.45; } 40% { transform: translateY(-3px); opacity: 1; } }
+  .time { font-size: 0.9375rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c); }
+  .badge { position: absolute; right: -6px; top: -6px; width: 24px; height: 24px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; animation: badge 0.5s var(--ease-spring) both; }
+  .badge svg { width: 14px; height: 14px; }
+  @keyframes badge { from { transform: scale(0) rotate(-40deg); } }
+  .fleck { position: absolute; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; animation: burst 1s cubic-bezier(0.16, 0.8, 0.3, 1) both; }
+  @keyframes burst { to { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
+
+  @media (max-width: 900px) {
+    .derby { padding: 8px 16px 32px; }
+    .stage { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 8px; }
+    .paper-col { width: 100%; max-width: 560px; justify-self: center; }
+    .field { max-width: 560px; width: 100%; justify-self: center; }
+    .nav-right .pill span { display: none; }
+    .nav-right .pill { width: 2.5rem; padding: 0; justify-content: center; }
+  }
+  @media (max-width: 480px) {
+    .lanes { gap: 6px; }
+    .lane { padding: 8px 10px; gap: 10px; border-radius: 16px; }
+    .critter { width: 32px; height: 32px; }
+    .guess { font-size: 1.05rem; }
+    .line { height: 1.3rem; margin-top: 1px; }
+    .tools .label { display: none; }
+    .banner { font-size: 0.85rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+
+  #notes { max-width: 1180px; margin: 0 auto; padding: 40px 24px 100px; font-size: 14px; line-height: 1.8; color: var(--ink-2); }
+  #notes h3 { font-size: 13px; font-weight: 700; color: var(--ink); padding-bottom: 12px; border-bottom: 3px solid var(--ink); }
+  #notes dt { margin-top: 22px; }
+  #notes dt code { font: inherit; font-weight: 700; color: var(--ink); }
+  #notes dd { margin-top: 4px; }
+  #notes dd code { font: inherit; font-size: 0.93em; color: var(--ink); background: rgb(255 255 255 / 0.45); padding: 0 0.25em; border-radius: 4px; }
+</style>
+</head>
+<body id="room">
+<div id="app"></div>
+
+<section id="notes" lang="zh-CN">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#room</code></dt>
+    <dd>每回合换一次整页底色，<code>body</code> 背景 0.7 s 过渡。颜色取自 7 个模型各自的浅色，所以底色本身就提示「这一局」，白卡片在任何底色上都站得住。</dd>
+    <dt><code>#paper</code></dt>
+    <dd>白纸 28 px 圆角，三层阴影（2 px 硬边 + 70 px 大柔影 + 24 px 中影）浮在底色上，叠一层 7% 的 feTurbulence 纸纹。笔迹 3.4 px 圆头，铅笔图标跟着最后一个点走。</dd>
+    <dt><code>#field</code></dt>
+    <dd>7 张白卡片竖排，每张：彩色小生物 + 名字/出品方 + 22 px 粗体当前猜测 + 被划掉的旧猜测（左右渐隐）。右上角三点「思考气泡」用模型自己的颜色 14% 混白。</dd>
+    <dt><code>#clock</code></dt>
+    <dd>白胶囊里一个 SVG 圆环倒计时，60 s 走完一圈；剩 10 s 变红。</dd>
+    <dt><code>#critters</code></dt>
+    <dd>7 种几何身体（圆、方、三角、胶囊、水滴、花、星）放在 64×64 盒子里，同一双眼睛按 <code>eyeY</code>/<code>gap</code> 摆。新猜测跳一下，猜错摇头，猜中蹦起来，平时每 4.2 s 眨一次眼。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  roundMs: 60000,
+  drawSpeed: 0.9,           // px of path per ms when the script draws
+  stroke: 3.4,
+  pauseAfterWin: 3200,
+  models: [
+    { key: 'orbit',  name: 'Orbit 4',      lab: 'Halo Labs',  color: '#F2442E', room: '#FF8A7A', shape: 'circle' },
+    { key: 'pebble', name: 'Pebble Flash', lab: 'Quarry',     color: '#6B4EFF', room: '#BBA8FF', shape: 'square' },
+    { key: 'tern',   name: 'Tern 2 Mini',  lab: 'Seabird',    color: '#00A870', room: '#6FE3B0', shape: 'triangle' },
+    { key: 'mochi',  name: 'Mochi M5',     lab: 'Rice Paper', color: '#F2338C', room: '#FF9BC8', shape: 'pill' },
+    { key: 'rill',   name: 'Rill V3 Flash',lab: 'Brook',      color: '#1F6BFF', room: '#86C3FF', shape: 'drop' },
+    { key: 'clover', name: 'Clover 7',     lab: 'Meadow',     color: '#FF7A1A', room: '#FFBE85', shape: 'flower' },
+    { key: 'nova',   name: 'Nova 1.5',     lab: 'Starling',   color: '#00B2D6', room: '#8FE6F5', shape: 'star' },
+  ],
+  // Strokes are polylines in a 0..1 box. Guesses fire when the drawn ink passes `at` (0..1 of the round's total ink).
+  rounds: [
+    {
+      word: 'snail', room: '#6FE3B0',
+      strokes: [
+        spiral(0.55, 0.5, 0.2, 2.6),
+        [[0.2, 0.72], [0.35, 0.72], [0.55, 0.72], [0.78, 0.72], [0.84, 0.66], [0.82, 0.58]],
+        [[0.2, 0.72], [0.15, 0.6], [0.16, 0.48], [0.2, 0.42]],
+        [[0.17, 0.44], [0.12, 0.3]], [[0.21, 0.43], [0.24, 0.29]],
+      ],
+      guesses: {
+        orbit:  [[0.25, 'swirl'], [0.55, 'shell'], [0.92, 'snail', 1]],
+        pebble: [[0.3, 'spiral'], [0.6, 'ammonite'], [0.95, 'slug']],
+        tern:   [[0.22, 'lollipop'], [0.7, 'snail', 1]],
+        mochi:  [[0.35, 'cinnamon roll'], [0.75, 'shell']],
+        rill:   [[0.28, 'galaxy'], [0.68, 'nautilus']],
+        clover: [[0.4, 'rope'], [0.8, 'hedgehog']],
+        nova:   [[0.32, 'whirlpool'], [0.85, 'turtle']],
+      },
+    },
+    {
+      word: 'kite', room: '#FF9BC8',
+      strokes: [
+        [[0.5, 0.14], [0.72, 0.38], [0.5, 0.7], [0.28, 0.38], [0.5, 0.14]],
+        [[0.5, 0.14], [0.5, 0.7]], [[0.28, 0.38], [0.72, 0.38]],
+        [[0.5, 0.7], [0.46, 0.76], [0.54, 0.8], [0.46, 0.84], [0.53, 0.88], [0.48, 0.92]],
+        [[0.45, 0.79], [0.41, 0.77], [0.43, 0.82], [0.45, 0.79]],
+        [[0.52, 0.86], [0.56, 0.83], [0.57, 0.88], [0.52, 0.86]],
+      ],
+      guesses: {
+        orbit:  [[0.2, 'diamond'], [0.65, 'kite', 1]],
+        pebble: [[0.25, 'rhombus'], [0.5, 'envelope'], [0.9, 'kite', 1]],
+        tern:   [[0.3, 'gem'], [0.7, 'balloon']],
+        mochi:  [[0.22, 'diamond'], [0.48, 'kite', 1]],
+        rill:   [[0.35, 'arrow'], [0.75, 'jellyfish']],
+        clover: [[0.28, 'crystal'], [0.62, 'sail']],
+        nova:   [[0.4, 'road sign'], [0.8, 'kite', 1]],
+      },
+    },
+    {
+      word: 'lighthouse', room: '#86C3FF',
+      strokes: [
+        [[0.38, 0.86], [0.43, 0.36], [0.57, 0.36], [0.62, 0.86], [0.38, 0.86]],
+        [[0.41, 0.36], [0.41, 0.26], [0.59, 0.26], [0.59, 0.36]],
+        [[0.39, 0.26], [0.5, 0.17], [0.61, 0.26]],
+        [[0.41, 0.52], [0.59, 0.52]], [[0.4, 0.68], [0.6, 0.68]],
+        [[0.62, 0.29], [0.86, 0.22]], [[0.62, 0.33], [0.86, 0.38]],
+        [[0.14, 0.9], [0.24, 0.86], [0.34, 0.9], [0.66, 0.9], [0.76, 0.86], [0.86, 0.9]],
+      ],
+      guesses: {
+        orbit:  [[0.3, 'tower'], [0.62, 'rocket']],
+        pebble: [[0.35, 'vase'], [0.7, 'tower']],
+        tern:   [[0.28, 'chimney'], [0.6, 'castle'], [0.88, 'lighthouse', 1]],
+        mochi:  [[0.4, 'bottle'], [0.78, 'lamp']],
+        rill:   [[0.3, 'traffic cone'], [0.82, 'lighthouse', 1]],
+        clover: [[0.45, 'tower'], [0.9, 'beacon']],
+        nova:   [[0.38, 'pagoda'], [0.73, 'lighthouse', 1]],
+      },
+    },
+  ],
+  fallbackGuesses: ['squiggle', 'blob', 'cloud', 'hat', 'fish', 'tree', 'house', 'face', 'sun', 'boat', 'chair', 'moon'],
+};
+
+function spiral(cx, cy, r, turns) {
+  const pts = [];
+  for (let i = 0; i <= 80; i++) {
+    const t = i / 80, a = t * turns * Math.PI * 2;
+    const rr = r * (1 - t * 0.92);
+    pts.push([cx + Math.cos(a + Math.PI) * rr, cy - 0.08 + Math.sin(a + Math.PI) * rr]);
+  }
+  return pts;
+}
+
+const BODIES = (() => {
+  const petals = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2; return `<circle cx="${32 + Math.cos(a) * 17}" cy="${33 + Math.sin(a) * 17}" r="11"/>`; }).join('');
+  const poly = (n, f) => 'M' + Array.from({ length: n }, (_, i) => f(i).map(v => v.toFixed(1)).join(' ')).join(' L') + ' Z';
+  const star = poly(10, i => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 15.5 : 27; return [32 + Math.cos(a) * r, 35 + Math.sin(a) * r]; });
+  return {
+    circle:   { eyeY: 33, gap: 10, svg: '<circle cx="32" cy="33" r="27"/>' },
+    square:   { eyeY: 33, gap: 10, svg: '<rect x="6" y="7" width="52" height="52" rx="15"/>' },
+    triangle: { eyeY: 41, gap: 9, svg: '<path d="M32 10 L57 54 L7 54 Z" stroke-width="9" stroke-linejoin="round"/>' },
+    pill:     { eyeY: 33, gap: 11, svg: '<rect x="3" y="14" width="58" height="38" rx="19"/>' },
+    drop:     { eyeY: 40, gap: 9.5, svg: '<path d="M32 3 C 40 14, 57 28, 57 40 A 25 22 0 0 1 7 40 C 7 28, 24 14, 32 3 Z"/>' },
+    flower:   { eyeY: 33, gap: 9.5, svg: petals + '<circle cx="32" cy="33" r="19"/>' },
+    star:     { eyeY: 36, gap: 9, svg: `<path d="${star}" stroke-width="8" stroke-linejoin="round"/>` },
+  };
+})();
+
+function critterSVG(m) {
+  const b = BODIES[m.shape];
+  const eye = x => `<g class="lid"><ellipse cx="${x}" cy="${b.eyeY}" rx="5.2" ry="6.4" fill="#fff"/><circle cx="${x + 0.8}" cy="${b.eyeY + 1}" r="2.8" fill="#16130f"/></g>`;
+  return `<svg class="critter" viewBox="0 0 64 64" aria-hidden="true"><g fill="${m.color}" stroke="${m.color}" stroke-width="0">${b.svg}</g>${eye(32 - b.gap)}${eye(32 + b.gap)}</svg>`;
+}
+
+const ICON = {
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
+  clear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+  trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>',
+  pencil: '<svg viewBox="0 0 34 34"><g transform="rotate(45 17 17)"><rect x="12" y="2" width="10" height="22" rx="2" fill="#FFC93C" stroke="#16130f" stroke-width="1.6"/><rect x="12" y="2" width="10" height="5" rx="2" fill="#F48FB1" stroke="#16130f" stroke-width="1.6"/><path d="M12 24 L17 32 L22 24 Z" fill="#F6D9B0" stroke="#16130f" stroke-width="1.6" stroke-linejoin="round"/><path d="M15.4 29.4 L17 32 L18.6 29.4 Z" fill="#16130f"/></g></svg>',
+  glyph: '<svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18c3 0 4-6 7-6s2 6 5 6 3-9 6-9"/><circle cx="22.5" cy="9" r="1.6" fill="currentColor"/></svg>',
+};
+
+function createPictionary(container, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const timers = new Set();
+  const later = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); fn(); }, ms); timers.add(id); return id; };
+  let raf = 0, alive = true;
+
+  container.innerHTML = `
+    <div class="derby">
+      <nav class="nav">
+        <div class="brand">${ICON.glyph}Sketch Derby</div>
+        <div class="nav-right">
+          <button class="pill pill-ghost" type="button">${ICON.cal}<span>Daily</span></button>
+          <button class="pill pill-ghost" type="button">${ICON.trophy}<span>Leaderboard</span></button>
+        </div>
+      </nav>
+      <div class="stage">
+        <div class="paper-col">
+          <div class="head">
+            <h1 class="word" aria-live="polite"></h1>
+            <div class="clock" id="clock"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-opacity="0.16" stroke-width="3"/><circle class="ring" cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg><span class="secs">60s</span></div>
+          </div>
+          <div class="paper" id="paper">
+            <canvas></canvas>
+            <div class="pencil">${ICON.pencil}</div>
+            <div class="hint">Draw here, or watch the demo</div>
+            <div class="banner"></div>
+          </div>
+          <div class="tools">
+            <div>
+              <button class="pill pill-ghost" type="button" data-act="undo">${ICON.undo}<span class="label">Undo</span></button>
+              <button class="pill pill-ghost" type="button" data-act="clear">${ICON.clear}<span class="label">Clear</span></button>
+            </div>
+            <div>
+              <button class="pill pill-ghost" type="button" data-act="demo">${ICON.play}<span class="label">Watch demo</span></button>
+              <button class="pill pill-ghost" type="button" data-act="skip">${ICON.flag}<span class="label">Give up</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="field" id="field">
+          <div class="field-head"><span>The field</span><span class="live"><i></i><b>7</b>&nbsp;doodlers racing</span></div>
+          <ul class="lanes" id="critters"></ul>
+        </div>
+      </div>
+    </div>`;
+
+  const $ = s => container.querySelector(s);
+  const wordEl = $('.word'), paper = $('.paper'), canvas = $('canvas'), ctx = canvas.getContext('2d');
+  const pencil = $('.pencil'), banner = $('.banner'), hint = $('.hint');
+  const ring = $('.ring'), secs = $('.secs'), clock = $('.clock'), lanesEl = $('.lanes');
+
+  const lanes = cfg.models.map(m => {
+    const li = document.createElement('li');
+    li.className = 'lane';
+    li.style.setProperty('--c', m.color);
+    li.innerHTML = `${critterSVG(m)}<div class="who"><div class="name">${m.name}<small>${m.lab}</small></div><div class="line"><span class="guess idle">watching</span><div class="trail"></div></div></div><div class="side"></div>`;
+    lanesEl.appendChild(li);
+    return { m, li, critter: li.querySelector('.critter'), guessEl: li.querySelector('.guess'), trail: li.querySelector('.trail'), side: li.querySelector('.side') };
+  });
+
+  let round = -1, state = null;
+  let size = 0, dpr = 1;
+
+  function resize() {
+    const r = paper.getBoundingClientRect();
+    dpr = Math.min(2, devicePixelRatio || 1);
+    size = r.width;
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    redraw();
+  }
+  const ro = new ResizeObserver(resize); ro.observe(paper);
+
+  function redraw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = cfg.stroke; ctx.strokeStyle = '#16130f';
+    if (!state) return;
+    for (const s of state.strokes) {
+      if (s.length < 1) continue;
+      ctx.beginPath(); ctx.moveTo(s[0][0] * size, s[0][1] * size);
+      if (s.length === 1) ctx.lineTo(s[0][0] * size + 0.01, s[0][1] * size);
+      for (let i = 1; i < s.length; i++) ctx.lineTo(s[i][0] * size, s[i][1] * size);
+      ctx.stroke();
+    }
+  }
+
+  const len = pts => pts.reduce((a, p, i) => i ? a + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
+
+  function setRoom(color) { document.body.style.setProperty('--room', color); document.documentElement.style.setProperty('--room', color); }
+
+  function startRound(i, mode) {
+    clearTimers();
+    round = (i + cfg.rounds.length) % cfg.rounds.length;
+    const R = cfg.rounds[round];
+    state = { R, strokes: [], ink: 0, total: R.strokes.reduce((a, s) => a + len(s), 0), fired: {}, solved: null, t0: performance.now(), mode, over: false, userInk: 0 };
+    setRoom(R.room);
+    wordEl.innerHTML = R.word.split('').map((c, k) => `<span style="animation-delay:${k * 28}ms">${c}</span>`).join('');
+    banner.classList.remove('on');
+    hint.style.opacity = mode === 'user' ? 1 : 0;
+    clock.classList.remove('urgent');
+    for (const L of lanes) {
+      L.li.classList.remove('dim', 'win'); L.li.querySelector('.badge')?.remove();
+      L.guessEl.className = 'guess idle'; L.guessEl.textContent = 'watching';
+      L.trail.innerHTML = ''; L.side.innerHTML = ''; L.queue = (R.guesses[L.m.key] || []).slice(); L.look = false; L.miss = 0;
+    }
+    redraw();
+    if (mode === 'demo') later(() => scriptDraw(0), reduced ? 200 : 700);
+    tick();
+  }
+
+  function scriptDraw(si) {
+    if (!state || state.over || state.mode !== 'demo') return;
+    const s = state.R.strokes[si];
+    if (!s) { pencil.classList.remove('on'); return; }
+    const done = [s[0]], idx = state.strokes.length; state.strokes.push(done);
+    let seg = 1, segT = 0;
+    const segLen = k => Math.hypot(s[k][0] - s[k - 1][0], s[k][1] - s[k - 1][1]);
+    let last = performance.now();
+    pencil.classList.add('on');
+    const step = now => {
+      if (!alive || !state || state.over || state.mode !== 'demo') return;
+      let budget = reduced ? Infinity : (now - last) * cfg.drawSpeed / Math.max(size, 1); last = now;
+      let tip = null;
+      while (seg < s.length && budget > 0) {
+        const L = segLen(seg) || 1e-6, left = L - segT;
+        if (budget >= left) { budget -= left; state.ink += left; done.push(s[seg]); seg++; segT = 0; }
+        else { segT += budget; state.ink += budget; budget = 0; const a = s[seg - 1], b = s[seg], f = segT / L; tip = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+      }
+      const cur = tip ? done.concat([tip]) : done;
+      state.strokes[idx] = cur;
+      tip = cur[cur.length - 1];
+      pencil.style.transform = `translate(${tip[0] * size}px, ${tip[1] * size - 34}px)`;
+      redraw(); feed(state.ink / state.total);
+      if (seg < s.length) requestAnimationFrame(step);
+      else later(() => scriptDraw(si + 1), reduced ? 120 : 260);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function feed(progress) {
+    if (!state || state.over) return;
+    for (const L of lanes) {
+      const next = L.queue[0];
+      if (!next || progress < next[0]) continue;
+      L.queue.shift();
+      lookThen(L, next[1], !!next[2]);
+    }
+  }
+
+  function lookThen(L, text, right) {
+    if (L.look) { L.queue.unshift([0, text, right]); return; }
+    L.look = true;
+    L.side.innerHTML = '<span class="think"><i></i><i></i><i></i></span>';
+    later(() => {
+      L.look = false;
+      if (!state || state.over) { L.side.innerHTML = ''; return; }
+      L.side.innerHTML = '';
+      say(L, text, right);
+      if (L.queue[0] && L.queue[0][0] === 0) { const q = L.queue.shift(); lookThen(L, q[1], q[2]); }
+    }, 500 + Math.random() * 900);
+  }
+
+  function bump(L, kind) { L.critter.classList.remove('hop', 'shake', 'jump'); void L.critter.getBoundingClientRect(); L.critter.classList.add(kind); }
+
+  function say(L, text, right) {
+    const prev = L.guessEl.textContent;
+    if (!L.guessEl.classList.contains('idle') && prev) {
+      const chip = document.createElement('span'); chip.textContent = prev; L.trail.prepend(chip);
+    }
+    L.guessEl.className = 'guess new' + (right ? ' right' : '');
+    L.guessEl.textContent = text;
+    bump(L, 'hop');
+    if (right) return win(L);
+    later(() => { if (L.guessEl.textContent === text && !L.guessEl.classList.contains('right')) { L.guessEl.classList.add('wrong'); bump(L, 'shake'); } }, 650);
+  }
+
+  function win(L) {
+    state.over = true; state.solved = L;
+    const ms = performance.now() - state.t0;
+    pencil.classList.remove('on');
+    bump(L, 'jump');
+    L.li.classList.add('win');
+    L.li.insertAdjacentHTML('beforeend', `<span class="badge">${ICON.check}</span>`);
+    L.side.innerHTML = `<span class="time">${(ms / 1000).toFixed(1)}s</span>`;
+    for (const o of lanes) if (o !== L) { o.li.classList.add('dim'); o.side.innerHTML = ''; }
+    banner.innerHTML = `${critterSVG(L.m).replace('class="critter"', 'class="critter" style="width:28px;height:28px"')}${L.m.name} got it in ${(ms / 1000).toFixed(1)}s`;
+    banner.classList.add('on');
+    setRoom(L.m.room);
+    if (!reduced) burst(L);
+    if (state.mode === 'demo') later(() => startRound(round + 1, 'demo'), cfg.pauseAfterWin);
+  }
+
+  function burst(L) {
+    const r = L.li.getBoundingClientRect(), host = L.li;
+    for (let i = 0; i < 14; i++) {
+      const f = document.createElement('i'); f.className = 'fleck';
+      const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 50;
+      f.style.cssText = `left:30px;top:${r.height / 2}px;background:${i % 3 ? L.m.color : L.m.room};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;--r:${Math.random() * 360}deg`;
+      host.appendChild(f); later(() => f.remove(), 1100);
+    }
+  }
+
+  function tick() {
+    cancelAnimationFrame(raf);
+    const loop = () => {
+      if (!alive || !state) return;
+      if (!state.over) {
+        const left = Math.max(0, cfg.roundMs - (performance.now() - state.t0));
+        ring.style.strokeDashoffset = String(100 * (1 - left / cfg.roundMs));
+        secs.textContent = Math.ceil(left / 1000) + 's';
+        clock.classList.toggle('urgent', left < 10000);
+        if (left <= 0) { timeUp(); return; }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+  }
+
+  function timeUp() {
+    state.over = true; pencil.classList.remove('on');
+    banner.textContent = `Time's up. Nobody got “${state.R.word}”`; banner.classList.add('on');
+    for (const L of lanes) L.side.innerHTML = '';
+    later(() => startRound(round + 1, state.mode), cfg.pauseAfterWin);
+  }
+
+  // Free drawing: real ink length stands in for model progress, so the scripted guesses still arrive in order.
+  let drawing = null;
+  const at = e => { const r = paper.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+  function down(e) {
+    if (!state) return;
+    if (state.mode !== 'user' || state.over) startRound(state.over ? round + 1 : round, 'user');
+    hint.style.opacity = 0;
+    paper.setPointerCapture(e.pointerId);
+    drawing = [at(e)]; state.strokes.push(drawing); redraw();
+  }
+  function move(e) {
+    if (!drawing) return;
+    const p = at(e), q = drawing[drawing.length - 1];
+    const d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+    if (d < 0.004) return;
+    drawing.push(p); state.ink += d; redraw();
+    feed(Math.min(1, state.ink / state.total));
+  }
+  function up() {
+    if (!drawing) return; drawing = null;
+    if (state.mode === 'user' && state.ink / state.total > 1.1 && !state.over) {
+      for (const L of lanes) if (!L.look && !L.queue.length && Math.random() < 0.5) lookThen(L, cfg.fallbackGuesses[Math.floor(Math.random() * cfg.fallbackGuesses.length)], false);
+    }
+  }
+  paper.addEventListener('pointerdown', down);
+  paper.addEventListener('pointermove', move);
+  paper.addEventListener('pointerup', up);
+  paper.addEventListener('pointercancel', up);
+
+  container.querySelector('.tools').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !state) return;
+    const act = b.dataset.act;
+    if (act === 'undo' && state.mode === 'user') { const s = state.strokes.pop(); if (s) state.ink = Math.max(0, state.ink - len(s)); redraw(); }
+    if (act === 'clear' && state.mode === 'user') { state.strokes = []; state.ink = 0; redraw(); }
+    if (act === 'demo') startRound(round, 'demo');
+    if (act === 'skip') startRound(round + 1, state.mode);
+  });
+
+  function clearTimers() { timers.forEach(clearTimeout); timers.clear(); }
+
+  startRound(0, cfg.autoplay === false ? 'user' : 'demo');
+
+  return {
+    next() { startRound(round + 1, state.mode); },
+    demo() { startRound(round, 'demo'); },
+    destroy() { alive = false; clearTimers(); cancelAnimationFrame(raf); ro.disconnect(); container.innerHTML = ''; },
+  };
+}
+
+window.derby = createPictionary(document.getElementById('app'));
+</script>
+</body>
+</html>

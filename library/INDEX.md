@@ -65,6 +65,7 @@
 | [appliance/index.html](living/appliance/index.html) | 一台等轴手绘烤面包机，按钮放面包、压杆、计时烤、叮一声弹起。线稿套一层位移 + 纸纹 + 斑驳的 SVG 滤镜，滑杆调抖动，色点换机身色 | 想把一个日常物件做成能玩的说明图，既要手绘温度又要能交互。复刻 @Aprilzz423 的 Colorfigures |
 | [framed/index.html](living/framed/index.html) | 一段湖景过一层稀疏点阵纹理，高清输出，装进浅米色面板里的圆角画框，衬线大标题、三栏信息、一个深色按钮。四步各有开关，能看每一步关掉后掉了什么 | 让站看起来贵，最快的是一段对味的素材 + 一层纹理 + 克制的框，界面本身少做。复刻 @davidhaz |
 | [launchreel/index.html](living/launchreel/index.html) | 一片白色键帽铺满地面，蓝键沿对角线升起成轨迹、拼出像素数字、一圈圈涟漪扩开；每幕一行短句从遮罩里升上来，一词强调色。声音全是 WebAudio 合成 | 发布短片的画面、文字、声音都读同一张时间表，拖到哪一帧都对得上。复刻 @LexnLin 的 Cinetic v1.1 发布视频 |
+| [pictionary/index.html](living/pictionary/index.html) | 你画一个词，右边 7 个彩色小生物排成一列抢着猜，猜错划线，第一个猜中的那张卡亮起来，整页换成它的颜色 | 多个 AI 同时作答的比赛界面。每回合换底色，白卡片 + 浮起的白纸，进度按墨量推进。复刻 @nutlope |
 
 ## 零件
 
@@ -502,3 +503,13 @@
 | 相机关键帧 / 只有相机两头都缓 | [launchreel](living/launchreel/index.html#play) | `E.cam` (0.48, 0.1, 0, 0.9)；词入场 `E.outSoft` 0.67 s、间隔 0.12 s；出场 `E.exit` 0.4 s |
 | 代码合成的音效 | [launchreel](living/launchreel/index.html#sound) | 键落：2.4 kHz 高通噪声 35 ms + 180→120 Hz 正弦。重击 120→46 Hz。甩镜：带通 380→2200→500 Hz。一行字只配一声 |
 | 发布短片的工厂接口 / 减少动态效果 | [launchreel](living/launchreel/index.html#controls) | `createLaunchReel(el, opts)` → `{ play, pause, seek, setSound, destroy }`；减少动态效果时停在 6.9 s |
+
+### 你画我猜 / 多模型赛跑 / 贴纸卡片
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 每回合换整页底色 | [pictionary](living/pictionary/index.html#room) | `body` 背景 0.7 s 过渡。底色取 7 个模型的浅色，赢家出现时换成赢家的色 |
+| 浮起来的白纸画板 | [pictionary](living/pictionary/index.html#paper) | 圆角 28 px，三层阴影，7% 纸纹。脚本按墨量画笔，铅笔跟着笔尖 |
+| 多个模型一排卡片抢答 | [pictionary](living/pictionary/index.html#field) | 白卡 20 px 圆角。22 px 当前猜测，猜错划线，旧猜测缩成渐隐小胶囊，右上三点思考气泡 |
+| 圆环倒计时胶囊 | [pictionary](living/pictionary/index.html#clock) | SVG 圆 `pathLength=100` 改 `dashoffset`，剩 10 s 变红 |
+| 几何小生物头像 | [pictionary](living/pictionary/index.html#critters) | 7 种身体放 64×64 盒子，眼睛按 `eyeY`/`gap` 摆。跳、摇头、蹦、眨眼 4 种反应 |
