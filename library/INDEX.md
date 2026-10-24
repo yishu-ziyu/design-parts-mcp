@@ -70,6 +70,7 @@
 | [caustics/index.html](living/caustics/index.html) | 从水底往上看：一团发虚的日光、浑浊的青绿水体、上方水面的焦散亮斑、淡淡的光柱和悬浮物。2.39:1 画框，一个着色器画完，没有贴图 | 要一个写实水下氛围镜头当头图或转场，但不想放视频。复刻 @Yuki_1t0 Houdini 合集里 16 s 的水下仰拍 |
 | [extrude/index.html](living/extrude/index.html) | 一个平面像素小怪逐行刷出、腿掉下来落定，再沿 Z 轴拉成体素，镜头转到四分之三侧，最后体素缝消失变成一整块。9 s 一循环，可拖时间轴逐拍看 | 角色出场要从「平面图标」过渡到「有体积的东西」。一个厚度变量驱动整只角色，换角色只换一张 ASCII 像素图。复刻 @LexnLin |
 | [peel/index.html](living/peel/index.html) | 一张像素贴纸页：按住往里拖，贴纸从边上翻起露出灰背面和模切孔，撕过一半跟手，贴到待办纸上。撕的沙沙声是 WebAudio 现合成的，拖得快就响、撕得开就高 | 拟物交互的手感一半在声音：声音不排进动画时间线，直接挂在指针速度和进度上。复刻 @workcinprogress |
+| [bencho/index.html](living/bencho/index.html) | 四个会回应手的小组件放在一张 2×2 灰格里：被指针搅出字符尾巴的点阵立方体、点一下就把前卡送到最后的纵深卡堆、停笔后收成「✓ Signed」胶囊的签名板、带黏尾巴的白球 | 微交互要有一个「回应」：手一动，东西就变形、变字、收起或粘连。组件按自然尺寸写死再整体缩放。复刻 bencho.dev（@cabralorenzo） |
 
 ## 零件
 
@@ -558,3 +559,12 @@
 | 贴纸板 / 像素贴纸 / 模切白边 | [peel](living/peel/index.html#sheet) | 412×415 板、3×3 格。12×12 字符画 × 6px，24 方向平移叠白边。撕过 50% 脱离，`back.out(3)` 落下随机 ±10° |
 | 横线待办纸 / 手账感 | [peel](living/peel/index.html#note) | 行距 56、蓝线 `#c9d4e8`、红边线、转 −3.5°。Playfair Display Italic 23px，勾选加删除线 |
 | 一键复位 / 依次飞回 | [peel](living/peel/index.html#reset) | 间隔 0.05s、0.6s `power3.inOut` 飞回原位，落位时孔消失、各响一个上行小音 |
+
+### 微交互 / 按压 · 拖拽 · 悬停
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 点阵物体 / 指针拖出字符尾巴 | [bencho](living/bencho/index.html#dotcube) | 5.5 px 一格，格心正交射线打立方体定点径。60 px 内加热画 `#`，1.2 s 冷却。按下放一圈环 |
+| 纵深卡堆 / 前卡甩到最后 | [bencho](living/bencho/index.html#cardswap) | 196×266，skewY 6°，第 i 张 `translate3d(34i, −26i, −70i)`，perspective 1000。`0.6s cubic-bezier(0.22,1,0.36,1)` |
+| 签名板 / 签完收成胶囊 | [bencho](living/bencho/index.html#signature) | 300×180 → 112×40，宽高 0.6 s 同一曲线。墨 3 px 随速度变细，签完 0.26 s 变灰。点胶囊倒带清除 |
+| 黏球 / goo 滤镜 | [bencho](living/bencho/index.html#dragball) | `feGaussianBlur 4.5` + alpha `16 −6.17` + `atop`。抓住 1.12 倍，速度拉长上限 36%，尾球追上被粘住 |
