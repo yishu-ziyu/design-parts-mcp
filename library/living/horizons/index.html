@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>horizons — 能调焦、能换机位的实时黑洞</title>
+<style>
+/* Fonts are vendored (fontsource 5.3.0, latin subset only): the page opens from file:// with zero network. */
+@font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:400;font-display:swap;
+  src:url(fonts/cormorant-garamond-latin-400-normal.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400;font-display:swap;
+  src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--bg:#0b0907;--fg:#f2e7d6;--mono:"JetBrains Mono",ui-monospace,monospace;--serif:"Cormorant Garamond",Georgia,serif;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);margin:0;font-family:system-ui,sans-serif;font-size:14px}
+.wrap{padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* keep the whole 16:9 frame inside the first screen */
+.bh{position:relative;aspect-ratio:16/9;width:min(100%,calc((100vh - 32px)*16/9));margin:0 auto;border-radius:12px;overflow:hidden;background:#000;user-select:none;touch-action:none}
+.bh canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;inset:0;pointer-events:none;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--fg)}
+.tl{position:absolute;left:3%;top:5%}
+.tl small{display:block;opacity:.55;font-size:8.5px;letter-spacing:.26em}
+.tl .nm{font-family:var(--serif);font-size:clamp(22px,3.4vw,38px);margin:4px 0 2px;transition:opacity .4s}
+.tl p{margin:0;font-size:9.5px;opacity:.7;max-width:24ch;line-height:1.5;transition:opacity .4s}
+.tr{position:absolute;right:3%;top:5%;display:flex;gap:14px;pointer-events:auto}
+.tr button{background:none;border:0;cursor:pointer;opacity:.7;padding:3px;color:inherit}
+.tr button:hover{opacity:1}
+.tr svg{width:12px;height:12px;display:block}
+.dial{position:absolute;right:2.6%;top:26%;bottom:26%;width:40px;pointer-events:auto;cursor:ns-resize}
+.dial .ln{position:absolute;right:8px;top:0;bottom:0;width:1px;background:rgba(242,231,214,.28)}
+.tk{position:absolute;right:8px;height:1px;width:5px;background:rgba(242,231,214,.4)}
+.tk.l{width:9px}
+.tkl{position:absolute;right:20px;transform:translateY(-50%);font-size:7.5px;opacity:.45}
+.val{position:absolute;right:12px;transform:translateY(-50%);white-space:nowrap;font-size:9.5px;display:flex;align-items:center;gap:5px;transition:top .15s}
+.val i{width:8px;height:8px;border:1px solid currentColor;border-radius:50%}
+.bl{position:absolute;left:3%;bottom:5%;line-height:1.75;opacity:.7;font-size:8.5px}
+.bc{position:absolute;left:50%;bottom:4.2%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;pointer-events:auto}
+.bc button{background:none;border:0;cursor:pointer;font-size:13px;opacity:.65;padding:3px 6px;color:inherit}
+.bc button:hover{opacity:1}
+.bc span{font-family:var(--serif);font-size:15px;letter-spacing:.08em;min-width:64px;text-align:center}
+.corner{position:absolute;width:12px;height:12px;border-color:rgba(242,231,214,.35);border-style:solid}
+.a{left:1.4%;top:2.6%;border-width:1px 0 0 1px}.b{right:1.4%;top:2.6%;border-width:1px 1px 0 0}.c{left:1.4%;bottom:2.6%;border-width:0 0 1px 1px}.d{right:1.4%;bottom:2.6%;border-width:0 1px 1px 0}
+@media (max-width:600px){.tl p,.bl{display:none}}
+
+/* ===== page-end 可拆 ===== */
+#notes{max-width:860px;margin:0 auto;padding:56px 16px 112px;color:rgba(242,231,214,.66)}
+#notes h3{font-family:var(--mono);font-size:11px;font-weight:400;letter-spacing:.26em;color:rgba(242,231,214,.5);margin:0 0 18px}
+#notes dl{margin:0}
+#notes dt{margin-top:18px}
+#notes dt code{font-size:12px;color:#ffc06a}
+#notes dd{margin:4px 0 0;font-size:12.5px;line-height:1.85}
+#notes code{font-family:var(--mono);font-size:11.5px;color:var(--fg)}
+#notes .hint{font-size:11px;margin:22px 0 0;color:rgba(242,231,214,.4);line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="bh" id="bh">
+  <canvas id="lensing"></canvas><canvas id="scale"></canvas>
+  <div class="hud" id="hud">
+    <i class="corner a"></i><i class="corner b"></i><i class="corner c"></i><i class="corner d"></i>
+    <div class="tl"><small>LENSING STUDY</small><div class="nm" id="nm">Overlook</div><p id="tg">盘的背面被弯成一道拱</p></div>
+    <div class="tr"><button id="pause" aria-label="暂停"><svg viewBox="0 0 12 12" fill="currentColor" id="pi"><rect x="2.5" y="2" width="2" height="8"/><rect x="7.5" y="2" width="2" height="8"/></svg></button><button id="full" aria-label="全屏"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/></svg></button></div>
+    <div class="dial" id="focal"><div class="ln"></div><div class="val" id="val"><span>50 mm</span><i></i></div></div>
+    <div class="bl">ALT <span id="alt">—</span> · HORIZON <span id="hz">—</span><br><span id="fps">—</span> · <span id="clk">00:00:00</span></div>
+    <div class="bc" id="viewpoint"><button id="prev" aria-label="上一个机位">‹</button><span id="sn">Overlook</span><button id="next" aria-label="下一个机位">›</button></div>
+  </div>
+</div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#lensing</code></dt>
+    <dd>逐像素光线追踪：一个全屏三角形 + 片元着色器，从相机反向发光线，每步 <code>vel += −1.5·h²·r/|r|⁵·dt</code>（史瓦西光线近似，视界半径 Rs = 1），步长 <code>clamp(.06r, .025, 1.5)</code>，最多 130 步。r &lt; 1 吸收；只有 r &gt; 60 且在远离的光线才去星空取色，步数用完的也按吸收（否则视界里冒亮点）。光线穿过 y = 0 且 2.6 &lt; r &lt; 13 时取盘色：开普勒角速度 <code>2.2/r^1.5</code>，两层 fbm 叠出气体丝，朝镜头一侧乘 <code>(1+.45·cos)^2.2</code>，俯看机位由内到外 白 → 橙 → 暗红。收尾 <code>1−exp(−1.15c)</code> 色调映射 + 暗角 .28。星空哈希不用 sin（sin 会出斜条纹）。</dd>
+    <dt><code>#viewpoint</code></dt>
+    <dd>两个场景是同一个 shader 的一个 uniform <code>sc</code>（0 → 1）：相机距离 19 → 34、仰角 .17 → .022 rad、俯仰 .035 → −.01、地平线 −.30 → .012、盘外径 13 → 10，盘色和地面一起 mix。点 ‹ › 只改目标值，<code>cur += (target−cur)·min(1, dt·1.4)</code> 指数逼近（时间常数约 0.7s），看到的是相机连续移动，不是切图。左上场景名淡出 .4s，350ms 时换字再淡入。</dd>
+    <dt><code>#focal</code></dt>
+    <dd>焦距刻度：18–85mm，<code>fov = 2·atan(12/mm)</code>（全画幅 24mm 高），shader 里视平面半高 = tan(fov/2)。滚轮 <code>deltaY × 0.025</code> mm，拖右侧竖刻度按位置映射，读数 .15s 跟过去。刻度每 3mm 一根，标 24 / 35 / 50 / 70，默认 50mm。</dd>
+    <dt><code>#scale</code></dt>
+    <dd>尺度物：第二块 2D canvas 叠在 WebGL 上，按 devicePixelRatio 满分辨率画（不跟着光追降分辨率）。俯看机位是亮窗农舍 + 皮卡，<code>α = 1 − 1.9·sc</code>；贴盘机位是宇航员背影 + 26 颗散景，<code>α = (sc − .4)/.6</code>。农舍高约画面的 1/6、皮卡 1/20，都压在地平线上，黑洞才显得大。窗光 <code>#ffc06a</code> + 14px 辉光；剪影坐标单位 = 画面高 / 700。</dd>
+    <dt><code>#hud</code></dt>
+    <dd>四角仪表：10px 等宽、字距 .08em、12px 角框、透明度 .55–.7，中间全留给画面。读数和 shader 吃同一组参数：ALT = 距离·sin(仰角)，HORIZON = 距离 − 1，单位 Rs；FPS、渲染比例、运行时钟实时刷新。窄于 600px 收掉说明行和左下读数。</dd>
+    <dt><code>#fps</code></dt>
+    <dd>自适应分辨率：光追画布按 CSS 尺寸的 <code>Q</code> 倍渲染（初值 .7），每 0.6s 量一次帧率：低于 40 且 Q &gt; .4 时 Q − .1，高于 58 且 Q &lt; .9 时 Q + .05。左下 <code>FPS · Q%</code> 就是它；每像素 130 步，普通笔记本会落到 40%–60%。</dd>
+  </dl>
+  <p class="hint">交互：底部 ‹ › 换机位；滚轮或拖右侧刻度改焦距；右上暂停 / 全屏。WebGL 不可用时只显示一行提示。</p>
+</section>
+
+<script>
+(function(){
+const box=document.getElementById('bh'),cv=document.getElementById('lensing'),fg=document.getElementById('scale'),fx=fg.getContext('2d');
+const gl=cv.getContext('webgl',{antialias:false});
+if(!gl){box.insertAdjacentHTML('beforeend','<p style="position:absolute;inset:0;display:grid;place-items:center">需要 WebGL</p>');return}
+const VS='attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+const FS=`precision highp float;
+uniform vec2 res;uniform float t;uniform float sc;uniform float fov;
+float h1(vec3 p){p=fract(p*.1031);p+=dot(p,p.zyx+31.32);return fract((p.x+p.y)*p.z);}
+float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2(1,0)),f.x),mix(h2(i+vec2(0,1)),h2(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n2(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
+vec3 stars(vec3 d){vec3 g=floor(d*700.);float s=pow(h1(g),160.)*2.4;vec3 g2=floor(d*260.);s+=pow(h1(g2+3.1),220.)*1.6;return vec3(s);}
+void main(){
+ vec2 uv=(gl_FragCoord.xy-.5*res)/res.y;
+ /* scene parameters: sc=0 looks down onto a wide-open, tilted disk; sc=1 sits almost in the disk plane */
+ float dist=mix(19.,34.,sc);
+ float elev=mix(.17,.022,sc);
+ float pitch=mix(.035,-.01,sc);
+ float horizon=mix(-.30,.012,sc);
+ vec3 cp=vec3(0.,sin(elev),-cos(elev))*dist;
+ vec3 fw=normalize(-cp)+vec3(0.,pitch,0.);fw=normalize(fw);
+ vec3 rt=normalize(cross(vec3(0,1,0),fw));vec3 up=cross(fw,rt);
+ vec3 dir=normalize(fw+(uv.x*rt+uv.y*up)*tan(fov)*2.);
+ vec3 hot=mix(vec3(1.,.86,.62),vec3(1.,.97,.92),sc);
+ vec3 mid=mix(vec3(1.,.55,.16),vec3(.96,.86,.80),sc);
+ vec3 cool=mix(vec3(.55,.18,.03),vec3(.55,.48,.66),sc);
+ vec3 pos=cp,vel=dir;
+ float hh=dot(cross(pos,vel),cross(pos,vel));
+ vec3 col=vec3(0.);float al=0.;bool cap=false;bool esc=false;
+ for(int i=0;i<130;i++){
+   float r=length(pos);
+   if(r<1.){cap=true;break;}
+   if(r>60.&&dot(pos,vel)>0.){esc=true;break;}
+   float dt=clamp(.06*r,.025,1.5);
+   vec3 pp=pos;
+   vel+= -1.5*hh*pos/pow(r,5.)*dt;
+   pos+=vel*dt;
+   if(pp.y*pos.y<0.){
+     float k=pp.y/(pp.y-pos.y);vec3 q=mix(pp,pos,k);float rr=length(q.xz);
+     float rin=2.6,rout=mix(13.,10.,sc);
+     if(rr>rin&&rr<rout){
+       float x=(rr-rin)/(rout-rin);
+       float om=2.2/pow(rr,1.5);
+       float an=atan(q.z,q.x)+t*om;
+       float fil=fbm(vec2(an*mix(6.,9.,sc)/3.1416*3.,rr*mix(2.6,3.2,sc)));
+       float fil2=fbm(vec2(an*24./3.1416,rr*9.));
+       float dens=smoothstep(0.,.08,x)*pow(1.-x,1.6)*(.35+1.3*fil*fil2*2.);
+       vec3 tang=normalize(vec3(-q.z,0.,q.x));
+       float beam=pow(clamp(1.+.45*dot(tang,-normalize(vel)),.25,2.),2.2);
+       vec3 c=mix(hot,mid,smoothstep(0.,.35,x));c=mix(c,cool,smoothstep(.35,1.,x));
+       float a=clamp(dens*mix(.85,.95,sc),0.,1.);
+       col+=(1.-al)*c*a*beam*mix(1.05,2.8,sc);al+=(1.-al)*a;
+     }
+   }
+ }
+ vec3 bg=mix(vec3(.012,.006,.003),vec3(.13,.12,.21),sc);
+ bg=mix(bg,mix(vec3(0.),vec3(.04,.04,.09),sc),smoothstep(-.1,.5,uv.y));
+ if(!esc)cap=true;
+ if(!cap){vec3 d=normalize(vel);bg+=stars(d)*mix(.8,.04,sc);}
+ vec3 sky=col+(1.-al)*(cap?vec3(0.):bg);
+ /* ground: a near flat field, not lensed */
+ float gy=horizon-uv.y;
+ vec3 o=sky;
+ if(gy>0.){
+   float z=1./(gy+.004);
+   vec2 gp=vec2(uv.x*z,z);
+   vec3 ga=vec3(.11,.055,.016)*(.55+.9*fbm(vec2(gp.x*40.,gp.y*1.6)))+vec3(.28,.14,.03)*pow(fbm(vec2(gp.x*90.,gp.y*.6)),3.);
+   vec3 gb=vec3(.06,.045,.11)*(.7+.6*fbm(vec2(uv.x*z,z*.5)*1.3));
+   for(int L=0;L<3;L++){
+     float s=9.+float(L)*7.;
+     vec2 fp=vec2(uv.x*z,z*.5)*s+vec2(float(L)*3.7,float(L)*1.9);
+     vec2 ci=floor(fp),cf=fract(fp)-.5;
+     float hr=h2(ci+float(L)*11.),hg=h2(ci+7.3+float(L));
+     vec2 off=(vec2(hr,hg)-.5)*.8;float fd=length(cf-off*.6);
+     float rad=.12+.22*h2(ci+3.3);
+     float pet=smoothstep(rad,rad*.45,fd)*step(.25,hg);
+     vec3 fc=mix(vec3(.26,.17,.46),vec3(.58,.45,.80),hr);
+     gb=mix(gb,fc*(.45+.55*hg),pet*.85);
+     float spark=step(.955,h2(ci+1.7+float(L)))*smoothstep(.16,.0,fd);
+     gb+=vec3(1.,.9,.75)*spark*(.5+.5*sin(t*1.7+hr*30.));
+   }
+   gb*=mix(.55,1.1,smoothstep(.6,0.,gy));
+   vec3 g=mix(ga,gb,sc);
+   g+=mix(vec3(1.,.6,.22),vec3(1.,.94,.88),sc)*exp(-gy*mix(9.,22.,sc))*mix(.55,.9,sc)*exp(-abs(uv.x)*mix(1.,.6,sc));
+   o=g;
+ }
+ o+=mix(vec3(1.,.7,.35),vec3(1.,.95,.9),sc)*exp(-abs(gy)*mix(90.,gy>0.?14.:34.,sc))*mix(.25,1.05,sc);
+ o+=vec3(.55,.5,.62)*sc*.12*smoothstep(.45,-.1,uv.y)*(cap&&gy<0.?.15:1.);
+ o*=1.-.28*dot(uv,uv);
+ o=1.-exp(-o*1.15);
+ o=pow(o,vec3(.95));
+ gl_FragColor=vec4(o,1.);
+}`;
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));return s}
+const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);gl.useProgram(pr);
+gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+const L=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(L);gl.vertexAttribPointer(L,2,gl.FLOAT,false,0,0);
+const U=n=>gl.getUniformLocation(pr,n);const uR=U('res'),uT=U('t'),uS=U('sc'),uF=U('fov');
+let Q=.7;
+function size(){const r=box.getBoundingClientRect();cv.width=Math.round(r.width*Q);cv.height=Math.round(r.height*Q);fg.width=r.width*devicePixelRatio;fg.height=r.height*devicePixelRatio;gl.viewport(0,0,cv.width,cv.height)}
+size();addEventListener('resize',size);
+
+const SC=[{n:'Overlook',tg:'盘的背面被弯成一道拱'},{n:'Edge-on',tg:'盘的背面绕成一圈细环'}];
+let target=0,cur=0,mm=50,paused=false,T=0,last=performance.now();
+function setScene(i){target=(i+2)%2;document.getElementById('sn').textContent=SC[target].n;const nm=document.getElementById('nm'),tg=document.getElementById('tg');nm.style.opacity=tg.style.opacity=0;setTimeout(()=>{nm.textContent=SC[target].n;tg.textContent=SC[target].tg;nm.style.opacity=tg.style.opacity=1},350)}
+document.getElementById('prev').onclick=()=>setScene(target-1);document.getElementById('next').onclick=()=>setScene(target+1);
+document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pi').innerHTML=paused?'<path d="M3 2l7 4-7 4z"/>':'<rect x="2.5" y="2" width="2" height="8"/><rect x="7.5" y="2" width="2" height="8"/>'};
+document.getElementById('full').onclick=()=>{box.requestFullscreen&&box.requestFullscreen().catch(()=>{})};
+const dial=document.getElementById('focal'),MIN=18,MAX=85;
+for(let v=MIN;v<=MAX;v+=Math.round((MAX-MIN)/22)){const e=document.createElement('i');e.className='tk'+(v%5===0?' l':'');e.style.top=((v-MIN)/(MAX-MIN)*100)+'%';dial.appendChild(e)}
+[24,35,50,70].forEach(v=>{const e=document.createElement('span');e.className='tkl';e.textContent=v;e.style.top=((v-MIN)/(MAX-MIN)*100)+'%';dial.appendChild(e)});
+function setMM(v){mm=Math.max(MIN,Math.min(MAX,v));const e=document.getElementById('val');e.style.top=((mm-MIN)/(MAX-MIN)*100)+'%';e.firstChild.textContent=Math.round(mm)+' mm'}
+setMM(50);
+box.addEventListener('wheel',e=>{e.preventDefault();setMM(mm+e.deltaY*.025)},{passive:false});
+let dg=false;dial.addEventListener('pointerdown',e=>{dg=true;dial.setPointerCapture(e.pointerId)});
+dial.addEventListener('pointermove',e=>{if(!dg)return;const r=dial.getBoundingClientRect();setMM(MIN+(e.clientY-r.top)/r.height*(MAX-MIN))});
+dial.addEventListener('pointerup',()=>dg=false);
+
+/* 2D layer: farmhouse + truck (sc=0), astronaut + bokeh flowers (sc=1) */
+const bokeh=[];for(let i=0;i<26;i++)bokeh.push({x:Math.random(),y:.78+Math.random()*.3,r:.02+Math.random()*.05,a:.25+Math.random()*.4,c:Math.random()<.5?'210,190,230':'240,232,220'});
+function drawFG(s,zoom){
+  const W=fg.width,H=fg.height;fx.clearRect(0,0,W,H);
+  const hz=lerp(-.30,-.075,s);const y0=H/2-hz*H;const u=H/700;
+  const a1=Math.max(0,1-s*1.9),a2=Math.max(0,(s-.4)/.6);
+  if(a1>0){fx.save();fx.globalAlpha=a1;
+    const hx=W*.75,hy=y0+2*u,sc=1.15;
+    fx.fillStyle='#160a04';
+    const P=(pts)=>{fx.beginPath();pts.forEach(([x,y],i)=>i?fx.lineTo(hx+x*u*sc,hy+y*u*sc):fx.moveTo(hx+x*u*sc,hy+y*u*sc));fx.closePath();fx.fill()};
+    P([[-80,0],[-80,-46],[-88,-46],[-44,-92],[0,-46],[-8,-46],[-8,0]]);
+    P([[-8,0],[-8,-40],[-14,-40],[28,-76],[70,-40],[64,-40],[64,0]]);
+    P([[64,0],[64,-30],[96,-30],[96,0]]);
+    fx.fillRect(hx+40*u*sc,hy-96*u*sc,9*u*sc,30*u*sc);
+    fx.fillRect(hx-90*u*sc,hy-4*u*sc,200*u*sc,4*u*sc);
+    fx.fillStyle='#ffc06a';fx.shadowColor='#ff9a3a';fx.shadowBlur=14*u;
+    [[-70,-36],[-56,-36],[-30,-36],[-18,-36],[-50,-70],[6,-30],[20,-30],[42,-30],[54,-30],[74,-22],[86,-22]].forEach(([x,y])=>fx.fillRect(hx+x*u*sc,hy+y*u*sc,7*u*sc,10*u*sc));
+    fx.shadowBlur=0;
+    const tx=W*.47;fx.fillStyle='#120804';
+    fx.beginPath();fx.roundRect(tx-58*u,y0-19*u,116*u,13*u,2*u);fx.fill();
+    fx.beginPath();fx.moveTo(tx-56*u,y0-19*u);fx.lineTo(tx-48*u,y0-36*u);fx.lineTo(tx-14*u,y0-36*u);fx.lineTo(tx-8*u,y0-19*u);fx.fill();
+    fx.beginPath();fx.arc(tx-34*u,y0-5*u,8*u,0,7);fx.arc(tx+36*u,y0-5*u,8*u,0,7);fx.fill();
+    fx.restore()}
+  if(a2>0){fx.save();fx.globalAlpha=a2;
+    bokeh.forEach(b=>{const g=fx.createRadialGradient(b.x*W,b.y*H,0,b.x*W,b.y*H,b.r*H);g.addColorStop(0,`rgba(${b.c},${b.a})`);g.addColorStop(.7,`rgba(${b.c},${b.a*.5})`);g.addColorStop(1,`rgba(${b.c},0)`);fx.fillStyle=g;fx.beginPath();fx.arc(b.x*W,b.y*H,b.r*H,0,7);fx.fill()});
+    const ax=W*.44,ay=H*.86,v=u*.78;
+    const suit=(x0,x1)=>{const g=fx.createLinearGradient(x0,0,x1,0);g.addColorStop(0,'#3a3546');g.addColorStop(.45,'#8d8899');g.addColorStop(.7,'#b9b3c2');g.addColorStop(1,'#4a4456');return g};
+    fx.fillStyle=suit(ax-120*v,ax+120*v);fx.beginPath();fx.moveTo(ax-118*v,ay+60*v);fx.quadraticCurveTo(ax-122*v,ay-58*v,ax-70*v,ay-84*v);fx.lineTo(ax+70*v,ay-84*v);fx.quadraticCurveTo(ax+122*v,ay-58*v,ax+118*v,ay+60*v);fx.closePath();fx.fill();
+    fx.fillStyle=suit(ax-60*v,ax+60*v);fx.beginPath();fx.roundRect(ax-58*v,ay-96*v,116*v,128*v,18*v);fx.fill();
+    fx.fillStyle='rgba(30,26,40,.55)';fx.beginPath();fx.roundRect(ax-40*v,ay-70*v,80*v,10*v,4*v);fx.fill();
+    const hg=fx.createRadialGradient(ax+14*v,ay-170*v,4*v,ax,ay-150*v,58*v);hg.addColorStop(0,'#f4efe9');hg.addColorStop(.35,'#b8b2c4');hg.addColorStop(.8,'#4c4660');hg.addColorStop(1,'#26212f');
+    fx.fillStyle=hg;fx.beginPath();fx.ellipse(ax,ay-150*v,52*v,56*v,0,0,7);fx.fill();
+    fx.strokeStyle='rgba(255,250,240,.75)';fx.lineWidth=2.2*v;fx.beginPath();fx.ellipse(ax,ay-152*v,47*v,51*v,0,-2.1,-.9);fx.stroke();
+    fx.fillStyle='#ff3b30';fx.shadowColor='#ff3b30';fx.shadowBlur=12*v;fx.beginPath();fx.arc(ax,ay-40*v,3.2*v,0,7);fx.fill();fx.shadowBlur=0;
+    const base=fx.createRadialGradient(ax,ay+50*v,10*v,ax,ay+50*v,170*v);base.addColorStop(0,'rgba(34,24,58,.95)');base.addColorStop(.55,'rgba(34,24,58,.7)');base.addColorStop(1,'rgba(34,24,58,0)');fx.fillStyle=base;fx.beginPath();fx.ellipse(ax,ay+50*v,190*v,80*v,0,0,7);fx.fill();
+    fx.restore()}
+}
+const lerp=(a,b,t)=>a+(b-a)*t;
+let frames=0,acc=0;const t0=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;if(!paused)T+=dt;
+  cur+=(target-cur)*Math.min(1,dt*1.4);
+  const fov=2*Math.atan(12/mm);
+  gl.uniform2f(uR,cv.width,cv.height);gl.uniform1f(uT,T);gl.uniform1f(uS,cur);gl.uniform1f(uF,fov*.5);
+  gl.drawArrays(gl.TRIANGLES,0,3);drawFG(cur,1);
+  frames++;acc+=dt;if(acc>.6){const f=frames/acc;document.getElementById('fps').textContent=Math.round(f)+' FPS · '+Math.round(Q*100)+'%';if(f<40&&Q>.4){Q-=.1;size()}else if(f>58&&Q<.9){Q+=.05;size()}frames=0;acc=0}
+  // readouts use the shader's own camera (dist, elev) in Schwarzschild radii; the horizon sits at r = 1
+  const dist=lerp(19,34,cur),elev=lerp(.17,.022,cur);
+  document.getElementById('alt').textContent=(dist*Math.sin(elev)).toFixed(2)+' Rs';
+  document.getElementById('hz').textContent=(dist-1).toFixed(1)+' Rs';
+  const s=Math.floor((now-t0)/1000);document.getElementById('clk').textContent=[s/3600|0,(s/60|0)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');
+  requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

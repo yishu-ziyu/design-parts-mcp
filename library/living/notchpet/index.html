@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>刘海里的糯糯</title>
+<style>
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/inter-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/inter-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/inter-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "JetBrains Mono"; font-style: italic; font-weight: 400; font-display: swap; src: url("fonts/jetbrains-mono-latin-400-italic.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  :root {
+    --lid: #060608;
+    --ink: #e9e9ee;
+    --ui: #f2f2f5;
+  }
+  html, body { margin: 0; background: var(--lid); }
+  #stage { position: relative; height: 100vh; height: 100svh; overflow: hidden; background: var(--lid); cursor: default; touch-action: none; user-select: none; -webkit-user-select: none; }
+  #stage.play { cursor: grab; }
+  #stage.play.hold { cursor: grabbing; }
+  canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+  .layer { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; pointer-events: none; }
+
+  /* code window text (world units: 1 unit = 1 css px before the camera) */
+    .title { position: absolute; font: 600 23px/1 Inter, system-ui, sans-serif; color: #c4c4ca; white-space: nowrap; transform: translate(-50%, -50%); letter-spacing: -0.1px; }
+    .ln { position: absolute; font: 400 25.4px/37.5px "JetBrains Mono", ui-monospace, Menlo, monospace; color: #5d5d64; text-align: right; width: 44px; }
+  .code { position: absolute; font: 400 25.4px/37.5px "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: 0; color: #e8e8ee; white-space: pre; font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+  .kw { color: #f088aa; } .fn { color: #6fc6a3; } .ty { color: #98e5d3; } .nu { color: #e4cf7e; }
+  .cm { color: #8a8a92; font-style: italic; }
+  .typo { position: relative; }
+  .typo::after { content: ""; position: absolute; left: -1px; right: -3px; bottom: -8px; height: 8px; opacity: var(--sq, 1);
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8'%3E%3Cpath d='M0 5.5 Q2.5 0.5 5 4 T10 2.5' fill='none' stroke='%23fd5b51' stroke-width='2.4'/%3E%3C/svg%3E") repeat-x; background-size: 10px 8px; }
+  .badge { position: absolute; height: 30px; padding: 0 11px 0 9px; border-radius: 7px; background: #5f312c; color: #ff8f7b; font: 600 22px/30px Inter, system-ui, sans-serif; white-space: nowrap; }
+  .badge b { font-weight: 500; margin-right: 6px; }
+  .hl { position: absolute; background: rgba(52, 199, 89, 0.24); }
+  .input { position: absolute; font: 500 24px/1 Inter, system-ui, sans-serif; color: #f4f4f7; white-space: nowrap; transform: translateY(-50%); }
+  .input .ph { color: #8e8e95; }
+  .caret { display: inline-block; width: 2.6px; height: 30px; background: #1d8cff; vertical-align: -6px; margin-left: 1px; border-radius: 1px; }
+
+  /* UI */
+  #ui { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; align-items: center; gap: 10px; pointer-events: none; font: 500 12px/1 Inter, system-ui, sans-serif; color: rgba(255,255,255,.86); }
+  #bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.18); overflow: hidden; }
+  #bar i { display: block; height: 100%; width: 0; background: rgba(255,255,255,.75); }
+  #hint { transition: opacity .4s; opacity: 0; padding: 7px 10px; border-radius: 99px; background: rgba(10,12,16,.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); white-space: nowrap; }
+  #back { white-space: nowrap; pointer-events: auto; cursor: pointer; padding: 7px 11px; border-radius: 99px; border: 0; background: rgba(255,255,255,.9); color: #111; font: 600 12px/1 Inter, system-ui, sans-serif; display: none; }
+  #stage:hover #hint, #stage.fresh #hint { opacity: 1; }
+  #stage.play #back { display: block; }
+  #stage.play #bar { visibility: hidden; }
+  #nogl { position: absolute; inset: 0; display: none; place-items: center; color: #ddd; font: 14px/1.6 Inter, system-ui, sans-serif; text-align: center; padding: 16px; }
+  #tonotes { pointer-events: auto; white-space: nowrap; padding: 7px 10px; border-radius: 99px; background: rgba(10,12,16,.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: rgba(255,255,255,.86); text-decoration: none; }
+  #tonotes:hover { color: #fff; }
+  @media (max-width: 520px) { #hint { font-size: 11px; } }
+
+  /* page-end notes */
+  #notes { max-width: 860px; margin: 0 auto; padding: 72px 24px 120px; color: #9b9ba4; font: 400 14px/1.8 Inter, system-ui, "PingFang SC", "Hiragino Sans GB", sans-serif; }
+  #notes h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; letter-spacing: .1em; color: #e9e9ee; }
+  #notes dl { margin: 0; }
+  #notes dt { margin-top: 24px; }
+  #notes dt code { font: 400 13px/1.4 "JetBrains Mono", ui-monospace, Menlo, monospace; color: #fe5462; }
+  #notes dd { margin: 6px 0 0; }
+  #notes dd code { font: 400 12.5px/1 "JetBrains Mono", ui-monospace, Menlo, monospace; color: #d9d9df; }
+</style>
+</head>
+<body>
+<div id="stage" class="fresh">
+  <canvas id="desk"></canvas>
+  <div id="world" class="layer"></div>
+  <canvas id="goo"></canvas>
+  <div id="faces" class="layer"></div>
+  <div id="cursorLayer" class="layer"></div>
+  <div id="ui"><span id="hint">按住刘海里的小家伙往外拖</span><div id="bar"><i></i></div><button id="back" type="button">自动演示</button><a id="tonotes" href="#notes">可拆 ↓</a></div>
+  <div id="nogl">这个页面需要 WebGL 才能画出黏糊糊的形状。</div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#goo</code></dt>
+    <dd>黏糊本体（前层 SDF 着色器）：头（椭圆 17.5×13）、脖子、身体在同一张距离场里，<code>blend()</code> 按 smooth-min 权重同时混距离和颜色（<code>k = 11</code>），所以脖子从头的 <code>#323237</code> 渐到身体的 <code>#fe5462</code>。脖子 = 头 → 控制点 → 身体的二次贝塞尔上排 10 段 round-cone，中段收细 <code>pinch = clamp((L − 60) / 220, 0, 0.38)</code>；两中心距超过 118 断开，两边各留一根尖尾巴弹回（头侧 27、身侧 16）。变胶囊不换图形：猫的距离场直接 <code>mix</code> 到圆角矩形。</dd>
+    <dt><code>#desk</code></dt>
+    <dd>窗口和标签（后层 SDF 着色器）：代码窗口（圆角 32）和顶边梯形标签 <code>smin(k = 9)</code> 合成一块；标签停稳高 37，弹簧 230 / 9 给出回弹；变输入框时长到高 67、顶部半宽 193，里面是 <code>#3d3d42</code> 灰胶囊。拖着靠近时窗口朝小猫鼓起（吸引的 smin 半径 0 → 26），能放下时外沿亮一圈 6.5 宽的浅蓝描边。刘海同一套梯形：底宽 87、顶宽 130、深 44、底角 13。</dd>
+    <dt><code>#world</code></dt>
+    <dd>字和着色器用同一台相机：<code>DOMMatrix</code> = 居中 → 适配缩放 → 透视 <code>m34 = −1/1150</code> → rotateX/Y/Z → 缩放 → 平移。DOM 层（代码、报错、输入字）直接吃这个 transform，着色器吃它 3×3 部分的逆（<code>uHinv</code>）把屏幕像素映回世界坐标，两边逐像素对齐。镜头 23 个关键帧从原视频帧拟合（刘海段缩放约 2.3、窗口段约 1.12），关键帧之间按时间加权的 Hermite 插值。</dd>
+    <dt><code>#stage</code></dt>
+    <dd>一个状态机，两种驱动：home → grab →（retract | carry）→（return | dock）→ input → think → done → dock，弹簧按固定 240 Hz 步长积分。自动演示是写死的光标路径加按下 1.38 s、松开 5.16 s、打开 6.28 s、提交 7.78 s，喂给和真人输入同一个 <code>step()</code>：12 s 循环，任何时刻都能复现。点画面任意处切到试玩，镜头按 <code>1 − e^(−3.2·dt)</code> 趋近能同时看见刘海和窗口的机位。</dd>
+    <dt><code>#faces</code></dt>
+    <dd>表情和反馈是叠在着色器上的 SVG：点眼 → 悬停眼睛放大 → 按住眯眼「&gt; &lt;」→ 拖 1.35 s 后惊讶（竖条眼 + 小圆嘴）→ 拉断变笑脸，3 颗心在 0 / 0.2 / 0.34 s 冒出；两中心距 45–75 之间汗滴（<code>#9cc6e4</code>）渐显。思考：右上蓝点 <code>#0a8bff</code>（半径 = 猫宽 × 0.19）加头顶红色火星；完成：点变绿 <code>#24c15a</code>，12 颗红点 0.9 s 内从半径 22 散到 40。</dd>
+  </dl>
+</section>
+
+<script>
+(() => {
+'use strict';
+
+// ---------- world layout (units ~ video px at the docked shot) ----------
+const WL = 5, WT = 236, WW = 1100, WH = 760, WR = 32, TB = 78;
+const HEAD = { x: 0, y: 22, rx: 17.5, ry: 13 };
+const NOTCH = { x: 0, topHW: 65, botHW: 43.5, depth: 44, rBot: 13, kTop: 4.5 };
+const DOCK = { x: 402, y: WT - 18 };
+const BREAK = 118;
+const LOOP = 12.0;
+const LINE_H = 37.5, CODE_X = 90, CODE_Y0 = WT + 131;
+const C_RED = [0xfe, 0x54, 0x62].map(v => v / 255);
+const C_HEAD = [0x32, 0x32, 0x37].map(v => v / 255);
+const C_TAB = [0x2b, 0x2b, 0x30].map(v => v / 255);
+const C_PILL = [0x3d, 0x3d, 0x42].map(v => v / 255);
+
+const $ = s => document.querySelector(s);
+const stage = $('#stage'), world = $('#world'), faces = $('#faces'), curLayer = $('#cursorLayer');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeOut = t => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+const easeInOut = t => { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const mixc = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
+
+// ---------- DOM: code window text ----------
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, cls, parent, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; parent.appendChild(e); return e; }
+const K = s => `<span class="kw">${s}</span>`, F = s => `<span class="fn">${s}</span>`, T = s => `<span class="ty">${s}</span>`, N = s => `<span class="nu">${s}</span>`, CM = s => `<span class="cm">${s}</span>`;
+const TYPO = { bad: 'stifnes', good: 'stiffness' };
+const LINES = [
+  [19, CM('/// The tab springs out of the window edge when it lands')],
+  [20, `${K('func')} ${F('settle')}(_ tab: ${K('inout')} ${T('Tab')}, dt: ${T('Double')}) {`],
+  [21, `    ${K('let')} k = <span class="typo" id="typo">${TYPO.bad}</span>`],
+  [22, `    ${K('let')} pull = (tab.rest - tab.height) * k * ${N('0.82')}`],
+  [23, `    tab.velocity += (pull - tab.velocity * damping) * dt`],
+  [24, `    ${K('for')} edge ${K('in')} [${T('Edge')}.leading, .trailing] {`],
+  [25, `        ${K('if')} tab.isDocked {`],
+  [26, `            ${CM('// shoulders stay level while the tab wobbles')}`],
+  [27, `            ${K('let')} lift = tab.height * ${N('0.4')}`],
+  [28, `            tab.shoulder[edge] = ${F('min')}(lift, ${N('12')})`],
+  [29, `        } ${K('else')} {`],
+  [30, `            tab.shoulder[edge] = ${N('0')}`],
+];
+const hl = el('div', 'hl', world); hl.style.cssText += `left:${WL}px;width:${WW}px;top:${CODE_Y0 + 2 * LINE_H - LINE_H / 2}px;height:${LINE_H}px;opacity:0`;
+LINES.forEach(([n, html], i) => {
+  const y = CODE_Y0 + i * LINE_H - LINE_H / 2;
+  const a = el('div', 'ln', world, String(n)); a.style.left = (56.4 - 44) + 'px'; a.style.top = y + 'px';
+  const b = el('div', 'code', world, html); b.style.left = CODE_X + 'px'; b.style.top = y + 'px';
+});
+const title = el('div', 'title', world, 'Tab.swift — mochi'); title.style.left = '533px'; title.style.top = (WT + 36) + 'px';
+const badge = el('div', 'badge', world, `<b>✕</b>Cannot find '${TYPO.bad}' in scope`);
+badge.style.left = (CODE_X + 22 * 15.24) + 'px'; badge.style.top = (CODE_Y0 + 2 * LINE_H - 16) + 'px';
+const typo = $('#typo');
+const inputEl = el('div', 'input', world); inputEl.style.left = (400 - 200 + 24) + 'px'; inputEl.style.top = (WT - 28) + 'px';
+
+// hearts live between the canvases (they float over the bezel)
+const heartsSvg = document.createElementNS(SVGNS, 'svg');
+heartsSvg.setAttribute('width', '1'); heartsSvg.setAttribute('height', '1'); heartsSvg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
+world.appendChild(heartsSvg);
+const HEART_D = 'M0 3.2 C-1.2 2.2 -4 0.4 -4 -1.6 C-4 -3.1 -2.9 -4 -1.8 -4 C-1 -4 -0.4 -3.6 0 -3 C0.4 -3.6 1 -4 1.8 -4 C2.9 -4 4 -3.1 4 -1.6 C4 0.4 1.2 2.2 0 3.2 Z';
+const hearts = [0, 1, 2].map(() => { const p = document.createElementNS(SVGNS, 'path'); p.setAttribute('d', HEART_D); p.setAttribute('fill', '#e0628a'); heartsSvg.appendChild(p); return p; });
+
+// faces + particles above the gooey canvas
+const fsvg = document.createElementNS(SVGNS, 'svg');
+fsvg.setAttribute('width', '1'); fsvg.setAttribute('height', '1'); fsvg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
+faces.appendChild(fsvg);
+fsvg.innerHTML = `
+<g id="partG" fill="#e5485a"></g>
+<g id="sweat" fill="#9cc6e4"><ellipse cx="-19.5" cy="-3" rx="2.4" ry="3.3"/><ellipse cx="19.5" cy="-3" rx="2.4" ry="3.3"/></g>
+<g id="hf" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+  <g id="hfIdle" stroke="none" fill="#fff"><ellipse class="e" cx="-5" cy="-1" rx="2.1" ry="2.1"/><ellipse class="e" cx="5" cy="-1" rx="2.1" ry="2.1"/></g>
+  <g id="hfSquint" transform="scale(0.86)"><path d="M-2.2 -5 L-6.6 -2.2 L-2.2 0.6"/><path d="M2.2 -5 L6.6 -2.2 L2.2 0.6"/><path d="M-3.6 6.4 L0 2.8 L3.6 6.4"/></g>
+  <g id="hfWow" stroke="none" fill="#fff"><rect x="-6.6" y="-6" width="3.4" height="7.6" rx="1.7"/><rect x="3.2" y="-6" width="3.4" height="7.6" rx="1.7"/><circle cx="0" cy="5.4" r="1.6"/></g>
+  <g id="hfHappy" transform="scale(0.82)"><path d="M-8 0 Q-5 -4.6 -2 0"/><path d="M2 0 Q5 -4.6 8 0"/><path d="M-5 3.6 Q0 8.4 5 3.6"/></g>
+</g>
+<g id="bf" fill="#fff" stroke="#fff" stroke-linecap="round" stroke-width="0">
+  <g id="bfPill"><rect class="l" x="-1" y="-1" width="1" height="1"/><rect class="r" x="-1" y="-1" width="1" height="1"/></g>
+  <g id="bfHappy" fill="none" stroke-width="2"><path class="l" d=""/><path class="r" d=""/></g>
+</g>
+<circle id="dot" r="6" fill="#0a8bff"/>
+<g id="ringG" fill="#e04a5c"></g>`;
+const F_ = id => fsvg.querySelector('#' + id);
+const hf = F_('hf'), hfIdle = F_('hfIdle'), hfSquint = F_('hfSquint'), hfWow = F_('hfWow'), hfHappy = F_('hfHappy');
+const bf = F_('bf'), bfPill = F_('bfPill'), bfHappy = F_('bfHappy'), dotEl = F_('dot'), sweat = F_('sweat'), partG = F_('partG'), ringG = F_('ringG');
+const ringDots = Array.from({ length: 12 }, () => { const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('r', '1.9'); ringG.appendChild(c); return c; });
+const PMAX = 18;
+const partEls = Array.from({ length: PMAX }, () => { const c = document.createElementNS(SVGNS, 'rect'); c.setAttribute('rx', '1'); partG.appendChild(c); return c; });
+
+// cursor (tip at 0,0), ~48 units tall
+const csvg = document.createElementNS(SVGNS, 'svg');
+csvg.setAttribute('width', '1'); csvg.setAttribute('height', '1'); csvg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
+csvg.innerHTML = `<g id="cur"><path d="M0 0 L0 34.5 L8.4 26.6 L13.8 39.2 L19.6 36.8 L14.3 24.5 L25.6 24.3 Z" transform="scale(1.0)" fill="#000" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></g>`;
+curLayer.appendChild(csvg);
+const curG = csvg.querySelector('#cur');
+
+// ---------- WebGL ----------
+const VERT = `attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }`;
+const COMMON = `
+precision highp float;
+uniform mat3 uHinv; uniform vec2 uRes; uniform float uDpr;
+vec2 toWorld(vec2 s){ vec3 w = uHinv * vec3(s, 1.0); return w.xy / w.z; }
+float cover(float d, float aa){ return clamp(0.5 - d / aa, 0.0, 1.0); }
+float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0); return mix(b, a, h) - k*h*(1.0-h); }
+float sdBox(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
+float sdTrap(vec2 p, float r1, float r2, float he){
+  vec2 k1 = vec2(r2, he); vec2 k2 = vec2(r2 - r1, 2.0*he);
+  p.x = abs(p.x);
+  vec2 ca = vec2(p.x - min(p.x, (p.y < 0.0) ? r1 : r2), abs(p.y) - he);
+  vec2 cb = p - k1 + k2*clamp(dot(k1 - p, k2)/dot(k2, k2), 0.0, 1.0);
+  float s = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
+  return s*sqrt(min(dot(ca, ca), dot(cb, cb)));
+}
+float sdRTrap(vec2 q, float r1, float he, float sl, float rad){
+  // r1 = half width at bottom (y=-he, y up), sides widen by sl per unit height, corners rounded by rad
+  float k = sqrt(1.0 + sl*sl);
+  float a = r1 + sl*rad - rad*k;
+  float b = r1 + sl*(2.0*he - rad) - rad*k;
+  return sdTrap(q, a, b, he - rad) - rad;
+}
+float sdEll(vec2 p, vec2 r){ float k0 = length(p/r); float k1 = length(p/(r*r)); return k0*(k0 - 1.0)/max(k1, 1e-4); }
+`;
+
+const BACK_FS = COMMON + `
+uniform vec4 uWin; uniform vec2 uWinP;
+uniform vec4 uTab;   // cx, height, topHalfW, on
+uniform vec4 uAttr;  // cat x, y, r, attract
+uniform float uHL;
+uniform vec4 uPill; uniform float uPillA;
+uniform vec3 uCTB; uniform vec3 uCCode; uniform vec3 uCPill;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+vec3 over(vec3 c, vec3 s, float a){ return mix(c, s, a); }
+void main(){
+  vec2 s = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uDpr;
+  vec2 p = toWorld(s);
+  float pxw = length(toWorld(s + vec2(1.0, 0.0)) - p);
+  float aa = max(pxw / uDpr, 1e-3) * 1.15;
+
+  float g = clamp((p.x*0.55 - p.y*0.45 + 260.0) / 1500.0, 0.0, 1.0);
+  vec3 col = mix(vec3(0.184, 0.514, 0.765), vec3(0.118, 0.420, 0.690), g);
+  col *= 1.0 - 0.10*exp(-max(p.y, 0.0)/70.0);
+  col += (hash(floor(s*uDpr)) - 0.5) * 0.012;
+
+  float dp = sdBox(p - vec2(-446.0, 7.0), vec2(354.0, 57.0), 20.0);
+  col = over(col, vec3(0.0), cover(dp, aa));
+
+  vec2 wc = vec2(-92.0 - 330.0, 296.0 + 360.0);
+  float dw = sdBox(p - wc, vec2(330.0, 360.0), 24.0);
+  col = over(col, vec3(0.0, 0.03, 0.08), 0.22*exp(-max(dw - 2.0, 0.0)/26.0) * step(0.0, dw));
+  col = over(col, vec3(0.957, 0.957, 0.969), cover(dw, aa));
+
+  // code window + tab (smooth union) + attraction toward a nearby blob
+  vec2 c = uWin.xy + uWin.zw*0.5;
+  float dWin = sdBox(p - c, uWin.zw*0.5, uWinP.x);
+  float th = uTab.y * uTab.w;
+  float dTab = 1e5;
+  if (th > 0.5) {
+    float hw = uTab.z;
+    float he = (th + 24.0) * 0.5;
+    vec2 q = vec2(p.x - uTab.x, -(p.y - (uWin.y - th + he)));
+    float rr = min(12.0, th*0.4);
+    // y-up local: bottom (inside the window) is wider, top is hw
+    dTab = sdRTrap(vec2(q.x, -q.y), hw, he, 0.42, rr);
+  }
+  float dBody = smin(dWin, dTab, 9.0);
+  if (uAttr.w > 0.001) {
+    float dc = length(p - uAttr.xy) - uAttr.z*0.8 + 0.0;
+    dBody = smin(dBody, dc + (1.0 - uAttr.w)*60.0, 26.0*uAttr.w + 0.01);
+  }
+  float dsh = sdBox(p - c - vec2(0.0, 14.0), uWin.zw*0.5, uWinP.x);
+  col = over(col, vec3(0.0, 0.02, 0.06), 0.34*exp(-max(dsh, 0.0)/34.0) * step(0.0, dBody));
+  // drop-target highlight ring
+  float ring = cover(dBody - 6.5, aa) * (1.0 - cover(dBody, aa));
+  col = over(col, vec3(0.74, 0.83, 0.90), ring*uHL);
+  vec3 wcol = (p.y < uWin.y + uWinP.y) ? uCTB : uCCode;
+  col = over(col, wcol, cover(dBody, aa));
+  float sep = abs(p.y - (uWin.y + uWinP.y)) - 0.9;
+  col = over(col, vec3(0.095, 0.095, 0.11), cover(sep, aa) * cover(dWin, aa));
+  vec2 tl = vec2(uWin.x + 35.0, uWin.y + 39.0);
+  col = over(col, vec3(1.0, 0.42, 0.35), cover(length(p - tl) - 12.6, aa));
+  col = over(col, vec3(1.0, 0.75, 0.18), cover(length(p - tl - vec2(41.0, 0.0)) - 12.6, aa));
+  col = over(col, vec3(0.13, 0.75, 0.27), cover(length(p - tl - vec2(82.0, 0.0)) - 12.6, aa));
+  if (uPillA > 0.001) {
+    float dpl = sdBox(p - uPill.xy, uPill.zw, uPill.w);
+    col = over(col, uCPill, cover(dpl, aa) * uPillA);
+  }
+
+  // bezel + notch (on top of the desktop)
+  float nh = ${NOTCH.depth.toFixed(1)};
+  float he2 = (nh + 20.0)*0.5;
+  vec2 qn = vec2(p.x - ${NOTCH.x.toFixed(1)}, -(p.y - (nh - he2)));
+  float dn = sdRTrap(qn, ${NOTCH.botHW.toFixed(1)}, he2, ${((NOTCH.topHW - NOTCH.botHW) / NOTCH.depth).toFixed(4)}, ${NOTCH.rBot.toFixed(1)});
+  float dz = smin(p.y, dn, ${NOTCH.kTop.toFixed(1)});
+  col = over(col, vec3(0.063, 0.063, 0.075), cover(dz, aa));
+  float dl = p.y + 41.0;
+  col = over(col, vec3(0.20, 0.196, 0.22), cover(abs(dl) - 0.9, aa));
+  col = over(col, vec3(0.022, 0.022, 0.03), cover(dl + 0.9, aa));
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+const FRONT_FS = COMMON + `
+uniform vec4 uHead; uniform vec3 uHeadCol; uniform float uHeadA;
+uniform vec4 uBody; uniform vec3 uBodyCol; uniform float uBodyA; uniform vec4 uBodyX;
+uniform vec4 uNeckC; uniform float uNeckOn;
+uniform vec4 uTailH; uniform vec4 uTailB;
+uniform vec4 uDrop1; uniform vec4 uDrop2;
+uniform vec4 uPill; uniform float uPillMix; uniform vec4 uPillCol;
+uniform float uK;
+uniform vec4 uBound;
+float sdRoundCone(vec2 p, vec2 a, vec2 b, float r1, float r2){
+  vec2 ba = b - a; float l2 = max(dot(ba, ba), 1e-4); float rr = r1 - r2; float a2 = l2 - rr*rr; float il2 = 1.0/l2;
+  vec2 pa = p - a; float y = dot(pa, ba); float z = y - l2;
+  vec2 xv = pa*l2 - ba*y; float x2 = dot(xv, xv); float y2 = y*y*l2; float z2 = z*z*l2;
+  float k = sign(rr)*rr*rr*x2;
+  if (sign(z)*a2*z2 > k) return sqrt(x2 + z2)*il2 - r2;
+  if (sign(y)*a2*y2 < k) return sqrt(x2 + y2)*il2 - r1;
+  return (sqrt(x2*a2*il2) + y*rr)*il2 - r1;
+}
+float sdTri(vec2 p, vec2 p0, vec2 p1, vec2 p2){
+  vec2 e0 = p1-p0, e1 = p2-p1, e2 = p0-p2; vec2 v0 = p-p0, v1 = p-p1, v2 = p-p2;
+  vec2 pq0 = v0 - e0*clamp(dot(v0,e0)/dot(e0,e0), 0.0, 1.0);
+  vec2 pq1 = v1 - e1*clamp(dot(v1,e1)/dot(e1,e1), 0.0, 1.0);
+  vec2 pq2 = v2 - e2*clamp(dot(v2,e2)/dot(e2,e2), 0.0, 1.0);
+  float s = sign(e0.x*e2.y - e0.y*e2.x);
+  vec2 d = min(min(vec2(dot(pq0,pq0), s*(v0.x*e0.y-v0.y*e0.x)), vec2(dot(pq1,pq1), s*(v1.x*e1.y-v1.y*e1.x))), vec2(dot(pq2,pq2), s*(v2.x*e2.y-v2.y*e2.x)));
+  return -sqrt(d.x)*sign(d.y);
+}
+// blob / cat in local, normalized units (half width = 1)
+float sdCat(vec2 q, float cat){
+  float d = sdEll(q - vec2(0.0, 0.03), vec2(1.0, 0.9));
+  vec2 e = vec2(abs(q.x), q.y);
+  float de = sdTri(e, vec2(0.32, -0.52), vec2(0.96, -0.26), vec2(0.76, -0.98)) - 0.13;
+  de += (1.0 - cat)*0.75;
+  return smin(d, de, 0.16);
+}
+void blend(inout float d, inout vec4 c, float d2, vec4 c2, float k){
+  float h = clamp(0.5 + 0.5*(d2 - d)/k, 0.0, 1.0);
+  d = mix(d2, d, h) - k*h*(1.0 - h);
+  c = mix(c2, c, h);
+}
+void main(){
+  vec2 s = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uDpr;
+  vec2 p = toWorld(s);
+  if (p.x < uBound.x || p.y < uBound.y || p.x > uBound.z || p.y > uBound.w) { gl_FragColor = vec4(0.0); return; }
+  float pxw = length(toWorld(s + vec2(1.0, 0.0)) - p);
+  float aa = max(pxw / uDpr, 1e-3) * 1.15;
+
+  vec2 H = uHead.xy; vec2 B = uBody.xy;
+  float d = sdEll(p - H, uHead.zw);
+  vec4 c = vec4(uHeadCol, uHeadA);
+  if (uHeadA < 0.01) d = 1e4;
+
+  float bw = uBody.z;
+  if (uNeckOn > 0.5) {
+    vec2 C = uNeckC.xy;
+    float r0 = uHead.w*0.72, r1 = bw*0.6, pinch = uNeckC.z;
+    float dn = 1e5; float tn = 0.0;
+    vec2 prev = H; float rprev = r0;
+    for (int i = 1; i <= 10; i++) {
+      float t = float(i)/10.0; float it = 1.0 - t;
+      vec2 cur = it*it*H + 2.0*it*t*C + t*t*B;
+      float rc = mix(r0, r1, t) * (1.0 - pinch*sin(3.14159*t));
+      float ds = sdRoundCone(p, prev, cur, max(rprev, 0.5), max(rc, 0.5));
+      if (ds < dn) { dn = ds; vec2 sg = cur - prev; tn = t - 0.1 + 0.1*clamp(dot(p - prev, sg)/max(dot(sg, sg), 1e-3), 0.0, 1.0); }
+      prev = cur; rprev = rc;
+    }
+    vec4 cn = vec4(mix(uHeadCol, uBodyCol, smoothstep(0.05, 0.95, tn)), mix(uHeadA, uBodyA, tn));
+    blend(d, c, dn, cn, uK);
+  }
+  vec2 lb = p - B;
+  float ca = cos(uBodyX.z), sa = sin(uBodyX.z);
+  vec2 rv = vec2(ca*lb.x + sa*lb.y, -sa*lb.x + ca*lb.y) / uBodyX.xy;
+  lb = vec2(ca*rv.x - sa*rv.y, sa*rv.x + ca*rv.y);
+  vec2 qb = lb / bw;
+  float db = sdCat(qb, uBody.w) * bw * min(uBodyX.x, uBodyX.y);
+  if (uPillMix > 0.001) {
+    float dpl = sdBox(p - uPill.xy, uPill.zw, uPill.w);
+    db = mix(db, dpl, uPillMix);
+  }
+  vec4 cb = vec4(mix(uBodyCol, uPillCol.rgb, uPillMix*uPillCol.a), uBodyA);
+  if (uBodyA < 0.01 && uNeckOn < 0.5) db = 1e4;
+  // trailing droplets merge into the body
+  if (uDrop1.z > 0.2) db = smin(db, length(p - uDrop1.xy) - uDrop1.z, 7.0);
+  if (uDrop2.z > 0.2) db = smin(db, length(p - uDrop2.xy) - uDrop2.z, 7.0);
+  blend(d, c, db, cb, uK);
+  // snapped tails
+  if (uTailH.z > 0.5) {
+    vec2 a = H + uTailH.xy*uHead.w*0.3, b = H + uTailH.xy*(uHead.w*0.3 + uTailH.z);
+    float dt = sdRoundCone(p, a, b, uTailH.w, 1.6);
+    blend(d, c, dt, vec4(uHeadCol, uHeadA), 6.0);
+  }
+  if (uTailB.z > 0.5) {
+    vec2 a = B + uTailB.xy*bw*0.4, b = B + uTailB.xy*(bw*0.4 + uTailB.z);
+    float dt = sdRoundCone(p, a, b, uTailB.w, 1.4);
+    blend(d, c, dt, cb, 7.0);
+  }
+  float cv = cover(d, aa);
+  vec4 outc = vec4(c.rgb, 1.0) * cv * c.a;
+  gl_FragColor = outc;
+}`;
+
+function mkGL(canvas, fs) {
+  const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true });
+  if (!gl) return null;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VERT)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+  gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = {}; const n = gl.getProgramParameter(pr, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(pr, i); U[info.name] = gl.getUniformLocation(pr, info.name); }
+  return { gl, U, canvas };
+}
+let GB, GF;
+try { GB = mkGL($('#desk'), BACK_FS); GF = mkGL($('#goo'), FRONT_FS); } catch (e) { console.error(e); GB = GF = null; }
+if (!GB || !GF) { $('#nogl').style.display = 'grid'; }
+
+// ---------- camera ----------
+// keyframes: time, look-at x/y (world), scale (ref px per unit), tilt x/y, roll z (deg)
+const CAM = [
+  { t: 0.0, x: 11.4, y: 55.8, s: 2.3, rx: -7.0, ry: -15.4, rz: -1.71 },
+  { t: 1.0, x: 11.4, y: 55.6, s: 2.35, rx: -7.4, ry: -15.5, rz: -1.8 },
+  { t: 1.4, x: 11.4, y: 55.5, s: 2.36, rx: -7.4, ry: -14.5, rz: -1.7 },
+  { t: 2.0, x: 13.2, y: 56.5, s: 1.95, rx: -7.5, ry: -14.0, rz: -1.8 },
+  { t: 2.5, x: -1.0, y: 68.0, s: 1.84, rx: -7.0, ry: -15.0, rz: -1.7 },
+  { t: 3.0, x: 13.6, y: 62.6, s: 1.94, rx: -6.2, ry: -18.9, rz: -1.55 },
+  { t: 3.5, x: 25.5, y: 64.5, s: 1.95, rx: -6.1, ry: -19.3, rz: -1.41 },
+  { t: 3.6, x: 24.6, y: 66.5, s: 1.94, rx: -6.4, ry: -18.6, rz: -1.45 },
+  { t: 4.0, x: 24.7, y: 88.5, s: 1.85, rx: -8.9, ry: -16.2, rz: -1.88 },
+  { t: 4.5, x: 124.3, y: 185.4, s: 1.71, rx: 4.0, ry: -11.0, rz: -1.3 },
+  { t: 5.0, x: 323.2, y: 312.9, s: 1.63, rx: 15.0, ry: -11.0, rz: 2.14 },
+  { t: 5.5, x: 408.8, y: 341.0, s: 1.47, rx: 15.0, ry: -11.0, rz: 2.05 },
+  { t: 6.0, x: 423.5, y: 380.0, s: 1.24, rx: 15.0, ry: -11.0, rz: 2.2 },
+  { t: 6.45, x: 425.4, y: 397.1, s: 1.156, rx: 15.7, ry: -10.3, rz: 1.96 },
+  { t: 7.0, x: 425.1, y: 403.5, s: 1.122, rx: 15.6, ry: -9.9, rz: 1.76 },
+  { t: 7.9, x: 426.8, y: 403.7, s: 1.119, rx: 15.4, ry: -10.7, rz: 2.07 },
+  { t: 8.6, x: 425.9, y: 403.3, s: 1.123, rx: 15.3, ry: -10.7, rz: 2.08 },
+  { t: 9.5, x: 426.6, y: 403.9, s: 1.126, rx: 15.2, ry: -10.7, rz: 2.04 },
+  { t: 10.0, x: 425.4, y: 417.9, s: 1.084, rx: 16.5, ry: -8.7, rz: 1.27 },
+  { t: 10.6, x: 425.5, y: 420.8, s: 1.083, rx: 16.4, ry: -8.7, rz: 1.27 },
+  { t: 11.0, x: 429.9, y: 390.9, s: 1.21, rx: 15.8, ry: -12.0, rz: 2.8 },
+  { t: 11.9, x: 430.4, y: 374.6, s: 1.264, rx: 15.0, ry: -11.0, rz: 2.1 },
+  { t: 12.0, x: 430.5, y: 372.8, s: 1.27, rx: 15.0, ry: -11.0, rz: 2.1 },
+];
+const PLAYCAM = { x: 262, y: 188, s: 1.2, rx: 12, ry: -10, rz: 1.2 };
+const CAM_D = 1150;
+function camAt(t) {
+  const k = CAM; if (t <= k[0].t) return { ...k[0] }; if (t >= k[k.length - 1].t) return { ...k[k.length - 1] };
+  let i = 0; while (k[i + 1].t < t) i++;
+  const a = k[Math.max(0, i - 1)], b = k[i], c = k[i + 1], d = k[Math.min(k.length - 1, i + 2)];
+  const u = (t - b.t) / (c.t - b.t);
+  const o = {};
+  for (const key of ['x', 'y', 's', 'rx', 'ry', 'rz']) {
+    // monotone-ish cubic hermite (catmull-rom with time-aware tangents)
+    const m1 = (c[key] - a[key]) / Math.max(c.t - a.t, 1e-3) * (c.t - b.t);
+    const m2 = (d[key] - b[key]) / Math.max(d.t - b.t, 1e-3) * (c.t - b.t);
+    const u2 = u * u, u3 = u2 * u;
+    o[key] = (2 * u3 - 3 * u2 + 1) * b[key] + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * c[key] + (u3 - u2) * m2;
+  }
+  return o;
+}
+let VW = 960, VH = 540, DPR = 1;
+function camMatrix(c) {
+  const fit = Math.max(VW / 960, VH / 540 * 0.62);
+  const m = new DOMMatrix();
+  m.translateSelf(VW / 2, VH / 2);
+  m.scaleSelf(fit, fit);
+  const P = new DOMMatrix(); P.m34 = -1 / CAM_D; m.multiplySelf(P);
+  m.rotateAxisAngleSelf(1, 0, 0, c.rx);
+  m.rotateAxisAngleSelf(0, 1, 0, c.ry);
+  m.rotateAxisAngleSelf(0, 0, 1, c.rz);
+  m.scaleSelf(c.s, c.s);
+  m.translateSelf(-c.x, -c.y);
+  return m;
+}
+function inv3(a) { // row-major 3x3
+  const [a0, a1, a2, a3, a4, a5, a6, a7, a8] = a;
+  const b01 = a8 * a4 - a5 * a7, b11 = -a8 * a3 + a5 * a6, b21 = a7 * a3 - a4 * a6;
+  const det = a0 * b01 + a1 * b11 + a2 * b21; const id = 1 / det;
+  return [b01 * id, (-a8 * a1 + a2 * a7) * id, (a5 * a1 - a2 * a4) * id, b11 * id, (a8 * a0 - a2 * a6) * id, (-a5 * a0 + a2 * a3) * id, b21 * id, (-a7 * a0 + a1 * a6) * id, (a4 * a0 - a1 * a3) * id];
+}
+let Mcam = new DOMMatrix(), Hinv = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+function setCamera(c) {
+  Mcam = camMatrix(c);
+  const H = [Mcam.m11, Mcam.m21, Mcam.m41, Mcam.m12, Mcam.m22, Mcam.m42, Mcam.m14, Mcam.m24, Mcam.m44];
+  Hinv = inv3(H);
+  const tf = Mcam.toString();
+  world.style.transform = tf; faces.style.transform = tf; curLayer.style.transform = tf;
+}
+function screenToWorld(X, Y) {
+  const h = Hinv; const w = h[6] * X + h[7] * Y + h[8];
+  return { x: (h[0] * X + h[1] * Y + h[2]) / w, y: (h[3] * X + h[4] * Y + h[5]) / w };
+}
+
+// ---------- autoplay script ----------
+// cursor tip keyframes in world units
+const CUR = [
+  [0.00, 160, 205], [0.80, 128, 168], [1.00, 44, 86], [1.22, 8, 33], [1.38, 5, 32],
+  [1.70, -3, 82], [2.00, -10, 117], [2.50, -69, 111], [3.00, 71, 95], [3.45, 15, 140], [3.60, 16, 182],
+  [4.00, 123, 229], [4.50, 371, 348], [5.00, 409, 368], [5.20, 412, 372], [5.50, 470, 420], [6.20, 520, 470],
+  [10.70, 720, 410], [11.00, 626, 376], [11.90, 495, 435], [12.0, 487, 441],
+];
+function curAt(t) {
+  const k = CUR; if (t <= k[0][0]) return { x: k[0][1], y: k[0][2] }; if (t >= k[k.length - 1][0]) return { x: k[k.length - 1][1], y: k[k.length - 1][2] };
+  let i = 0; while (k[i + 1][0] < t) i++;
+  const a = k[Math.max(0, i - 1)], b = k[i], c = k[i + 1], d = k[Math.min(k.length - 1, i + 2)];
+  const u = (t - b[0]) / (c[0] - b[0]), u2 = u * u, u3 = u2 * u, dt = c[0] - b[0];
+  const o = {};
+  [1, 2].forEach(j => {
+    const m1 = (c[j] - a[j]) / Math.max(c[0] - a[0], 1e-3) * dt * 0.85;
+    const m2 = (d[j] - b[j]) / Math.max(d[0] - b[0], 1e-3) * dt * 0.85;
+    o[j === 1 ? 'x' : 'y'] = (2 * u3 - 3 * u2 + 1) * b[j] + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * c[j] + (u3 - u2) * m2;
+  });
+  return o;
+}
+const TYPED = '帮我修一下';
+const SCRIPT = { down: 1.38, up: 5.16, open: 6.28, typeStart: 6.78, typeStep: 0.15, submit: 7.78 };
+function curVisAt(t) { return t < 0.8 ? 0 : t < 0.9 ? (t - 0.8) / 0.1 : t < 5.2 ? 1 : t < 5.36 ? 1 - (t - 5.2) / 0.16 : t < 10.75 ? 0 : Math.min(1, (t - 10.75) / 0.12); }
+
+// ---------- simulation ----------
+const DT = 1 / 240;
+let S;
+function fresh() {
+  return {
+    t: 0, mode: 'home', mt: 0,
+    cur: { x: 160, y: 205, down: false, vis: 0, pdown: false, downAt: null, moved: 0 },
+    head: { x: HEAD.x, y: HEAD.y, sx: 1, sy: 1, vx: 0, vy: 0, halo: 0, lx: 0, ly: 0, face: 'idle', faceAge: 9, blink: 0, happyT: -9, grabT: -9 },
+    anchor: 'notch',
+    body: { x: HEAD.x, y: HEAD.y, vx: 0, vy: 0, hw: 14, cat: 0, catv: 0, red: 0, a: 0, sx: 1, sy: 1, ang: 0, eyesA: 0, lx: 0, ly: 0 },
+    neck: { on: 0, x: 0, y: 22, vx: 0, vy: 0, pinch: 0 },
+    tailH: { len: 0, v: 0, dx: 0, dy: 1 }, tailB: { len: 0, v: 0, dx: 0, dy: -1 },
+    drops: [{ x: 0, y: 22, vx: 0, vy: 0 }, { x: 0, y: 22, vx: 0, vy: 0 }],
+    tab: { h: 0, hv: 0, hw: 40, hwv: 0, cx: DOCK.x, top: 49 },
+    pill: { mix: 0, cx: DOCK.x, cy: DOCK.y, hw: 19, hh: 17, grey: 0, a: 1 }, backPillA: 0,
+    hl: 0, attract: 0,
+    inp: { on: 0, text: '', ph: 0, phase: 'none', pt: 0 },
+    fixT: -1, think: { on: false, t: 0 },
+    dot: { a: 0, green: 0, pop: 0 },
+    hearts: [-9, -9, -9], parts: [], ring: -9, sweat: 0, sweatL: 0,
+    shake: 0,
+  };
+}
+function spring(o, k, tgt, stiff, damp, dt) { const v = k + 'v'; if (!o[v]) o[v] = 0; const a = stiff * (tgt - o[k]) - damp * o[v]; o[v] += a * dt; o[k] += o[v] * dt; }
+function spring2(o, tx, ty, stiff, damp, dt) {
+  const ax = stiff * (tx - o.x) - damp * o.vx, ay = stiff * (ty - o.y) - damp * o.vy;
+  o.vx += ax * dt; o.vy += ay * dt; o.x += o.vx * dt; o.y += o.vy * dt;
+}
+const inHead = (x, y, m = 1.25) => ((x - HEAD.x) / (HEAD.rx * m)) ** 2 + ((y - HEAD.y) / (HEAD.ry * m * 1.3)) ** 2 < 1;
+const nearCat = (x, y) => Math.hypot(x - S.body.x, y - S.body.y) < S.body.hw * 1.5;
+const overWindow = (x, y) => x > WL - 10 && x < WL + WW + 10 && y > WT - 150 && y < WT + WH;
+
+function setFace(f) { if (S.head.face !== f) { S.head.face = f; S.head.faceAge = 0; } }
+function startGrab(from) {
+  S.mode = 'grab'; S.mt = 0; S.anchor = from;
+  const b = S.body;
+  if (from === 'notch') { b.x = HEAD.x; b.y = HEAD.y + 4; b.vx = b.vy = 0; b.hw = 13; b.cat = 0; b.red = 0; S.head.grabT = S.t; setFace('squint'); }
+  S.neck.on = 1; S.neck.x = (b.x + S.cur.x) / 2; S.neck.y = (b.y + S.cur.y) / 2; S.neck.vx = S.neck.vy = 0;
+  b.a = 1;
+}
+function anchorPos() { return S.anchor === 'tab' ? { x: DOCK.x, y: WT - 30 } : { x: S.head.x, y: S.head.y }; }
+function doBreak() {
+  const A = anchorPos(), b = S.body;
+  const dx = b.x - A.x, dy = b.y - A.y, L = Math.hypot(dx, dy) || 1;
+  S.neck.on = 0;
+  S.tailH.len = 27; S.tailH.lenv = 0; S.tailH.dx = dx / L; S.tailH.dy = dy / L;
+  S.tailB.len = 16; S.tailB.lenv = 0; S.tailB.dx = -dx / L; S.tailB.dy = -dy / L;
+  S.mode = 'carry'; S.mt = 0;
+  b.hw = Math.max(b.hw, 24); b.cat = Math.max(b.cat, 0.6);
+  if (S.anchor === 'notch') { setFace('happy'); S.head.happyT = S.t; S.hearts = [S.t, S.t + 0.2, S.t + 0.34]; }
+  else { S.tab.h = Math.max(S.tab.h, 0.3); }
+}
+function dock() {
+  S.mode = 'dock'; S.mt = 0; S.tab.hw = 40; S.hl = Math.min(S.hl, 1);
+}
+function openInput() {
+  if (S.mode !== 'dock') return;
+  S.mode = 'input'; S.mt = 0; S.inp.phase = 'open'; S.inp.pt = 0; S.inp.text = '';
+}
+function submit() {
+  if (S.mode !== 'input' || S.inp.phase !== 'typing') return;
+  S.inp.phase = 'close'; S.inp.pt = 0;
+}
+function typeChar(ch) { if (S.mode === 'input' && S.inp.phase !== 'close' && S.inp.text.length < 18) S.inp.text += ch; }
+function backspace() { if (S.mode === 'input' && S.inp.phase !== 'close') S.inp.text = S.inp.text.slice(0, -1); }
+
+let rngSeed = 7;
+const rnd = () => { rngSeed = (rngSeed * 16807) % 2147483647; return (rngSeed - 1) / 2147483646; };
+
+function step(dt) {
+  S.t += dt; S.mt += dt;
+  const c = S.cur, h = S.head, b = S.body, n = S.neck;
+  const pressed = c.down && !c.pdown, released = !c.down && c.pdown;
+  if (pressed) { c.downAt = { x: c.x, y: c.y }; c.moved = 0; }
+  if (c.down && c.downAt) c.moved = Math.max(c.moved, Math.hypot(c.x - c.downAt.x, c.y - c.downAt.y));
+
+  // ---- head (notch) ----
+  const hovering = S.mode === 'home' && c.vis > 0.5 && inHead(c.x, c.y);
+  spring(h, 'halo', (hovering || (S.mode === 'grab' && S.anchor === 'notch' && S.mt < 0.25)) ? 1 : 0, 300, 30, dt);
+  h.faceAge += dt;
+  let lookX = 0, lookY = 0;
+  if (c.vis > 0.5) { const dx = c.x - h.x, dy = c.y - h.y, L = Math.hypot(dx, dy) || 1; const f = Math.min(1, 160 / L) * 2.4; lookX = dx / L * f; lookY = dy / L * f * 0.7; }
+  h.lx = lerp(h.lx, lookX, 1 - Math.exp(-dt * 14)); h.ly = lerp(h.ly, lookY, 1 - Math.exp(-dt * 14));
+  if (h.face === 'happy' && S.t - h.happyT > 1.7) setFace('idle');
+  if (S.mode === 'grab' && S.anchor === 'notch' && S.t - h.grabT > 1.35 && h.face === 'squint') setFace('wow');
+  if (S.mode === 'home' && h.face !== 'happy') setFace(hovering ? 'hover' : 'idle');
+  // head squash: pulled toward body while grabbing
+  let hsx = hovering ? 1.04 : 1, hsy = hovering ? 1.04 : 1, hx = HEAD.x, hy = HEAD.y;
+  if (S.mode === 'grab' && S.anchor === 'notch') {
+    const dx = b.x - HEAD.x, dy = b.y - HEAD.y, L = Math.hypot(dx, dy) || 1;
+    const pull = Math.min(L, 140) / 140;
+    hx += dx / L * pull * 3.5; hy += dy / L * pull * 4.5;
+    hsx = 1.08 - pull * 0.04; hsy = 1.1 + pull * 0.04;
+    if (S.mt < 0.12) { hsx = 1.14; hsy = 0.98; }
+  }
+  spring2(h, hx, hy, 500, 22, dt);
+  spring(h, 'sx', hsx, 420, 16, dt); spring(h, 'sy', hsy, 420, 16, dt);
+  h.blink = (S.t % 3.1) > 3.0 ? 1 : 0;
+
+  // ---- interaction modes ----
+  const tgtX = c.x - 2, tgtY = c.y - 9;
+  switch (S.mode) {
+    case 'home': {
+      b.a = 0; b.x = h.x; b.y = h.y; b.vx = b.vy = 0; n.on = 0;
+      if (pressed && inHead(c.x, c.y)) startGrab('notch');
+      break;
+    }
+    case 'grab': {
+      const A = anchorPos();
+      spring2(b, tgtX, tgtY, 520, 26, dt);
+      const dx = b.x - A.x, dy = b.y - A.y, L = Math.hypot(dx, dy);
+      spring(b, 'hw', S.anchor === 'tab' ? 19 : lerp(14, 25, sstep(8, 90, L)), 220, 18, dt);
+      b.red = S.anchor === 'tab' ? 1 : sstep(15, 125, L);
+      b.cat = S.anchor === 'tab' ? 1 : 0;
+      b.eyesA = sstep(22, 45, L);
+      // neck control lags behind the midpoint, giving the curve
+      spring2(n, (A.x + b.x) / 2, (A.y + b.y) / 2 + L * 0.05, 140, 13, dt);
+      n.pinch = clamp((L - 60) / 220, 0, 0.38);
+      S.sweat = S.anchor === 'notch' ? sstep(45, 75, L) : 0;
+      if (L > BREAK) doBreak();
+      else if (!c.down) { S.mode = 'retract'; S.mt = 0; }
+      break;
+    }
+    case 'retract': {
+      const A = anchorPos();
+      spring2(b, A.x, A.y + (S.anchor === 'tab' ? 14 : 0), 260, 18, dt);
+      spring2(n, (A.x + b.x) / 2, (A.y + b.y) / 2, 200, 16, dt);
+      const L = Math.hypot(b.x - A.x, b.y - A.y);
+      n.pinch = clamp((L - 60) / 220, 0, 0.38);
+      spring(b, 'hw', S.anchor === 'tab' ? 16.5 : 13, 160, 16, dt);
+      b.eyesA = sstep(22, 45, L); S.sweat = 0;
+      if (L < 6) { if (S.anchor === 'tab') { S.mode = 'dock'; S.mt = 0; n.on = 0; } else { S.mode = 'home'; S.mt = 0; setFace('idle'); } }
+      break;
+    }
+    case 'carry': {
+      spring2(b, tgtX, tgtY, 420, 21, dt);
+      spring(b, 'hw', 18.5, 50, 9, dt);
+      b.red = 1; b.eyesA = 1; S.sweat = 0;
+      spring(b, 'cat', 1, 420, 20, dt);
+      const over = b.x > WL && b.x < WL + WW && b.y > WT && b.y < WT + WH;
+      S.hl = lerp(S.hl, over ? 1 : 0, 1 - Math.exp(-dt * 16));
+      S.attract = lerp(S.attract, (Math.abs(b.x - DOCK.x) < 120 && b.y < WT + 10 && b.y > WT - 90) ? 1 : 0, 1 - Math.exp(-dt * 10));
+      if (!c.down) {
+        if (overWindow(b.x, b.y)) dock(); else { S.mode = 'return'; S.mt = 0; }
+      }
+      break;
+    }
+    case 'return': {
+      spring2(b, h.x, h.y + 6, 120, 13, dt);
+      spring(b, 'hw', 15, 120, 14, dt);
+      spring(b, 'cat', 0, 200, 16, dt);
+      S.hl = lerp(S.hl, 0, 1 - Math.exp(-dt * 10));
+      if (Math.hypot(b.x - h.x, b.y - h.y) < 9) { S.mode = 'home'; S.mt = 0; setFace('happy'); h.happyT = S.t; S.hearts = [S.t, -9, -9]; }
+      break;
+    }
+    case 'dock': case 'input': case 'think': case 'done': {
+      S.hl = lerp(S.hl, 0, 1 - Math.exp(-dt * 9));
+      S.attract = lerp(S.attract, 0, 1 - Math.exp(-dt * 8));
+      spring(b, 'cat', 1, 260, 16, dt); b.red = 1;
+      if (S.mode === 'dock') {
+        if (S.mt < 0.6) spring2(b, DOCK.x, DOCK.y, 150, 9.5, dt); else spring2(b, DOCK.x, DOCK.y, 300, 17, dt);
+        spring(b, 'hw', 16.5, 200, 14, dt);
+        b.eyesA = 1;
+        if (c.down && c.moved > 8 && nearCat(c.downAt.x, c.downAt.y)) { S.anchor = 'tab'; startGrab('tab'); }
+        else if (released && c.moved < 6 && nearCat(c.x, c.y)) openInput();
+      }
+      break;
+    }
+  }
+
+  // ---- tab on the window top ----
+  const landing = S.mode === 'dock' && S.mt < 0.6 && !(b.vy > 0 && b.y > WT - 45);
+  const docked = (['dock', 'input', 'think', 'done'].includes(S.mode) && !landing) || (S.mode === 'grab' && S.anchor === 'tab') || (S.mode === 'retract' && S.anchor === 'tab');
+  let tabTop = 37, tabHW = 24, tabCX = DOCK.x;
+  const ip = S.inp, P = S.pill;
+  if (S.mode === 'input') {
+    ip.pt += dt;
+    if (ip.phase === 'open') {
+      const u1 = easeInOut(ip.pt / 0.17), u2 = easeInOut((ip.pt - 0.17) / 0.14);
+      P.mix = u1; P.a = 1;
+      P.cx = lerp(DOCK.x, lerp(402, 400, u2), u1); P.cy = lerp(DOCK.y, lerp(WT - 21, WT - 28, u2), u1);
+      P.hw = lerp(16.5, lerp(84, 200, u2), u1); P.hh = lerp(16, lerp(23, 24, u2), u1);
+      P.grey = u2;
+      tabHW = lerp(lerp(24, 100, u1), 193, u2); tabTop = lerp(lerp(37, 55, u1), 67, u2); tabCX = lerp(DOCK.x, 397, u2);
+      if (ip.pt > 0.33) { ip.phase = 'typing'; ip.pt = 0; }
+      S.backPillA = 0; ip.ph = 0;
+    } else if (ip.phase === 'typing') {
+      P.mix = 1; P.cx = 400; P.cy = WT - 28; P.hw = 200; P.hh = 24; P.grey = 1;
+      S.backPillA = 1; P.a = 0;
+      tabHW = 193; tabTop = 67; tabCX = 397;
+      ip.ph = Math.min(1, ip.pt / 0.12);
+    } else if (ip.phase === 'close') {
+      const u1 = easeInOut(ip.pt / 0.14), u2 = easeInOut((ip.pt - 0.14) / 0.2);
+      S.backPillA = 0; P.a = 1; P.grey = 1 - u1;
+      P.cx = lerp(400, 402, u1); P.cy = lerp(WT - 28, lerp(WT - 22, DOCK.y, u2), u1);
+      P.hw = lerp(200, lerp(73, 16.5, u2), u1); P.hh = lerp(24, lerp(21.5, 16, u2), u1);
+      P.mix = 1 - u2;
+      tabHW = lerp(193, lerp(84, 24, u2), u1); tabTop = lerp(67, lerp(50, 37, u2), u1); tabCX = lerp(397, DOCK.x, u1);
+      if (ip.pt > 0.36) { S.mode = 'think'; S.mt = 0; ip.phase = 'none'; P.mix = 0; S.dot.a = 0; ip.text = ''; }
+    }
+  } else { P.mix = Math.max(0, P.mix - dt * 8); S.backPillA = 0; ip.ph = 0; }
+  spring(S.tab, 'h', docked ? 1 : 0, docked ? 230 : 400, docked ? 9 : 30, dt);
+  S.tab.top = tabTop; S.tab.hw = tabHW; S.tab.cx = tabCX;
+
+  // ---- thinking / fix ----
+  if (S.mode === 'think') {
+    if (S.mt > 0.05) S.dot.a = Math.min(1, S.dot.a + dt * 9);
+    if (S.mt > 0.1 && rnd() < dt * 22 && S.parts.length < PMAX) {
+      S.parts.push({ x: b.x - 12 + rnd() * 24, y: b.y - 18 - rnd() * 6, vx: -10 + rnd() * 20, vy: -26 - rnd() * 22, life: 0, max: 0.35 + rnd() * 0.3, w: 1.8 + rnd() * 1.4, h: 2.0 + rnd() * 3.6 });
+    }
+    if (S.mt > 1.62 && S.fixT < 0) S.fixT = S.t;
+    if (S.mt > 2.15) { S.mode = 'done'; S.mt = 0; S.ring = S.t; }
+  }
+  if (S.mode === 'done') { S.dot.green = Math.min(1, S.dot.green + dt * 10); if (S.mt > 2.6) { S.mode = 'dock'; S.mt = 0; } }
+  if (!['think', 'done', 'dock'].includes(S.mode)) { if (S.mode !== 'input') { S.dot.a = Math.max(0, S.dot.a - dt * 6); } }
+  if (S.mode === 'input') S.dot.a = Math.max(0, S.dot.a - dt * 10);
+  S.parts.forEach(p => { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 30 * dt; });
+  S.parts = S.parts.filter(p => p.life < p.max);
+
+  spring(S.tailH, 'len', 0, 55, 9, dt); spring(S.tailB, 'len', 0, 80, 11, dt);
+  if (S.tailH.len < 0.6) S.tailH.len = 0; if (S.tailB.len < 0.6) S.tailB.len = 0;
+  // droplets lag behind the moving body
+  S.drops.forEach((d, i) => { spring2(d, b.x, b.y, i ? 70 : 110, i ? 9 : 11, dt); });
+  const sp = Math.hypot(b.vx, b.vy);
+  const st = clamp(sp / 1400, 0, 0.18);
+  b.ang = Math.atan2(b.vy, b.vx);
+  b.sx = 1 + st; b.sy = 1 - st * 0.8;
+  b.lx = lerp(b.lx, clamp(b.vx / 260, -1, 1) * 2.2, 1 - Math.exp(-dt * 10));
+  b.ly = lerp(b.ly, clamp(b.vy / 260, -1, 1) * 1.6, 1 - Math.exp(-dt * 10));
+  c.pdown = c.down;
+}
+
+// ---------- drive: autoplay or user ----------
+let mode = 'auto';     // 'auto' | 'play'
+let autoT = 0, lastNow = 0, firedType = 0;
+const user = { x: 0, y: 0, down: false, has: false, tap: 0 };
+let camCur = { ...CAM[0] };
+
+function driveAuto(t) {
+  const p = curAt(t); S.cur.x = p.x; S.cur.y = p.y;
+  S.cur.vis = curVisAt(t);
+  S.cur.down = t >= SCRIPT.down && t < SCRIPT.up;
+  if (t >= SCRIPT.open && S.mode === 'dock' && !S.flags.open) { S.flags.open = 1; openInput(); }
+  const nChars = clamp(Math.floor((t - SCRIPT.typeStart) / SCRIPT.typeStep) + 1, 0, TYPED.length);
+  if (S.mode === 'input' && S.inp.phase === 'typing') while (S.inp.text.length < nChars && t < SCRIPT.submit) typeChar(TYPED[S.inp.text.length]);
+  if (t >= SCRIPT.submit && !S.flags.submit) { S.flags.submit = 1; submit(); }
+}
+function resetAuto() { S = fresh(); S.flags = {}; rngSeed = 7; }
+function advanceAutoTo(T) { while (S.t + DT <= T + 1e-9) { driveAuto(S.t + DT); step(DT); } }
+
+// ---------- render ----------
+function resize() {
+  const r = stage.getBoundingClientRect(); VW = Math.max(1, r.width); VH = Math.max(1, r.height);
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  for (const G of [GB, GF]) { if (!G) continue; G.canvas.width = Math.round(VW * DPR); G.canvas.height = Math.round(VH * DPR); }
+}
+function u4(G, n, a, b, c, d) { if (G.U[n]) G.gl.uniform4f(G.U[n], a, b, c, d); }
+function u1(G, n, a) { if (G.U[n]) G.gl.uniform1f(G.U[n], a); }
+function u3(G, n, v) { if (G.U[n]) G.gl.uniform3f(G.U[n], v[0], v[1], v[2]); }
+function commonU(G) {
+  const gl = G.gl; gl.viewport(0, 0, G.canvas.width, G.canvas.height);
+  const h = Hinv; gl.uniformMatrix3fv(G.U.uHinv, false, [h[0], h[3], h[6], h[1], h[4], h[7], h[2], h[5], h[8]]);
+  gl.uniform2f(G.U.uRes, G.canvas.width, G.canvas.height); gl.uniform1f(G.U.uDpr, DPR);
+}
+function setVis(e, v) { e.style.opacity = v; }
+function render() {
+  const h = S.head, b = S.body, n = S.neck;
+  if (GB) {
+    commonU(GB);
+    u4(GB, 'uWin', WL, WT, WW, WH); GB.gl.uniform2f(GB.U.uWinP, WR, TB);
+    const th = clamp(S.tab.h, 0, 1.35);
+    u4(GB, 'uTab', S.tab.cx, S.tab.top, S.tab.hw + Math.max(0, th - 1) * 22, th);
+    u4(GB, 'uAttr', b.x, b.y, b.hw, S.mode === 'carry' ? S.attract : 0);
+    u1(GB, 'uHL', clamp(S.hl, 0, 1));
+    u1(GB, 'uPillA', S.backPillA);
+    GB.gl.uniform4f(GB.U.uPill, 400, WT - 28, 200, 24);
+    u3(GB, 'uCTB', C_TAB); u3(GB, 'uCCode', [0x20 / 255, 0x1f / 255, 0x26 / 255]); u3(GB, 'uCPill', C_PILL);
+    GB.gl.drawArrays(GB.gl.TRIANGLES, 0, 3);
+  }
+  if (GF) {
+    const G = GF, gl = G.gl; commonU(G);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    const anchorTab = S.anchor === 'tab' && (S.mode === 'grab' || S.mode === 'retract');
+    const hx = anchorTab ? DOCK.x : h.x, hy = anchorTab ? WT - 24 : h.y;
+    const hrx = anchorTab ? 26 : HEAD.rx * h.sx, hry = anchorTab ? 10 : HEAD.ry * h.sy;
+    u4(G, 'uHead', hx, hy, hrx, hry);
+    u3(G, 'uHeadCol', anchorTab ? C_TAB : mixc(mixc(C_HEAD, [0.245, 0.243, 0.262], clamp(h.halo, 0, 1)), [0.30, 0.22, 0.24], S.mode === 'grab' && S.anchor === 'notch' ? sstep(40, 130, Math.hypot(b.x - h.x, b.y - h.y)) * 0.8 : 0));
+    u1(G, 'uHeadA', 1);
+    const bodyCol = mixc(C_HEAD, C_RED, b.red);
+    const showBody = S.mode !== 'home' ? 1 : 0;
+    u4(G, 'uBody', b.x, b.y, b.hw, b.cat); u3(G, 'uBodyCol', bodyCol); u1(G, 'uBodyA', showBody);
+    u4(G, 'uBodyX', b.sx, b.sy, b.ang, 0);
+    u4(G, 'uNeckC', n.x, n.y, n.pinch, 0); u1(G, 'uNeckOn', n.on && (S.mode === 'grab' || S.mode === 'retract') ? 1 : 0);
+    u4(G, 'uTailH', S.tailH.dx, S.tailH.dy, S.anchor === 'notch' ? S.tailH.len : 0, 8.0 * clamp(S.tailH.len / 12, 0.4, 1));
+    u4(G, 'uTailB', S.tailB.dx, S.tailB.dy, S.tailB.len, 6);
+    const sp = Math.hypot(b.vx, b.vy), dr = S.mode === 'carry' ? clamp((sp - 250) / 900, 0, 1) : 0;
+    u4(G, 'uDrop1', S.drops[0].x, S.drops[0].y, 5.5 * dr, 0); u4(G, 'uDrop2', S.drops[1].x, S.drops[1].y, 3.8 * dr, 0);
+    const P = S.pill;
+    gl.uniform4f(G.U.uPill, P.cx, P.cy, P.hw, P.hh);
+    u1(G, 'uPillMix', P.mix); gl.uniform4f(G.U.uPillCol, C_PILL[0], C_PILL[1], C_PILL[2], P.grey);
+    if (S.mode === 'input' && S.inp.phase === 'typing') u1(G, 'uBodyA', 0);
+    u1(G, 'uK', 11);
+    u4(G, 'uBound', -900, -200, 1600, 1400);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  const hfA = 1;
+  hf.setAttribute('transform', `translate(${h.x + h.lx * (h.face === 'idle' || h.face === 'hover' ? 1 : 0.3)} ${h.y + h.ly * 0.6}) scale(${h.sx} ${h.sy * (h.blink && h.face === 'idle' ? 0.15 : 1) * (h.faceAge < 0.07 ? 0.4 + h.faceAge / 0.07 * 0.6 : 1)})`);
+  hf.style.opacity = hfA;
+  setVis(hfIdle, h.face === 'idle' || h.face === 'hover' ? 1 : 0);
+  hfIdle.querySelectorAll('.e').forEach(e => { e.setAttribute('ry', h.face === 'hover' ? 2.9 : 2.1); e.setAttribute('rx', h.face === 'hover' ? 2.3 : 2.1); });
+  setVis(hfSquint, h.face === 'squint' ? 1 : 0); setVis(hfWow, h.face === 'wow' ? 1 : 0); setVis(hfHappy, h.face === 'happy' ? 1 : 0);
+  sweat.setAttribute('transform', `translate(${h.x} ${h.y}) scale(${h.sx * 1.05} 1)`);
+  setVis(sweat, S.sweat * (0.8 + 0.2 * Math.sin(S.t * 18)));
+
+  // body face
+  const W = b.hw * 2;
+  const thinking = S.mode === 'think';
+  const happy = S.mode === 'done';
+  const bodyFaceA = (S.mode === 'home' ? 0 : b.eyesA) * (1 - clamp(S.pill.mix * 3, 0, 1));
+  bf.style.opacity = bodyFaceA;
+  bf.setAttribute('transform', `translate(${b.x + b.lx} ${b.y + b.ly + W * 0.05})`);
+  const ew = W * 0.13, eh = W * (b.cat > 0.5 && S.mode !== 'carry' && S.mode !== 'grab' ? 0.30 : 0.34), es = W * 0.17;
+  const [eL, eR] = bfPill.querySelectorAll('rect');
+  let lookT = thinking ? Math.sin(S.mt * 5.2) * W * 0.09 : 0;
+  let ehL = eh, ehR = eh;
+  if (thinking) { ehL = ew * 1.05; ehR = eh * 0.72; }
+  eL.setAttribute('x', -es - ew / 2 + lookT); eL.setAttribute('y', -ehL / 2); eL.setAttribute('width', ew); eL.setAttribute('height', ehL); eL.setAttribute('rx', ew / 2);
+  eR.setAttribute('x', es - ew / 2 + lookT); eR.setAttribute('y', -ehR / 2); eR.setAttribute('width', ew); eR.setAttribute('height', ehR); eR.setAttribute('rx', ew / 2);
+  setVis(bfPill, happy ? 0 : 1); setVis(bfHappy, happy ? 1 : 0);
+  const [hL, hR] = bfHappy.querySelectorAll('path');
+  const aw = W * 0.12;
+  hL.setAttribute('d', `M${-es - aw} 0 Q${-es} ${-aw * 1.3} ${-es + aw} 0`); hR.setAttribute('d', `M${es - aw} 0 Q${es} ${-aw * 1.3} ${es + aw} 0`);
+  bfHappy.setAttribute('stroke-width', W * 0.055);
+
+  // status dot
+  const dotA = S.dot.a;
+  dotEl.setAttribute('cx', b.x + W * 0.42); dotEl.setAttribute('cy', b.y - W * 0.36); dotEl.setAttribute('r', W * 0.19 * (dotA < 1 ? 0.6 + dotA * 0.4 : 1));
+  dotEl.setAttribute('fill', S.dot.green > 0.5 ? '#24c15a' : '#0a8bff'); dotEl.style.opacity = dotA;
+
+  // particles
+  partEls.forEach((e, i) => { const p = S.parts[i]; if (!p) { e.style.opacity = 0; return; } e.setAttribute('x', p.x); e.setAttribute('y', p.y); e.setAttribute('width', p.w); e.setAttribute('height', p.h); e.style.opacity = 1 - p.life / p.max; });
+  const rt = S.t - S.ring;
+  ringDots.forEach((e, i) => {
+    if (rt < 0 || rt > 0.9) { e.style.opacity = 0; return; }
+    const a = i / 12 * Math.PI * 2 + 0.2, R = lerp(22, 40, easeOut(rt / 0.9));
+    e.setAttribute('cx', b.x + Math.cos(a) * R * 1.15); e.setAttribute('cy', b.y + 4 + Math.sin(a) * R); e.style.opacity = 1 - sstep(0.45, 0.9, rt);
+  });
+  // hearts
+  hearts.forEach((e, i) => {
+    const ht = S.t - S.hearts[i];
+    if (ht < 0 || ht > 1.1) { e.style.opacity = 0; return; }
+    const pos = [[-10, -19], [0, -17], [11, -14]][i];
+    const sc = 0.95 * (ht < 0.07 ? easeOut(ht / 0.07) * 1.15 : 1 + 0.15 * Math.max(0, 1 - (ht - 0.07) / 0.15));
+    e.setAttribute('transform', `translate(${S.head.x + pos[0]} ${S.head.y + pos[1] - ht * 4}) scale(${sc})`);
+    e.style.opacity = 1 - sstep(0.75, 1.1, ht);
+  });
+
+  // code fix
+  const ft = S.fixT < 0 ? -1 : S.t - S.fixT;
+  typo.textContent = ft >= 0 ? TYPO.good : TYPO.bad;
+  typo.style.setProperty('--sq', ft >= 0 ? 0 : 1);
+  badge.style.opacity = ft < 0 ? 1 : 1 - clamp(ft / 0.22, 0, 1) * 0.92 - clamp((ft - 0.22) / 0.3, 0, 1) * 0.08;
+  hl.style.opacity = ft < 0 ? 0 : (ft < 0.08 ? ft / 0.08 : 1 - 0.9 * sstep(0.35, 1.3, ft));
+
+  // input text
+  const ip = S.inp;
+  const caretOn = (S.t * 1.9) % 1 < 0.6;
+  if (S.mode === 'input' && ip.phase === 'typing') {
+    inputEl.style.opacity = ip.ph;
+    inputEl.innerHTML = (ip.text ? escapeHtml(ip.text) : '') + `<span class="caret" style="opacity:${caretOn || ip.text ? 1 : 0}"></span>` + (ip.text ? '' : '<span class="ph">说点什么…</span>');
+  } else inputEl.style.opacity = 0;
+
+  // cursor
+  curG.setAttribute('transform', `translate(${S.cur.x} ${S.cur.y})`);
+  curG.style.opacity = mode === 'auto' ? S.cur.vis : 0;
+}
+function escapeHtml(s) { return s.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch])); }
+
+// ---------- loop ----------
+const bar = $('#bar i');
+let frozen = false;
+function frame(now) {
+  if (!lastNow) lastNow = now;
+  let dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+  if (frozen) { requestAnimationFrame(frame); return; }
+  if (mode === 'auto') {
+    autoT += dt;
+    if (autoT >= LOOP) { autoT -= LOOP; resetAuto(); }
+    advanceAutoTo(autoT);
+    camCur = camAt(autoT);
+    bar.style.width = (autoT / LOOP * 100).toFixed(2) + '%';
+  } else {
+    if (user.has) { const w = screenToWorld(user.x, user.y); S.cur.x = w.x; S.cur.y = w.y; }
+    S.cur.vis = 1;
+    let acc = dt;
+    // a press and release can land between two frames; replay them as separate steps so clicks register
+    if (user.tap && !user.down) { S.cur.down = true; step(DT); step(DT); acc -= 2 * DT; }
+    user.tap = 0;
+    S.cur.down = user.down;
+    while (acc > 1e-6) { const d = Math.min(DT, acc); step(d); acc -= d; }
+    const k = 1 - Math.exp(-dt * 3.2);
+    const fit = Math.max(VW / 960, VH / 540 * 0.62);
+    const pc = { ...PLAYCAM, s: clamp(VW / (fit * 780), 0.55, 1.3) };
+    if (VW < 560) { pc.x = 200; pc.y = 280; pc.s = 0.95; }
+    for (const key of ['x', 'y', 's', 'rx', 'ry', 'rz']) camCur[key] = lerp(camCur[key], pc[key], k);
+  }
+  setCamera(camCur);
+  render();
+  requestAnimationFrame(frame);
+}
+
+// ---------- input ----------
+function toPlay() {
+  if (mode === 'play') return;
+  mode = 'play'; stage.classList.add('play');
+  if (S.mode === 'grab') { S.mode = 'retract'; S.mt = 0; }
+  if (S.mode === 'carry') { S.mode = 'return'; S.mt = 0; }
+  $('#hint').textContent = VW < 560 ? '拖到窗口上，点它打字' : '拖出来放到窗口顶上；点它可以打字，回车发送';
+}
+function toAuto() { mode = 'auto'; stage.classList.remove('play'); autoT = 0; resetAuto(); $('#hint').textContent = '按住刘海里的小家伙往外拖'; }
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('#back, #tonotes')) return;
+  toPlay();
+  const r = stage.getBoundingClientRect(); user.x = e.clientX - r.left; user.y = e.clientY - r.top; user.has = true; user.down = true; user.tap = 1;
+  stage.classList.add('hold');
+  try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+});
+stage.addEventListener('pointermove', e => { const r = stage.getBoundingClientRect(); user.x = e.clientX - r.left; user.y = e.clientY - r.top; user.has = true; });
+const up = () => { user.down = false; stage.classList.remove('hold'); };
+stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+$('#back').addEventListener('click', e => { e.stopPropagation(); toAuto(); });
+window.addEventListener('keydown', e => {
+  if (mode !== 'play' || S.mode !== 'input') return;
+  if (e.key === 'Enter') { submit(); e.preventDefault(); }
+  else if (e.key === 'Backspace') { backspace(); e.preventDefault(); }
+  else if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) { typeChar(e.key); e.preventDefault(); }
+});
+window.addEventListener('compositionend', e => { if (mode === 'play' && e.data) for (const ch of e.data) typeChar(ch); });
+
+window.addEventListener('resize', resize);
+resize(); resetAuto();
+if (location.hash.includes('clean')) $('#ui').style.display = 'none';
+setTimeout(() => stage.classList.remove('fresh'), 4500);
+// test hook: jump the autoplay to a time and render synchronously
+window.__seek = T => { frozen = true; mode = 'auto'; stage.classList.remove('play'); resetAuto(); autoT = T; advanceAutoTo(T); camCur = camAt(T); setCamera(camCur); render(); bar.style.width = (T / LOOP * 100) + '%'; return S.mode; };
+window.__state = () => S;
+if (GB && GF) requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

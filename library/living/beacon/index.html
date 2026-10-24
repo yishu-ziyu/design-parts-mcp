@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>beacon — 一张字形表，三张动态海报</title>
+<style>
+@font-face{font-family:"Kode Mono";font-style:normal;font-display:swap;font-weight:400;src:url("fonts/kode-mono-latin-400-normal.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Kode Mono";font-style:normal;font-display:swap;font-weight:500;src:url("fonts/kode-mono-latin-500-normal.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Funnel Display";font-style:normal;font-display:swap;font-weight:400;src:url("fonts/funnel-display-latin-400-normal.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Funnel Display";font-style:normal;font-display:swap;font-weight:500;src:url("fonts/funnel-display-latin-500-normal.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Inter";font-style:normal;font-display:swap;font-weight:100 900;src:url("fonts/inter-latin-opsz-normal.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{
+  --bg:#dcdcde;
+  --panel:#ececee;
+  --ink:#1c1c1e;
+  --ink-2:#5c5c62;
+  --ink-3:#8c8c92;
+  --line:rgba(0,0,0,.10);
+  --accent:#607dfe;
+  --mono:"Kode Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans:system-ui, -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#18181a; --panel:#202023; --ink:#ececee; --ink-2:#a4a4aa; --ink-3:#74747a; --line:rgba(255,255,255,.10);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#18181a; --panel:#202023; --ink:#ececee; --ink-2:#a4a4aa; --ink-3:#74747a; --line:rgba(255,255,255,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:13px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 300px;height:100vh}
+.stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 16px 14px;min-width:0;min-height:0}
+.poster-wrap{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+#poster{display:block;box-shadow:0 0 0 1px var(--line);touch-action:none}
+.timeline{flex:none;display:flex;align-items:center;gap:10px;width:var(--pw,420px);max-width:100%;padding-left:84px}
+.timeline button{all:unset;cursor:pointer;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:var(--panel);box-shadow:0 0 0 1px var(--line)}
+.timeline button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.timeline svg{width:12px;height:12px;fill:var(--ink)}
+.track{position:relative;flex:1;cursor:ew-resize;user-select:none;padding-bottom:12px}
+.lane{position:relative;height:13px;display:flex;align-items:center}
+.lane em{position:absolute;right:calc(100% + 8px);font:normal 10px/13px var(--sans);color:var(--ink-2);white-space:nowrap}
+.bar{position:relative;flex:1;height:5px;border-radius:3px;background:var(--line)}
+.seg{position:absolute;top:0;height:100%;border-radius:3px;background:var(--ink-3)}
+.seg.hot{background:var(--accent)}
+.ticks{position:absolute;left:0;right:0;bottom:0;height:10px;font:9px/10px var(--mono);color:var(--ink-3)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.head{position:absolute;top:-2px;bottom:11px;width:2px;margin-left:-1px;background:var(--ink);border-radius:1px}
+.tc{font:11px var(--mono);color:var(--ink-2);min-width:42px;text-align:right}
+.side{border-left:1px solid var(--line);background:var(--panel);padding:18px 18px 22px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.eyebrow{margin:0;font:11px var(--mono);letter-spacing:.04em;color:var(--ink-3);text-transform:uppercase}
+h1{margin:4px 0 6px;font:500 19px/1.25 var(--sans)}
+.credit{margin:0;color:var(--ink-2);font-size:12px}
+.credit a{color:inherit}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tabs button{all:unset;cursor:pointer;padding:8px 8px 7px;border-radius:7px;box-shadow:inset 0 0 0 1px var(--line);font:11px/1.2 var(--mono);color:var(--ink-2)}
+.tabs button b{display:block;font-weight:500;color:var(--ink);font-size:12px;margin-top:3px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--panel);box-shadow:none}
+.tabs button[aria-selected="true"] b{color:var(--panel)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sec-t{margin:0 0 8px;font:11px var(--mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.param{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;margin-bottom:10px}
+.param label{font-size:12px;color:var(--ink-2)}
+.param output{font:11px var(--mono);color:var(--ink)}
+.param input{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.param[hidden]{display:none}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.btns button{all:unset;cursor:pointer;padding:6px 10px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--line);font-size:12px;color:var(--ink)}
+.btns button[aria-pressed="true"]{background:var(--accent);color:#fff;box-shadow:none}
+.btns button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.spec{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12px}
+.spec dt{color:var(--ink-3);white-space:nowrap}
+.spec dd{margin:0;font:11px/1.6 var(--mono);color:var(--ink)}
+.sw{display:flex;flex-wrap:wrap;gap:6px 10px}
+.sw span{display:inline-flex;align-items:center;gap:5px;font:11px var(--mono)}
+.sw i{width:12px;height:12px;border-radius:2px;box-shadow:0 0 0 1px var(--line);display:inline-block}
+#legend{width:100%;height:auto;display:block;border-radius:6px}
+.note{margin:0;font-size:12px;color:var(--ink-2)}
+#notes{border-top:1px solid var(--line);background:var(--panel);padding:36px 16px 64px}
+#notes .in{max-width:880px;margin:0 auto}
+#notes h3{margin:0 0 14px;font:500 11px var(--mono);letter-spacing:.04em;color:var(--ink-3)}
+#notes dl{margin:0}
+#notes dt{margin-top:18px}
+#notes dt code{font:500 12px var(--mono);color:var(--accent)}
+#notes dd{margin:4px 0 0;font-size:12px;line-height:1.75;color:var(--ink-2)}
+#notes dd code{font:11px var(--mono);color:var(--ink)}
+@media (max-width:760px){
+  body{overflow:auto}
+  .app{display:block;height:auto}
+  .stage{height:auto;padding:16px 16px 10px}
+  .poster-wrap{flex:none}
+  .side{border-left:0;border-top:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="stage" id="stage">
+    <div class="poster-wrap" id="wrap"><canvas id="poster" role="img" aria-label="动态海报"></canvas></div>
+    <div class="timeline" id="timeline">
+      <div class="track" id="track" aria-label="时间轴，可拖动"></div>
+      <span class="tc" id="tc">0.00s</span>
+      <button id="play" aria-label="暂停"><svg viewBox="0 0 12 12" id="playIcon"><rect x="2" y="1.5" width="2.6" height="9"/><rect x="7.4" y="1.5" width="2.6" height="9"/></svg></button>
+    </div>
+  </main>
+  <aside class="side">
+    <header>
+      <p class="eyebrow">Motion poster system · study</p>
+      <h1>一套规则，三张动态海报</h1>
+      <p class="credit">照着 Nick（@nickbakeddesign）给 boat 做的 motion posters 拆规则重建。画幅、网格、字形表、配色和时间线按原作测量，文字、图形和品牌是新写的。</p>
+    </header>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <section id="density">
+      <p class="sec-t">参数</p>
+      <div class="param"><label for="pCols">网格列数</label><output id="oCols"></output><input id="pCols" type="range" min="20" max="90" step="1"></div>
+      <div class="param"><label for="pDens">密度偏移</label><output id="oDens"></output><input id="pDens" type="range" min="-0.35" max="0.35" step="0.01" value="0"></div>
+      <div class="param" id="beam"><label for="pBeam">光束张角</label><output id="oBeam"></output><input id="pBeam" type="range" min="12" max="70" step="1" value="36"></div>
+      <div class="param"><label for="pSpeed">播放速度</label><output id="oSpeed"></output><input id="pSpeed" type="range" min="0.25" max="2" step="0.05" value="1"></div>
+      <div class="btns">
+        <button id="bGrid" aria-pressed="false">显示网格与密度图</button>
+        <button id="bSeed">换一组随机</button>
+        <button id="bReplay">从头播放</button>
+      </div>
+    </section>
+    <section>
+      <p class="sec-t">字形表（从稀到密）</p>
+      <canvas id="legend"></canvas>
+    </section>
+    <section>
+      <p class="sec-t">这张的规格</p>
+      <dl class="spec" id="spec"></dl>
+    </section>
+  </aside>
+</div>
+<section id="notes">
+  <div class="in">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#poster</code></dt>
+    <dd>画幅 1240 × 1754（A 系列 1:√2）。所有元素在这套逻辑坐标里画，<code>setTransform(kScale)</code> 缩到显示宽度，像素比封顶 2。底纹按显示宽度生成一次、按种类缓存：深灰 = 68.5 级灰上叠一层 fbm 云状噪点（±3.5）；蓝色孔版 = fbm 找浅色斑（<code>smoothstep 0.50–0.68</code>）+ 暗坑 + 逐像素颗粒，实测平均色 (95.5, 124, 250)。</dd>
+    <dt><code>#legend</code></dt>
+    <dd>一张字形表管三张海报，从稀到密：小点（0.14 格）、方点（0.28）、字符 I / A / 0 / 1 / %、粗十字（臂宽 0.30）、菱形、圆环（半径 0.40，线宽 0.075）、实心圆（0.46）、实心方块里放深色数字、黄格。字号 = 格 × 0.64，Kode Mono。灯塔用蓝 <code>#8598f7</code> + 浅灰字 <code>#d6d6d6</code> + 黄 <code>#f8f079</code>；浪用浅灰 <code>#cdd1d6</code> + 黄 <code>#fad12d</code>，约 3.5% 的圆、环、十字、反白块换成黄色。</dd>
+    <dt><code>#density</code></dt>
+    <dd>形状只管密度，字形由密度挑。灯塔、浪先画成白色矢量剪影，画进每格 4 × 4px 的离屏画布并模糊 0.55（灯塔）/ 0.7（浪）格，每格取平均透明度当密度；浪 = 浪体 × 0.5 + 浪顶带 × 0.62，所以浪顶最密。加分形噪声（灯塔 ±0.17，浪 ±0.21）后按阈值挑字形（灯塔 0.14 / 0.36 / 0.62，浪 0.1 / 0.3 / 0.55 / 0.78），最稀的一档再按哈希空掉约一半。网格 57 列（单元 21.75px）/ 34 列。「显示网格与密度图」把格线和密度叠在海报上。</dd>
+    <dt><code>#beam</code></dt>
+    <dd>光束把文字解码成格子。灯在 (872, 693)，两个方向相反的楔形各宽 36°，2.48–2.7s 淡入，之后顺时针 40°/s（3.0s 指向 181.5°）。楔形当裁剪区：区内重铺底纹盖掉文字，再叠 <code>#8598f7</code> × 31%。表格、logo、标题预先用白色以半分辨率画到离屏，按 0.65 × 灯塔格（约 14px）统计笔画覆盖率，≥ 0.07 的格子换成字形；格心角度落在光束半宽内才画。空白处不出格子。</dd>
+    <dt><code>#timeline</code></dt>
+    <dd>9s 一个循环，前 2s 长出来，后 7s 定住，到点硬切回空白。灯塔版：表格 0.08s 起每 0.1s 一行，标题两行 0.32–0.55s / 0.55–0.95s 淡入，灯塔 0.15→1.9s 从下往上长（每格 ±0.16s 抖动），2.5s 光束出现。浪版：标题 0.2–0.8s 淡入并从 9px 模糊变清楚，字形场从左往右长（涌浪 0.4–2.2s，卷浪 0.35–1.5s），2.4s 后每 0.5s 换约 1% 的字形；右侧 5 个 22px 状态灯周期 1.375–1.61s、亮 36%、彼此错开。时间轴可拖，空格暂停，← / → 换海报。</dd>
+  </dl>
+  </div>
+</section>
+<script>
+(() => {
+'use strict';
+
+const W = 1240, H = 1754, LOOP = 9;
+const MONO = '"Kode Mono", ui-monospace, Menlo, monospace';
+const DISP = '"Funnel Display", "Helvetica Neue", Arial, sans-serif';
+const INTER_D = '"Inter Display", "Inter", "Helvetica Neue", Arial, sans-serif';
+
+/* ---------- noise ---------- */
+function hash(i, j, s) {
+  let h = Math.imul(i | 0, 374761393) ^ Math.imul(j | 0, 668265263) ^ Math.imul((s | 0) + 1013, 1442695041);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoise(x, y, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const fbm = (x, y, s) => 0.62 * vnoise(x, y, s) + 0.38 * vnoise(x * 2.13 + 7.1, y * 2.13 + 3.7, s + 31);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+/* ---------- paper / ink textures ---------- */
+const texCache = new Map();
+function texture(kind, bw) {
+  const key = kind + ':' + bw;
+  if (texCache.has(key)) return texCache.get(key);
+  const tw = Math.max(64, Math.round(kind === 'blue' ? bw : bw / 2)), th = Math.round(tw * H / W);
+  const c = document.createElement('canvas'); c.width = tw; c.height = th;
+  const g = c.getContext('2d'); const img = g.createImageData(tw, th); const d = img.data;
+  const k = tw / W;
+  for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) {
+    const X = x / k, Y = y / k;
+    let r, gg, b;
+    if (kind === 'blue') {
+      // risograph-like mottling: light flecks over a slightly darker field
+      const n = fbm(X / 9, Y / 9, 3);
+      const m = vnoise(X / 2.6, Y / 2.6, 8);
+      const fleck = smooth(0.50, 0.68, n * 0.72 + m * 0.28);
+      const pit = smooth(0.36, 0.18, n);
+      const grain = (hash(x, y, 9) - 0.5) * 8;
+      r = 86 + fleck * 38 - pit * 10 + grain;
+      gg = 116 + fleck * 33 - pit * 10 + grain;
+      b = 249 + fleck * 6 - pit * 5 + grain * 0.4;
+    } else if (kind === 'dark') {
+      const n = fbm(X / 30, Y / 30, 5);
+      const v = 68.5 + (n - 0.5) * 7 + (hash(x, y, 11) - 0.5) * 4;
+      r = gg = b = v;
+    } else {
+      const n = fbm(X / 24, Y / 24, 7);
+      const v = 240.5 + (n - 0.5) * 5 + (hash(x, y, 13) - 0.5) * 3;
+      r = v; gg = v; b = v + 2;
+    }
+    const i = (y * tw + x) * 4; d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  texCache.set(key, c);
+  return c;
+}
+function texRect(ctx, tex, x, y, w, h) {
+  const s = tex.width / W;
+  const sx = Math.max(0, x), sy = Math.max(0, y), ex = Math.min(W, x + w), ey = Math.min(H, y + h);
+  ctx.drawImage(tex, sx * s, sy * s, (ex - sx) * s, (ey - sy) * s, sx, sy, ex - sx, ey - sy);
+}
+
+/* ---------- brand mark (fictional "skerry") ---------- */
+function markPath(ctx, x, y, h) {
+  ctx.beginPath();
+  ctx.rect(x, y + 0.86 * h, 1.0 * h, 0.14 * h);
+  ctx.moveTo(x + 0.30 * h, y + 0.86 * h); ctx.lineTo(x + 0.70 * h, y + 0.86 * h);
+  ctx.lineTo(x + 0.615 * h, y + 0.40 * h); ctx.lineTo(x + 0.385 * h, y + 0.40 * h); ctx.closePath();
+  ctx.rect(x + 0.40 * h, y + 0.15 * h, 0.20 * h, 0.19 * h);
+  ctx.moveTo(x + 0.37 * h, y + 0.245 * h); ctx.lineTo(x, y + 0.05 * h); ctx.lineTo(x, y + 0.44 * h); ctx.closePath();
+  ctx.moveTo(x + 0.63 * h, y + 0.245 * h); ctx.lineTo(x + h, y + 0.05 * h); ctx.lineTo(x + h, y + 0.44 * h); ctx.closePath();
+}
+function logoWidth(ctx, h) {
+  ctx.font = `500 ${0.98 * h}px ${DISP}`;
+  return h * 1.0 + h * 0.42 + ctx.measureText('skerry').width;
+}
+function drawLogo(ctx, x, y, h, color) {
+  ctx.fillStyle = color;
+  markPath(ctx, x, y, h); ctx.fill();
+  ctx.font = `500 ${0.98 * h}px ${DISP}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('skerry', x + h * 1.42, y + 0.80 * h);
+}
+
+/* ---------- glyph cells ---------- */
+const ascCache = new Map();
+function ascentOf(ctx, px) {
+  const key = ctx.font;
+  if (!ascCache.has(key)) ascCache.set(key, ctx.measureText('0').actualBoundingBoxAscent || px * 0.7);
+  return ascCache.get(key);
+}
+function drawCell(ctx, c, s, pal, asc) {
+  const x = c.x, y = c.y, cx = x + s / 2, cy = y + s / 2;
+  switch (c.type) {
+    case 'fill':
+      ctx.fillStyle = pal.fill; ctx.fillRect(x - 0.3, y - 0.3, s + 0.6, s + 0.6);
+      if (c.ch) { ctx.fillStyle = pal.ink; ctx.fillText(c.ch, cx, cy + asc / 2); }
+      break;
+    case 'yfill':
+      ctx.fillStyle = pal.yellow; ctx.fillRect(x + s * 0.03, y + s * 0.03, s * 0.94, s * 0.94);
+      if (c.ch) { ctx.fillStyle = pal.yink; ctx.fillText(c.ch, cx, cy + asc / 2); }
+      break;
+    case 'inv':
+    case 'yinv':
+      ctx.fillStyle = c.type === 'inv' ? pal.glyph : pal.yellow;
+      ctx.fillRect(x + s * 0.03, y + s * 0.03, s * 0.94, s * 0.94);
+      ctx.fillStyle = pal.ink; ctx.fillText(c.ch, cx, cy + asc / 2);
+      break;
+    case 'char':
+      ctx.fillStyle = pal.char; ctx.fillText(c.ch, cx, cy + asc / 2);
+      break;
+    case 'dot':
+      ctx.fillStyle = pal.dot; ctx.fillRect(cx - s * 0.14, cy - s * 0.14, s * 0.28, s * 0.28);
+      break;
+    case 'tiny':
+      ctx.fillStyle = pal.dot; ctx.fillRect(cx - s * 0.07, cy - s * 0.07, s * 0.14, s * 0.14);
+      break;
+    case 'circle':
+    case 'ycircle':
+      ctx.fillStyle = c.type === 'circle' ? pal.glyph : pal.yellow;
+      ctx.beginPath(); ctx.arc(cx, cy, s * 0.46, 0, 6.2832); ctx.fill();
+      break;
+    case 'ring':
+    case 'yring':
+      ctx.strokeStyle = c.type === 'ring' ? pal.glyph : pal.yellow; ctx.lineWidth = s * 0.075;
+      ctx.beginPath(); ctx.arc(cx, cy, s * 0.40, 0, 6.2832); ctx.stroke();
+      break;
+    case 'diamond':
+      ctx.fillStyle = pal.glyph;
+      ctx.beginPath(); ctx.moveTo(cx, cy - s * 0.47); ctx.lineTo(cx + s * 0.47, cy); ctx.lineTo(cx, cy + s * 0.47); ctx.lineTo(cx - s * 0.47, cy); ctx.closePath(); ctx.fill();
+      break;
+    case 'plus':
+    case 'yplus':
+      ctx.fillStyle = c.type === 'plus' ? pal.glyph : pal.yellow;
+      ctx.fillRect(cx - s * 0.47, cy - s * 0.15, s * 0.94, s * 0.30);
+      ctx.fillRect(cx - s * 0.15, cy - s * 0.47, s * 0.30, s * 0.94);
+      break;
+  }
+}
+
+/* ---------- density maps: vector silhouettes sampled onto the cell grid ---------- */
+function sampleDensity(cols, rows, offY, s, painters, blurCells) {
+  const R = 4;
+  const cw = cols * R, ch = rows * R;
+  const out = painters.map(paint => {
+    const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+    const g = c.getContext('2d');
+    g.filter = `blur(${blurCells * R}px)`;
+    g.setTransform(R / s, 0, 0, R / s, 0, -offY * R / s);
+    g.fillStyle = '#fff'; g.strokeStyle = '#fff';
+    paint(g);
+    return g.getImageData(0, 0, cw, ch).data;
+  });
+  const maps = out.map(data => {
+    const m = new Float32Array(cols * rows);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      let sum = 0;
+      for (let yy = 0; yy < R; yy++) for (let xx = 0; xx < R; xx++) sum += data[((r * R + yy) * cw + c * R + xx) * 4 + 3];
+      m[r * cols + c] = sum / (R * R * 255);
+    }
+    return m;
+  });
+  return maps;
+}
+
+const BEACON_CX = 872, LAMP_Y = 693;
+function paintLighthouse(g) {
+  const cx = BEACON_CX;
+  g.fillStyle = 'rgba(255,255,255,0.7)';
+  g.fillRect(cx - 30, 682, 60, 22);
+  g.fillRect(cx - 58, 704, 116, 156);
+  g.fillStyle = '#fff';
+  g.beginPath();
+  g.rect(cx - 98, 860, 196, 70);
+  g.moveTo(cx - 92, 930); g.lineTo(cx + 92, 930); g.lineTo(cx + 120, 1520); g.lineTo(cx - 120, 1520); g.closePath();
+  g.moveTo(cx - 150, 1508); g.lineTo(cx + 150, 1508); g.lineTo(cx + 270, 1525);
+  g.bezierCurveTo(cx + 300, 1590, cx + 330, 1650, cx + 345, 1722);
+  g.lineTo(cx - 352, 1722);
+  g.bezierCurveTo(cx - 300, 1640, cx - 250, 1570, cx - 190, 1522); g.closePath();
+  g.fill();
+}
+function swellSurface(x) {
+  const gs = (c, w) => Math.exp(-(((x - c) / w) ** 2));
+  return H * (0.668 - 0.17 * gs(0.2 * W, 0.16 * W) - 0.075 * gs(0.86 * W, 0.11 * W) + 0.03 * gs(0.55 * W, 0.08 * W)) + 12 * Math.sin(x / 41);
+}
+function paintSwellBody(g) {
+  g.beginPath(); g.moveTo(-40, H * 0.985);
+  for (let x = -40; x <= W + 40; x += 10) g.lineTo(x, swellSurface(x));
+  g.lineTo(W + 40, H * 0.985); g.closePath(); g.fill();
+}
+function paintSwellBand(g) {
+  g.lineWidth = 120; g.lineJoin = 'round';
+  g.beginPath();
+  for (let x = -40; x <= W + 40; x += 10) { const y = swellSurface(x) + 46; x === -40 ? g.moveTo(x, y) : g.lineTo(x, y); }
+  g.stroke();
+}
+const P = (u, v) => [u * W, v * H];
+const CREST_BODY = [[0,.985],[0,.635],[.05,.605],[.12,.615],[.2,.66],[.3,.705],[.4,.712],[.5,.68],[.58,.61],[.635,.52],[.675,.43],[.715,.36],[.765,.312],[.84,.292],[.93,.298],[1,.33],[1,.985]];
+const CREST_LIP = [[.82,.283],[.72,.296],[.62,.322],[.53,.356],[.455,.392],[.41,.43],[.395,.452],[.43,.452],[.5,.43],[.58,.405],[.66,.382],[.73,.37],[.77,.36]];
+function polyPath(g, pts) { g.beginPath(); pts.forEach((p, i) => { const [x, y] = P(p[0], p[1]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); }
+function paintCrestBody(g) { polyPath(g, CREST_BODY); g.fill(); polyPath(g, CREST_LIP); g.fill(); }
+function paintCrestBand(g) {
+  g.lineWidth = 105; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.beginPath();
+  const top = CREST_BODY.slice(1, 16);
+  top.forEach((p, i) => { const [x, y] = P(p[0], p[1] + 0.02); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.stroke();
+  g.lineWidth = 95;
+  g.beginPath();
+  CREST_LIP.slice(0, 7).forEach((p, i) => { const [x, y] = P(p[0], p[1] + 0.02); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.stroke();
+}
+
+/* ---------- classification: density -> glyph ---------- */
+const CH_BEACON = ['I', 'A', 'I', 'A', '0', '1', '1', '%'];
+const CH_FIELD = ['0', '1', '0', '1', '%', 'I', 'A', '1'];
+function pick(arr, h) { return arr[Math.floor(h * arr.length) % arr.length]; }
+
+function classifyBeacon(d, h1, h2) {
+  if (d < 0.14) return null;
+  if (d < 0.36) { if (h1 < 0.55) return null; return h2 < 0.55 ? 'dot' : h2 < 0.85 ? 'char' : 'tiny'; }
+  if (d < 0.62) { if (h1 < 0.14) return null; return h2 < 0.44 ? 'char' : h2 < 0.60 ? 'dot' : h2 < 0.76 ? 'shape' : h2 < 0.99 ? 'fill' : 'yfill'; }
+  return h2 < 0.64 ? 'fill' : h2 < 0.77 ? 'shape' : h2 < 0.92 ? 'char' : h2 < 0.985 ? 'dot' : 'yfill';
+}
+function classifyField(d, h1, h2) {
+  if (d < 0.1) return d > 0.03 && h1 < 0.05 ? 'tiny' : null;
+  if (d < 0.3) { if (h1 < 0.5) return null; return h2 < 0.60 ? 'dot' : h2 < 0.85 ? 'char' : 'tiny'; }
+  if (d < 0.55) { if (h1 < 0.1) return null; return h2 < 0.30 ? 'dot' : h2 < 0.52 ? 'char' : h2 < 0.72 ? 'ring' : h2 < 0.82 ? 'circle' : h2 < 0.90 ? 'plus' : h2 < 0.96 ? 'diamond' : 'inv'; }
+  if (d < 0.78) return h2 < 0.10 ? 'dot' : h2 < 0.20 ? 'char' : h2 < 0.45 ? 'ring' : h2 < 0.75 ? 'circle' : h2 < 0.85 ? 'diamond' : h2 < 0.94 ? 'plus' : 'inv';
+  return h2 < 0.04 ? 'char' : h2 < 0.06 ? 'dot' : h2 < 0.18 ? 'ring' : h2 < 0.25 ? 'plus' : h2 < 0.37 ? 'diamond' : h2 < 0.45 ? 'inv' : 'circle';
+}
+
+/* ---------- posters ---------- */
+const POSTERS = [
+  {
+    id: 'beacon', no: '01', name: 'BEACON', cols: 57, range: [36, 90],
+    pal: { fill: '#8598f7', ink: '#3f4660', char: '#d6d6d6', dot: '#8598f7', glyph: '#8598f7', yellow: '#f8f079', yink: '#47452f' },
+    decodePal: { fill: '#8598f7', ink: '#3f4660', char: '#c9c9c9', dot: '#8598f7', glyph: '#8598f7', yellow: '#f8f079', yink: '#47452f' },
+    lanes: [
+      { a: 0.1, b: 1.1, label: '表格逐行' },
+      { a: 0.15, b: 1.95, label: '灯塔自下而上' },
+      { a: 2.5, b: 9, label: '光束 40°/s', hot: true },
+    ],
+    spec: () => [
+      ['画幅', '1240 × 1754（A 系列 1:√2）'],
+      ['网格', `${state.cols[0]} 列，单元 ${(W / state.cols[0]).toFixed(1)}px`],
+      ['解码网格', `单元 ×0.65 = ${(W / state.cols[0] * 0.65).toFixed(1)}px`],
+      ['光束', `双向楔形 ${state.beam}°，顺时针 40°/s，2.5s 出现`],
+      ['字体', 'Kode Mono 20px · Inter Display 41px'],
+      ['循环', '9.0s，硬切回空白'],
+    ],
+    swatches: [['#444444', '底'], ['#8598f7', '蓝'], ['#f8f079', '黄'], ['#bebebe', '字']],
+  },
+  {
+    id: 'swell', no: '02', name: 'SWELL', cols: 34, range: [20, 60],
+    pal: { glyph: '#cdd1d6', char: '#cdd1d6', dot: '#cdd1d6', ink: '#53575d', yellow: '#fad12d', fill: '#cdd1d6', yink: '#53575d' },
+    lanes: [
+      { a: 0.1, b: 1.15, label: '终端逐行' },
+      { a: 0.2, b: 0.8, label: '标题去模糊' },
+      { a: 0.4, b: 2.3, label: '字形场 左→右', hot: true },
+      { a: 0, b: 9, label: '状态灯' },
+    ],
+    spec: () => [
+      ['画幅', '1240 × 1754'],
+      ['色块', 'x 147→出血，y 166→1579'],
+      ['网格', `${state.cols[1]} 列，单元 ${(W / state.cols[1]).toFixed(1)}px`],
+      ['密度', '浪体 × 0.5 + 浪顶带 × 0.6 + 噪声'],
+      ['字体', 'Funnel Display 79px · Kode Mono 19px'],
+      ['循环', '9.0s，2.3s 后只剩状态灯在动'],
+    ],
+    swatches: [['#f1f1f3', '纸'], ['#607dfe', '蓝'], ['#cdd1d6', '字形'], ['#fad12d', '黄']],
+  },
+  {
+    id: 'crest', no: '03', name: 'CREST', cols: 34, range: [20, 60],
+    pal: { glyph: '#cdd1d6', char: '#cdd1d6', dot: '#cdd1d6', ink: '#53575d', yellow: '#fad12d', fill: '#cdd1d6', yink: '#53575d' },
+    lanes: [
+      { a: 0.1, b: 0.9, label: '终端逐行' },
+      { a: 0.2, b: 0.8, label: '标题去模糊' },
+      { a: 0.35, b: 1.6, label: '字形场 左→右', hot: true },
+      { a: 0, b: 9, label: '状态灯' },
+    ],
+    spec: () => [
+      ['画幅', '1240 × 1754'],
+      ['面板', 'x 出血→957，y 169→1586'],
+      ['网格', `${state.cols[2]} 列，单元 ${(W / state.cols[2]).toFixed(1)}px`],
+      ['密度', '浪体 + 卷浪唇，中间留空洞'],
+      ['字体', 'Funnel Display 79px · Kode Mono 19px'],
+      ['循环', '9.0s'],
+    ],
+    swatches: [['#607dfe', '蓝'], ['#444444', '面板'], ['#cdd1d6', '字形'], ['#fad12d', '黄']],
+  },
+];
+
+const state = { idx: 0, cols: POSTERS.map(p => p.cols), dens: [0, 0, 0], beam: 36, speed: 1, seed: 1, grid: false, playing: true, t: 0 };
+
+/* ---------- field construction ---------- */
+let field = null;
+function buildField() {
+  const p = POSTERS[state.idx];
+  const cols = state.cols[state.idx], s = W / cols, rows = Math.ceil(H / s), offY = H - rows * s;
+  const bias = state.dens[state.idx], seed = state.seed * 97 + state.idx * 13;
+  const cells = [];
+  let dmap;
+  if (p.id === 'beacon') {
+    const [m] = sampleDensity(cols, rows, offY, s, [paintLighthouse], 0.55);
+    dmap = m;
+    const lampCol = Math.floor(BEACON_CX / s), lampRow = Math.floor((LAMP_Y - offY) / s);
+    const topRow = lampRow - 1, botRow = Math.floor((1722 - offY) / s);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const n = (fbm(c * 0.42, r * 0.42, seed) - 0.5) * 0.34;
+      const d = r < lampRow + 1 ? -1 : m[r * cols + c] + bias + n;
+      const h1 = hash(c, r, seed + 1), h2 = hash(c, r, seed + 2), h3 = hash(c, r, seed + 3), h4 = hash(c, r, seed + 4);
+      let type = classifyBeacon(d, h1, h2);
+      let ch = '';
+      if (r === lampRow - 1 && c === lampCol) { type = 'fill'; ch = '1'; }
+      if (r === lampRow && Math.abs(c - lampCol) === 1) { type = 'yfill'; ch = c < lampCol ? '0' : '1'; }
+      if (r === lampRow && c === lampCol) { type = 'char'; ch = 'A'; }
+      if (r === lampRow && c === lampCol + 2) { type = 'dot'; }
+      if (!type) continue;
+      if (type === 'shape') type = h3 < 0.5 ? 'plus' : h3 < 0.75 ? 'diamond' : 'circle';
+      if (!ch) {
+        if (type === 'char') ch = h4 < 0.8 ? (c % 2 ? 'A' : 'I') : pick(['0', '1', '%'], h3);
+        else if (type === 'fill') ch = h4 < 0.8 ? (h3 < 0.5 ? '0' : '1') : '';
+        else if (type === 'yfill') ch = h3 < 0.5 ? '0' : '1';
+      }
+      const prog = clamp((botRow - r) / Math.max(1, botRow - topRow), 0, 1);
+      const t0 = 0.15 + 1.75 * prog + (hash(c, r, seed + 5) - 0.5) * 0.32;
+      cells.push({ x: c * s, y: offY + r * s, type, ch, t0 });
+    }
+  } else {
+    const painters = p.id === 'swell' ? [paintSwellBody, paintSwellBand] : [paintCrestBody, paintCrestBand];
+    const [body, band] = sampleDensity(cols, rows, offY, s, painters, 0.7);
+    dmap = new Float32Array(cols * rows);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      const base = body[i] * 0.5 + band[i] * 0.62;
+      const n = (fbm(c * 0.3, r * 0.3, seed) - 0.5) * 0.42 * smooth(0.02, 0.22, base);
+      const d = base > 0.015 ? base + bias + n : 0;
+      dmap[i] = clamp(base, 0, 1);
+      const h1 = hash(c, r, seed + 1), h2 = hash(c, r, seed + 2), h3 = hash(c, r, seed + 3);
+      let type = classifyField(d, h1, h2);
+      if (!type) continue;
+      if (h3 < 0.035) type = { circle: 'ycircle', inv: 'yinv', plus: 'yplus', ring: 'yring' }[type] || type;
+      const ch = type === 'char' || type === 'inv' || type === 'yinv' ? pick(CH_FIELD, hash(c, r, seed + 4)) : '';
+      const t0 = p.id === 'swell'
+        ? 0.4 + 1.8 * (c / cols) + (hash(c, r, seed + 5) - 0.5) * 0.4
+        : 0.35 + 1.15 * (c / cols) + (hash(c, r, seed + 5) - 0.5) * 0.3;
+      cells.push({ x: c * s, y: offY + r * s, type, ch, t0, alt: hash(c, r, seed + 6) });
+    }
+  }
+  field = { id: p.id, cols, rows, s, offY, cells, dmap, decode: null };
+}
+
+/* Beacon: everything under the beam is re-drawn as cells sampled from the text layer */
+function drawBeaconText(ctx, t, full) {
+  const rowsT = BEACON_ROWS;
+  ctx.font = `400 20px ${MONO}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = full ? '#fff' : '#bebebe';
+  let k = 0;
+  rowsT.forEach((row, slot) => {
+    if (!row) return;
+    const on = full || t >= 0.08 + 0.1 * k;
+    k++;
+    if (!on) return;
+    const y = 61 + 27 * slot;
+    ctx.fillText(row[0], 43, y); ctx.fillText(row[1], 147, y); ctx.fillText(row[2], 439, y); ctx.fillText(row[3], 720, y);
+  });
+  ctx.font = `400 18px ${MONO}`; ctx.textAlign = 'right';
+  ctx.fillStyle = full ? '#fff' : '#b3b3b3';
+  ctx.fillText('SHELL-07 · DEBIAN', 1195, 137);
+  ctx.textAlign = 'left';
+  const lw = logoWidth(ctx, 56);
+  drawLogo(ctx, 1195 - lw, 42, 56, full ? '#fff' : '#fcfcfc');
+  ctx.font = `400 41.5px ${INTER_D}`; ctx.textAlign = 'left';
+  const a1 = full ? 1 : smooth(0.32, 0.55, t), a2 = full ? 1 : smooth(0.55, 0.95, t);
+  if (a1 > 0) { ctx.globalAlpha = a1; ctx.fillStyle = '#f7f7f7'; ctx.fillText('A LIGHT FOR', 41, 1614); }
+  if (a2 > 0) { ctx.globalAlpha = a2; ctx.fillStyle = '#f7f7f7'; ctx.fillText('OVERNIGHT AGENTS', 41, 1660); }
+  ctx.globalAlpha = 1;
+}
+const BEACON_ROWS = [
+  ['A1', 'Queue Warmup', 'WORKER POOL', '2:14'],
+  ['A2', 'Lease Renewal', 'LONG JOBS', '3:02'],
+  null,
+  ['B1', 'Checkpoint Writer', 'STATE SNAPSHOTS', '4:41'],
+  ['B2', 'Remote Shell', 'SSH SESSIONS', '1:58'],
+  ['B3', 'Log Tail', 'LIVE STREAMS', '0:47'],
+  null,
+  ['C1', 'Night Shift 2', 'IDLE COMPUTE', '3:40'],
+  ['C2', 'Agent Handoff', 'TASK ROUTING', '4:12'],
+  ['C3', 'Cold Storage', 'ARCHIVES', '0:19'],
+  null,
+  ['D1', 'Signal Relay', 'WEBHOOKS', '5:26'],
+  ['D2', 'Volume Attach', 'DISK MOUNTS', '3:33'],
+];
+
+function buildDecode() {
+  const s = field.s * 0.65;
+  const scale = 0.5;
+  const c = document.createElement('canvas'); c.width = Math.round(W * scale); c.height = Math.round(H * scale);
+  const g = c.getContext('2d'); g.scale(scale, scale);
+  drawBeaconText(g, 99, true);
+  const data = g.getImageData(0, 0, c.width, c.height).data;
+  const cols = Math.ceil(W / s), rows = Math.ceil(H / s), seed = state.seed * 31 + 5;
+  const cells = [];
+  for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+    const x0 = Math.floor(q * s * scale), y0 = Math.floor(r * s * scale), x1 = Math.min(c.width, Math.floor((q + 1) * s * scale)), y1 = Math.min(c.height, Math.floor((r + 1) * s * scale));
+    let sum = 0, n = 0;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { sum += data[(y * c.width + x) * 4 + 3]; n++; }
+    const cov = n ? sum / (n * 255) : 0;
+    if (cov < 0.07) continue;
+    const h = hash(q, r, seed), h2 = hash(q, r, seed + 1);
+    const type = h < 0.12 ? null : h < 0.56 ? 'char' : h < 0.79 ? 'dot' : h < 0.965 ? 'fill' : 'yfill';
+    if (!type) continue;
+    const cx = q * s + s / 2, cy = r * s + s / 2;
+    cells.push({ x: q * s, y: r * s, type, ch: pick(CH_BEACON, h2), ang: Math.atan2(cy - LAMP_Y, cx - BEACON_CX) });
+  }
+  field.decode = { s, cells };
+}
+
+/* ---------- terminals (Swell / Crest) ---------- */
+function drawTerminal(ctx, x, top0, firstRowTop, rows, t, look, startAt) {
+  ctx.font = `400 19px ${MONO}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  rows.forEach((row, i) => {
+    const appear = i === 0 ? 0 : startAt + 0.13 * (i - 1);
+    if (t < appear) return;
+    const top = i === 0 ? top0 : firstRowTop + 40 * (i - 1);
+    const iconW = 41, gap = 6;
+    const tw = ctx.measureText(row[1]).width + 16;
+    ctx.fillStyle = look.tag;
+    ctx.fillRect(x, top, iconW, 34);
+    ctx.fillRect(x + iconW + gap, top, tw, 34);
+    ctx.fillStyle = look.icon;
+    ctx.textAlign = 'center'; ctx.fillText(row[0], x + iconW / 2, top + 23);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = row[2] === 'accent' ? look.accent : look.text;
+    ctx.fillText(row[1], x + iconW + gap + 8, top + 23);
+  });
+}
+const SWELL_TERM = [
+  ['</>', 'ZSH'], ['$', 'skerry up'], ['>', 'warming a shell in eu-north ...'], ['✓', 'Debian 13 ready'],
+  ['✓', 'Node, Python & git installed'], ['✓', 'Volume /work mounted'], ['✓', 'Agent attached'],
+  ['→', 'Safe to close the laptop'], ['</>', 'SKERRY  shell-07', 'accent'],
+];
+const CREST_TERM = [
+  ['</>', 'SH'], ['$', 'curl -fsSL https://skerry.sh/i | sh'], ['✓', 'skerry CLI installed'],
+  ['→', 'skerry up --keep'], ['✓', 'shell-07 attached'], ['→', 'runs until you stop it'],
+];
+const CREST_BOTTOM = [
+  ['</>', 'SH'], ['>', 'warming a shell in eu-north ...'], ['✓', 'Debian 13 ready'], ['✓', 'Node, Python & git installed'], ['✓', 'Volume /work mounted'],
+];
+
+function drawLeds(ctx, t, onLight) {
+  const per = [1.375, 1.52, 1.43, 1.61, 1.47], ph = [0.0, 0.62, 0.21, 0.83, 0.44];
+  for (let k = 0; k < 5; k++) {
+    const on = ((t / per[k] + ph[k]) % 1) < 0.36;
+    ctx.fillStyle = on ? '#fad12d' : (onLight[k] ? '#d4d5db' : '#d2d6e4');
+    ctx.fillRect(1133, 84 + 109 * k, 22, 22);
+  }
+}
+
+function drawHeadline(ctx, lines, x, t, color) {
+  const a = smooth(0.2, 0.8, t);
+  if (a <= 0) return;
+  const blur = (1 - a) * 9 * kScale;
+  ctx.save();
+  if (blur > 0.3) ctx.filter = `blur(${blur.toFixed(2)}px)`;
+  ctx.globalAlpha = a;
+  ctx.font = `400 79px ${DISP}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = color;
+  ctx.fillText(lines[0], x, 391);
+  ctx.fillText(lines[1], x, 482);
+  ctx.restore();
+}
+
+/* ---------- render ---------- */
+const cv = document.getElementById('poster');
+const ctx = cv.getContext('2d');
+let kScale = 1;
+
+function drawCells(ctx, cells, s, pal, t, build) {
+  const fs = s * 0.64;
+  ctx.font = `400 ${fs}px ${MONO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const asc = ascentOf(ctx, fs);
+  for (const c of cells) {
+    if (build && t < c.t0) continue;
+    drawCell(ctx, c, s, pal, asc);
+  }
+}
+
+function beamAngle(t) { return (181.5 + 40 * (t - 3)) * Math.PI / 180; }
+
+function renderBeacon(t) {
+  const dark = texture('dark', cv.width);
+  ctx.drawImage(dark, 0, 0, W, H);
+  drawBeaconText(ctx, t, false);
+  const ba = smooth(2.48, 2.7, t);
+  if (ba > 0) {
+    const a = beamAngle(t), hw = state.beam / 2 * Math.PI / 180, R = 3200;
+    ctx.save();
+    ctx.beginPath();
+    for (const base of [a, a + Math.PI]) {
+      ctx.moveTo(BEACON_CX, LAMP_Y);
+      ctx.lineTo(BEACON_CX + R * Math.cos(base - hw), LAMP_Y + R * Math.sin(base - hw));
+      ctx.lineTo(BEACON_CX + R * Math.cos(base + hw), LAMP_Y + R * Math.sin(base + hw));
+      ctx.closePath();
+    }
+    ctx.clip();
+    ctx.drawImage(dark, 0, 0, W, H);
+    ctx.fillStyle = `rgba(133,152,247,${0.31 * ba})`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    if (!field.decode) buildDecode();
+    const d = field.decode;
+    const inBeam = [];
+    for (const c of d.cells) {
+      let diff = (c.ang - a) % Math.PI;
+      if (diff < 0) diff += Math.PI;
+      if (Math.min(diff, Math.PI - diff) < hw) inBeam.push(c);
+    }
+    ctx.globalAlpha = ba;
+    drawCells(ctx, inBeam, d.s, POSTERS[0].decodePal, t, false);
+    ctx.globalAlpha = 1;
+  }
+  drawCells(ctx, field.cells, field.s, POSTERS[0].pal, t, true);
+}
+
+function renderSwell(t) {
+  const light = texture('light', cv.width), blue = texture('blue', cv.width);
+  ctx.drawImage(light, 0, 0, W, H);
+  const look = { tag: '#e1e3e7', icon: '#6b6d73', text: '#6b6d73', accent: '#607dfe' };
+  drawTerminal(ctx, 40, 40, 97, SWELL_TERM, t, look, 0.1);
+  drawTerminal(ctx, 40, 1466, 1523, SWELL_TERM.slice(0, 6), t, look, 0.25);
+  texRect(ctx, blue, 147, 166, W - 147, 1579 - 166);
+  drawLogo(ctx, 188, 209, 65, '#ffffff');
+  drawHeadline(ctx, ['Shells that stay up', 'while you sleep'], 176, t, '#ffffff');
+  drawCells(ctx, flickered(t), field.s, POSTERS[1].pal, t, true);
+  drawLeds(ctx, t, [true, false, false, false, false]);
+}
+
+function renderCrest(t) {
+  const blue = texture('blue', cv.width), dark = texture('dark', cv.width);
+  ctx.drawImage(blue, 0, 0, W, H);
+  const look = { tag: 'rgba(255,255,255,0.17)', icon: '#ffffff', text: '#ffffff', accent: '#ffffff' };
+  drawTerminal(ctx, 800, 42, 98, CREST_TERM, t, look, 0.1);
+  drawTerminal(ctx, 40, 1489, 1546, CREST_BOTTOM, t, look, 0.2);
+  texRect(ctx, dark, 0, 169, 957, 1586 - 169);
+  drawLogo(ctx, 42, 209, 65, '#ffffff');
+  drawHeadline(ctx, ['A whole machine,', 'just somewhere else'], 34, t, '#ffffff');
+  drawCells(ctx, flickered(t), field.s, POSTERS[2].pal, t, true);
+  drawLeds(ctx, t, [false, false, false, false, false]);
+}
+
+/* after the build the field is almost still; a few cells swap glyphs every half second */
+const SWAP = { circle: 'ring', ring: 'circle', plus: 'diamond', diamond: 'plus', dot: 'char', char: 'dot' };
+let flickerKey = -1, flickerCells = null;
+function flickered(t) {
+  const tick = Math.floor(t / 0.5);
+  if (tick === flickerKey && flickerCells) return flickerCells;
+  flickerKey = tick;
+  flickerCells = field.cells.map((c, i) => {
+    if (t < 2.4 || hash(i, tick, 77) > 0.012 || !SWAP[c.type]) return c;
+    return Object.assign({}, c, { type: SWAP[c.type], ch: c.ch || pick(CH_FIELD, c.alt) });
+  });
+  return flickerCells;
+}
+
+function drawGridOverlay(t) {
+  const f = field;
+  const dm = document.createElement('canvas'); dm.width = f.cols; dm.height = f.rows;
+  const g = dm.getContext('2d'); const img = g.createImageData(f.cols, f.rows);
+  for (let i = 0; i < f.dmap.length; i++) {
+    const v = clamp(f.dmap[i], 0, 1);
+    img.data[i * 4] = 255; img.data[i * 4 + 1] = 70; img.data[i * 4 + 2] = 40; img.data[i * 4 + 3] = v * 150;
+  }
+  g.putImageData(img, 0, 0);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(dm, 0, f.offY, f.cols * f.s, f.rows * f.s);
+  ctx.strokeStyle = 'rgba(255,60,40,0.35)'; ctx.lineWidth = 1 / kScale;
+  ctx.beginPath();
+  for (let c = 0; c <= f.cols; c++) { ctx.moveTo(c * f.s, 0); ctx.lineTo(c * f.s, H); }
+  for (let r = 0; r <= f.rows; r++) { ctx.moveTo(0, f.offY + r * f.s); ctx.lineTo(W, f.offY + r * f.s); }
+  ctx.stroke();
+  if (f.id === 'beacon') {
+    ctx.strokeStyle = '#ff3c28'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(BEACON_CX, LAMP_Y, 18, 0, 6.2832); ctx.stroke();
+    const a = beamAngle(t);
+    ctx.beginPath(); ctx.moveTo(BEACON_CX, LAMP_Y); ctx.lineTo(BEACON_CX + 260 * Math.cos(a), LAMP_Y + 260 * Math.sin(a)); ctx.stroke();
+    ctx.fillStyle = '#ff3c28'; ctx.font = `500 22px ${MONO}`; ctx.textAlign = 'left';
+    const deg = ((181.5 + 40 * (t - 3)) % 360 + 360) % 360;
+    ctx.fillText(`${deg.toFixed(0)}°`, BEACON_CX + 26, LAMP_Y - 24);
+  }
+  ctx.restore();
+}
+
+function render(t) {
+  ctx.setTransform(kScale, 0, 0, kScale, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  const id = POSTERS[state.idx].id;
+  if (id === 'beacon') renderBeacon(t); else if (id === 'swell') renderSwell(t); else renderCrest(t);
+  if (state.grid) drawGridOverlay(t);
+}
+
+/* ---------- layout ---------- */
+const wrap = document.getElementById('wrap');
+const timeline = document.getElementById('timeline');
+function layout() {
+  const narrow = window.innerWidth <= 760;
+  let cw, ch;
+  if (narrow) {
+    cw = Math.min(wrap.clientWidth, 520);
+    ch = cw * H / W;
+  } else {
+    const aw = wrap.clientWidth, ah = wrap.clientHeight;
+    ch = Math.min(ah, aw * H / W);
+    cw = ch * W / H;
+  }
+  cw = Math.max(120, Math.floor(cw)); ch = Math.floor(cw * H / W);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  const bw = Math.round(cw * dpr);
+  if (cv.width !== bw) { cv.width = bw; cv.height = Math.round(bw * H / W); }
+  kScale = cv.width / W;
+  timeline.style.setProperty('--pw', Math.min(wrap.clientWidth, Math.max(cw + 84, 380)) + 'px');
+}
+let rz = 0;
+window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { layout(); drawLegend(); }); });
+
+/* ---------- UI ---------- */
+const tabs = document.getElementById('tabs');
+POSTERS.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.setAttribute('role', 'tab'); b.innerHTML = `${p.no}<b>${p.name}</b>`;
+  b.addEventListener('click', () => select(i));
+  tabs.appendChild(b);
+});
+const $ = id => document.getElementById(id);
+const pCols = $('pCols'), pDens = $('pDens'), pBeam = $('pBeam'), pSpeed = $('pSpeed');
+function syncUI() {
+  const p = POSTERS[state.idx];
+  [...tabs.children].forEach((b, i) => b.setAttribute('aria-selected', String(i === state.idx)));
+  pCols.min = p.range[0]; pCols.max = p.range[1]; pCols.value = state.cols[state.idx];
+  $('oCols').textContent = `${state.cols[state.idx]} 列`;
+  pDens.value = state.dens[state.idx]; $('oDens').textContent = (state.dens[state.idx] >= 0 ? '+' : '') + state.dens[state.idx].toFixed(2);
+  pBeam.value = state.beam; $('oBeam').textContent = state.beam + '°';
+  $('beam').hidden = p.id !== 'beacon';
+  pSpeed.value = state.speed; $('oSpeed').textContent = state.speed.toFixed(2) + '×';
+  $('bGrid').setAttribute('aria-pressed', String(state.grid));
+  const spec = $('spec'); spec.innerHTML = '';
+  p.spec().forEach(([k, v]) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v; spec.append(dt, dd); });
+  const dt = document.createElement('dt'); dt.textContent = '颜色';
+  const dd = document.createElement('dd'); dd.className = 'sw';
+  p.swatches.forEach(([hex, name]) => { const s = document.createElement('span'); s.innerHTML = `<i style="background:${hex}"></i>${hex}`; s.title = name; dd.appendChild(s); });
+  spec.append(dt, dd);
+  cv.setAttribute('aria-label', `${p.no} ${p.name} 动态海报`);
+}
+function buildTimeline() {
+  const p = POSTERS[state.idx], track = $('track');
+  track.innerHTML = '';
+  p.lanes.forEach(ln => {
+    const lane = document.createElement('div'); lane.className = 'lane';
+    const em = document.createElement('em'); em.textContent = ln.label;
+    const bar = document.createElement('div'); bar.className = 'bar';
+    const seg = document.createElement('div'); seg.className = 'seg' + (ln.hot ? ' hot' : '');
+    seg.style.left = (ln.a / LOOP * 100) + '%'; seg.style.width = ((ln.b - ln.a) / LOOP * 100) + '%';
+    seg.title = `${ln.label} ${ln.a}–${ln.b}s`;
+    bar.appendChild(seg); lane.append(em, bar); track.appendChild(lane);
+  });
+  const ticks = document.createElement('div'); ticks.className = 'ticks';
+  for (let s = 0; s <= LOOP; s += 1) { const sp = document.createElement('span'); sp.style.left = (s / LOOP * 100) + '%'; sp.textContent = s; ticks.appendChild(sp); }
+  track.appendChild(ticks);
+  const head = document.createElement('div'); head.className = 'head'; head.id = 'head'; track.appendChild(head);
+}
+function select(i) {
+  state.idx = i; state.t = 0; flickerCells = null;
+  buildField(); syncUI(); buildTimeline(); layout(); drawLegend();
+}
+pCols.addEventListener('input', () => { state.cols[state.idx] = +pCols.value; flickerCells = null; buildField(); syncUI(); });
+pDens.addEventListener('input', () => { state.dens[state.idx] = +pDens.value; flickerCells = null; buildField(); syncUI(); });
+pBeam.addEventListener('input', () => { state.beam = +pBeam.value; syncUI(); });
+pSpeed.addEventListener('input', () => { state.speed = +pSpeed.value; syncUI(); });
+$('bGrid').addEventListener('click', () => { state.grid = !state.grid; syncUI(); });
+$('bSeed').addEventListener('click', () => { state.seed++; flickerCells = null; buildField(); });
+$('bReplay').addEventListener('click', () => { state.t = 0; setPlaying(true); });
+function setPlaying(v) {
+  state.playing = v;
+  $('play').setAttribute('aria-label', v ? '暂停' : '播放');
+  $('playIcon').innerHTML = v ? '<rect x="2" y="1.5" width="2.6" height="9"/><rect x="7.4" y="1.5" width="2.6" height="9"/>' : '<path d="M2.5 1.2 L10.5 6 L2.5 10.8Z"/>';
+}
+$('play').addEventListener('click', () => setPlaying(!state.playing));
+const track = $('track');
+function scrub(e) {
+  const r = track.getBoundingClientRect();
+  state.t = clamp((e.clientX - r.left) / r.width, 0, 0.9999) * LOOP;
+}
+track.addEventListener('pointerdown', e => { track.setPointerCapture(e.pointerId); setPlaying(false); scrub(e); });
+track.addEventListener('pointermove', e => { if (track.hasPointerCapture(e.pointerId)) scrub(e); });
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') select((state.idx + 1) % POSTERS.length);
+  if (e.key === 'ArrowLeft') select((state.idx + POSTERS.length - 1) % POSTERS.length);
+  if (e.key === ' ') { e.preventDefault(); setPlaying(!state.playing); }
+});
+
+/* glyph vocabulary strip */
+function drawLegend() {
+  const lg = $('legend'), p = POSTERS[state.idx];
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = lg.clientWidth || 264, cssH = 64;
+  lg.width = Math.round(cssW * dpr); lg.height = Math.round(cssH * dpr); lg.style.height = cssH + 'px';
+  const g = lg.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const isB = p.id === 'beacon';
+  g.fillStyle = isB ? '#444444' : p.id === 'swell' ? '#607dfe' : '#444444';
+  g.fillRect(0, 0, cssW, cssH);
+  const seq = isB
+    ? [['tiny'], ['dot'], ['char', 'I'], ['char', 'A'], ['plus'], ['diamond'], ['circle'], ['fill', '1'], ['yfill', '0']]
+    : [['tiny'], ['dot'], ['char', '0'], ['plus'], ['ring'], ['diamond'], ['circle'], ['inv', '1'], ['ycircle']];
+  const n = seq.length, s = Math.min(22, (cssW - 20) / n * 0.8), step = (cssW - 20) / n;
+  g.font = `400 ${s * 0.64}px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  const asc = g.measureText('0').actualBoundingBoxAscent || s * 0.45;
+  seq.forEach(([type, ch], i) => drawCell(g, { x: 10 + step * i + (step - s) / 2, y: 12, type, ch }, s, p.pal, asc));
+  g.fillStyle = 'rgba(255,255,255,0.55)'; g.font = `400 9px ${MONO}`; g.textAlign = 'left';
+  g.fillText('稀', 10, cssH - 9); g.textAlign = 'right'; g.fillText('密', cssW - 10, cssH - 9);
+}
+
+/* ---------- loop ---------- */
+let last = performance.now(), frames = 0, fpsT = last;
+window.__fps = 0;
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (state.playing) state.t = (state.t + dt * state.speed) % LOOP;
+  render(state.t);
+  const head = document.getElementById('head');
+  if (head) head.style.left = (state.t / LOOP * 100) + '%';
+  $('tc').textContent = state.t.toFixed(2) + 's';
+  frames++;
+  if (now - fpsT > 1000) { window.__fps = frames * 1000 / (now - fpsT); frames = 0; fpsT = now; }
+  requestAnimationFrame(frame);
+}
+
+/* test hook: deterministic frames for screenshots */
+window.__poster = {
+  select, seek(t) { setPlaying(false); state.t = t; render(t); },
+  set(k, v) { state[k] = v; buildField(); syncUI(); },
+};
+
+select(0);
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setPlaying(false); state.t = 6; }
+requestAnimationFrame(frame);
+
+const fontLoads = [`400 20px "Kode Mono"`, `400 50px "Funnel Display"`, `500 50px "Funnel Display"`, `400 41px "Inter"`].map(f => document.fonts.load(f).catch(() => null));
+Promise.all(fontLoads).then(() => { ascCache.clear(); if (field) field.decode = null; drawLegend(); });
+})();
+</script>
+</body>
+</html>

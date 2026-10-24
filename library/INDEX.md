@@ -40,6 +40,12 @@
 | [flycam/index.html](living/flycam/index.html) | 左边黄视锥相机沿虚线航线在一块合成上空走位（真 three.js：MOTION 卡、GRAPHICS 卡、UI 面板、cloner 环、文字绕柱），右边是它看见的画面，末帧停在文字绕柱 | 要真 three.js 栈的「看得见的相机」：CameraHelper 视锥 + 虚线航线 + 路径点点火 + POV 铸镜头 + 一个 renderer 两个窗格。**v2**：WebGL 真栈重做（v1 是 CSS 3D 近似、内容是求职物件，已废）；溯源 mo1（three.js WebGPU 演示）。CSS 3D 版标本走 [nightflight](nightflight/index.html) / [rig](rig/index.html) |
 | [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam 的 **v1 系（CSS 3D）**，零件沿用 [#rig](nightflight/index.html#rig) / [#flight](nightflight/index.html#flight) / [#timeline](nightflight/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
 | [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
+| [horizons/index.html](living/horizons/index.html) | 黑洞上方的拱和洞边细环是逐像素弯光线算出来的。点底部 ‹ › 相机连续换机位，滚轮改焦距，四角只有实时读数 | 首屏只放一个真在跑的画面。能按规则算的形状别画。几个作品切换做成同一个框里换机位 |
+| [koi/index.html](living/koi/index.html) | 三张同版式海报：锦鲤、海龟、蜥蜴各由一千多个半透明水彩色点拼成。鼠标划过，点被推开再弹回 | 粒子图案先画一张颜色对的底图。作品封面做成同版式系列，一张一个主色 |
+| [notchpet/index.html](living/notchpet/index.html) | 刘海里一团黏糊小猫被拖出来，脖子越拉越细、拉断，停到代码窗口上沿长出标签，变成输入框，回车后报错消失、那一行闪绿。12 s 自动循环，点一下自己拖 | agent / 桌宠的产品演示。一个形状贯穿所有状态，不弹新控件。结果落在用户自己的窗口里，不回一条聊天。复刻 @imbabybrooklyn |
+| [scanline/index.html](living/scanline/index.html) | 一只猫被扫描线一格一格画出来，12 fps 一顿一顿地动。全页一个黑两个近白，标题也是点阵。能把自己的视频拖进去 | 产品 hero 要一条只属于它的渲染规则。素材和着色器分开，换主角只换素材。复刻 @amananimates |
+| [cutpath/index.html](living/cutpath/index.html) | 透明 PNG 外面长出一圈等距洋红切割线，挂孔贴着图案顶。点 3D，亚克力立起来，旁边一枚 500 日元硬币 | 做实物下单的工具：先把交给印刷厂的文件做对（White / Art / CutContour 三层 SVG），再用一枚硬币回答多大、孔在哪。真 three.js 挤出走这里，可见相机仍走 flycam |
+| [beacon/index.html](living/beacon/index.html) | 三张海报是同一张字形表排的。灯塔从下往上长，2.5s 后光束扫过表格，字变成 0/1 格子。两张浪从左往右长，然后只剩状态灯在闪 | 一组封面要成套：先定字形表和 9 秒先长后停的节奏，每张只换一张密度图。只留一个一直在动的东西，让它演产品的动作。品牌 skerry 是虚构的 |
 
 ## 零件
 
@@ -220,3 +226,68 @@
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
 | 陌生网址或截图要做成活笔记 | [stranger](living/stranger/index.html) | 先问四句。第一屏先活 |
+
+### 光线追踪 / 换机位 / 仪表
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 黑洞透镜 / 逐像素弯光线 / 吸积盘 | [horizons](living/horizons/index.html#lensing) | 每步 `vel += −1.5·h²·pos/r⁵·dt`，最多 130 步，r<1 吸收，步数用完也算吸收。盘：开普勒 `2.2/r^1.5` + 两层 fbm，朝镜头那侧更亮 |
+| 两个场景是同一个模型换机位 / 连续过渡 | [horizons](living/horizons/index.html#viewpoint) | 一个 uniform `sc` 0→1 同时插距离 19→34、仰角 .17→.022 rad。`cur` 指数逼近目标，约 0.7s。不是切图 |
+| 焦距刻度 / 滚轮改焦距 | [horizons](living/horizons/index.html#focal) | 18–85mm，`fov = 2·atan(12/mm)`。滚轮 0.025mm/格，拖右侧竖刻度 |
+| 小人造物给尺度 | [horizons](living/horizons/index.html#scale) | 2D canvas 叠在 WebGL 上。农舍高约画面 1/6，换机位时和宇航员交叉淡换 |
+| 仪器式 HUD / 四角只放真实读数 | [horizons](living/horizons/index.html#hud) | 10px 等宽、12px 角框，中间全空。ALT、HORIZON 从相机参数实算，单位 Rs |
+| 重 shader 保帧率 / 自适应分辨率 | [horizons](living/horizons/index.html#fps) | 每 0.6s 量帧率：<40 降 0.1，>58 升 0.05，比例 .4–.9。左下 `FPS · %` |
+
+### 粒子 / 取色 / 海报系列
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 粒子从底图取色 / 中间大边缘小 | [koi](living/koi/index.html#sample) | 距离场 + 大点先放的变径泊松。锦鲤 D0 38、r 3–12。点色吸到底图的纯色，接缝不出灰点 |
+| 水彩点 / 花瓣形色块 / 边缘加深 | [koi](living/koi/index.html#dot) | 核心圆 + 6–8 瓣，边缘同色相加深，不往灰走。32 色 × 12 形预画图集，multiply，每帧只 drawImage |
+| 标注点连线框 / 编号标签 | [koi](living/koi/index.html#callouts) | 实心圆 r 4.8 + 1.1px 主色线。两行标签：mono 500 15px + 300 14px 45% 灰。点位按动物外框比例存 |
+| 同一版式出系列 / 一张一个主色 | [koi](living/koi/index.html#series) | 4:5。标题左上 300 字重，只一个词上主色。主色只在标题词、动物、四角虚色块 |
+| 鼠标推散再聚回 / 弹簧粒子 | [koi](living/koi/index.html#scatter) | 半径约 105 斥力，弹簧 0.045、阻尼 0.8。点「重新聚拢」撒开再飞回。停稳不重画 |
+| 换成自己的图 | [koi](living/koi/index.html#upload) | 等比缩进 0.82W × 0.7H，白底亮度 >232 抠掉。点、标注框、标题点数重算 |
+
+### 黏糊形状 / SDF / 跟拍镜头
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 拖出来的拉丝 / smooth union 脖子 / 拉断 | [notchpet](living/notchpet/index.html#goo) | 10 段 round-cone 排在二次贝塞尔上，中段收细。两中心距过 118 断开，两根尖尾巴弹回。颜色跟距离一起混 |
+| 宠物变标签变输入框 / 形状连续变形 | [notchpet](living/notchpet/index.html#goo) | 不换图形。猫的距离场直接 `mix` 到圆角矩形，红胶囊再变灰输入框 |
+| 窗口长出标签 / 拖到目标上吸附 | [notchpet](living/notchpet/index.html#desk) | 窗口和梯形标签 `smin` 成一块，标签高 37 → 67。拖近时窗口朝它鼓起，外沿亮一圈 6.5 宽浅蓝 |
+| DOM 文字和着色器对齐 / 3D 倾斜跟拍 | [notchpet](living/notchpet/index.html#world) | 一个 `DOMMatrix`：DOM 当 transform，着色器用它的逆。镜头 23 帧从原视频拟合 |
+| 自动演示和试玩共用一套逻辑 | [notchpet](living/notchpet/index.html#stage) | 光标脚本喂同一个 `step()`，240 Hz 弹簧。点一下切试玩 |
+| agent 在干活 / 思考点变完成点 | [notchpet](living/notchpet/index.html#faces) | 蓝点 → 绿点，半径是猫宽 0.19。完成散一圈 12 颗红点，代码那一行同时闪绿 |
+| 被拖时的表情 / 出汗冒心 | [notchpet](living/notchpet/index.html#faces) | 眯眼 → 惊讶 → 拉断笑脸 + 3 颗心。不用字就看懂 |
+
+### 扫描线 / 点阵 / 采样感
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 视频变扫描线 / 四档线宽 shader | [scanline](living/scanline/index.html#scan) | 12×8 格，格心采一次亮度。< 0.24 整格、< 0.44 粗线 6/8、< 0.805 细线 3/8，其余空。模糊淡影最多 30% 墨 |
+| 降帧采样感 / 12 fps 步进 | [scanline](living/scanline/index.html#stage) | `floor(t × 12)` 变了才重画。格子不动，动的是源。滚出视口就停 |
+| 点阵大标题 / 像素字 | [scanline](living/scanline/index.html#headline) | 竖笔 2 格、横笔 1 格、字距 2。SVG `rect` + `crispEdges`，单位取整到整像素 |
+| 一个黑两个近白 / 画布亮 4 级 | [scanline](living/scanline/index.html#hero) | `#0A0A0A`、`#F1F1EF`、`#F5F5F2`。画布 41.4% 起，上沿硬，左缘渐变 |
+| 换成自己的视频 / 自动色阶 | [scanline](living/scanline/index.html#swap) | object URL 本地读。直方图 3/7/45/92 百分位对齐四个切点。平坦背景避开细线切点 |
+
+### 切割线 / 白版 / 实物尺寸
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 透明图外扩等距白边 / 切割线 / 距离变换 | [cutpath](living/cutpath/index.html#stage) | `alpha > 40`，两遍倒角距离（1 / 1.4142）≤ 白边 mm × ppm。内洞泛洪填实。每块 8 邻域描边 + 3 遍 Chaikin。工作分辨率长边 560 |
+| 分开的小块连成一块 / 闭运算 | [cutpath](living/cutpath/index.html#merge) | 外扩 6mm 再收回 6mm。关掉，条数从 1 变 2 |
+| 挂链孔贴着图案顶 | [cutpath](living/cutpath/index.html#hole) | 孔 2.2mm + 环 1.8mm。找白版最高点，孔心再上移 0.7 环半径，补一段颈。拖滑块，孔沿上沿走 |
+| 白版 / 切割线 / 图案三种看法 + 尺寸读数 | [cutpath](living/cutpath/index.html#modes) | 白版 `#3a3a40` 实填。读数：外尺寸 mm、面积 cm²、dpi、条数 + 孔 |
+| 交给印刷厂的文件 / 分层 SVG / CutContour | [cutpath](living/cutpath/index.html#export) | White（evenodd 抠孔）、Art（PNG 内嵌）、CutContour（`#E6007E` 0.1mm）。单位 mm。宿主下载不可用就弹文本框 |
+| 3D 亚克力 / 透射材质 / 和硬币比大小 | [cutpath](living/cutpath/index.html#acrylic) | 正交相机，四视角 r = 4L。透射 0.97、ior 1.49、粗糙 0.12、clearcoat 1。30° 边线 `#7d8c90` 0.42。硬币 26.5mm 立在右边 10mm。r147 UMD 在 `vendor/` |
+
+### 字形海报 / 密度 / 光束
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 字形表 / 一套字形管一组图 | [beacon](living/beacon/index.html#legend) | 小点、方点、I/A/0/1/%、十字、菱形、圆环、实心圆、方块反白数字、黄格。字号 = 格 × 0.64。黄色只放几格 |
+| 形状决定密度 / 剪影变字形场 | [beacon](living/beacon/index.html#density) | 剪影画进每格 4×4px 离屏，模糊 0.55–0.7 格取平均 alpha，加噪声按阈值挑字形。打开「显示网格与密度图」 |
+| 光束扫过，文字变格子 | [beacon](living/beacon/index.html#beam) | 双向楔形各 36°，顺时针 40°/s。区内重铺底纹 + 蓝 31%。文字层按 14px 格算笔画覆盖率，≥ 0.07 换字形 |
+| 先长出来再定住 / 9 秒循环 | [beacon](living/beacon/index.html#timeline) | 表格 0.1s 一行，灯塔 0.15→1.9s 自下而上，光束 2.5s 起。浪 0.4–2.2s 左→右。泳道可拖 |
+| 孔版蓝纹理 / 海报坐标系 | [beacon](living/beacon/index.html#poster) | 1240×1754 逻辑坐标，`setTransform` 缩放。蓝 = fbm 浅斑 + 暗坑 + 颗粒，均色 (95.5, 124, 250) |
