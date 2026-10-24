@@ -58,6 +58,8 @@
 | [diagrams/index.html](living/diagrams/index.html) | 左边逐字打出 Mermaid 风格文本，右边每打一个字整张 SVG 重画：流程图、桑基图、柱状图，暖白底配 8 个系列色 | 想让“文本即图”看起来干净、能换主题时用。数值全部取自 Pele 源码。复刻 @kepano |
 | [stitch/index.html](living/stitch/index.html) | 一个小木屋三维模型，拖着转，实时降采样成 115 格宽的十字绣图样；右栏是滑杆、线色表、DMC 色号、针数和 14ct 成品尺寸 | 把任何矢量或三维内容变成「能绣出来」的格子图，同时算出要买几束线、绣出来多大。复刻 @LottieCoxon |
 | [filmtype/index.html](living/filmtype/index.html) | 电影字体档案站：暗色开场轮播三部片，一滚主帧撑满再上推，进到浅色大列表。悬停片名两侧出「+」、第 4 列展开一帧；点开横向一帧一帧走，底部时间码尺跟着点亮。14 部虚构电影、每帧用免费字体画 | 做一个「按条目浏览图片资料」的档案站，要开场有仪式感、列表克制、单条能逐帧翻。复刻 fontsinmovies.com（@VibeEverything 推荐） |
+| [asciimmo/index.html](living/asciimmo/index.html) | 整个小世界用彩色等宽字画：草被风吹成一道道 `/`，塘里有倒影，队友跟着走，陌生玩家闲逛放技能，左上角黑底组队面板 | 想做「字符画游戏世界」时，地形、倒影、角色、法术和 HUD 怎么用同一套格子画出来。复刻 TikTok @Ansenjeo（经 @Ekimko 转帖） |
+| [traces/index.html](living/traces/index.html) | AI 干活时的轨迹列表：状态头跟着当前步骤换字，步骤一条条往下长，结果卡片开两张收一张，最后整段折成一行摘要「Ran 2 searches and read 3 sources」。自己写的书店晨报内容 | 让人看见 agent 在做什么，又不被过程淹没。复刻 @dimitroweb |
 
 ## 零件
 
@@ -426,3 +428,23 @@
 | 列表行悬停弹预览 / 十字标 | [filmtype](living/filmtype/index.html#list) | 5 等分，片名跨 2–4 列 37.4px。预览宽 1 列，`clip-path: inset(50% 0 50% 0)` → `inset(0)` 0.5 s `(.66,0,.34,1)`；「+」从内往外滑 |
 | 列表 / 图片视图切换与排序 | [filmtype](living/filmtype/index.html#toolbar) | 图片视图 3 列 `gap 60 20`。当前排序项变灰，再点反向；切换 0.167 s 淡出淡入 |
 | 横向逐帧 + 时间码尺 | [filmtype](living/filmtype/index.html#film) | 当前帧钉 44.7vw，滚轮节流一帧，1 s 平移；尺上每帧一点，当前点红，时间码标签跟随 |
+
+### ASCII 游戏世界 / 字符画渲染
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 整屏字符画 / canvas 逐格画字 | [asciimmo](living/asciimmo/index.html#ascii) | 格 = 字宽 × 字号 × 1.12。颜色登记成调色板下标，同色一桶，一桶设一次 `fillStyle`。底色 `#0C0C16` |
+| 字符地形 / 风吹草 / 水面倒影 | [asciimmo](living/asciimmo/index.html#world) | 草 `\| / ' ,` 值噪声定疏密，斜向正弦带扫过变 `/` 并提亮。水格以塘上沿为轴取镜像格，字也镜像，压暗两次 |
+| 游戏组队面板 / 血条蓝条 | [asciimmo](living/asciimmo/index.html#party) | 黑底 `#070707`、1.5px 浅灰边、卡间距 3px。血条是细框里 2px 亮 1px 暗的竖纹 |
+| 帧率 / 帧耗时角标 | [asciimmo](living/asciimmo/index.html#hud) | `FPS · frame ms`，每 0.5 s 实测更新，淡灰绿 `#B4BBB4` |
+| 本地模拟多人 / 跟随 / 施法特效 | [asciimmo](living/asciimmo/index.html#hint) | 队友沿你的轨迹隔 26 点跟随；陌生玩家本地闲逛。法术 = 0.58 椭圆符号环 + 火花 + 脚下 `( _ )` 法阵 + 技能名飘字 |
+
+### Agent 轨迹 / 进行中状态
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| agent 步骤时间线 / 状态头跟随 / 折成摘要 | [traces](living/traces/index.html#trace) | 30px 一行，步骤文字缩进 51px。每 1.5 s 一步，换字 180 ms 模糊淡出淡入。结束时橙色图标宽度收到 0，摘要左移 25px |
+| 进行中文字扫光（连胶囊一起） | [traces](living/traces/index.html#shimmer) | `mask-image` 带子 16% 宽、透明度 0.28，mask 宽 300%，1.5 s 从左扫到右 |
+| 展开收起不量高度 / 最多开两张 | [traces](living/traces/index.html#fold) | `grid-template-rows: 0fr ↔ 1fr` 0.5 s，内层 `overflow:hidden`。`keepOpen: 2` |
+| 浅灰底上的「几乎同色」卡片 | [traces](living/traces/index.html#card) | 页 `#EEEEEE`、卡 `#F6F6F6`，1px 4.5% 描边 + 2px/5px 投影 + 顶部 1px 白高光，圆角 12px |
+| 回答逐块淡入 + 引用胶囊 | [traces](living/traces/index.html#answer) | 110 ms 错开，5px 上移 + 2px 模糊。引用和轨迹里同一个胶囊组件 |

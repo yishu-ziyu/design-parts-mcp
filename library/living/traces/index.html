@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Trace Timeline</title>
+<style>
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/inter-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/inter-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/inter-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  :root {
+    --page: #eeeeee;
+    --card: #f6f6f6;
+    --ink: #1c1c1c;
+    --text: #3a3a3a;
+    --muted: #8a8a8a;
+    --faint: #a8a8a8;
+    --rule: #e3e3e3;
+    --accent: #ee6a2c;
+    --row: 30px;
+    --indent: 26px;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--ink); }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: left; }
+
+  #stage { min-height: 100vh; padding: clamp(40px, 15vh, 170px) 16px 80px; }
+  .col { max-width: 544px; margin: 0 auto; }
+
+  /* ---- trace ---- */
+  .tr-head { display: flex; align-items: center; min-height: var(--row); gap: 0; max-width: 100%; }
+  .tr-glyph { width: 25px; flex: none; display: flex; align-items: center; color: var(--accent); overflow: hidden;
+    transition: width .45s var(--ease), opacity .3s; }
+  .tr-glyph svg { width: 14px; height: 14px; display: block; }
+  .tr.done .tr-glyph { width: 0; opacity: 0; }
+  .tr-label { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: .3em; color: var(--text); min-width: 0;
+    transition: opacity .18s ease, filter .18s ease, transform .18s ease; }
+  .tr-label.out { opacity: 0; filter: blur(3px); transform: translateY(-3px); }
+  .tr.done .tr-head .tr-label { color: var(--muted); }
+  .tr-srcs { display: inline-flex; gap: 3px; margin-left: 4px; }
+  .tr-srcs svg { width: 15px; height: 15px; }
+  .chev { width: 18px; height: 18px; flex: none; margin-left: 5px; color: var(--muted); transition: transform .3s var(--ease); }
+  .chev.closed { transform: rotate(-90deg); }
+
+  .verb { color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 7px 0 5px; border-radius: 8px;
+    background: #f3f3f3; box-shadow: 0 0 0 1px rgba(0,0,0,.05); font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+  .chip svg { width: 12px; height: 12px; flex: none; }
+
+  /* shimmer: a translucent band in a mask sweeps left to right, so chips and icons fade with the text */
+  .shim { -webkit-mask-image: linear-gradient(90deg, #000 0 42%, rgba(0,0,0,.28) 50%, #000 58% 100%);
+    mask-image: linear-gradient(90deg, #000 0 42%, rgba(0,0,0,.28) 50%, #000 58% 100%);
+    -webkit-mask-size: 300% 100%; mask-size: 300% 100%; animation: shim 1.5s linear infinite; }
+  @keyframes shim { from { -webkit-mask-position: 100% 0; mask-position: 100% 0; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
+
+  .fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease), opacity .35s; opacity: 0; }
+  .fold.open { grid-template-rows: 1fr; opacity: 1; }
+  .fold > .in { overflow: hidden; min-height: 0; }
+
+  .tr-body > .in { position: relative; padding-left: var(--indent); }
+  .tr-body > .in::before { content: ""; position: absolute; left: 7px; top: 2px; bottom: 6px; width: 1px; background: var(--rule); }
+
+  .step { opacity: 0; transform: translateY(4px); filter: blur(2px); transition: opacity .35s, transform .45s var(--ease), filter .35s; }
+  .step.in-view { opacity: 1; transform: none; filter: none; }
+  .step-row { display: flex; align-items: center; min-height: var(--row); width: 100%; color: #5c5c5c; }
+  .step-ico { width: 25px; flex: none; color: var(--muted); display: flex; }
+  .step-ico svg { width: 15px; height: 15px; }
+
+  .card { margin: 4px 0 10px 25px; background: var(--card); border-radius: 12px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.045), 0 2px 5px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.9); }
+  .crow { display: grid; grid-template-columns: 27px 1fr auto; column-gap: 0; padding: 8px 13px 9px 12px; font-size: 13.5px; line-height: 1.45; }
+  .crow + .crow { box-shadow: inset 0 1px 0 #ececec; }
+  .crow .lead { grid-row: span 2; width: 18px; height: 18px; margin-top: 1px; display: flex; align-items: center; justify-content: center; }
+  .crow .lead.letter { border-radius: 5px; background: #e2e2e2; font-size: 11px; font-weight: 600; color: #5a5a5a; }
+  .crow .lead.dot::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2f6feb; }
+  .crow .lead svg { width: 15px; height: 15px; }
+  .crow .t { font-weight: 500; color: var(--ink); min-width: 0; }
+  .crow .t span { font-weight: 400; color: var(--muted); margin-left: .35em; }
+  .crow .time { color: var(--faint); font-size: 13.5px; padding-left: 12px; }
+  .crow .x { grid-column: 2 / 4; color: var(--text); }
+  .crow.one { grid-template-columns: 26px 1fr auto; }
+  .crow.one .lead { grid-row: auto; }
+  .more { padding: 9px 13px 11px; font-size: 13.5px; color: var(--faint); box-shadow: inset 0 1px 0 #ececec; }
+
+  /* ---- answer ---- */
+  .ans h4, .ans li { opacity: 0; transform: translateY(5px); filter: blur(2px); transition: opacity .45s, transform .55s var(--ease), filter .45s; }
+  .ans .show { opacity: 1; transform: none; filter: none; }
+  .ans h4 { font-size: 15px; font-weight: 600; margin: 14px 0 14px; color: #111; }
+  .ans h4:first-child { margin-top: 9px; }
+  .ans ul { list-style: none; }
+  .ans li { position: relative; padding-left: 23px; margin: 0 0 4px; line-height: 1.75; color: #151515; }
+  .ans li::before { content: ""; position: absolute; left: 9px; top: .78em; width: 5px; height: 5px; border-radius: 50%; background: #151515; }
+  .ans .chip { vertical-align: 1px; margin: 0 1px; }
+  .ans code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; background: #e6e6e6; padding: 2px 6px; border-radius: 5px; color: #333; }
+  .ans a { color: #111; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+  .acts { display: flex; gap: 10px; margin-top: 18px; color: var(--muted); opacity: 0; transition: opacity .5s; }
+  .acts.show { opacity: 1; }
+  .acts button { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: inherit; }
+  .acts button:hover { background: rgba(0,0,0,.05); }
+  .acts svg { width: 16px; height: 16px; }
+
+  #replay { position: fixed; right: 16px; bottom: 16px; font-size: 13px; color: var(--muted); padding: 6px 10px; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,.08); background: var(--card); }
+  #replay:hover { color: var(--ink); }
+
+  #notes { max-width: 760px; margin: 0 auto; padding: 72px 16px 120px; font-size: 14px; line-height: 1.8; color: #444; border-top: 1px solid #e0e0e0; }
+  #notes h3 { font-size: 13px; font-weight: 600; letter-spacing: .08em; color: #111; padding-bottom: 12px; border-bottom: 2px solid #111; }
+  #notes dt { margin-top: 24px; }
+  #notes dt code { font: inherit; font-weight: 600; color: #111; }
+  #notes dd { margin-top: 4px; }
+  #notes dd code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; color: #111; background: rgba(0,0,0,.06); padding: 0 .25em; border-radius: 3px; }
+
+  @media (max-width: 480px) {
+    body { font-size: 15px; }
+    .crow { font-size: 14px; padding: 9px 11px; }
+    .card { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shim { animation: none; -webkit-mask-image: none; mask-image: none; }
+    .step, .ans h4, .ans li, .tr-label, .fold, .tr-glyph, .chev, .acts { transition: none !important; filter: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<section id="stage">
+  <div class="col" id="trace"></div>
+</section>
+<button id="replay" type="button">Replay</button>
+
+<section id="notes" lang="zh-CN">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#trace</code></dt>
+    <dd>整条 agent 轨迹：一行状态头 + 缩进的步骤列表 + 结果卡片 + 最后的回答。头行永远显示「正在做的那一步」，每步开始时把这一步的标签复制上去，旧文字 180 ms 模糊上移淡出、新文字淡入。最后整段折叠成一行灰字摘要「Ran N searches and read M sources」+ 前三个来源图标，左边橙色图标宽度收到 0，摘要左移 25px 和回答左对齐。</dd>
+    <dt><code>#shimmer</code></dt>
+    <dd>进行中的文字扫光：不是给文字上渐变色，而是给整行加 <code>mask-image</code>，一条 16% 宽、透明度 0.28 的带子 1.5 s 从左扫到右（mask 宽 300%）。这样行里的来源胶囊、图标也会一起被扫淡，和原作里胶囊半透明的那几帧一致。reduced-motion 下关掉。</dd>
+    <dt><code>#fold</code></dt>
+    <dd>结果卡片展开 / 收起：外层 <code>display:grid</code>，<code>grid-template-rows</code> 在 <code>0fr</code> 和 <code>1fr</code> 之间过渡 0.5 s，内层 <code>overflow:hidden</code>，不用量高度。最多同时开 2 张（<code>CONFIG.keepOpen</code>），第 3 张打开时最早那张收起，箭头转 -90°。所以列表一直往下长，但高度大致不变。</dd>
+    <dt><code>#card</code></dt>
+    <dd>卡片样式：底 <code>#F6F6F6</code> 放在页面 <code>#EEEEEE</code> 上，只亮 3%；靠三层阴影成形——1px 4.5% 黑描边、下方 2px/5px 5% 黑投影、顶边 1px 内白高光。圆角 12px，行间 1px <code>#ECECEC</code>。行：18px 字母方块或来源图标 + 粗体标题 + 灰色副标 + 右侧时间，下一行正文。</dd>
+    <dt><code>#answer</code></dt>
+    <dd>回答逐块出现：标题、每条要点依次 110 ms 错开，从 5px 下方、2px 模糊淡入。要点里用同一个来源胶囊做引用，和上面轨迹里的胶囊同一个组件。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  thinking: 'Working on it…',
+  thinkMs: 700,
+  stepMs: 1500,
+  cardDelayMs: 400,
+  keepOpen: 2,
+  answerDelayMs: 300,
+  answerStaggerMs: 110,
+  collapseDelayMs: 1000,
+  summary: (searches, reads) => `Ran ${searches} search${searches === 1 ? '' : 'es'} and read ${reads} source${reads === 1 ? '' : 's'}`,
+
+  sources: {
+    chat:   { name: 'Desk',   icon: '<svg viewBox="0 0 16 16"><rect x="1" y="2" width="14" height="10" rx="3" fill="#7a5cf0"/><path d="M5 12v3l3-3" fill="#7a5cf0"/><rect x="4" y="5" width="8" height="1.6" rx=".8" fill="#fff"/><rect x="4" y="8" width="5" height="1.6" rx=".8" fill="#fff"/></svg>' },
+    notes:  { name: 'Notes',  icon: '<svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="3.5" fill="#e8b33c"/><rect x="4" y="4.5" width="8" height="1.5" rx=".75" fill="#fff"/><rect x="4" y="7.3" width="8" height="1.5" rx=".75" fill="#fff"/><rect x="4" y="10.1" width="5" height="1.5" rx=".75" fill="#fff"/></svg>' },
+    mail:   { name: 'Inbox',  icon: '<svg viewBox="0 0 16 16" fill="none" stroke="#d6453a" stroke-width="2" stroke-linejoin="round"><rect x="1.5" y="3.5" width="13" height="9.5" rx="2"/><path d="M2 4.5l6 4.5 6-4.5"/></svg>' },
+    orders: { name: 'Orders', icon: '<svg viewBox="0 0 16 16"><path d="M8 1l6.5 3.3v7.4L8 15l-6.5-3.3V4.3z" fill="#2f7fe0"/><path d="M1.8 4.4L8 7.6l6.2-3.2M8 7.6V15" stroke="#fff" stroke-width="1.3" fill="none"/></svg>' },
+    stock:  { name: 'Stock',  icon: '<svg viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="3.5" fill="#2e9e6a"/><path d="M1 6h14M1 10.5h14M6 1v14" stroke="#fff" stroke-width="1.3"/></svg>' },
+  },
+
+  steps: [
+    { kind: 'search', verb: 'Searched', src: 'chat', rest: 'for messages since Friday',
+      rows: [
+        { lead: 'letter:M', title: 'Mia Chen', meta: '#front-desk', time: '9:12', text: 'Can we hold two copies of The Salt Orchard until Thursday?' },
+        { lead: 'letter:T', title: 'Tom Ruiz', meta: '#stockroom', time: '10:40', text: 'Back shelf in poetry is loose again, moved the boxes off it.' },
+        { lead: 'letter:A', title: 'Ana Silva', meta: '#events', time: '15:05', text: 'Can we push poetry night a week? The reader is sick.' },
+      ], more: '+2 more' },
+    { kind: 'read', verb: 'Read the', src: 'notes', rest: 'from Tuesday’s staff meeting',
+      rows: [
+        { lead: 'src', title: 'Window display', meta: 'Mia, Tom', time: '10:30', text: 'Autumn theme goes up Friday, Tom brings the lamps.' },
+        { lead: 'src', title: 'Events', meta: 'Everyone', time: '16:00', text: 'Poetry night moves to Nov 12, Ana handles RSVPs.' },
+      ] },
+    { kind: 'search', verb: 'Searched', src: 'mail', rest: 'for supplier replies',
+      rows: [
+        { lead: 'dot', title: 'Re: Order 2291', meta: 'Harbor Books', time: '8:40', text: 'Ships Wednesday. Two titles are on backorder.' },
+        { lead: '', title: 'Invoice 7710', meta: 'Paper & Pine', time: 'Yesterday', text: 'Payment due Nov 1, net 30 as usual.' },
+      ] },
+    { kind: 'read', verb: 'Read the', src: 'orders', rest: 'returned this week',
+      rows: [
+        { lead: 'glyph:return', title: 'Damaged cover', meta: '#4471', time: '2d' },
+        { lead: 'glyph:swap', title: 'Wrong edition', meta: '#4480', time: '3d' },
+        { lead: 'glyph:check', title: 'Refunded', meta: '#4483', time: '5d' },
+      ], more: '+1 more' },
+    { kind: 'read', verb: 'Read the', src: 'stock', rest: 'sheet',
+      rows: [
+        { lead: 'src', title: 'Under 3 copies', meta: '6 titles', time: 'Today', text: 'Two of them are in the Harbor backorder.' },
+      ] },
+  ],
+
+  answer: [
+    { h: 'Front desk' },
+    { li: ['Hold two copies of The Salt Orchard until Thursday', { cite: 'chat', label: 'Mia' }, '.'] },
+    { h: 'Events' },
+    { li: ['Poetry night moves to Nov 12, Ana is on RSVPs', { cite: 'notes', label: 'notes' }, '.'] },
+    { li: ['Window display goes up Friday', { cite: 'notes', label: 'notes' }, '.'] },
+    { h: 'Suppliers' },
+    { li: ['Order ', { code: 'HB-2291' }, ' ships Wednesday with two backorders', { cite: 'mail', label: 'reply' }, '.'] },
+    { li: ['Paper & Pine invoice is due Nov 1: ', { link: 'billing@paperpine.example' }, '.'] },
+  ],
+};
+
+const ICONS = {
+  search: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>',
+  read: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M4 1.8h5.2L12.5 5v9.2H4z"/><path d="M9 2v3.3h3.3M6.3 8.3h3.9M6.3 11h3.9" stroke-linecap="round"/></svg>',
+  think: '<svg viewBox="0 0 16 16" fill="currentColor"><circle class="d" cx="5" cy="5" r="1.7"/><circle class="d" cx="11" cy="5" r="1.7"/><circle class="d" cx="11" cy="11" r="1.7"/><circle class="d" cx="5" cy="11" r="1.7"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5L9 11l3.5-3.5"/></svg>',
+  return: '<svg viewBox="0 0 16 16" fill="none" stroke="#8a63d2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3L2 6l3 3"/><path d="M2 6h7.5a4 4 0 010 8H7"/></svg>',
+  swap: '<svg viewBox="0 0 16 16" fill="none" stroke="#2e9e6a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h10l-3-3M13 11H3l3 3"/></svg>',
+  check: '<svg viewBox="0 0 16 16" fill="none" stroke="#7a7a7a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.2l1.8 1.8 3.2-3.5"/></svg>',
+  copy: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>',
+  up: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l4-4 4 4"/></svg>',
+  down: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>',
+};
+
+function createTraces(container, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+  const chip = (id, label) => `<span class="chip">${cfg.sources[id].icon}${esc(label || cfg.sources[id].name)}</span>`;
+  const labelHTML = s => `<span class="verb">${esc(s.verb)}</span>${chip(s.src)}<span>${esc(s.rest)}</span>`;
+
+  let run = 0;
+  const timers = new Set();
+  const wait = (ms, id) => new Promise((res, rej) => {
+    const t = setTimeout(() => { timers.delete(t); id === run ? res() : rej('stale'); }, reduce ? 0 : ms);
+    timers.add(t);
+  });
+
+  let root, head, glyph, label, srcs, headChev, body, list, ans, acts, steps = [];
+
+  function build() {
+    container.innerHTML = '';
+    root = el('div', 'tr');
+    head = el('button', 'tr-head'); head.type = 'button'; head.id = 'shimmer';
+    glyph = el('span', 'tr-glyph', ICONS.think);
+    label = el('span', 'tr-label shim', esc(cfg.thinking));
+    srcs = el('span', 'tr-srcs');
+    head.append(glyph, label, srcs);
+    head.insertAdjacentHTML('beforeend', ICONS.chev);
+    headChev = head.lastElementChild; headChev.classList.add('closed');
+    body = el('div', 'fold tr-body open'); body.id = 'fold';
+    list = el('div', 'in'); body.append(list);
+    ans = el('div', 'ans'); ans.id = 'answer';
+    acts = el('div', 'acts', ['copy', 'up', 'down'].map(k => `<button type="button" aria-label="${k}">${ICONS[k]}</button>`).join(''));
+    root.append(head, body, ans, acts);
+    container.append(root);
+    head.addEventListener('click', () => {
+      if (!root.classList.contains('done')) return;
+      const open = body.classList.toggle('open');
+      headChev.classList.toggle('closed', !open);
+    });
+    steps = [];
+    pulseDots();
+  }
+
+  let dotsRaf = 0;
+  function pulseDots() {
+    cancelAnimationFrame(dotsRaf);
+    if (reduce) return;
+    const tick = now => {
+      const dots = glyph.querySelectorAll('.d');
+      if (!dots.length) return;
+      const k = now / 170;
+      dots.forEach((d, i) => { const a = (Math.sin(k - i * 1.2) + 1) / 2; d.setAttribute('r', (1.1 + a * 0.9).toFixed(2)); d.style.opacity = (0.45 + a * 0.55).toFixed(2); });
+      dotsRaf = requestAnimationFrame(tick);
+    };
+    dotsRaf = requestAnimationFrame(tick);
+  }
+
+  async function swapHead(html, glyphHTML, id) {
+    label.classList.add('out');
+    await wait(180, id);
+    label.innerHTML = html;
+    if (glyphHTML) glyph.innerHTML = glyphHTML;
+    label.classList.remove('out');
+  }
+
+  function rowHTML(r, src) {
+    let lead = '';
+    if (r.lead === 'src') lead = `<span class="lead">${cfg.sources[src].icon}</span>`;
+    else if (r.lead === 'dot') lead = '<span class="lead dot"></span>';
+    else if (r.lead && r.lead.startsWith('letter:')) lead = `<span class="lead letter">${esc(r.lead.slice(7))}</span>`;
+    else if (r.lead && r.lead.startsWith('glyph:')) lead = `<span class="lead">${ICONS[r.lead.slice(6)]}</span>`;
+    else lead = '<span class="lead"></span>';
+    const t = `<span class="t">${esc(r.title)}${r.meta ? `<span>${esc(r.meta)}</span>` : ''}</span><span class="time">${esc(r.time || '')}</span>`;
+    return `<div class="crow${r.text ? '' : ' one'}">${lead}${t}${r.text ? `<span class="x">${esc(r.text)}</span>` : ''}</div>`;
+  }
+
+  function addStep(s) {
+    const wrap = el('div', 'step');
+    const row = el('button', 'step-row'); row.type = 'button';
+    row.innerHTML = `<span class="step-ico">${ICONS[s.kind]}</span><span class="tr-label shim">${labelHTML(s)}</span>${ICONS.chev}`;
+    const chev = row.querySelector('.chev'); chev.classList.add('closed');
+    const fold = el('div', 'fold');
+    const card = el('div', 'card', s.rows.map(r => rowHTML(r, s.src)).join('') + (s.more ? `<div class="more">${esc(s.more)}</div>` : ''));
+    if (!steps.length) card.id = 'card';
+    const inner = el('div', 'in'); inner.append(card); fold.append(inner);
+    wrap.append(row, fold);
+    list.append(wrap);
+    const st = { wrap, row, chev, fold, text: row.querySelector('.tr-label'),
+      setOpen(v) { fold.classList.toggle('open', v); chev.classList.toggle('closed', !v); } };
+    row.addEventListener('click', () => st.setOpen(!fold.classList.contains('open')));
+    steps.push(st);
+    requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.add('in-view')));
+    return st;
+  }
+
+  function answerNodes() {
+    const nodes = [];
+    let ul = null;
+    for (const b of cfg.answer) {
+      if (b.h) { ul = null; nodes.push(el('h4', null, esc(b.h))); continue; }
+      if (!ul) { ul = el('ul'); nodes.push(ul); }
+      const li = el('li', null, b.li.map(p => typeof p === 'string' ? esc(p)
+        : p.cite ? ' ' + chip(p.cite, p.label)
+        : p.code ? `<code>${esc(p.code)}</code>`
+        : p.link ? `<a href="#" onclick="return false">${esc(p.link)}</a>` : '').join(''));
+      ul.append(li);
+    }
+    return nodes;
+  }
+
+  async function play() {
+    const id = ++run;
+    timers.forEach(clearTimeout); timers.clear();
+    build();
+    try {
+      await wait(cfg.thinkMs, id);
+      for (let i = 0; i < cfg.steps.length; i++) {
+        const s = cfg.steps[i];
+        steps.forEach(p => p.text.classList.remove('shim'));
+        swapHead(labelHTML(s), ICONS[s.kind], id);
+        headChev.classList.remove('closed');
+        const st = addStep(s);
+        await wait(cfg.cardDelayMs, id);
+        st.setOpen(true);
+        steps.slice(0, Math.max(0, steps.length - cfg.keepOpen)).forEach(p => p.setOpen(false));
+        await wait(cfg.stepMs - cfg.cardDelayMs, id);
+      }
+      steps.forEach(p => { p.text.classList.remove('shim'); p.setOpen(false); });
+      await wait(cfg.answerDelayMs, id);
+      const nodes = answerNodes();
+      ans.append(...nodes);
+      const items = [...ans.querySelectorAll('h4, li')];
+      for (const n of items) {
+        await wait(cfg.answerStaggerMs, id);
+        n.classList.add('show');
+      }
+      await wait(cfg.collapseDelayMs, id);
+      cancelAnimationFrame(dotsRaf);
+      root.classList.add('done');
+      body.classList.remove('open');
+      headChev.classList.add('closed');
+      const searches = cfg.steps.filter(s => s.kind === 'search').length;
+      const used = [...new Set(cfg.steps.map(s => s.src))].slice(0, 3);
+      await swapHead(esc(cfg.summary(searches, cfg.steps.length - searches)), null, id);
+      label.classList.remove('shim');
+      srcs.innerHTML = used.map(k => cfg.sources[k].icon).join('');
+      acts.classList.add('show');
+    } catch (e) { if (e !== 'stale') throw e; }
+  }
+
+  play();
+  return {
+    replay: play,
+    destroy() { run++; timers.forEach(clearTimeout); timers.clear(); cancelAnimationFrame(dotsRaf); container.innerHTML = ''; },
+  };
+}
+
+const traces = createTraces(document.getElementById('trace'));
+document.getElementById('replay').addEventListener('click', () => traces.replay());
+window.__traces = traces;
+</script>
+</body>
+</html>
