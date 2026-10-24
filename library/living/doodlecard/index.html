@@ -1075,7 +1075,7 @@ function createPromoPlayer(container, options = {}) {
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = document.createElement('canvas'); container.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  let scale = 1, playing = false, t = 0, last = 0, raf = 0, destroyed = false, ready = false, user = null;
+  let scale = 1, playing = false, t = 0, last = 0, raf = 0, destroyed = false, ready = false, user = null, mediaToken = 0;
   const assets = { cards: [], white: [], paper: [], marks: {} };
   const listeners = new Set();
 
@@ -1119,11 +1119,11 @@ function createPromoPlayer(container, options = {}) {
   function aroundCenter(s) { ctx.translate(cfg.W / 2, cfg.H / 2); ctx.scale(s, s); ctx.translate(-cfg.W / 2, -cfg.H / 2); }
 
   function drawOpening(f) {
-    const O = TL.opening, a = assets.cards[0];
+    const O = TL.opening, a = assets.cards[0], us = user && userFrame();
     ctx.fillStyle = '#111'; ctx.fillRect(0, 0, cfg.W, cfg.H);
     const sh = reduced ? 0 : 1, tx = sh * (6 * Math.sin(f * 0.11) + 3 * Math.sin(f * 0.23)), ty = sh * 4 * Math.sin(f * 0.09 + 1), rot = sh * 0.15 * Math.sin(f * 0.07) * DEG;
     ctx.save(); ctx.translate(cfg.W / 2 + tx, cfg.H / 2 + ty); ctx.rotate(rot); ctx.scale(1.04 + f * 0.0004, 1.04 + f * 0.0004); ctx.translate(-cfg.W / 2, -cfg.H / 2);
-    const src = user ? user.source : a && a.wide; if (src) drawCover(ctx, src, 0, 0, cfg.W, cfg.H);
+    const src = user ? us : a && a.wide; if (src) drawCover(ctx, src, 0, 0, cfg.W, cfg.H);
     ctx.restore();
     // titles share one baseline; they cut out a frame after the phone covers the centre
     const ta = f < O.titleOff ? 1 : f < O.titleOff + 1 ? 0.35 : 0;
@@ -1142,7 +1142,7 @@ function createPromoPlayer(container, options = {}) {
       ctx.save(); rrect(ctx, s.x, s.y, s.w, s.h, s.r); ctx.clip();
       ctx.fillStyle = '#000'; ctx.fillRect(s.x, s.y, s.w, s.h);
       const vx = s.x, vy = s.y + w * 0.33, vw = s.w, vh = vw * 4 / 3;
-      if (user) drawCover(ctx, user.source, vx, vy, vw, vh);
+      if (user) drawCover(ctx, us, vx, vy, vw, vh);
       else if (a) { const [vx0, vy0, vw0, vh0] = a.view, Wd = a.wide.width, Hd = a.wide.height; ctx.drawImage(a.wide, vx0 * Wd, vy0 * Hd, vw0 * Wd, vh0 * Hd, vx, vy, vw, vh); }
       ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(s.x + 22, s.y + w * 0.2, 6, 0, 7); ctx.arc(s.x + s.w - 22, s.y + w * 0.2, 6, 0, 7); ctx.fill();
       ctx.fillStyle = 'rgba(40,40,40,.75)'; ['.5', '1x', '2', '5'].forEach((z, i) => { ctx.beginPath(); ctx.arc(vx + vw / 2 + (i - 1.5) * 18, vy + vh - 14, 7.5, 0, 7); ctx.fill(); });
@@ -1351,9 +1351,57 @@ function createPromoPlayer(container, options = {}) {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     if (!ready || !assets.cards[0]) { ctx.fillStyle = '#9a9a96'; ctx.font = `500 16px ${cfg.font.ui}`; ctx.textAlign = 'center'; ctx.fillText('正在生成画面…', cfg.W / 2, cfg.H / 2); return; }
     const raw = t * F, f = Math.min(cfg.frames - 1, cfg.quantize ? Math.floor(raw) : raw);
+    syncVideo(f);
     renderFrame(f);
-    if (user && user.video && f < TL.flashes[0].f && playing && user.video.paused) user.video.play().catch(() => { });
   }
+  // ---------- the viewer's video ----------
+  // The promo plays its own <video>, loaded from the URL of the one it is handed, so the lab (which
+  // plays that original element) cannot move it. Only the opening shows it, driven by the promo clock:
+  //   video time = (promo time − VSEG start) mod video duration
+  // When paused, the promo time is the middle of the held frame: a frame's start can round to just
+  // before the matching video frame and show the one before it.
+  const VSEG = [0, TL.flashes[0].f];
+  const videoDur = v => isFinite(v.duration) && v.duration > 0 ? v.duration : 0;
+  function videoTimeAt(sec) { const d = videoDur(user.video), x = Math.max(0, sec - VSEG[0] / F); return d ? x % d : x; }
+  // While a video seeks its readyState drops to HAVE_METADATA and drawImage draws nothing, so the
+  // opening shows the frame copied into `hold` just before the seek until 'seeked'.
+  function userFrame() { const v = user.video; return !v ? user.source : v.readyState >= 2 && !v.seeking ? v : user.hold; }
+  function seekVideo(time) {
+    const v = user.video;
+    if (v.readyState >= 2 && !v.seeking) ctx2d(user.hold).drawImage(v, 0, 0, user.hold.width, user.hold.height);
+    v.currentTime = time;
+  }
+  // Paused (or past the opening, parked on its first frame for the loop): the video is paused on the
+  // mapped time. Playing: it runs at rate 1 and is re-seeked when it drifts by more than a frame. A seek
+  // made while playing lands late by about its own duration, so `lead` learns that offset; without it
+  // every correction leaves a new drift and the video keeps re-seeking.
+  function syncVideo(f) {
+    const v = user && user.video; if (!v) return;
+    const inSeg = f >= VSEG[0] && f < VSEG[1], now = performance.now();
+    if (playing && inSeg) {
+      user.want = -1;
+      if (v.paused) { v.play().catch(() => { }); user.settle = now + 250; user.corrected = false; }
+      if (v.seeking || now < user.settle) return;
+      const d = videoDur(v), want = videoTimeAt(t);
+      let err = v.currentTime - want; if (d) err -= d * Math.round(err / d);
+      if (Math.abs(err) <= 1 / F) { user.corrected = false; return; }
+      if (user.corrected) user.lead = clamp(user.lead - err, 0, 0.5);
+      seekVideo(d ? (want + user.lead) % d : want + user.lead); user.corrected = true; user.settle = now + 250;
+    } else {
+      if (!v.paused) v.pause();
+      const want = videoTimeAt(((inSeg ? f : VSEG[0]) + (cfg.quantize ? 0.5 : 0)) / F);
+      if (!v.seeking && want !== user.want) { user.want = want; seekVideo(want); }
+    }
+  }
+  function ownVideo(url) {
+    return new Promise(resolve => {
+      const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+      const done = ok => { v.removeEventListener('loadeddata', onData); v.removeEventListener('error', onError); if (!ok) dropVideo(v); resolve(ok ? v : null); };
+      const onData = () => done(true), onError = () => done(false);
+      v.addEventListener('loadeddata', onData); v.addEventListener('error', onError); v.src = url;
+    });
+  }
+  function dropVideo(v) { if (v) { v.pause(); v.removeAttribute('src'); v.load(); } }
   function tick(now) {
     if (destroyed) return;
     const dt = last ? Math.min(0.1, (now - last) / 1000) : 0; last = now;
@@ -1362,20 +1410,28 @@ function createPromoPlayer(container, options = {}) {
   }
   raf = requestAnimationFrame(tick);
   function play() { playing = true; last = 0; listeners.forEach(fn => fn('play')); }
-  function pause() { playing = false; listeners.forEach(fn => fn('pause')); }
+  function pause() { playing = false; draw(); listeners.forEach(fn => fn('pause')); }
   function seek(sec) { t = clamp(sec, 0, cfg.frames / F - 1e-4); draw(); listeners.forEach(fn => fn('time', t)); }
   // Put the viewer's own photo / video into the opening, the first flash card and the first table card.
+  // A video is reloaded from its URL into a <video> the promo owns; the caller keeps that URL alive
+  // until the media is replaced.
   async function setUserMedia(source, text = {}) {
-    if (!source) { user = null; await readyPromise; return; }
+    const token = ++mediaToken;
+    if (!source) { if (user) dropVideo(user.video); user = null; await readyPromise; return; }
+    const url = source.tagName === 'VIDEO' ? source.currentSrc || source.src : '', still = snapshot(source, 1400);
     await readyPromise;
-    const still = snapshot(source, 1400);
+    const video = url ? await ownVideo(url) : null;
+    if (token !== mediaToken || destroyed) { dropVideo(video); return; }
+    if (user) dropVideo(user.video);
     const dd = doodlify(still, { mask: 'auto', seed: 5 });
     const c0 = Object.assign({}, cfg.cards[0], text, { doodle: dd.canvas });
-    user = { source, still, video: source.tagName === 'VIDEO' ? source : null };
+    let hold = null;
+    if (video) { const [vw, vh] = srcSize(video), k = Math.min(1, 1920 / Math.max(vw, vh)); hold = makeCanvas(vw * k, vh * k); ctx2d(hold).drawImage(video, 0, 0, hold.width, hold.height); }
+    user = { source: video || (url ? still : source), still, video, hold, lead: 0, settle: 0, corrected: false, want: -1 };
     assets.white[0] = renderCard(c0, 'white'); assets.paper[0] = renderCard(c0, 'paper', 1.6);
     draw();
   }
-  function destroy() { destroyed = true; cancelAnimationFrame(raf); ro.disconnect(); canvas.remove(); listeners.clear(); }
+  function destroy() { destroyed = true; mediaToken++; cancelAnimationFrame(raf); ro.disconnect(); canvas.remove(); listeners.clear(); if (user) dropVideo(user.video); user = null; }
   return { play, pause, seek, toggle: () => playing ? pause() : play(), get playing() { return playing; }, get time() { return t; }, duration: cfg.frames / F, ready: readyPromise, reduced, setUserMedia, on: fn => { listeners.add(fn); return () => listeners.delete(fn); }, destroy, frame: f => seek((f + 0.5) / F), getCard: (i, style = 'white') => (style === 'paper' ? assets.paper : assets.white)[i], getPhoto: i => assets.cards[i] && assets.cards[i].photo };
 }
 
@@ -1451,7 +1507,11 @@ function createDoodleLayer(container, opts = {}) {
   promo.ready.then(() => { if (!promo.reduced && !/[?&]still/.test(location.search)) promo.play(); else promo.frame(90); });
 
   // ---- lab ----
-  let labSource = null, objectUrl = null, sampleMask = null;
+  let labSource = null, sampleMask = null;
+  // Uploads are object URLs made here. The lab plays the element it is given and the promo reloads a
+  // video's URL into its own element, so a URL is revoked only once neither of them uses it.
+  const urlOf = new WeakMap(); let labUrl = null, promoUrl = null;
+  const release = url => { if (url && url !== labUrl && url !== promoUrl) URL.revokeObjectURL(url); };
   const lab = createDoodleLayer($('lab-stage'), { date: $('f-date').value, caption: $('f-caption').value });
   window.__lab = lab;
   promo.ready.then(() => {
@@ -1463,29 +1523,33 @@ function createDoodleLayer(container, opts = {}) {
   $('f-date').addEventListener('input', e => lab.update({ date: e.target.value }));
   $('f-caption').addEventListener('input', e => lab.update({ caption: e.target.value }));
   $('btn-repop').addEventListener('click', () => lab.repop());
-  $('btn-use').addEventListener('click', () => { if (!labSource) return; promo.setUserMedia(labSource, { date: $('f-date').value, caption: $('f-caption').value }).then(() => { promo.frame(0); promo.play(); }); $('lab-status').textContent = '已放进开场、第一张闪光卡和桌面上的一张卡。'; });
+  $('btn-use').addEventListener('click', () => { if (!labSource) return; toPromo(labSource, { date: $('f-date').value, caption: $('f-caption').value }); $('lab-status').textContent = '已放进开场、第一张闪光卡和桌面上的一张卡。'; });
   function loadFile(file, then) {
     if (!file) return;
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
     if (file.type.startsWith('video/')) {
-      const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.src = objectUrl;
+      const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.src = url; urlOf.set(v, url);
       v.addEventListener('loadeddata', () => { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); v.addEventListener('seeked', () => then(v), { once: true }); }, { once: true });
-      v.addEventListener('error', () => { $('lab-status').textContent = '这个视频浏览器读不了，换一个 mp4 或 webm 试试。'; }, { once: true });
+      v.addEventListener('error', () => { release(url); $('lab-status').textContent = '这个视频浏览器读不了，换一个 mp4 或 webm 试试。'; }, { once: true });
     } else {
-      const img = new Image(); img.onload = () => then(img); img.onerror = () => { $('lab-status').textContent = '这张图片读不了，换一张 jpg 或 png 试试。'; }; img.src = objectUrl;
+      const img = new Image(); urlOf.set(img, url); img.onload = () => then(img); img.onerror = () => { release(url); $('lab-status').textContent = '这张图片读不了，换一张 jpg 或 png 试试。'; }; img.src = url;
     }
   }
-  const toLab = src => { labSource = src; $('f-mask').value = 'auto'; $('f-mask').querySelector('[value=given]').disabled = true; lab.setSource(src, { mask: 'auto' }); lab.play(); $('lab-status').textContent = src.tagName === 'VIDEO' ? '视频每秒重画 6 次。' : '已换成你的照片。'; };
+  const toLab = src => {
+    const old = labSource; labSource = src; labUrl = urlOf.get(src) || null;
+    $('f-mask').value = 'auto'; $('f-mask').querySelector('[value=given]').disabled = true; lab.setSource(src, { mask: 'auto' }); lab.play(); $('lab-status').textContent = src.tagName === 'VIDEO' ? '视频每秒重画 6 次。' : '已换成你的照片。';
+    if (old && old !== src && urlOf.has(old)) { if (old.tagName === 'VIDEO') { old.pause(); old.removeAttribute('src'); old.load(); } release(urlOf.get(old)); }
+  };
+  const toPromo = (src, text) => { const old = promoUrl; promoUrl = urlOf.get(src) || null; promo.setUserMedia(src, text).then(() => { release(old); promo.frame(0); promo.play(); }); };
   $('lab-file').addEventListener('change', e => loadFile(e.target.files[0], toLab));
-  $('promo-file').addEventListener('change', e => loadFile(e.target.files[0], src => { toLab(src); promo.setUserMedia(src).then(() => { promo.frame(0); promo.play(); }); }));
+  $('promo-file').addEventListener('change', e => loadFile(e.target.files[0], src => { toLab(src); toPromo(src); }));
   const drop = $('drop');
   ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', e => loadFile(e.dataTransfer.files[0], toLab));
   $('promo-stage').addEventListener('dragover', e => e.preventDefault());
-  $('promo-stage').addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0], src => { toLab(src); promo.setUserMedia(src).then(() => { promo.frame(0); promo.play(); }); }); });
-  window.addEventListener('pagehide', () => { if (objectUrl) URL.revokeObjectURL(objectUrl); });
+  $('promo-stage').addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0], src => { toLab(src); toPromo(src); }); });
+  window.addEventListener('pagehide', () => { [labUrl, promoUrl].forEach(u => { if (u) URL.revokeObjectURL(u); }); });
 })();
 </script>
 </body>

@@ -8,7 +8,7 @@
 
 ## 这一页是什么
 
-- **宣传片播放器**：1080×720 画布，按 24 fps 停帧播放整段 456 帧。下面是播放键、可拖的帧条、时间码，七个段落按钮跳到对应帧。「换成我的照片/视频」把你的素材放进开场、第一张闪光卡和桌上的一张卡。
+- **宣传片播放器**：1080×720 画布，按 24 fps 停帧播放整段 456 帧。下面是播放键、可拖的帧条、时间码，七个段落按钮跳到对应帧。「换成我的照片/视频」把你的素材放进开场、第一张闪光卡和桌上的一张卡；视频只在开场里播放，跟着宣传片的时钟走，暂停、拖动或跳到同一帧时看到的是同一帧视频。
 - **涂鸦层实验区**：宣传片里每张卡用的同一个工厂函数单独拿出来。可调颜色数、蜡笔颗粒、边缘抖动、重画帧率、主体来源、日期和一句话；拖照片或视频进来，视频每秒重画 6 次。图片只在本机处理。
 - 产品是虚构的 **LOOP**，工作室是 nearby studio。字标、标语、18 张卡的日期和一句话、全部替身场景都是自己的，不用原作的品牌、logo、文案和照片。
 - 往下滚是「可拆」。
@@ -140,7 +140,7 @@ layer.getCard(); layer.getDoodle(); layer.destroy();
 const promo = createPromoPlayer(stageEl, { config: CONFIG });
 await promo.ready;            // 场景和涂鸦生成完
 promo.play(); promo.pause(); promo.toggle(); promo.seek(3.75); promo.frame(90);
-promo.setUserMedia(imgOrVideo, { date, caption });   // 换开场、第一张卡和桌上一张卡
+promo.setUserMedia(imgOrVideo, { date, caption });   // 换开场、第一张卡和桌上一张卡；视频会用它的 URL 另开一个自己的 <video>，这个 URL 要留到换掉素材以后再 revoke
 promo.on((event, t) => {});   // 'play' | 'pause' | 'time' | 'ready'
 promo.getCard(i, 'white' | 'paper'); promo.getPhoto(i); promo.destroy();
 ```
