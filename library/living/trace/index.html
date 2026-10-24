@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI trace · 工具调用轨迹</title>
+<style>
+  :root{
+    --page:#F7F7F6;
+    --stage:#EDEDED;
+    --card:#F5F5F5;
+    --ink:#1F1F1F;
+    --muted:#8C8C8C;
+    --faint:#B4B4B4;
+    --line:#E2E2E2;
+    --chip:rgba(0,0,0,.035);
+    --live:#E2762E;
+    --unread:#2F7BEA;
+    --ease:cubic-bezier(.2,.8,.2,1);
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--page);color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:48px 20px 80px}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+  #stage{width:760px;max-width:100%;height:600px;background:var(--stage);border-radius:18px;
+    padding:44px 0 0 64px;overflow:hidden;position:relative;font-size:13px;line-height:1}
+  #thread{width:560px;max-width:calc(100% - 24px)}
+
+  .hd{display:flex;align-items:center;gap:7px;min-height:26px;cursor:pointer;user-select:none;width:max-content;max-width:100%;color:var(--muted)}
+  .hd .ic{width:14px;height:14px;flex:none;display:grid;place-items:center;color:var(--faint)}
+  .hd .ic svg{width:14px;height:14px}
+  .lbl{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .chev{width:12px;height:12px;flex:none;color:var(--faint);transition:transform .25s var(--ease)}
+  .open>.hd .chev{transform:rotate(90deg)}
+  #root.open:not(:has(.step))>.hd .chev{transform:none}
+
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 6px 3px 4px;border-radius:6px;background:var(--chip);
+    color:var(--ink);font-weight:500;font-size:12px}
+  .chip svg{width:12px;height:12px;flex:none}
+
+  /* 原版扫过去的是一道变淡的带，不是变亮的带：正常字色上掠过一段半透明 */
+  .run>.hd .lbl{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 38%,rgba(0,0,0,.28) 50%,#000 62%,#000 100%);
+    mask-image:linear-gradient(90deg,#000 0,#000 38%,rgba(0,0,0,.28) 50%,#000 62%,#000 100%);
+    -webkit-mask-size:260% 100%;mask-size:260% 100%;animation:sweep 1.5s linear infinite}
+  @keyframes sweep{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0 0;mask-position:0 0}}
+
+  #root>.hd{color:var(--ink)}
+  #root>.hd .ic{color:var(--live)}
+  #root>.hd .lbl{color:var(--muted)}
+  #root>.hd .lbl>.v{color:var(--ink)}
+  .swap{animation:swapin .22s var(--ease)}
+  @keyframes swapin{from{opacity:.25;filter:blur(1.5px)}to{opacity:1;filter:none}}
+  .summary .lbl{color:var(--muted)!important;font-weight:400}
+  .summary .ic{display:none!important}
+  .stack{display:inline-flex;margin-left:4px}
+  .stack svg{width:13px;height:13px;margin-left:-3px;border-radius:3px;background:var(--stage);box-shadow:0 0 0 1.5px var(--stage)}
+  .blurin{animation:blurin .5s var(--ease)}
+  @keyframes blurin{from{opacity:0;filter:blur(5px)}to{opacity:1;filter:none}}
+
+  .fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s var(--ease),opacity .34s var(--ease)}
+  .open>.fold{grid-template-rows:1fr}
+  .fold>.in{overflow:hidden;min-height:0}
+  #kids{margin:4px 0 2px 6px;padding-left:15px;border-left:1px solid var(--line)}
+  #root:not(.open)>.fold{opacity:0}
+
+  .step{opacity:0;transform:translateY(4px);transition:opacity .26s var(--ease),transform .26s var(--ease)}
+  .step.on{opacity:1;transform:none}
+  .step .hd .lbl>.v{color:var(--muted)}
+
+  .card{margin:4px 0 10px 21px;width:440px;max-width:calc(100% - 21px);background:var(--card);border-radius:11px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.035),0 1px 2px rgba(0,0,0,.04),0 6px 16px -10px rgba(0,0,0,.12)}
+  .row{display:grid;grid-template-columns:14px 1fr auto;column-gap:9px;align-items:start;padding:10px 12px 10px 11px;border-top:1px solid rgba(255,255,255,.9)}
+  .row:first-child{border-top:0}
+  .row.one{align-items:center;padding-top:8px;padding-bottom:8px}
+  .lead{height:15px;display:grid;place-items:center}
+  .row.one .lead{height:auto}
+  .t1{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden}
+  .t1 b{font-weight:600;color:var(--ink)}
+  .t1 span{color:var(--muted)}
+  .t2{grid-column:2/4;font-size:12px;color:#555;margin-top:5px}
+  .time{font-size:11.5px;color:var(--faint);padding-top:1px}
+  .more{padding:8px 12px 9px;font-size:11px;color:var(--faint);border-top:1px solid rgba(255,255,255,.9)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--unread)}
+  .ava{width:14px;height:14px;border-radius:3.5px;background:rgba(0,0,0,.07);color:#666;font-size:8.5px;font-weight:600;display:grid;place-items:center}
+  .lead svg{width:13px;height:13px}
+
+  #answer{margin-top:14px;font-size:13px;line-height:1.55;color:var(--ink)}
+  #answer h4{font-size:13px;font-weight:600;margin:12px 0 6px}
+  #answer h4:first-child{margin-top:0}
+  #answer ul{list-style:none}
+  #answer li{position:relative;padding-left:14px;margin:4px 0}
+  #answer li::before{content:"";position:absolute;left:3px;top:.68em;width:3.5px;height:3.5px;border-radius:50%;background:var(--ink)}
+  #answer code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;background:var(--chip);padding:1px 4px;border-radius:4px}
+  #answer a{color:var(--ink);text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(0,0,0,.35)}
+  #answer .chip{font-size:11px;padding:1px 5px 1px 3px;vertical-align:1px}
+  #answer .chip svg{width:11px;height:11px}
+  .tok{opacity:0;transition:opacity .18s linear}
+  #answer h4:not(:has(.tok.on)),#answer li:not(:has(.tok.on)),#answer ul:not(:has(.tok.on)){display:none}
+  .tok.on{opacity:1}
+  #foot{display:flex;gap:10px;margin-top:12px;color:var(--faint);opacity:0;transition:opacity .3s}
+  #foot.on{opacity:1}
+  #foot svg{width:13px;height:13px}
+
+  .instant,.instant *{transition:none!important;animation-duration:0s!important}
+
+  #bar{width:760px;max-width:100%;display:flex;align-items:center;gap:14px;margin-top:14px;font-size:12px;color:var(--muted)}
+  #bar button{padding:6px 12px;border-radius:8px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08);font-size:12px;color:var(--ink)}
+  #bar button:hover{box-shadow:0 0 0 1px rgba(0,0,0,.16)}
+  #clock{font-variant-numeric:tabular-nums;margin-left:auto}
+
+  #notes{width:760px;max-width:100%;margin-top:56px}
+  #notes h3{font-size:12px;letter-spacing:.12em;font-weight:500;color:var(--muted);margin-bottom:16px}
+  #notes dl{display:grid;grid-template-columns:160px 1fr;gap:10px 18px;font-size:12.5px;line-height:1.75;color:#444}
+  #notes dt{color:var(--muted)}
+  #notes code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+  #notes .hint{font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.8}
+
+  @media (max-width:640px){#stage{padding:28px 0 0 18px;height:640px}#notes dl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="stage" aria-label="AI 工具调用轨迹演示">
+  <div id="thread">
+    <div id="root" class="run open">
+      <div class="hd" id="rootHd"><span class="ic" id="rootIc"></span><span class="lbl" id="rootLbl"></span><svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></div>
+      <div class="fold"><div class="in"><div id="kids"></div></div></div>
+    </div>
+    <div id="answer"></div>
+    <div id="foot" aria-hidden="true">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/><path d="M9.5 4.5V3.5a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1"/></svg>
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 7 5.5l3 3"/></svg>
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5 7 8.5l3-3"/></svg>
+    </div>
+  </div>
+</div>
+
+<div id="bar">
+  <button id="replay">再播一次</button>
+  <button id="slow">0.5×</button>
+  <span>任意一步都能点开 / 收起；结束后点摘要行重新展开</span>
+  <span id="clock">0.0s</span>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt id="sweep"><code>.run .lbl</code> 扫光</dt>
+    <dd>正在跑的那一行，用 <code>mask-image</code> 让一道 28% 不透明的淡带从右往左平移，1.5s 一圈，线性。字色本身不变，所以 chip 里的图标和品牌名会一起被扫淡——用 <code>background-clip:text</code> 做不到这一点。</dd>
+    <dt id="live-head"><code>#root .hd</code> 实时状态行</dt>
+    <dd>顶行不是标题，是当前在做的事：Working on it → 每一步开始时换成该步文字（220ms 去模糊淡入）→ 结束时换成「Ran N searches and read M sources」+ 来源图标叠片。图标橙色，表示还活着。</dd>
+    <dt id="guide"><code>#kids</code> 竖线</dt>
+    <dd>子步骤缩进 21px，左侧 1px 线从顶行图标正下方起，一直挂到最后一张卡片下面。</dd>
+    <dt id="window"><code>keepOpen = 2</code> 展开窗口</dt>
+    <dd>新卡展开的同一帧，倒数第三张收起，最多同时开两张。高度用 <code>grid-template-rows 0fr → 1fr</code>，340ms，<code>cubic-bezier(.2,.8,.2,1)</code>；收和开同时进行，所以总高度大致不跳。</dd>
+    <dt id="card"><code>.card</code> 结果卡</dt>
+    <dd>比舞台亮一档的灰（#F5 对 #ED），圆角 11，1px 4% 描边 + 一层很浅的投影；行与行之间是白色分隔线而不是灰线。前导位放未读点 / 字母头像 / 来源图标 / PR 与工单状态。超出三条显示「+N more」。</dd>
+    <dt id="chip"><code>.chip</code> 来源标签</dt>
+    <dd>3.5% 黑底、圆角 6、图标 12px + 500 字重名字。正文里同一个 chip 缩小一号，夹在句末当引用。</dd>
+    <dt id="stream"><code>#answer</code> 逐词流出</dt>
+    <dd>步骤全部跑完先把所有卡片收起，再让答案按词出现（每词 180ms 淡入，整段 1.4s 内均匀流完）。答案写完后，整串步骤收成一行摘要，摘要文字从 5px 模糊淡入。</dd>
+  </dl>
+  <p class="hint">测试参数：<code>?t=4.3</code> 定格在第 4.3 秒（无过渡，和原视频同一时刻逐帧对照）；<code>?demo=end</code> 直接到终态。来源与原版逐帧时间轴见 README。</p>
+</section>
+
+<script>
+(function(){
+"use strict";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = (s) => document.querySelector(s);
+
+const ICON = {
+  search:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="6.2" cy="6.2" r="3.9"/><path d="m9.2 9.2 2.6 2.6"/></svg>',
+  read:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M3.5 1.8h4.7l2.8 2.8v7.1a.6.6 0 0 1-.6.6H3.5a.6.6 0 0 1-.6-.6V2.4a.6.6 0 0 1 .6-.6z"/><path d="M8 1.8v3h3M5 7.4h4M5 9.6h3"/></svg>',
+  liveSearch:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="6.2" cy="6.2" r="3.9"/><circle cx="6.2" cy="6.2" r="1.2" fill="currentColor" stroke="none"/><path d="m9.2 9.2 2.6 2.6"/></svg>',
+  spin:'<svg viewBox="0 0 14 14"><g fill="currentColor"><circle cx="4" cy="4" r="1.5"><animate attributeName="opacity" values="1;.25;.25;.25;1" dur=".9s" repeatCount="indefinite"/></circle><circle cx="10" cy="4" r="1.5"><animate attributeName="opacity" values=".25;1;.25;.25;.25" dur=".9s" repeatCount="indefinite"/></circle><circle cx="10" cy="10" r="1.5"><animate attributeName="opacity" values=".25;.25;1;.25;.25" dur=".9s" repeatCount="indefinite"/></circle><circle cx="4" cy="10" r="1.5"><animate attributeName="opacity" values=".25;.25;.25;1;.25" dur=".9s" repeatCount="indefinite"/></circle></g></svg>',
+  write:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 9.5c1.5-2 2.5-2 3 0s1.8 2 3.2 0 1.8-1.8 2.8-.6"><animate attributeName="stroke-dasharray" values="0 20;20 0" dur="1.1s" repeatCount="indefinite"/></path></svg>',
+  dot:'<svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="3" fill="currentColor"/></svg>'
+};
+
+/* 品牌标是自绘的简化示意，不是官方矢量 */
+const BRAND = {
+  slack:{name:"Slack",svg:'<svg viewBox="0 0 12 12"><rect x="1" y="4.6" width="6" height="2.2" rx="1.1" fill="#36C5F0"/><rect x="4.6" y="1" width="2.2" height="6" rx="1.1" fill="#2EB67D"/><rect x="5" y="5.2" width="6" height="2.2" rx="1.1" fill="#ECB22E"/><rect x="5.2" y="5" width="2.2" height="6" rx="1.1" fill="#E01E5A"/></svg>'},
+  granola:{name:"Granola",svg:'<svg viewBox="0 0 12 12"><rect width="12" height="12" rx="2.6" fill="#A8C64A"/><path d="M6 3.2a2.8 2.8 0 1 0 2.8 2.8A1.7 1.7 0 1 0 5.4 6a.8.8 0 1 0 1.6 0" fill="none" stroke="#24301A" stroke-width="1.1" stroke-linecap="round"/></svg>'},
+  gmail:{name:"Gmail",svg:'<svg viewBox="0 0 12 12" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><path d="M1.8 9.8V3.4" stroke="#4285F4"/><path d="M10.2 9.8V3.4" stroke="#34A853"/><path d="M1.8 3.4 6 6.6l4.2-3.2" stroke="#EA4335"/></svg>'},
+  github:{name:"GitHub",svg:'<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.2" fill="#1F2328"/><path d="M3.9 8.4V7.6c-.7.1-1-.4-1.1-.7M8.1 8.4V7.2c0-.5-.2-.8-.5-.9.9-.1 1.4-.6 1.4-1.6 0-.4-.1-.7-.4-1 .1-.3.1-.6 0-.9-.4 0-.7.2-1 .4a3.6 3.6 0 0 0-1.8 0c-.3-.2-.6-.4-1-.4-.1.3-.1.6 0 .9-.3.3-.4.6-.4 1 0 1 .5 1.5 1.4 1.6-.3.1-.5.4-.5.9v1.2" fill="none" stroke="#fff" stroke-width=".75" stroke-linecap="round" stroke-linejoin="round"/></svg>'},
+  linear:{name:"Linear",svg:'<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.2" fill="#5E6AD2"/><path d="M2.4 7.2 4.8 9.6M2.2 5.3l4.5 4.5M3 3.7l5.3 5.3M4.4 2.6l5 5" stroke="#fff" stroke-width=".7" stroke-linecap="round"/></svg>'}
+};
+const chip = (k) => `<span class="chip">${BRAND[k].svg}${BRAND[k].name}</span>`;
+
+const PR = {
+  open:'<svg viewBox="0 0 13 13" fill="none" stroke="#1A7F37" stroke-width="1.2" stroke-linecap="round"><circle cx="3.5" cy="3" r="1.3"/><circle cx="3.5" cy="10" r="1.3"/><circle cx="9.5" cy="10" r="1.3"/><path d="M3.5 4.3v4.4M9.5 8.7V5.5c0-1-.6-1.6-1.6-1.6H6.4"/></svg>',
+  merged:'<svg viewBox="0 0 13 13" fill="none" stroke="#8250DF" stroke-width="1.2" stroke-linecap="round"><circle cx="3.5" cy="3" r="1.3"/><circle cx="3.5" cy="10" r="1.3"/><circle cx="9.5" cy="6.5" r="1.3"/><path d="M3.5 4.3v4.4M3.5 4.6c.4 1.4 1.8 1.9 4.7 1.9"/></svg>',
+  draft:'<svg viewBox="0 0 13 13" fill="none" stroke="#8C8C8C" stroke-width="1.2" stroke-linecap="round"><circle cx="3.5" cy="3" r="1.3"/><circle cx="3.5" cy="10" r="1.3"/><path d="M3.5 4.3v4.4M9.5 3v1M9.5 6v1M9.5 9v1.3"/></svg>',
+  prog:'<svg viewBox="0 0 13 13" fill="none" stroke="#E2A12E" stroke-width="1.3"><circle cx="6.5" cy="6.5" r="4.6" stroke-dasharray="2.2 1.6"/></svg>',
+  todo:'<svg viewBox="0 0 13 13" fill="none" stroke="#A0A0A0" stroke-width="1.2"><circle cx="6.5" cy="6.5" r="4.6"/></svg>',
+  done:'<svg viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.2" fill="#5E6AD2"/><path d="m4.3 6.6 1.5 1.5 2.9-3" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+
+const STEPS = [
+  {kind:"search",verb:"Searched",src:"slack",rest:"for messages since yesterday",more:1,rows:[
+    {lead:'<span class="ava">J</span>',t:"Jane Doe",who:"#support",time:"9:41",d:"Two tickets this morning, both cold sales emails. Closing them."},
+    {lead:'<span class="ava">S</span>',t:"Sam Lee",who:"#deploys",time:"11:02",d:"fix: retry failed uploads is on staging, prod after lunch"},
+    {lead:'<span class="ava">A</span>',t:"Alex Kim",who:"#general",time:"14:15",d:"Huddle at 3? My mic is fixed this time, promise."}]},
+  {kind:"read",verb:"Read the",src:"granola",rest:"notes from today's calls",rows:[
+    {lead:BRAND.granola.svg,t:"Northwind kickoff",who:"Jane, Sam",time:"10:00",d:"Scope agreed: three sprints, invoice at month end."},
+    {lead:BRAND.granola.svg,t:"Weekly sync",who:"Team",time:"16:00",d:"Launch moves to Nov 3, Alex owns the docs."}]},
+  {kind:"search",verb:"Searched",src:"gmail",rest:"for unread threads",rows:[
+    {lead:'<span class="dot"></span>',t:"Re: Signed contract",who:"Jane Doe",time:"8:12",d:"Attached the signed copy, two small changes on page 4."},
+    {lead:"",t:"Invoice AC-043",who:"Northwind Billing",time:"Yesterday",d:"Payment scheduled for Oct 28."},
+    {lead:'<span class="dot"></span>',t:"Your October statement",who:"Acme Bank",time:"Yesterday",d:"Your statement is ready to view."}]},
+  {kind:"read",verb:"Read the",src:"github",rest:"pull requests",more:1,rows:[
+    {one:1,lead:PR.merged,t:"Retry failed uploads",who:"acme/app#128",time:"2h"},
+    {one:1,lead:PR.open,t:"Add the invoice export",who:"acme/app#131",time:"5h"},
+    {one:1,lead:PR.draft,t:"New onboarding",who:"acme/web#57",time:"1d"}]},
+  {kind:"read",verb:"Read the",src:"linear",rest:"issues",more:1,rows:[
+    {one:1,lead:PR.prog,t:"Export invoices as CSV",who:"ENG-142"},
+    {one:1,lead:PR.todo,t:"Fix the duplicate invoice number",who:"ENG-139"},
+    {one:1,lead:PR.done,t:"Ship the new onboarding",who:"ENG-120"}]}
+];
+
+const mini = (k) => `<span class="chip">${BRAND[k].svg}${k==="granola"?"notes":k==="slack"?"one":"commit"}</span>`;
+const ANSWER = [
+  ["h","Meetings"],
+  ["li",`Kickoff with Northwind: scope agreed, invoice at month end ${mini("granola")}.`],
+  ["h","Slack"],
+  ["li",`Two support tickets, no reply needed ${mini("slack")}.`],
+  ["li",`Shipped <code>fix: retry failed uploads</code> to staging ${mini("github")}.`],
+  ["h","Mail"],
+  ["li",`Jane Doe asked for the signed contract: <a href="#" onclick="return false">jane.doe@example.com</a>.`]
+];
+
+const KEEP_OPEN = 2;
+const T = {first:0.7, gap:1.45, open:0.4, collapse:8.05, answer:8.15, stream:1.4, summary:9.7};
+
+const root = $("#root"), rootIc = $("#rootIc"), rootLbl = $("#rootLbl"), kids = $("#kids"), answer = $("#answer"), foot = $("#foot");
+
+function stepLabel(s){ return `<span class="v">${s.verb}</span>${chip(s.src)}<span class="v">${s.rest}</span>`; }
+function setRoot(icon, html, cls){
+  rootIc.innerHTML = ICON[icon] || "";
+  rootLbl.innerHTML = html;
+  rootLbl.classList.remove("swap","blurin"); void rootLbl.offsetWidth; rootLbl.classList.add(cls || "swap");
+}
+function card(s){
+  const rows = s.rows.map(r => r.one
+    ? `<div class="row one"><span class="lead">${r.lead}</span><div class="t1"><b>${r.t}</b><span>${r.who}</span></div><span class="time">${r.time||""}</span></div>`
+    : `<div class="row"><span class="lead">${r.lead}</span><div class="t1"><b>${r.t}</b><span>${r.who}</span></div><span class="time">${r.time}</span><div class="t2">${r.d}</div></div>`).join("");
+  return `<div class="card">${rows}${s.more?`<div class="more">+${s.more} more</div>`:""}</div>`;
+}
+function bind(el){ el.querySelector(":scope>.hd").addEventListener("click", () => el.classList.toggle("open")); }
+const chev = '<svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>';
+
+let tokens = [];
+function buildAnswer(){
+  answer.innerHTML = ""; tokens = [];
+  let ul = null;
+  for (const [type, html] of ANSWER){
+    if (type === "h"){ ul = null; const h = document.createElement("h4"); h.innerHTML = wrap(html); answer.appendChild(h); }
+    else { if (!ul){ ul = document.createElement("ul"); answer.appendChild(ul); } const li = document.createElement("li"); li.innerHTML = wrap(html); ul.appendChild(li); }
+  }
+  tokens = [...answer.querySelectorAll(".tok")];
+}
+/* 按词切，但 chip / code / a 当作一个整体出现 */
+function wrap(html){
+  const parts = html.split(/(<(?:span|code|a)[\s\S]*?<\/(?:span|code|a)>)/g);
+  return parts.map(p => p.startsWith("<") ? `<span class="tok">${p}</span>` : p.split(/(\s+)/).map(w => w.trim() ? `<span class="tok">${w}</span>` : w).join("")).join("");
+}
+
+function timeline(){
+  const ev = [];
+  ev.push([0, () => setRoot("spin", `<span class="v">Working</span><span>on it…</span>`)]);
+  const els = [];
+  STEPS.forEach((s, i) => {
+    const t0 = T.first + i * T.gap;
+    ev.push([t0, () => {
+      const el = document.createElement("div");
+      el.className = "step run";
+      el.innerHTML = `<div class="hd"><span class="ic">${ICON[s.kind]}</span><span class="lbl">${stepLabel(s)}</span>${chev}</div><div class="fold"><div class="in">${card(s)}</div></div>`;
+      kids.appendChild(el); bind(el); els[i] = el;
+      requestAnimationFrame(() => el.classList.add("on"));
+      setRoot(i === 0 ? "dot" : "liveSearch", stepLabel(s));
+    }]);
+    ev.push([t0 + T.open, () => {
+      els[i].classList.add("open");
+      const old = els[i - KEEP_OPEN]; if (old) old.classList.remove("open");
+      setRoot("liveSearch", stepLabel(s), "none");
+    }]);
+    ev.push([t0 + T.gap - 0.05, () => els[i].classList.remove("run")]);
+  });
+  ev.push([T.collapse, () => { els.forEach(e => e && e.classList.remove("open")); rootIc.innerHTML = ICON.write; }]);
+  const n = tokens.length;
+  for (let k = 0; k < n; k++) ev.push([T.answer + k * T.stream / n, () => tokens[k].classList.add("on")]);
+  ev.push([T.summary, () => {
+    root.classList.remove("run","open"); root.classList.add("summary");
+    const icons = ["slack","granola","gmail"].map(k => BRAND[k].svg).join("");
+    setRoot("", `<span>Ran 2 searches and read 3 sources</span><span class="stack">${icons}</span>`, "blurin");
+    foot.classList.add("on");
+  }]);
+  return ev.sort((a, b) => a[0] - b[0]);
+}
+
+let timers = [], rate = 1, startAt = 0, tick = null;
+function reset(){
+  timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(tick);
+  kids.innerHTML = ""; root.className = "run open"; foot.classList.remove("on");
+  buildAnswer();
+}
+function play(){
+  reset();
+  const ev = timeline();
+  startAt = performance.now();
+  for (const [t, fn] of ev) timers.push(setTimeout(fn, t * 1000 / rate));
+  const clk = $("#clock");
+  const loop = () => { const s = (performance.now() - startAt) / 1000 * rate; clk.textContent = Math.min(s, 11.8).toFixed(1) + "s"; if (s < 11.8) tick = requestAnimationFrame(loop); };
+  loop();
+}
+function seek(t){
+  reset();
+  document.body.classList.add("instant");
+  for (const [et, fn] of timeline()) if (et <= t) fn();
+  document.querySelectorAll(".step").forEach(e => e.classList.add("on"));
+  $("#clock").textContent = t.toFixed(1) + "s";
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("instant")));
+}
+
+bind(root);
+$("#replay").addEventListener("click", () => play());
+$("#slow").addEventListener("click", (e) => { rate = rate === 1 ? 0.5 : 1; e.target.textContent = rate === 1 ? "0.5×" : "1×"; play(); });
+
+const q = new URLSearchParams(location.search);
+if (q.get("demo") === "end" || reduce) seek(99);
+else if (q.has("t")) seek(parseFloat(q.get("t")) || 0);
+else play();
+})();
+</script>
+</body>
+</html>

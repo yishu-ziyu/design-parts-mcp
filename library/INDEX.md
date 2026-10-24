@@ -71,6 +71,7 @@
 | [extrude/index.html](living/extrude/index.html) | 一个平面像素小怪逐行刷出、腿掉下来落定，再沿 Z 轴拉成体素，镜头转到四分之三侧，最后体素缝消失变成一整块。9 s 一循环，可拖时间轴逐拍看 | 角色出场要从「平面图标」过渡到「有体积的东西」。一个厚度变量驱动整只角色，换角色只换一张 ASCII 像素图。复刻 @LexnLin |
 | [peel/index.html](living/peel/index.html) | 一张像素贴纸页：按住往里拖，贴纸从边上翻起露出灰背面和模切孔，撕过一半跟手，贴到待办纸上。撕的沙沙声是 WebAudio 现合成的，拖得快就响、撕得开就高 | 拟物交互的手感一半在声音：声音不排进动画时间线，直接挂在指针速度和进度上。复刻 @workcinprogress |
 | [bencho/index.html](living/bencho/index.html) | 四个会回应手的小组件放在一张 2×2 灰格里：被指针搅出字符尾巴的点阵立方体、点一下就把前卡送到最后的纵深卡堆、停笔后收成「✓ Signed」胶囊的签名板、带黏尾巴的白球 | 微交互要有一个「回应」：手一动，东西就变形、变字、收起或粘连。组件按自然尺寸写死再整体缩放。复刻 bencho.dev（@cabralorenzo） |
+| [trace/index.html](living/trace/index.html) | Agent 依次查五个来源：每步长出一行在扫光，结果卡开两张收一张，答案逐词流出，最后整串收成「Ran 2 searches and read 3 sources」 | Agent / AI 助手展示工具调用过程、思考轨迹、引用来源。`?t=` 能和原视频逐秒对帧 |
 
 ## 零件
 
@@ -245,6 +246,17 @@
 | 双向时间轴 / 拖动同步两窗格 | [flycam](living/flycam/index.html#timeline) | rAF 推 t；拖拽 scrub、菱形跳关键帧、`?demo=progress=X` 定帧、`?rm=1` 拍 reduced-motion 帧；两窗格 + 时间轴同吃一个 `render(t)`。CSS 版同款在 [nightflight#timeline](nightflight/index.html#timeline) |
 | 真 3D 透视飞行（CSS 3D 版）/ 相机推进反算卡片位移 | [nightflight](living/nightflight/index.html#flight) | v1 系做法：外层 `perspective:900px` + 场景 `preserve-3d`；卡世界坐标固定，场景整体 `translate3d(-cam)`；缓动是 t 的纯函数，scrub 天然与播放一致 |
 | 便利贴逐字 / 打字进度换算 | [nightflight](living/nightflight/index.html#typenote) | 字符数 = t 在打字窗口内线性映射；窗口必须套着卡片在画面里的时段 |
+
+### AI 过程 / 工具调用 / 引用
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 正在运行的一行 / 扫光 / shimmer text | [trace](living/trace/index.html#sweep) | 一道 28% 的淡带从右往左扫过正常字色，chip 里的图标一起变淡。用 mask，不用 background-clip |
+| Agent 当前在做什么 / 实时状态行 / 进度一句话 | [trace](living/trace/index.html#live-head) | Working on it → 当前步骤文字 → Ran 2 searches and read 3 sources + 图标叠片 |
+| 工具调用结果卡 / 搜索结果预览 / +N more | [trace](living/trace/index.html#card) | 比底亮一档的灰卡，白分隔线；前导位放未读点、字母头像、PR / 工单状态 |
+| 多步结果太长 / 只开最近几张 / 手风琴自动收 | [trace](living/trace/index.html#window) | 新卡展开的同一帧收起倒数第三张，`grid-template-rows 0fr→1fr` 340ms |
+| 来源标签 / 引用 chip / 正文里的出处 | [trace](living/trace/index.html#chip) | 3.5% 黑底、圆角 6、图标 + 名字；正文里缩一号夹在句末 |
+| 答案逐词出现 / 流式输出 / 过程收成摘要 | [trace](living/trace/index.html#stream) | 按词淡入，chip / code / 链接整块出；写完后步骤列表收成一行，模糊淡入 |
 
 ### 方法 / 网点
 
