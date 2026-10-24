@@ -339,7 +339,7 @@ function createStitchTool(root, options) {
     ctx.lineCap = 'round';
     const passes = [];
     for (let t = 1; t < 4; t++) passes.push([t, shade(state.threads[t], -0.22), state.threads[t], shade(state.threads[t], 0.35)]);
-    if (!state.skipWhite) passes.unshift([0, '#dcdcd6', '#ffffff', '#ffffff']);
+    if (!state.skipWhite) passes.unshift([0, shade(state.threads[0], -0.14), state.threads[0], state.threads[0]]);
     const counts = [0,0,0,0];
     for (const [t, under, top, hi] of passes) {
       ctx.strokeStyle = under; ctx.lineWidth = lw; ctx.beginPath();
@@ -375,7 +375,7 @@ function createStitchTool(root, options) {
   }
 
   function updatePanel(counts, b) {
-    const used = [1,2,3].filter((t) => counts[t] > 0);
+    const used = [0,1,2,3].filter((t) => counts[t] > 0); // counts[0] is non-zero only when white is stitched
     const list = $('#keyList'); list.innerHTML = '';
     used.sort((a, b2) => b2 - a).forEach((t) => {
       const c = state.threads[t], d = nearestDMC(c), sk = Math.max(1, Math.ceil(counts[t] / o.stitchesPerSkein));
@@ -386,7 +386,7 @@ function createStitchTool(root, options) {
       li.querySelector('input').addEventListener('input', (e) => { push(); state.threads[t] = e.target.value; dirty = true; });
       list.appendChild(li);
     });
-    const w = b.c1 - b.c0 + 1, h = b.r1 - b.r0 + 1, tot = counts.reduce((a, x) => a + x, 0) - (state.skipWhite ? 0 : 0);
+    const w = b.c1 - b.c0 + 1, h = b.r1 - b.r0 + 1, tot = counts.reduce((a, x) => a + x, 0);
     $('#sGrid').textContent = w + ' × ' + h;
     $('#sCount').textContent = tot.toLocaleString('en-US');
     $('#sIn').textContent = (w / 14).toFixed(1) + '″ × ' + (h / 14).toFixed(1) + '″';
