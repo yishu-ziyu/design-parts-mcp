@@ -66,6 +66,7 @@
 | [framed/index.html](living/framed/index.html) | 一段湖景过一层稀疏点阵纹理，高清输出，装进浅米色面板里的圆角画框，衬线大标题、三栏信息、一个深色按钮。四步各有开关，能看每一步关掉后掉了什么 | 让站看起来贵，最快的是一段对味的素材 + 一层纹理 + 克制的框，界面本身少做。复刻 @davidhaz |
 | [launchreel/index.html](living/launchreel/index.html) | 一片白色键帽铺满地面，蓝键沿对角线升起成轨迹、拼出像素数字、一圈圈涟漪扩开；每幕一行短句从遮罩里升上来，一词强调色。声音全是 WebAudio 合成 | 发布短片的画面、文字、声音都读同一张时间表，拖到哪一帧都对得上。复刻 @LexnLin 的 Cinetic v1.1 发布视频 |
 | [pictionary/index.html](living/pictionary/index.html) | 你画一个词，右边 7 个彩色小生物排成一列抢着猜，猜错划线，第一个猜中的那张卡亮起来，整页换成它的颜色 | 多个 AI 同时作答的比赛界面。每回合换底色，白卡片 + 浮起的白纸，进度按墨量推进。复刻 @nutlope |
+| [lotus/index.html](living/lotus/index.html) | 页面底部一整块 canvas 荷塘：粉白黄三种荷花、立叶、圆石，上沿白雾融进页面，鼠标划过水面起椭圆涟漪。正文里一句手写注释旁的像素图标点开是一个小岛，骑士和羊都是代码画的点阵 | 作品集底部要一块会回应鼠标的「风景」，又不抢首屏。静的部分烘焙一次，只动摇摆的。复刻 @nexvyn |
 
 ## 零件
 
@@ -513,3 +514,13 @@
 | 多个模型一排卡片抢答 | [pictionary](living/pictionary/index.html#field) | 白卡 20 px 圆角。22 px 当前猜测，猜错划线，旧猜测缩成渐隐小胶囊，右上三点思考气泡 |
 | 圆环倒计时胶囊 | [pictionary](living/pictionary/index.html#clock) | SVG 圆 `pathLength=100` 改 `dashoffset`，剩 10 s 变红 |
 | 几何小生物头像 | [pictionary](living/pictionary/index.html#critters) | 7 种身体放 64×64 盒子，眼睛按 `eyeY`/`gap` 摆。跳、摇头、蹦、眨眼 4 种反应 |
+
+### 荷塘 / 程序化风景 / 像素小游戏
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| canvas 荷塘 / 假透视分层 | [lotus](living/lotus/index.html#pond) | 深度 d 决定 y 和大小。荷叶 = 压扁 0.36 的圆 + 0.44 rad 楔形缺口 + 9 条叶脉。远叶、水面、石头烘焙进离屏 canvas |
+| 水面涟漪 / 指针反馈 | [lotus](living/lotus/index.html#pond) | 移动 26 px 起弱涟漪，按下起强涟漪。3 圈，半径 `√k` 增到 46 px，压扁 0.32，1.6 s，`rgba(244,247,246,0.6)` |
+| 白雾收边 / 无边框画布 | [lotus](living/lotus/index.html#pond) | 最后在上沿 30% 盖白到透明渐变，canvas 与白页面之间没有线 |
+| 像素小游戏 / 字符串点阵精灵 | [lotus](living/lotus/index.html#game) | 160×90 逻辑分辨率 + `pixelated`。精灵是字符串 + 调色板，按脚底 y 排序画。点击或方向键走 |
+| 藏起来的彩蛋入口 | [lotus](living/lotus/index.html#game-toggle) | 正文末句旁一行手写体注释 + 22 px 像素图标，点开才展开游戏 |
