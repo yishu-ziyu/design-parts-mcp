@@ -55,6 +55,7 @@
 | [artatlas/index.html](living/artatlas/index.html) | 一个风格图鉴站：三列 16:10 卡片、搜索加分类胶囊实时过滤、点开是同页详情（大图、看点、可复制提示词、参考作品）。14 张缩略图全是 canvas 程序画的 | 要做「一类东西的图鉴 / 参考库」时，一种卡片、一种比例、两级灰字就够撑起整站。复刻 @onefifthblue 的 Game Art Style |
 | [hoop/index.html](living/hoop/index.html) | 一块漂在白纸上的等距小球场，三个像素小人自己运球、传球、投篮。整块场景先画到 160 像素宽再整数倍放大，草边碎成散点 | 想要一个“小而完整的世界”当插图或空状态：一块地、一束光、几个会动的小人。复刻 @zzzzshawn |
 | [retroprint/index.html](living/retroprint/index.html) | 一张金属产品照变成粉纸上的蓝墨点，疏密跟着原来的明暗走，暗部带白色细纹。六个 pass 可以逐个点开看，能拖自己的图进来 | 要把照片做成复古单色印刷，不想开 Photoshop。每一步一个 pass，参数和 Photoshop 面板一一对应。复刻 @DesignSpot_Jap |
+| [diagrams/index.html](living/diagrams/index.html) | 左边逐字打出 Mermaid 风格文本，右边每打一个字整张 SVG 重画：流程图、桑基图、柱状图，暖白底配 8 个系列色 | 想让“文本即图”看起来干净、能换主题时用。数值全部取自 Pele 源码。复刻 @kepano |
 
 ## 零件
 
@@ -394,3 +395,12 @@
 | 强噪声 + 阈值 = 网点疏密 | [retroprint](living/retroprint/index.html#controls) | 噪声强度 0.75、偏移 −0.22，乘 `2.2·√(l(1−l))` 让纯白纯黑不动。原作 0.8 灰处 34% 墨，本页 30% |
 | 双色映射 / 墨和纸 | [retroprint](living/retroprint/index.html#after) | 黑 → `#24207A`，白 → `#F2D4DC`。白底直接变纸色，不用抠图 |
 | 本地换图 / 拖放处理 | [retroprint](living/retroprint/index.html#swap) | object URL 读图，长边缩到 1100 再算，整数哈希噪声，同 seed 结果固定 |
+
+### 图表 / 流程图 / 文本即图
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 流程图节点和箭头的样式 | [diagrams](living/diagrams/index.html#view) | 底 `#f2f0e5`、描边 `#cecdc3` 1px、圆角 6、内边距 18/12、层距 48、箭头 8 实心三角，回边绕右侧 |
+| 边打字边出图 | [diagrams](living/diagrams/index.html#code) | 每 38 ms 一个字，换行停 260 ms，每次整张重画，半截行跳过；光标 2px `#da702c` |
+| 桑基图渐变连线 | [diagrams](living/diagrams/index.html#stage) | 条宽 10、间距 12+15、连线源→目标线性渐变、透明度 0.4、标签 14px 加 3px 背景色描边 |
+| 一套颜色变量管所有图 | [diagrams](living/diagrams/index.html#tabs) | Flexoki 暖白：`#fffcf0` 底、`#100f0f` 字、`#6f6e69` 灰，8 个系列色从红到品红 |
