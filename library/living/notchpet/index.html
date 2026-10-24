@@ -108,6 +108,27 @@ const C_PILL = [0x3d, 0x3d, 0x42].map(v => v / 255);
 
 const $ = s => document.querySelector(s);
 const stage = $('#stage'), world = $('#world'), faces = $('#faces'), curLayer = $('#cursorLayer');
+// A real (visually hidden) text field receives the typing, so touch keyboards open and IME composition
+// (e.g. Chinese) works; the rendered capsule only mirrors its value.
+const kb = document.createElement('input');
+kb.type = 'text'; kb.id = 'petKey'; kb.autocomplete = 'off'; kb.spellcheck = false; kb.enterKeyHint = 'send';
+kb.setAttribute('aria-label', '给小猫打字');
+kb.style.cssText = 'position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;pointer-events:none';
+stage.appendChild(kb);
+const syncKb = () => { if (S.mode === 'input' && S.inp.phase !== 'close') S.inp.text = [...kb.value].slice(0, 18).join(''); };
+kb.addEventListener('input', e => { if (!e.isComposing) syncKb(); });
+kb.addEventListener('compositionend', syncKb);
+kb.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) { syncKb(); submit(); e.preventDefault(); }
+});
+// focus on click, not pointerup: a touch tap's compatibility mousedown would move focus back to <body>
+stage.addEventListener('click', e => {
+  if (mode !== 'play' || !(S.mode === 'dock' || S.mode === 'input')) return;
+  const r = stage.getBoundingClientRect(), w = screenToWorld(e.clientX - r.left, e.clientY - r.top);
+  if (!nearCat(w.x, w.y)) return;
+  if (S.mode === 'dock') kb.value = '';
+  kb.focus({ preventScroll: true });
+});
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -572,6 +593,7 @@ function openInput() {
 function submit() {
   if (S.mode !== 'input' || S.inp.phase !== 'typing') return;
   S.inp.phase = 'close'; S.inp.pt = 0;
+  kb.blur();
 }
 function typeChar(ch) { if (S.mode === 'input' && S.inp.phase !== 'close' && S.inp.text.length < 18) S.inp.text += ch; }
 function backspace() { if (S.mode === 'input' && S.inp.phase !== 'close') S.inp.text = S.inp.text.slice(0, -1); }
@@ -930,7 +952,7 @@ function toPlay() {
   if (S.mode === 'carry') { S.mode = 'return'; S.mt = 0; }
   $('#hint').textContent = VW < 560 ? '拖到窗口上，点它打字' : '拖出来放到窗口顶上；点它可以打字，回车发送';
 }
-function toAuto() { mode = 'auto'; stage.classList.remove('play'); autoT = 0; resetAuto(); $('#hint').textContent = '按住刘海里的小家伙往外拖'; }
+function toAuto() { kb.blur(); mode = 'auto'; stage.classList.remove('play'); autoT = 0; resetAuto(); $('#hint').textContent = '按住刘海里的小家伙往外拖'; }
 stage.addEventListener('pointerdown', e => {
   if (e.target.closest('#back, #tonotes')) return;
   toPlay();
@@ -943,12 +965,12 @@ const up = () => { user.down = false; stage.classList.remove('hold'); };
 stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
 $('#back').addEventListener('click', e => { e.stopPropagation(); toAuto(); });
 window.addEventListener('keydown', e => {
+  if (document.activeElement === kb) return;
   if (mode !== 'play' || S.mode !== 'input') return;
   if (e.key === 'Enter') { submit(); e.preventDefault(); }
   else if (e.key === 'Backspace') { backspace(); e.preventDefault(); }
   else if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) { typeChar(e.key); e.preventDefault(); }
 });
-window.addEventListener('compositionend', e => { if (mode === 'play' && e.data) for (const ch of e.data) typeChar(ch); });
 
 window.addEventListener('resize', resize);
 resize(); resetAuto();
@@ -957,6 +979,7 @@ setTimeout(() => stage.classList.remove('fresh'), 4500);
 // test hook: jump the autoplay to a time and render synchronously
 window.__seek = T => { frozen = true; mode = 'auto'; stage.classList.remove('play'); resetAuto(); autoT = T; advanceAutoTo(T); camCur = camAt(T); setCamera(camCur); render(); bar.style.width = (T / LOOP * 100) + '%'; return S.mode; };
 window.__state = () => S;
+window.__geom = { screenToWorld, HEAD, DOCK };
 if (GB && GF) requestAnimationFrame(frame);
 })();
 </script>
