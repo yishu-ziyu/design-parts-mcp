@@ -64,6 +64,7 @@
 | [sketchbook/index.html](living/sketchbook/index.html) | 白底正中一本摊开的速写本，拖右页往左就翻，页面按圆柱弯起来，松手弹簧落下。下面一行地点日期，左边一列刻度跳页。页面全是代码画的铅笔水彩 | 作品集里放手绘本：翻页本身就是展示，不用再配轮播。复刻 @jeanxcrj |
 | [appliance/index.html](living/appliance/index.html) | 一台等轴手绘烤面包机，按钮放面包、压杆、计时烤、叮一声弹起。线稿套一层位移 + 纸纹 + 斑驳的 SVG 滤镜，滑杆调抖动，色点换机身色 | 想把一个日常物件做成能玩的说明图，既要手绘温度又要能交互。复刻 @Aprilzz423 的 Colorfigures |
 | [framed/index.html](living/framed/index.html) | 一段湖景过一层稀疏点阵纹理，高清输出，装进浅米色面板里的圆角画框，衬线大标题、三栏信息、一个深色按钮。四步各有开关，能看每一步关掉后掉了什么 | 让站看起来贵，最快的是一段对味的素材 + 一层纹理 + 克制的框，界面本身少做。复刻 @davidhaz |
+| [launchreel/index.html](living/launchreel/index.html) | 一片白色键帽铺满地面，蓝键沿对角线升起成轨迹、拼出像素数字、一圈圈涟漪扩开；每幕一行短句从遮罩里升上来，一词强调色。声音全是 WebAudio 合成 | 发布短片的画面、文字、声音都读同一张时间表，拖到哪一帧都对得上。复刻 @LexnLin 的 Cinetic v1.1 发布视频 |
 
 ## 零件
 
@@ -491,3 +492,13 @@
 | 高清输出 vs 低清拉伸 | [framed](living/framed/index.html#export) | 缓冲区按 DPR（最多 2）和 960 px 源；关时 0.32 倍再拉伸。角标显示缓冲区尺寸 |
 | 画框版式 vs 满屏遮罩版式 | [framed](living/framed/index.html#hero) | `#f0ede6` 页、`#eceadb` 面板、Newsreader 500 标题 4.6vw、画框 1248:450 圆角 10、三栏 + 36 px 深色按钮；对照组是满屏 + 渐变遮罩 + 渐变胶囊按钮 |
 | before / after 开关栏 | [framed](living/framed/index.html#steps) | 四个 `aria-pressed` 按钮 + 全部，键盘 1–4 / 0；切版式时整块淡出 180 ms 再淡入 |
+
+### 发布短片 / 键帽场 / 时间表驱动
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 3D 键帽场 / Canvas 2D 透视 + 画家算法 | [launchreel](living/launchreel/index.html#reel) | 36×22 键，按深度远到近画。侧面按世界坐标里相机在哪侧判断可见。雾按相机距离 0.8×–2.4× 混向底色 |
+| 一张时间表驱动画面、文字、声音 | [launchreel](living/launchreel/index.html#scrub) | 60 fps、120 BPM，一小节 2 s。五幕各写一个 `heightAt(i, j, t)`，拖进度条任意帧可停 |
+| 相机关键帧 / 只有相机两头都缓 | [launchreel](living/launchreel/index.html#play) | `E.cam` (0.48, 0.1, 0, 0.9)；词入场 `E.outSoft` 0.67 s、间隔 0.12 s；出场 `E.exit` 0.4 s |
+| 代码合成的音效 | [launchreel](living/launchreel/index.html#sound) | 键落：2.4 kHz 高通噪声 35 ms + 180→120 Hz 正弦。重击 120→46 Hz。甩镜：带通 380→2200→500 Hz。一行字只配一声 |
+| 发布短片的工厂接口 / 减少动态效果 | [launchreel](living/launchreel/index.html#controls) | `createLaunchReel(el, opts)` → `{ play, pause, seek, setSound, destroy }`；减少动态效果时停在 6.9 s |
