@@ -50,6 +50,7 @@
 | [doodlecard/index.html](living/doodlecard/index.html) | 照片闪一下白光，弹出一张蜡笔涂鸦卡，连做五次。然后照片越切越快地叠上来，停在 App 画面，最后一把纸卡落在木地板上。19 秒、24 fps，帧号逐帧对着原片 | 「照片进去、结果出来」的产品宣传片或揭晓动画；照片变平涂蜡笔小画；日记卡布局。品牌 LOOP、文案和替身场景是自己的。要卡通抖仍走 doodle。复刻 @JaejinBong |
 | [gamespace/index.html](living/gamespace/index.html) | 黑底上一个橙点 Stardew Valley，四个近邻带相似度小字逐字出来。拉远后 18.9 万个彩色点亮起，硬切坍成小球再炸开，镜头钻进去，退出来标出八个类型 | 讲 embedding / 相似度：先一个熟悉的点和近邻，再全景，再标区域。动画是时间 t 的纯函数，能按参考视频逐秒对。数据是合成的，`setData` 换真坐标。复刻 @re_skob |
 | [paperwave/index.html](living/paperwave/index.html) | 一张纸在点阵地面上起伏，纯 SVG 每帧把点投影到屏幕。按住纸往上拉，松手后鼓包沿纸跑到另一头再弹回。底部五个药丸左右拖改振幅、波长、速度、转角、俯角 | 不想引 3D 库又要有空间感：正交投影 + 细带按深度排序，辅助线和影子随高度变化来交代离地多高。真 3D 网格走 cutpath / flycam。复刻 @gabriell_lab |
+| [devicegallery/index.html](living/devicegallery/index.html) | 白底上一格格设备浮着，往哪拖都拖不到头。四条边像透镜一样弯，拖得越快弯得越狠、带色散。悬停时设备外面亮一圈慢慢转的彩虹光，点开从格子里飞到页中。开场是设备飞进来聚成一个球，镜头穿进网格 | 产品 / 硬件 / 作品图鉴要让人「逛」：内容只占中间，手感都在边缘那层光里，UI 退到四角。数据在页内 JSON，换真照片只改 `visual.src`。16 台设备是虚构的。复刻 @openmys |
 
 ## 零件
 
@@ -340,3 +341,16 @@
 | 落地虚线 / 用线的深浅交代高度 | [paperwave](living/paperwave/index.html#guides) | 每 1/16 长度一根，`3.5 4`。不透明度 `min(0.6, y/120)`，远侧 × 0.57，画在纸上面 |
 | 拖起一块再松手 / 波沿着传开 / 阻尼弦 | [paperwave](living/paperwave/index.html#probe) | 拾取细带反解 (x, z)，高斯 σ 35 拉到指针高度，波从手里穿过。c 465、k 6.6、γ 1.95，两端自由。读数是那一点的实际高度 |
 | 左右拖改数值的药丸 / scrub 控件 | [paperwave](living/paperwave/index.html#controls) | 高 32、圆角 16、`#f1f1f3`，悬停 `#e7e6eb`。名字 12px 灰、数值 12px 等宽黑右对齐最小宽 25。画面按 0.15 s 追显示值 |
+
+### 无尽画布 / 边缘透镜 / 悬停光
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 无尽拖动的产品画布 / 不重复平铺 | [devicegallery](living/devicegallery/index.html#gallery) | 格 544×544（窄屏 314×377），一块 3×3。块起点 (bx·s₁ + by·s₂) mod N，步长和 N 互质。主体框面积 = 产品框 × 64%。松手 ×0.95/帧滑行 |
+| 屏幕边缘像透镜一样弯 / 拖动时色散 | [devicegallery](living/devicegallery/index.html#lens) | 离屏 2D canvas → 片元着色器只改四边：左右 min(7%, 110px)、上下 min(10%, 90px)，带内 t − ½c·t²，c 随速度 0.6→0.97。色散 0.09，7 次采样，彩虹油膜 0.26 |
+| 悬停时轮廓外一圈彩虹光 | [devicegallery](living/devicegallery/index.html#lens) | 透明通道外扩三层（2px/模糊 36、4/18、2/6）再挖掉本体。锥形 8 色，24 s 转一圈，260ms 淡入。命中判断用同一张透明通道 |
+| 边线跟着鼠标鼓起来 / 贴边弹竖琴 | [devicegallery](living/devicegallery/index.html#sound) | 离边 150px 内鼓出 46px（σ 64px），跟随 0.14/帧。C 大调五声 C4–C6，三音短句间隔 0.17 s。Karplus–Strong 合成，不加载音频 |
+| 角落玻璃药丸 / 筛选面板 / 搜索浮条 | [devicegallery](living/devicegallery/index.html#dock) | 白 .52 + `blur(20px) saturate(180%)` + 顶部白内描边。底栏 `1fr 440px 1fr`。匹配条露 4 条、按条吸附。有筛选时变成居中的有限网格 |
+| 点卡片飞到页中的详情 / 相关推荐 | [devicegallery](living/devicegallery/index.html#focus) | 画布 380ms 淡白。FLIP 680ms `cubic-bezier(.2,.75,.15,1)`，信息晚 300ms 升 10px，每行再晚 45ms。相关度是标签 Jaccard，当前行 1px 彩虹线 |
+| 物件飞进来聚成球、镜头穿进网格的开场 | [devicegallery](living/devicegallery/index.html#intro) | n(t) = 2·e^(1.95(t−1)) 飞进实心球，缩放用视频三帧拟合。4.2 s 穿入，网格 0.45 倍长到 1。点按跳过 |
+| 页内 JSON 数据 / 换成真照片 | [devicegallery](living/devicegallery/index.html#config) | name / brand / category / line / price / tags / links / repos / visual。`visual.draw` 或 `visual.src`（`bounds` 不给就按透明通道自动裁） |
