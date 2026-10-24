@@ -49,6 +49,7 @@
 | [reliefkit/index.html](living/reliefkit/index.html) | 左边手机主屏九个暖灰塑料小机器，悬停时光跟着偏。右边放大一个，在图上拖，影子、高光和印字一起跟着光源转 | 要一组像产品照的图标：一个机身配方套全家，光从原作截图拟合，不凭眼睛调。正视 3D 感用 SDF 高度场算，不建模，加图标只写数据。品牌 ORDO 是自拟的。手法来自鹿言 & Zhiyi Zhang《Rams System Icons》 |
 | [doodlecard/index.html](living/doodlecard/index.html) | 照片闪一下白光，弹出一张蜡笔涂鸦卡，连做五次。然后照片越切越快地叠上来，停在 App 画面，最后一把纸卡落在木地板上。19 秒、24 fps，帧号逐帧对着原片 | 「照片进去、结果出来」的产品宣传片或揭晓动画；照片变平涂蜡笔小画；日记卡布局。品牌 LOOP、文案和替身场景是自己的。要卡通抖仍走 doodle。复刻 @JaejinBong |
 | [gamespace/index.html](living/gamespace/index.html) | 黑底上一个橙点 Stardew Valley，四个近邻带相似度小字逐字出来。拉远后 18.9 万个彩色点亮起，硬切坍成小球再炸开，镜头钻进去，退出来标出八个类型 | 讲 embedding / 相似度：先一个熟悉的点和近邻，再全景，再标区域。动画是时间 t 的纯函数，能按参考视频逐秒对。数据是合成的，`setData` 换真坐标。复刻 @re_skob |
+| [paperwave/index.html](living/paperwave/index.html) | 一张纸在点阵地面上起伏，纯 SVG 每帧把点投影到屏幕。按住纸往上拉，松手后鼓包沿纸跑到另一头再弹回。底部五个药丸左右拖改振幅、波长、速度、转角、俯角 | 不想引 3D 库又要有空间感：正交投影 + 细带按深度排序，辅助线和影子随高度变化来交代离地多高。真 3D 网格走 cutpath / flycam。复刻 @gabriell_lab |
 
 ## 零件
 
@@ -329,3 +330,13 @@
 | 硬切坍成小球再炸开 | [gamespace](living/gamespace/index.html#stage) | 顶点着色器把点限制在半径 r ×（0.82–1.18）的球里，r 0.03 → 0.12 → 0.5 → 0.95 → 2.6，共 3 s。数据不动 |
 | 加法点云不发白 / 保色相色调映射 / 颗粒 | [gamespace](living/gamespace/index.html#look) | 钳 1.8 → bloom 0.62 / 0.32 / 0.2 → 按最大通道压亮度，和逐通道映射 65 / 35 混。上下渐变底 screen 叠上。颗粒 0.022，每秒换 24 次 |
 | 章节标签 / 逐字发光字幕 | [gamespace](living/gamespace/index.html#chapter) | 编号 JetBrains Mono 12 + 30 px 线 + Barlow 600 13、字距 0.19em。字幕 Barlow Condensed 700 58，0.033 s 一字，冷白加两层蓝色外发光 |
+
+### 纯 SVG 伪 3D / 纸面 / 弹性拖拽
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 不用 3D 库的 3D / 正交投影 / 画家算法 | [paperwave](living/paperwave/index.html#scene) | `sx = ox + s(x·cosθ − z·sinθ)`，`sy = oy − s(sinT(x·sinθ + z·cosθ) + cosT·y)`。纸 660 × 176 切 128 条，每帧按深度重排；黑边跟着细带画，远边自然被挡。法线·视线定明暗，纸背淡紫灰 |
+| 地面点阵 / 屏幕空间淡出 / 随高度变淡的影子 | [paperwave](living/paperwave/index.html#floor) | 格 30，x ±660、z ±330，点 0.85px 黑 33%，屏幕距离 158 → 471 单位线性淡出。影子逐条 `α = 0.13·e^(−y/150)` |
+| 落地虚线 / 用线的深浅交代高度 | [paperwave](living/paperwave/index.html#guides) | 每 1/16 长度一根，`3.5 4`。不透明度 `min(0.6, y/120)`，远侧 × 0.57，画在纸上面 |
+| 拖起一块再松手 / 波沿着传开 / 阻尼弦 | [paperwave](living/paperwave/index.html#probe) | 拾取细带反解 (x, z)，高斯 σ 35 拉到指针高度，波从手里穿过。c 465、k 6.6、γ 1.95，两端自由。读数是那一点的实际高度 |
+| 左右拖改数值的药丸 / scrub 控件 | [paperwave](living/paperwave/index.html#controls) | 高 32、圆角 16、`#f1f1f3`，悬停 `#e7e6eb`。名字 12px 灰、数值 12px 等宽黑右对齐最小宽 25。画面按 0.15 s 追显示值 |
