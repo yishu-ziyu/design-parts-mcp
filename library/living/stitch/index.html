@@ -374,18 +374,34 @@ function createStitchTool(root, options) {
     updatePanel(counts, b);
   }
 
+  // draw() runs every animation frame, so the key rows are reused: rebuilding them would drop focus from an open colour picker
+  const keyRows = new Map();
+  let keyOrder = '';
+  function keyRow(t) {
+    if (keyRows.has(t)) return keyRows.get(t);
+    const li = document.createElement('li');
+    li.innerHTML = '<label class="sw"><input type="color" aria-label="Recolour thread"></label>' +
+      '<div><div class="hex"></div><div class="dmc"></div></div><div class="cnt"><span></span><small></small></div>';
+    const row = { li, sw: li.querySelector('.sw'), input: li.querySelector('input'), hex: li.querySelector('.hex'), dmc: li.querySelector('.dmc'), n: li.querySelector('.cnt span'), sk: li.querySelector('.cnt small') };
+    row.input.addEventListener('focus', () => push());
+    row.input.addEventListener('input', (e) => { state.threads[t] = e.target.value; dirty = true; });
+    keyRows.set(t, row);
+    return row;
+  }
   function updatePanel(counts, b) {
-    const used = [0,1,2,3].filter((t) => counts[t] > 0); // counts[0] is non-zero only when white is stitched
-    const list = $('#keyList'); list.innerHTML = '';
-    used.sort((a, b2) => b2 - a).forEach((t) => {
-      const c = state.threads[t], d = nearestDMC(c), sk = Math.max(1, Math.ceil(counts[t] / o.stitchesPerSkein));
-      const li = document.createElement('li');
-      li.innerHTML = '<label class="sw" style="background:' + c + '"><input type="color" value="' + c + '" aria-label="Recolour thread ' + c + '"></label>' +
-        '<div><div class="hex">' + c.toUpperCase() + '</div><div class="dmc">≈ DMC ' + d[0] + ' ' + d[1] + '</div></div>' +
-        '<div class="cnt">' + counts[t].toLocaleString('en-US') + '<small>' + sk + ' skein' + (sk > 1 ? 's' : '') + '</small></div>';
-      li.querySelector('input').addEventListener('input', (e) => { push(); state.threads[t] = e.target.value; dirty = true; });
-      list.appendChild(li);
-    });
+    const used = [0,1,2,3].filter((t) => counts[t] > 0).sort((a, b2) => b2 - a); // counts[0] is non-zero only when white is stitched
+    const list = $('#keyList');
+    if (used.join() !== keyOrder) { keyOrder = used.join(); list.replaceChildren(...used.map((t) => keyRow(t).li)); }
+    for (const t of used) {
+      const r = keyRow(t), c = state.threads[t], d = nearestDMC(c), sk = Math.max(1, Math.ceil(counts[t] / o.stitchesPerSkein));
+      r.sw.style.background = c;
+      if (document.activeElement !== r.input) r.input.value = c;
+      r.input.setAttribute('aria-label', 'Recolour thread ' + c);
+      r.hex.textContent = c.toUpperCase();
+      r.dmc.textContent = '≈ DMC ' + d[0] + ' ' + d[1];
+      r.n.textContent = counts[t].toLocaleString('en-US');
+      r.sk.textContent = sk + ' skein' + (sk > 1 ? 's' : '');
+    }
     const w = b.c1 - b.c0 + 1, h = b.r1 - b.r0 + 1, tot = counts.reduce((a, x) => a + x, 0);
     $('#sGrid').textContent = w + ' × ' + h;
     $('#sCount').textContent = tot.toLocaleString('en-US');
