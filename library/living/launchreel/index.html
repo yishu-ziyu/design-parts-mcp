@@ -498,16 +498,18 @@ const CONFIG = {
       } else if (ev.kind === 'whoosh') {
         const dur = Math.max(0.4, ev.dur);
         const n = actx.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
+        // sound switched on mid-attack: start the envelope where it would be now, never at a negative time
+        const att = dur * 0.3, a0 = Math.max(actx.currentTime, when - att), k = 1 - (when - a0) / att;
         const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
-        bp.frequency.setValueAtTime(380, when - dur * 0.3);
+        bp.frequency.setValueAtTime(380 * Math.pow(2200 / 380, k), a0);
         bp.frequency.exponentialRampToValueAtTime(2200, when);
         bp.frequency.exponentialRampToValueAtTime(500, when + dur * 0.7);
         const ng = actx.createGain();
-        ng.gain.setValueAtTime(0.0001, when - dur * 0.3);
+        ng.gain.setValueAtTime(0.0001 * Math.pow(0.22 / 0.0001, k), a0);
         ng.gain.exponentialRampToValueAtTime(0.22, when);
         ng.gain.exponentialRampToValueAtTime(0.0001, when + dur * 0.7);
         n.connect(bp); bp.connect(ng); ng.connect(g);
-        n.start(Math.max(actx.currentTime, when - dur * 0.3)); n.stop(when + dur * 0.75);
+        n.start(a0); n.stop(when + dur * 0.75);
       } else if (ev.kind === 'text') {
         const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = 880;
         const o2 = actx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 1320;
