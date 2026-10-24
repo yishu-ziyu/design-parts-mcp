@@ -53,6 +53,7 @@
 | [devicegallery/index.html](living/devicegallery/index.html) | 白底上一格格设备浮着，往哪拖都拖不到头。四条边像透镜一样弯，拖得越快弯得越狠、带色散。悬停时设备外面亮一圈慢慢转的彩虹光，点开从格子里飞到页中。开场是设备飞进来聚成一个球，镜头穿进网格 | 产品 / 硬件 / 作品图鉴要让人「逛」：内容只占中间，手感都在边缘那层光里，UI 退到四角。数据在页内 JSON，换真照片只改 `visual.src`。16 台设备是虚构的。复刻 @openmys |
 | [orbitshelf/index.html](living/orbitshelf/index.html) | 14 件抠图小物绕着衬线大标题慢慢转，前排大而清楚，后排小、淡、糊，边缘一圈磨砂雾 | 落地页首屏要一个安静的动态主视觉，不用 3D 也有景深。一个 cos θ 驱动缩放、透明度、层级、模糊。复刻 @Tanjim38 的 knowspace.si |
 | [artatlas/index.html](living/artatlas/index.html) | 一个风格图鉴站：三列 16:10 卡片、搜索加分类胶囊实时过滤、点开是同页详情（大图、看点、可复制提示词、参考作品）。14 张缩略图全是 canvas 程序画的 | 要做「一类东西的图鉴 / 参考库」时，一种卡片、一种比例、两级灰字就够撑起整站。复刻 @onefifthblue 的 Game Art Style |
+| [hoop/index.html](living/hoop/index.html) | 一块漂在白纸上的等距小球场，三个像素小人自己运球、传球、投篮。整块场景先画到 160 像素宽再整数倍放大，草边碎成散点 | 想要一个“小而完整的世界”当插图或空状态：一块地、一束光、几个会动的小人。复刻 @zzzzshawn |
 
 ## 零件
 
@@ -374,3 +375,12 @@
 | 搜索框 + 分类胶囊 | [artatlas](living/artatlas/index.html#filters) | 搜索框 40px 高 `#EEEFE9` 圆角 3px；胶囊 12px padding 9/13，选中墨底纸字；窄屏胶囊行内横滚 |
 | 16:10 卡片 / hover 放大 + 箭头 | [artatlas](living/artatlas/index.html#grid) | 三列列距 28px，占位底 `#E8E8E1`；图 `scale(1.035)` 0.5s，箭头淡入并从 -6px 滑回；9 / 19 / 11px 三层字 |
 | 同页详情 / hash 路由 | [artatlas](living/artatlas/index.html#detail) | `#style/<id>` 切换不刷新；左标题右描述，16:9 大图占 76% 宽，四栏看点，衬线提示词框，两列参考卡复用画法换种子 |
+
+### 等距像素小场景 / 低分辨率放大
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 低分辨率渲染再放大 / 固定颗粒数 | [hoop](living/hoop/index.html#stage) | 球场菱形固定 160 个像素宽，块大小 = 容器宽 × 0.6 ÷ 160 取整；`imageSmoothingEnabled = false` + `image-rendering: pixelated` |
+| 等距地面逐像素逆投影 / 磨旧沥青 | [hoop](living/hoop/index.html#court) | 屏幕 → (u, v)，圆角范数 p=7 分沥青/土/草；线宽 0.6 像素；两层低频噪声控制亮点概率 |
+| 漂浮小地皮 / 草边散点 | [hoop](living/hoop/index.html#post) | 纯白底无边框；超过草线后按哈希阈值丢像素，离边越远丢得越多 |
+| 统一光向的长投影 / 减少动态 | [hoop](living/hoop/index.html#toggle) | 光向 (0.62, −0.38)，长度 = 高 × 1.6，地面 × 0.5 并偏蓝；reduced-motion 只画一帧 |

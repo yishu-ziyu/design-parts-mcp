@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoop Diorama</title>
+<style>
+  :root { --page: #ffffff; --ink: #141414; --muted: #8a8a86; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--ink); }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif; overflow-x: hidden; }
+  #post { max-width: 1100px; margin: 0 auto; padding: 28px 16px 0; }
+  #caption { font-size: 15px; letter-spacing: -0.005em; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  #toggle { font: inherit; font-size: 13px; color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  #stage { position: relative; height: min(70vh, 640px); min-height: 300px; margin-top: 8px; overflow: hidden; }
+  #notes { max-width: 1100px; margin: 0 auto; padding: 48px 16px 120px; font-size: 14px; line-height: 1.8; color: #45453f; }
+  #notes h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--ink); padding-bottom: 12px; border-bottom: 2px solid var(--ink); }
+  #notes dt { margin-top: 22px; }
+  #notes dt code, #notes dd code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; color: var(--ink); }
+  #notes dd code { background: rgba(0,0,0,0.05); padding: 0 0.25em; }
+  @media (max-width: 480px) { #stage { height: 56vh; } }
+</style>
+</head>
+<body>
+<section id="post">
+  <p id="caption">小场面 · 三个人的半场 <button id="toggle" type="button">暂停</button></p>
+  <div id="stage" aria-label="等距视角的小篮球场，三个像素小人在打半场"></div>
+</section>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#stage</code></dt>
+    <dd>整个场景先画进一张很小的 canvas，再用 <code>imageSmoothingEnabled = false</code> 整数倍放大。球场菱形固定 <code>courtPixels = 160</code> 个低分辨率像素宽，块大小 = 容器宽 × 0.6（窄屏 0.84）÷ 160 取整，桌面 4 px、手机 2 px，大小屏看到的颗粒数一样。</dd>
+    <dt><code>#court</code></dt>
+    <dd>地面是 2:1 等距投影的逆映射：每个低分辨率像素反算回地面坐标 (u, v)，按圆角方形距离分层（沥青 / 土 / 草），线和蓝色禁区再按直角距离判断。颜色从 3–6 色的小色板里按哈希挑，沥青叠两层低频噪声做“磨旧”的亮斑。静态部分只算一次，每帧只拷贝再压阴影。</dd>
+    <dt><code>#post</code></dt>
+    <dd>白底、无边框、无阴影，场景是一块漂在白纸上的小地皮。草地外缘不描边：离边越远，像素按哈希阈值被丢掉的概率越高，边就自然碎成散点。</dd>
+    <dt><code>#toggle</code></dt>
+    <dd>阴影每帧重算：从脚下沿固定光向 (0.62, −0.38) 拉一条长度 = 身高 × 1.6 的带子，把地面像素乘 0.5 并略偏蓝。篮架、长椅、球用同一个函数。系统开了“减少动态”时只画一帧，点这里才动。</dd>
+  </dl>
+</section>
+
+<script src="hoop.js"></script>
+<script>
+  const CONFIG = {
+    courtPixels: 160,
+    fill: 0.6,
+    fillNarrow: 0.84,
+    seed: 7,
+    speed: 0.32,
+    light: [0.62, -0.38],
+    shadowLength: 1.6
+  };
+  const hoop = createHoop(document.getElementById('stage'), CONFIG);
+  hoop.canvas.id = 'court';
+  const btn = document.getElementById('toggle');
+  const sync = () => { btn.textContent = hoop.isPlaying() ? '暂停' : '播放'; };
+  btn.addEventListener('click', () => { hoop.isPlaying() ? hoop.pause() : hoop.play(); sync(); });
+  sync();
+</script>
+</body>
+</html>
