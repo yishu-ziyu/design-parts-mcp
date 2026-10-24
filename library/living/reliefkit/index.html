@@ -994,8 +994,11 @@ void main() {
     const prims = scenePrims(cfg, def);
     const data = packPrims(prims, pal, cfg, mi);
 
-    // ink layer (cached: fonts/text are the slowest part)
-    const inkKey = [def.id, S, ts, options.accent, options.shell, JSON.stringify(options.palette || {}), (options.date || new Date()).toDateString()].join('|');
+    // ink layer (cached: fonts/text are the slowest part). The key holds everything drawPrints reads,
+    // so an edited definition or a different cfg with the same id never reuses stale text.
+    const day = options.date || new Date();
+    const inkKey = JSON.stringify([def.id, def.label, def.labels, def.prints, cfg.brand, cfg.labels, cfg.fonts, pal, S, ts,
+      day.toDateString(), day.getHours(), day.getMinutes()]);
     let ink = inkCache.get(inkKey);
     if (!ink) {
       ink = document.createElement('canvas'); ink.width = S; ink.height = S;
