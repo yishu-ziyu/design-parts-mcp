@@ -68,6 +68,7 @@
 | [pictionary/index.html](living/pictionary/index.html) | 你画一个词，右边 7 个彩色小生物排成一列抢着猜，猜错划线，第一个猜中的那张卡亮起来，整页换成它的颜色 | 多个 AI 同时作答的比赛界面。每回合换底色，白卡片 + 浮起的白纸，进度按墨量推进。复刻 @nutlope |
 | [lotus/index.html](living/lotus/index.html) | 页面底部一整块 canvas 荷塘：粉白黄三种荷花、立叶、圆石，上沿白雾融进页面，鼠标划过水面起椭圆涟漪。正文里一句手写注释旁的像素图标点开是一个小岛，骑士和羊都是代码画的点阵 | 作品集底部要一块会回应鼠标的「风景」，又不抢首屏。静的部分烘焙一次，只动摇摆的。复刻 @nexvyn |
 | [caustics/index.html](living/caustics/index.html) | 从水底往上看：一团发虚的日光、浑浊的青绿水体、上方水面的焦散亮斑、淡淡的光柱和悬浮物。2.39:1 画框，一个着色器画完，没有贴图 | 要一个写实水下氛围镜头当头图或转场，但不想放视频。复刻 @Yuki_1t0 Houdini 合集里 16 s 的水下仰拍 |
+| [extrude/index.html](living/extrude/index.html) | 一个平面像素小怪逐行刷出、腿掉下来落定，再沿 Z 轴拉成体素，镜头转到四分之三侧，最后体素缝消失变成一整块。9 s 一循环，可拖时间轴逐拍看 | 角色出场要从「平面图标」过渡到「有体积的东西」。一个厚度变量驱动整只角色，换角色只换一张 ASCII 像素图。复刻 @LexnLin |
 
 ## 零件
 
@@ -536,3 +537,13 @@
 | 悬浮颗粒 / 散景点 | [caustics](living/caustics/index.html#motes) | 三层网格哈希（9 / 18 / 34 格），只 18% 的格子有点，亮度乘光照，背光处看不见 |
 | 图层开关调试着色器 | [caustics](living/caustics/index.html#layers) | 按钮直接把某层 uniform 置 0，`setLayer(name, on)` |
 | 宽银幕片名条 | [caustics](living/caustics/index.html#caption) | 2.39:1 画框下一行小号大写，字距 0.18em，和画框同宽 |
+
+### 平面变立体 / 体素 / CSS 3D 镜头
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 整段时间线 / 一个 t 驱动所有图层 | [extrude](living/extrude/index.html#stage) | `render(t)` 纯函数，rAF 只算 t；关键帧 + 三次缓动；0–2.2 光标、2.2 刷像素、3.0 掉腿、4.2 拉厚转镜、6.0 合缝、8.4 黑场 |
+| CSS 3D 镜头 / 转镜头不转角色 | [extrude](living/extrude/index.html#cam) | `perspective` = 舞台宽 × 1.15 放在舞台上；`.cam` 只做 rotateX −13°、rotateY −34°、scale 0.92 |
+| 开场前景光标 / 景深硬切 | [extrude](living/extrude/index.html#caret) | 前景 `>` 2.3→2.55 倍、blur 递减慢推，2.2 s 硬切成远景 0.62 倍 |
+| 平面阶段的底光 / 地面接手 | [extrude](living/extrude/index.html#glow) | 同色径向光 3.1–3.8 s 亮，4.4–5.4 s 退；地面同时淡入，第一层黑椭圆当软影 |
+| 逐拍对照 / 节拍表跳转 | [extrude](living/extrude/index.html#beats) | 6 拍起止时间，点一下 pause + seek 到那一拍 +0.6 s |
