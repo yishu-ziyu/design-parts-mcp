@@ -40,6 +40,7 @@
 | [flycam/index.html](living/flycam/index.html) | 左边黄视锥相机沿虚线航线在一块合成上空走位（真 three.js：MOTION 卡、GRAPHICS 卡、UI 面板、cloner 环、文字绕柱），右边是它看见的画面，末帧停在文字绕柱 | 要真 three.js 栈的「看得见的相机」：CameraHelper 视锥 + 虚线航线 + 路径点点火 + POV 铸镜头 + 一个 renderer 两个窗格。**v2**：WebGL 真栈重做（v1 是 CSS 3D 近似、内容是求职物件，已废）；溯源 mo1（three.js WebGPU 演示）。CSS 3D 版标本走 [nightflight](nightflight/index.html) / [rig](rig/index.html) |
 | [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam 的 **v1 系（CSS 3D）**，零件沿用 [#rig](nightflight/index.html#rig) / [#flight](nightflight/index.html#flight) / [#timeline](nightflight/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
 | [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
+| [trace/index.html](living/trace/index.html) | Agent 依次查五个来源：每步长出一行在扫光，结果卡开两张收一张，答案逐词流出，最后整串收成「Ran 2 searches and read 3 sources」 | Agent / AI 助手展示工具调用过程、思考轨迹、引用来源。`?t=` 能和原视频逐秒对帧 |
 
 ## 零件
 
@@ -214,6 +215,17 @@
 | 双向时间轴 / 拖动同步两窗格 | [flycam](living/flycam/index.html#timeline) | rAF 推 t；拖拽 scrub、菱形跳关键帧、`?demo=progress=X` 定帧、`?rm=1` 拍 reduced-motion 帧；两窗格 + 时间轴同吃一个 `render(t)`。CSS 版同款在 [nightflight#timeline](nightflight/index.html#timeline) |
 | 真 3D 透视飞行（CSS 3D 版）/ 相机推进反算卡片位移 | [nightflight](living/nightflight/index.html#flight) | v1 系做法：外层 `perspective:900px` + 场景 `preserve-3d`；卡世界坐标固定，场景整体 `translate3d(-cam)`；缓动是 t 的纯函数，scrub 天然与播放一致 |
 | 便利贴逐字 / 打字进度换算 | [nightflight](living/nightflight/index.html#typenote) | 字符数 = t 在打字窗口内线性映射；窗口必须套着卡片在画面里的时段 |
+
+### AI 过程 / 工具调用 / 引用
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 正在运行的一行 / 扫光 / shimmer text | [trace](living/trace/index.html#sweep) | 一道 28% 的淡带从右往左扫过正常字色，chip 里的图标一起变淡。用 mask，不用 background-clip |
+| Agent 当前在做什么 / 实时状态行 / 进度一句话 | [trace](living/trace/index.html#live-head) | Working on it → 当前步骤文字 → Ran 2 searches and read 3 sources + 图标叠片 |
+| 工具调用结果卡 / 搜索结果预览 / +N more | [trace](living/trace/index.html#card) | 比底亮一档的灰卡，白分隔线；前导位放未读点、字母头像、PR / 工单状态 |
+| 多步结果太长 / 只开最近几张 / 手风琴自动收 | [trace](living/trace/index.html#window) | 新卡展开的同一帧收起倒数第三张，`grid-template-rows 0fr→1fr` 340ms |
+| 来源标签 / 引用 chip / 正文里的出处 | [trace](living/trace/index.html#chip) | 3.5% 黑底、圆角 6、图标 + 名字；正文里缩一号夹在句末 |
+| 答案逐词出现 / 流式输出 / 过程收成摘要 | [trace](living/trace/index.html#stream) | 按词淡入，chip / code / 链接整块出；写完后步骤列表收成一行，模糊淡入 |
 
 ### 方法 / 网点
 
