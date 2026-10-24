@@ -46,6 +46,7 @@
 | [scanline/index.html](living/scanline/index.html) | 一只猫被扫描线一格一格画出来，12 fps 一顿一顿地动。全页一个黑两个近白，标题也是点阵。能把自己的视频拖进去 | 产品 hero 要一条只属于它的渲染规则。素材和着色器分开，换主角只换素材。复刻 @amananimates |
 | [cutpath/index.html](living/cutpath/index.html) | 透明 PNG 外面长出一圈等距洋红切割线，挂孔贴着图案顶。点 3D，亚克力立起来，旁边一枚 500 日元硬币 | 做实物下单的工具：先把交给印刷厂的文件做对（White / Art / CutContour 三层 SVG），再用一枚硬币回答多大、孔在哪。真 three.js 挤出走这里，可见相机仍走 flycam |
 | [beacon/index.html](living/beacon/index.html) | 三张海报是同一张字形表排的。灯塔从下往上长，2.5s 后光束扫过表格，字变成 0/1 格子。两张浪从左往右长，然后只剩状态灯在闪 | 一组封面要成套：先定字形表和 9 秒先长后停的节奏，每张只换一张密度图。只留一个一直在动的东西，让它演产品的动作。品牌 skerry 是虚构的 |
+| [reliefkit/index.html](living/reliefkit/index.html) | 左边手机主屏九个暖灰塑料小机器，悬停时光跟着偏。右边放大一个，在图上拖，影子、高光和印字一起跟着光源转 | 要一组像产品照的图标：一个机身配方套全家，光从原作截图拟合，不凭眼睛调。正视 3D 感用 SDF 高度场算，不建模，加图标只写数据。品牌 ORDO 是自拟的。手法来自鹿言 & Zhiyi Zhang《Rams System Icons》 |
 
 ## 零件
 
@@ -291,3 +292,15 @@
 | 光束扫过，文字变格子 | [beacon](living/beacon/index.html#beam) | 双向楔形各 36°，顺时针 40°/s。区内重铺底纹 + 蓝 31%。文字层按 14px 格算笔画覆盖率，≥ 0.07 换字形 |
 | 先长出来再定住 / 9 秒循环 | [beacon](living/beacon/index.html#timeline) | 表格 0.1s 一行，灯塔 0.15→1.9s 自下而上，光束 2.5s 起。浪 0.4–2.2s 左→右。泳道可拖 |
 | 孔版蓝纹理 / 海报坐标系 | [beacon](living/beacon/index.html#poster) | 1240×1754 逻辑坐标，`setTransform` 缩放。蓝 = fbm 浅斑 + 暗坑 + 颗粒，均色 (95.5, 124, 250) |
+
+### 超拟物图标 / 高度场 / 产品光
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 超拟物图标机身 / iOS 圆角 / V 槽 | [reliefkit](living/reliefkit/index.html#shell) | 超椭圆 p=4，角半径 0.2237 × 短边。外圈 2.35u 后一道 V 槽，宽 1.0u 深 0.9u，槽底遮蔽 0.55。面色 `#E1E0D9`。三种外壳只换色板 |
+| 产品摄影光 / 从截图反推光源 | [reliefkit](living/reliefkit/index.html#light) | 方位 47°、高度 16°、wrap 1，key 0.80 / ambient 0.40。用原作五处亮度反解。投影另抬 40°，只剩约 1u 接触阴影 |
+| 正视 3D 感不建模 / SDF 高度场渲染 | [reliefkit](living/reliefkit/index.html#stage) | 两遍 WebGL2：SDF 列表 → MRT 三张 RGBA8（16 位高度）。Sobel 法线、16 采样 AO、≤ 64 步软阴影。< 512px 2× 超采样，颗粒 < 1px 淡出 |
+| 印字 / LCD 段码跟着表面受光 | [reliefkit](living/reliefkit/index.html#print) | 2D canvas 画印刷层当反照率叠进去，有墨处高光乘 0.4。`{dd}` `{MON}` 取当天日期。缓存 60 张 |
+| 新增图标只写数据 | [reliefkit](living/reliefkit/index.html#schema) | 100×100u。part = 形状 + 操作 + 色板键 + 材质键。`under` 压在机身下，`repeat` + `each` 做阵列，push 到 `CONFIG.icons` |
+| 主屏图标网格 / 悬停偏光 / iOS 底板 | [reliefkit](living/reliefkit/index.html#screen) | 4 列 60px。悬停 ±7° 倾斜、光源偏 ±14°，按下 0.93。底板 n=5 超椭圆、物件 0.84、墙影 0.35 |
+| 拖图移光源 / 导出 1024 PNG | [reliefkit](living/reliefkit/index.html#inspector) | 离中心越远高度角越低（80° → 12°）。拖动只重画大图，松手重画全部。Blob 在 `window.lastExport` |
