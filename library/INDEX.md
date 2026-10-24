@@ -63,6 +63,7 @@
 | [genie/index.html](living/genie/index.html) | 作品集首页一列不带框的作品，点开一件，所有作品像 macOS 最小化一样斜着变薄、缩成一条，吸进顶部胶囊 Dock，页面换成暖灰作品页 | 作品集要在"列表"和"单个作品"之间有一个能看懂去向的过渡。0.68 s、右缘先动、过 38% 才淡出。复刻 @dmcgco（dmcg.co） |
 | [sketchbook/index.html](living/sketchbook/index.html) | 白底正中一本摊开的速写本，拖右页往左就翻，页面按圆柱弯起来，松手弹簧落下。下面一行地点日期，左边一列刻度跳页。页面全是代码画的铅笔水彩 | 作品集里放手绘本：翻页本身就是展示，不用再配轮播。复刻 @jeanxcrj |
 | [appliance/index.html](living/appliance/index.html) | 一台等轴手绘烤面包机，按钮放面包、压杆、计时烤、叮一声弹起。线稿套一层位移 + 纸纹 + 斑驳的 SVG 滤镜，滑杆调抖动，色点换机身色 | 想把一个日常物件做成能玩的说明图，既要手绘温度又要能交互。复刻 @Aprilzz423 的 Colorfigures |
+| [framed/index.html](living/framed/index.html) | 一段湖景过一层稀疏点阵纹理，高清输出，装进浅米色面板里的圆角画框，衬线大标题、三栏信息、一个深色按钮。四步各有开关，能看每一步关掉后掉了什么 | 让站看起来贵，最快的是一段对味的素材 + 一层纹理 + 克制的框，界面本身少做。复刻 @davidhaz |
 
 ## 零件
 
@@ -480,3 +481,13 @@
 | 物件交互状态机 / 药丸按钮 | [appliance](living/appliance/index.html#actions) | 放入 → 压杆 → 计时 → 弹起带上抛 → 取出。切片立在槽平面里，clipPath 只露顶面以上 |
 | 抖动滑杆 / 换色点 / 假转台 | [appliance](living/appliance/index.html#controls) | 滑杆直写位移 scale 0–3；5 色点重算三面；Turntable = `scaleX(cos t)` |
 | 透视 / 标注 / 缩放画板 | [appliance](living/appliance/index.html#stage) | viewBox 229.5×172.2；See-through 三面 0.35；虚线引线标签放滤镜外；缩放 60–160% |
+
+### 素材驱动 / 点阵纹理 / 画框版式
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 素材和文案同一个情绪 / 换素材对比 | [framed](living/framed/index.html#clip) | 冷湖慢船 vs 快速霓虹色块，文案不变。素材画在离屏 canvas，换素材只换这一层 |
+| 稀疏点阵纹理 shader / 有序抖动亮点 | [framed](living/framed/index.html#texture) | 6 CSS px 一格，格心采色；亮度 ×4 取小数和 4×4 Bayer 比，高出 0.22 画 0.54 格宽提亮方点，低出 0.5 画暗点，其余不画。底图混 30% 的 5 级色阶 |
+| 高清输出 vs 低清拉伸 | [framed](living/framed/index.html#export) | 缓冲区按 DPR（最多 2）和 960 px 源；关时 0.32 倍再拉伸。角标显示缓冲区尺寸 |
+| 画框版式 vs 满屏遮罩版式 | [framed](living/framed/index.html#hero) | `#f0ede6` 页、`#eceadb` 面板、Newsreader 500 标题 4.6vw、画框 1248:450 圆角 10、三栏 + 36 px 深色按钮；对照组是满屏 + 渐变遮罩 + 渐变胶囊按钮 |
+| before / after 开关栏 | [framed](living/framed/index.html#steps) | 四个 `aria-pressed` 按钮 + 全部，键盘 1–4 / 0；切版式时整块淡出 180 ms 再淡入 |
