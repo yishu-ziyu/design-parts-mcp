@@ -54,6 +54,7 @@
 | [orbitshelf/index.html](living/orbitshelf/index.html) | 14 件抠图小物绕着衬线大标题慢慢转，前排大而清楚，后排小、淡、糊，边缘一圈磨砂雾 | 落地页首屏要一个安静的动态主视觉，不用 3D 也有景深。一个 cos θ 驱动缩放、透明度、层级、模糊。复刻 @Tanjim38 的 knowspace.si |
 | [artatlas/index.html](living/artatlas/index.html) | 一个风格图鉴站：三列 16:10 卡片、搜索加分类胶囊实时过滤、点开是同页详情（大图、看点、可复制提示词、参考作品）。14 张缩略图全是 canvas 程序画的 | 要做「一类东西的图鉴 / 参考库」时，一种卡片、一种比例、两级灰字就够撑起整站。复刻 @onefifthblue 的 Game Art Style |
 | [hoop/index.html](living/hoop/index.html) | 一块漂在白纸上的等距小球场，三个像素小人自己运球、传球、投篮。整块场景先画到 160 像素宽再整数倍放大，草边碎成散点 | 想要一个“小而完整的世界”当插图或空状态：一块地、一束光、几个会动的小人。复刻 @zzzzshawn |
+| [retroprint/index.html](living/retroprint/index.html) | 一张金属产品照变成粉纸上的蓝墨点，疏密跟着原来的明暗走，暗部带白色细纹。六个 pass 可以逐个点开看，能拖自己的图进来 | 要把照片做成复古单色印刷，不想开 Photoshop。每一步一个 pass，参数和 Photoshop 面板一一对应。复刻 @DesignSpot_Jap |
 
 ## 零件
 
@@ -384,3 +385,12 @@
 | 等距地面逐像素逆投影 / 磨旧沥青 | [hoop](living/hoop/index.html#court) | 屏幕 → (u, v)，圆角范数 p=7 分沥青/土/草；线宽 0.6 像素；两层低频噪声控制亮点概率 |
 | 漂浮小地皮 / 草边散点 | [hoop](living/hoop/index.html#post) | 纯白底无边框；超过草线后按哈希阈值丢像素，离边越远丢得越多 |
 | 统一光向的长投影 / 减少动态 | [hoop](living/hoop/index.html#toggle) | 光向 (0.62, −0.38)，长度 = 高 × 1.6，地面 × 0.5 并偏蓝；reduced-motion 只画一帧 |
+
+### 印刷感 / 阈值抖动 / 双色
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| Photoshop 滤镜链搬到 canvas / 每步一个 pass | [retroprint](living/retroprint/index.html#passes) | 粒子 → 纹理层（半调 2/12 + 龟裂 35）→ 颜色比较（明）60% → 阈值 161 → 渐变映射。点缩略图看每一步 |
+| 强噪声 + 阈值 = 网点疏密 | [retroprint](living/retroprint/index.html#controls) | 噪声强度 0.75、偏移 −0.22，乘 `2.2·√(l(1−l))` 让纯白纯黑不动。原作 0.8 灰处 34% 墨，本页 30% |
+| 双色映射 / 墨和纸 | [retroprint](living/retroprint/index.html#after) | 黑 → `#24207A`，白 → `#F2D4DC`。白底直接变纸色，不用抠图 |
+| 本地换图 / 拖放处理 | [retroprint](living/retroprint/index.html#swap) | object URL 读图，长边缩到 1100 再算，整数哈希噪声，同 seed 结果固定 |
