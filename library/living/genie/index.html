@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>genie — 作品吸进 Dock</title>
+<style>
+:root{
+  --bg:#FFFFFF; --case:#F0EFEB; --ink:#111110; --muted:#6B6A66;
+  --dock:rgba(250,250,248,.82); --dock-line:rgba(0,0,0,.06);
+  --font:"Helvetica Neue",Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+  --serif:"Times New Roman",Georgia,"Songti SC",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.25 var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{transition:background .6s cubic-bezier(.2,.8,.2,1)}
+body.is-case{background:var(--case)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+
+#site{position:relative;height:100vh;height:100svh;overflow:hidden}
+.hdr{position:absolute;inset:0 0 auto 0;height:96px;display:grid;grid-template-columns:1fr auto 1fr;align-items:start;padding:28px 32px 0;z-index:5;pointer-events:none}
+.hdr>*{pointer-events:auto}
+.hdr nav{display:flex;gap:25px;padding-top:6px}
+.mark{text-align:center;line-height:1.05;font-size:13px;transition:opacity .3s}
+body.is-case .mark{opacity:0;pointer-events:none}
+.switch{justify-self:end;display:flex;gap:4px}
+.switch button{border:1px solid transparent;background:none;border-radius:7px;padding:7px 8px;cursor:pointer}
+.switch button[aria-pressed=true]{border-color:rgba(0,0,0,.09);background:#fff}
+.ftr{position:absolute;inset:auto 32px 34px 32px;display:flex;justify-content:space-between;z-index:5;pointer-events:none;transition:opacity .3s}
+body.is-case .ftr{opacity:0}
+body.is-case .hdr nav,body.is-case .switch{color:var(--muted)}
+
+#tray{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 120px,#000 calc(100% - 120px),transparent 100%);
+          mask-image:linear-gradient(transparent 0,#000 120px,#000 calc(100% - 120px),transparent 100%)}
+#tray::-webkit-scrollbar{display:none}
+#tray.anim{-webkit-mask-image:none;mask-image:none;z-index:4;pointer-events:none}
+.stack{padding:calc(50vh - 150px) 0 calc(50vh - 150px)}
+.card{display:flex;justify-content:center;align-items:center;height:min(62vh,460px);margin:0 0 6vh;cursor:pointer;border:0;background:none;width:100%;padding:0}
+.card .art{width:min(46vw,380px);aspect-ratio:1.25;will-change:transform,filter,opacity}
+.card .art svg{width:100%;height:100%;display:block;overflow:visible}
+.card:focus-visible{outline:none}
+.card:focus-visible .art{outline:1px dashed var(--muted);outline-offset:12px}
+
+#dock{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;height:52px;padding:0 10px;border-radius:16px;
+  background:var(--dock);box-shadow:0 0 0 1px var(--dock-line),0 8px 24px rgba(0,0,0,.06);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  z-index:6;opacity:0;pointer-events:none;transition:opacity .34s cubic-bezier(.4,0,.2,1)}
+body.is-case #dock{opacity:1;pointer-events:auto}
+#dock .x{position:absolute;right:calc(100% + 10px);top:50%;margin-top:-12px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.06);cursor:pointer;display:grid;place-items:center}
+#dock .x svg{width:10px;height:10px}
+#dock .cell{width:42px;height:40px;display:grid;place-items:center;border:0;background:none;cursor:pointer;border-radius:10px;padding:0}
+#dock .cell[aria-current=true]{background:rgba(0,0,0,.05)}
+#dock .cell .ico{width:30px;height:30px;opacity:0;transition:opacity .2s}
+#dock .cell .ico.on{opacity:1}
+#dock .cell svg{width:100%;height:100%}
+#dock .more{width:4px;height:18px;margin-left:4px;background:radial-gradient(circle,#999 1.2px,transparent 1.6px) 0 0/4px 6px}
+
+#case{position:absolute;inset:0;overflow-y:auto;z-index:2;opacity:0;pointer-events:none;transition:opacity .3s}
+body.is-case #case{opacity:1;pointer-events:auto}
+.case-in{max-width:900px;margin:0 auto;padding:120px 24px 80px;text-align:center}
+.case-in h2{font:700 clamp(56px,12vw,140px)/.9 var(--serif);letter-spacing:-.03em;margin:0;transform:scaleX(1.12)}
+.case-in .hero{width:min(54vw,300px);aspect-ratio:1.25;margin:-64px auto 22px;position:relative}
+.case-in .hero svg{width:100%;height:100%}
+.case-in p{font-size:clamp(18px,2.4vw,24px);line-height:1.2;max-width:420px;margin:0 auto}
+.case-in .meta{margin-top:40px;color:var(--muted);font-size:13px}
+
+#notes{background:#fff;padding:56px 32px 80px;border-top:1px solid #eee;position:relative;z-index:1}
+#notes h3{font-size:13px;margin:0 0 16px;font-weight:600}
+#notes dl{display:grid;grid-template-columns:minmax(120px,180px) 1fr;gap:10px 24px;max-width:860px;margin:0}
+#notes dt code{font-size:12px}
+#notes dd{margin:0;color:#333;line-height:1.55}
+@media (max-width:600px){
+  .hdr{padding:18px 16px 0;grid-template-columns:auto 1fr auto}
+  .hdr nav{gap:14px}.mark{font-size:11px}
+  .switch button{padding:6px 5px}
+  .ftr{inset:auto 16px 20px 16px}
+  .card .art{width:72vw}
+  #dock{gap:2px;padding:0 6px;height:46px;top:62px;margin-left:17px}
+  #dock .cell{width:34px}#dock .cell .ico{width:24px;height:24px}
+  .case-in{padding-top:136px}.case-in .hero{margin-top:-30px}
+  #notes{padding:40px 16px}
+  #notes dl{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main id="site">
+  <header class="hdr">
+    <nav><a href="#notes">关于</a><a href="#notes">联系</a></nav>
+    <div class="mark" id="mark"></div>
+    <div class="switch"><button type="button" id="btnWork" aria-pressed="true">作品</button><button type="button" aria-pressed="false" disabled>目录</button></div>
+  </header>
+  <div id="tray"><div class="stack" id="stack"></div></div>
+  <div id="dock" role="toolbar" aria-label="作品 Dock"></div>
+  <section id="case" aria-live="polite"><div class="case-in" id="caseIn"></div></section>
+  <footer class="ftr"><span id="ftrL"></span><span id="ftrR"></span></footer>
+</main>
+
+<section id="notes"><h3>可拆</h3><dl>
+  <dt><code>#stack</code></dt><dd>首页：作品不带卡片框，竖向一列居中，滚动容器上下各 120px 渐隐遮罩。</dd>
+  <dt><code>#dock</code></dt><dd>进入作品后顶部出现的胶囊 Dock：关闭圆钮 + 每个作品一个 42px 格子 + 竖向省略点。半透明白底 + 14px 背景模糊。</dd>
+  <dt><code>#tray</code></dt><dd>神灯变形：每件作品取中心点，跑原站的 d() 吸入函数，换算成 translate / scaleX / scaleY / skewY / opacity / blur 六个量，0.68 s、ease [.2,.8,.2,1]，相邻件错开 40 ms。</dd>
+  <dt><code>#case</code></dt><dd>作品页：底色换成暖灰，大号衬线标题压在主图上，一句话说明。点 Dock 里别的格子直接切换，点圆钮反向吐回首页。</dd>
+</dl></section>
+
+<script>
+const CONFIG = {
+  wordmark: ["The", "Studio Office", "of Lin Qiao"],
+  footer: ["品牌与软件设计", "做于上海"],
+  duration: 0.68,
+  stagger: 0.04,
+  ease: [0.2, 0.8, 0.2, 1],
+  maxBlur: 5,
+  bulge: 0.1,
+  projects: [
+    { id: "radio", title: "Tuner", line: "一台只有一个旋钮的收音机，转到哪里就停在哪里。", meta: "工业设计 · 2026",
+      svg: `<svg viewBox="0 0 250 200"><rect x="20" y="58" width="210" height="118" rx="14" fill="#E9E7E1" stroke="#1a1a1a" stroke-width="2"/><rect x="34" y="74" width="104" height="86" rx="6" fill="#2A2A28"/><g fill="#555">${Array.from({length:7},(_,r)=>Array.from({length:9},(_,c)=>`<circle cx="${44+c*11}" cy="${83+r*11}" r="2.6"/>`).join('')).join('')}</g><circle cx="186" cy="104" r="26" fill="#D8D5CC" stroke="#1a1a1a" stroke-width="2"/><line x1="186" y1="104" x2="186" y2="82" stroke="#E2552B" stroke-width="3" stroke-linecap="round"/><rect x="158" y="142" width="56" height="8" rx="4" fill="#bdb9ae"/><line x1="70" y1="58" x2="40" y2="14" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="125" cy="188" rx="96" ry="6" fill="rgba(0,0,0,.08)"/></svg>` },
+    { id: "lamp", title: "Arc", line: "一盏台灯，灯臂按住任何角度都不会回弹。", meta: "灯具 · 2025",
+      svg: `<svg viewBox="0 0 250 200"><ellipse cx="96" cy="186" rx="58" ry="8" fill="rgba(0,0,0,.08)"/><rect x="58" y="172" width="76" height="12" rx="6" fill="#1d1d1c"/><path d="M96 172 L120 98 L176 60" fill="none" stroke="#1d1d1c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="120" cy="98" r="7" fill="#E2552B"/><path d="M160 40 L214 72 L196 100 L142 68 Z" fill="#EDEBE5" stroke="#1d1d1c" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="205" cy="86" rx="8" ry="16" transform="rotate(32 205 86)" fill="#FFE9A8"/></svg>` },
+    { id: "kettle", title: "Pour", line: "壶嘴的弧度让最后一滴也落回杯里。", meta: "厨具 · 2025",
+      svg: `<svg viewBox="0 0 250 200"><ellipse cx="125" cy="188" rx="80" ry="7" fill="rgba(0,0,0,.08)"/><path d="M70 180 C62 120 74 84 125 80 C176 84 188 120 180 180 Z" fill="#C9CCC6" stroke="#1a1a1a" stroke-width="2"/><path d="M180 128 C204 118 214 98 222 84" fill="none" stroke="#1a1a1a" stroke-width="8" stroke-linecap="round"/><path d="M90 80 C92 50 158 50 160 80" fill="none" stroke="#1a1a1a" stroke-width="7" stroke-linecap="round"/><rect x="108" y="70" width="34" height="12" rx="6" fill="#E2552B"/><path d="M80 150 Q125 160 170 150" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3"/></svg>` },
+    { id: "cam", title: "Frame", line: "一台只拍方形照片的相机，取景器就是整块屏幕。", meta: "硬件 · 2024",
+      svg: `<svg viewBox="0 0 250 200"><ellipse cx="125" cy="182" rx="98" ry="7" fill="rgba(0,0,0,.08)"/><rect x="30" y="58" width="190" height="116" rx="16" fill="#1f1f1e"/><rect x="30" y="58" width="190" height="34" rx="16" fill="#E9E7E1"/><rect x="30" y="80" width="190" height="12" fill="#E9E7E1"/><circle cx="125" cy="128" r="38" fill="#2f2f2d" stroke="#E9E7E1" stroke-width="4"/><circle cx="125" cy="128" r="22" fill="#0d0d0c"/><circle cx="116" cy="119" r="6" fill="rgba(255,255,255,.35)"/><rect x="176" y="44" width="28" height="14" rx="4" fill="#E2552B"/><rect x="46" y="68" width="30" height="14" rx="3" fill="#1f1f1e"/></svg>` }
+  ]
+};
+
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const smooth = v => { const t = clamp01(v); return t * t * (3 - 2 * t); };
+
+// The deformation: points on the right side of the rect (t→1) start sinking first, the left
+// side 38% of the timeline later, so the shape funnels toward the target like the macOS genie.
+function geniePoint(g, t, v, p, bulge) {
+  const i = clamp01(t);
+  const n = smooth((p - 0.38 * (1 - i)) / (0.62 - 0.1 * i));
+  const x0 = g.left + t * g.width, y0 = g.top + g.height / 2;
+  const thick = 1 - 0.97 * n;
+  const arc = Math.sin(Math.PI * i) * Math.sin(Math.PI * p) * g.height * bulge;
+  return { x: x0 + (g.targetX - x0) * n, y: y0 + (g.targetY - y0) * n + arc + v * g.height / 2 * thick, thickness: thick, absorption: n };
+}
+
+function genieTransform(g, cx, cy, p, opt) {
+  const t = (cx - g.left) / g.width, v = (cy - g.top - g.height / 2) / (g.height / 2);
+  const l = geniePoint(g, t, v, p, opt.bulge), a = geniePoint(g, t - 0.005, v, p, opt.bulge), b = geniePoint(g, t + 0.005, v, p, opt.bulge);
+  const sx = (b.x - a.x) / (0.01 * g.width);
+  const fade = smooth((l.absorption - 0.38) / 0.62);
+  const skew = 180 * Math.atan2(b.y - a.y, Math.max(1, b.x - a.x)) / Math.PI;
+  return { x: l.x - cx, y: l.y - cy, scaleX: Math.max(0.035, Math.min(1.16, sx)), scaleY: l.thickness,
+    skewY: Math.max(-8, Math.min(8, skew)), opacity: 1 - fade, blur: opt.maxBlur * fade };
+}
+
+function bezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx, cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const X = t => ((ax * t + bx) * t + cx) * t, Y = t => ((ay * t + by) * t + cy) * t, dX = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => { let t = x; for (let k = 0; k < 8; k++) { const d = X(t) - x; if (Math.abs(d) < 1e-5) break; const s = dX(t); if (Math.abs(s) < 1e-6) break; t -= d / s; } return Y(clamp01(t)); };
+}
+
+function createGenieDock(root, options = {}) {
+  const opt = Object.assign({}, CONFIG, options);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ease = bezier(...opt.ease);
+  const $ = s => root.querySelector(s);
+  const stack = $("#stack"), dock = $("#dock"), caseIn = $("#caseIn"), tray = $("#tray");
+  $("#mark").innerHTML = opt.wordmark.join("<br>");
+  $("#ftrL").textContent = opt.footer[0]; $("#ftrR").textContent = opt.footer[1];
+
+  stack.innerHTML = opt.projects.map((p, i) => `<button class="card" type="button" data-i="${i}" aria-label="打开 ${p.title}"><div class="art">${p.svg}</div></button>`).join("");
+  dock.innerHTML = `<button class="x" type="button" aria-label="回到首页"><svg viewBox="0 0 10 10"><path d="M1 1L9 9M9 1L1 9" stroke="#555" stroke-width="1.4"/></svg></button>` +
+    opt.projects.map((p, i) => `<button class="cell" type="button" data-i="${i}" aria-label="${p.title}"><span class="ico">${p.svg}</span></button>`).join("") + `<span class="more" aria-hidden="true"></span>`;
+  const arts = [...stack.querySelectorAll(".art")], cells = [...dock.querySelectorAll(".cell")], icos = cells.map(c => c.querySelector(".ico"));
+
+  let state = "home", raf = 0, busy = false;
+
+  function apply(el, tr) {
+    el.style.transform = `translate(${tr.x}px,${tr.y}px) scale(${tr.scaleX},${tr.scaleY}) skewY(${tr.skewY}deg)`;
+    el.style.opacity = tr.opacity;
+    el.style.filter = tr.blur > 0.01 ? `blur(${tr.blur.toFixed(3)}px)` : "none";
+  }
+  function reset(el) { el.style.transform = ""; el.style.opacity = ""; el.style.filter = ""; }
+
+  function geometries() {
+    const vh = innerHeight;
+    return arts.map((el, i) => {
+      el.style.transform = "none";
+      const r = el.getBoundingClientRect(), c = cells[i].getBoundingClientRect();
+      return { el, i, visible: r.bottom > 0 && r.top < vh, cx: r.left + r.width / 2, cy: r.top + r.height / 2,
+        g: { left: r.left, top: r.top, width: r.width, height: r.height, targetX: c.left + c.width / 2, targetY: c.top + c.height / 2 } };
+    });
+  }
+
+  function run(dir, done) {
+    cancelAnimationFrame(raf);
+    const items = geometries().filter(o => o.visible);
+    tray.classList.add("anim");
+    const finish = done; done = () => { tray.classList.remove("anim"); finish(); };
+    if (reduce) { items.forEach(o => dir > 0 ? apply(o.el, { x: 0, y: 0, scaleX: 1, scaleY: 1, skewY: 0, opacity: 0, blur: 0 }) : reset(o.el)); done(); return; }
+    const t0 = performance.now(), D = opt.duration * 1000, S = opt.stagger * 1000;
+    const total = D + S * Math.max(0, items.length - 1);
+    const tick = now => {
+      const el = now - t0;
+      items.forEach((o, k) => {
+        const local = clamp01((el - k * S) / D), e = ease(local);
+        const p = dir > 0 ? e : 1 - e;
+        apply(o.el, genieTransform(o.g, o.cx, o.cy, p, opt));
+        if (dir > 0 && local > 0.72) icos[o.i].classList.add("on");
+      });
+      if (el < total) raf = requestAnimationFrame(tick); else done();
+    };
+    raf = requestAnimationFrame(tick);
+  }
+
+  function renderCase(i) {
+    const p = opt.projects[i];
+    caseIn.innerHTML = `<h2>${p.title}</h2><div class="hero">${p.svg}</div><p>${p.line}</p><div class="meta">${p.meta}</div>`;
+    cells.forEach((c, k) => c.setAttribute("aria-current", k === i ? "true" : "false"));
+  }
+
+  function open(i) {
+    if (busy) return;
+    busy = true; state = "case";
+    renderCase(i);
+    document.body.classList.add("is-case");
+    $("#btnWork").setAttribute("aria-pressed", "false");
+    icos.forEach(ic => ic.classList.remove("on"));
+    run(1, () => { icos.forEach(ic => ic.classList.add("on")); tray.style.visibility = "hidden"; busy = false; });
+  }
+  function close() {
+    if (busy || state !== "case") return;
+    busy = true; state = "home";
+    tray.style.visibility = "";
+    document.body.classList.remove("is-case");
+    $("#btnWork").setAttribute("aria-pressed", "true");
+    run(-1, () => { arts.forEach(reset); busy = false; });
+  }
+
+  const onStack = e => { const b = e.target.closest(".card"); if (b) open(+b.dataset.i); };
+  const onDock = e => {
+    if (e.target.closest(".x")) return close();
+    const c = e.target.closest(".cell"); if (c && state === "case") renderCase(+c.dataset.i);
+  };
+  const onKey = e => { if (e.key === "Escape") close(); };
+  const onWork = () => close();
+  stack.addEventListener("click", onStack);
+  dock.addEventListener("click", onDock);
+  addEventListener("keydown", onKey);
+  $("#btnWork").addEventListener("click", onWork);
+
+  return {
+    open, close,
+    setProgress(p) { geometries().filter(o => o.visible).forEach(o => apply(o.el, genieTransform(o.g, o.cx, o.cy, p, opt))); },
+    destroy() {
+      cancelAnimationFrame(raf);
+      stack.removeEventListener("click", onStack); dock.removeEventListener("click", onDock);
+      removeEventListener("keydown", onKey); $("#btnWork").removeEventListener("click", onWork);
+      stack.innerHTML = ""; dock.innerHTML = ""; caseIn.innerHTML = "";
+      document.body.classList.remove("is-case");
+    }
+  };
+}
+
+window.genie = createGenieDock(document.getElementById("site"));
+</script>
+</body>
+</html>

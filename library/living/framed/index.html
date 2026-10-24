@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>framed — 一段素材做出贵的感觉</title>
+<style>
+@font-face{font-family:"Newsreader";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/newsreader-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:"Newsreader";font-weight:500;font-style:normal;font-display:swap;src:url(fonts/newsreader-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:"Inter";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/inter-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:"Inter";font-weight:500;font-style:normal;font-display:swap;src:url(fonts/inter-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+
+:root{
+  --page:#f0ede6; --panel:#eceadb; --ink:#1c1c12; --body:#55544a; --faint:#8f8d81;
+  --btn:#152219; --btn-ink:#f3f1e8; --accent:#cfe86a;
+  --sans:"Inter",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  --serif:"Newsreader",Georgia,"Songti SC",serif;
+  --gut:clamp(16px,4.1vw,64px); --pad:clamp(14px,1.45vw,24px);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;padding-bottom:96px}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* framed hero (step 4 on) */
+.fh{position:relative;margin:10px var(--gut) 0;background:var(--panel);border-radius:12px;padding:0 var(--pad) var(--pad);transition:opacity .18s ease}
+.fh.fading{opacity:0}
+.fh nav{display:flex;justify-content:space-between;align-items:center;height:44px}
+.fh .brand{font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:-.01em}
+.fh .navlink{font-size:12px;color:#3a392f;text-decoration:none}
+.fh .top{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;margin-top:6px}
+.fh h1{margin:0;font-family:var(--serif);font-weight:500;font-size:clamp(38px,4.6vw,80px);line-height:.93;letter-spacing:-.035em}
+.fh .lede{margin:0 0 2px;max-width:300px;font-size:12px;line-height:1.45;color:var(--body)}
+.fh .media{position:relative;margin:clamp(22px,2.86vw,44px) 0 0;aspect-ratio:1248/450;border-radius:10px;overflow:hidden;background:#24564f}
+.fh .media canvas{display:block;width:100%;height:100%}
+.fh .badge{position:absolute;top:10px;right:10px;z-index:2;font-size:10px;letter-spacing:.02em;padding:4px 7px;border-radius:6px;background:rgba(20,30,24,.55);color:#eef3e6;font-variant-numeric:tabular-nums;backdrop-filter:blur(6px)}
+.fh .row{display:grid;grid-template-columns:repeat(3,1fr) auto;align-items:start;margin-top:20px}
+.fh .fact dt{font-size:10.5px;color:var(--faint);margin-bottom:5px}
+.fh .fact dd{margin:0;font-size:13px;font-weight:500}
+.fh .row dl{margin:0}
+.fh .cta{text-align:right}
+.fh .cta button{height:36px;padding:0 18px;border:0;border-radius:8px;background:var(--btn);color:var(--btn-ink);font-size:12px;font-weight:500}
+.fh .cta small{display:block;margin-top:7px;font-size:10px;color:var(--faint)}
+
+/* unframed hero (step 4 off): the usual full-bleed + scrim + loud CTA */
+.fh.raw{margin:0;border-radius:0;background:#111;color:#fff;padding:0 20px 20px;min-height:min(100svh,760px);display:flex;flex-direction:column;overflow:hidden}
+.fh.raw .media{position:absolute;inset:0;margin:0;border-radius:0;aspect-ratio:auto;z-index:0}
+.fh.raw .media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,.12) 45%,rgba(0,0,0,.7))}
+.fh.raw nav,.fh.raw .top,.fh.raw .row{position:relative;z-index:1}
+.fh.raw .brand{font-family:var(--sans);font-size:20px;text-transform:uppercase;letter-spacing:.12em}
+.fh.raw .navlink{color:#fff;font-size:14px;border:1px solid rgba(255,255,255,.6);padding:7px 14px;border-radius:999px}
+.fh.raw .top{grid-template-columns:1fr;justify-items:center;text-align:center;margin-top:9vh;gap:16px}
+.fh.raw h1{font-family:var(--sans);text-transform:uppercase;letter-spacing:.01em;line-height:1.02;font-size:clamp(30px,5.2vw,78px);text-shadow:0 4px 30px rgba(0,0,0,.55)}
+.fh.raw h1 br{display:none}
+.fh.raw .lede{color:#fff;font-size:16px;max-width:44ch}
+.fh.raw .badge{top:64px;right:20px}
+.fh.raw .row{margin-top:auto;gap:10px;grid-template-columns:repeat(3,1fr) auto;align-items:center}
+.fh.raw .fact{background:rgba(255,255,255,.16);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:9px 16px}
+.fh.raw .fact dt{color:rgba(255,255,255,.75)}
+.fh.raw .cta button{height:52px;padding:0 28px;border-radius:999px;font-size:16px;color:#fff;background:linear-gradient(90deg,#ff5f6d,#ffc371);box-shadow:0 10px 30px rgba(255,95,109,.5)}
+.fh.raw .cta small{color:rgba(255,255,255,.8)}
+
+/* step toggles */
+#steps{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:20;display:flex;gap:4px;padding:6px;border-radius:14px;background:rgba(21,34,25,.98);color:#eef1e6;font-size:12px;box-shadow:0 10px 30px rgba(10,20,14,.25)}
+#steps button{display:flex;align-items:center;gap:8px;padding:8px 11px;border:0;border-radius:10px;background:transparent;white-space:nowrap;text-align:left}
+#steps button:hover{background:rgba(255,255,255,.07)}
+#steps button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#steps .n{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1px solid rgba(238,241,230,.45);font-size:10.5px;font-weight:500;flex:none}
+#steps [aria-pressed="true"] .n{background:var(--accent);border-color:var(--accent);color:#152219}
+#steps [aria-pressed="false"] .t{opacity:.55;text-decoration:line-through;text-decoration-color:rgba(238,241,230,.4)}
+#steps .all{border-left:1px solid rgba(238,241,230,.15);border-radius:0 10px 10px 0;color:var(--accent)}
+
+#notes{max-width:880px;margin:56px var(--gut) 0;padding:0 var(--pad);font-size:14px;line-height:1.6;color:#3a392f}
+#notes h3{font-family:var(--serif);font-weight:500;font-size:22px;margin:0 0 12px}
+#notes dt{margin-top:12px}
+#notes dd{margin:2px 0 0}
+#notes code{font-size:12.5px;background:#e4e1d2;padding:1px 5px;border-radius:4px}
+
+@media (max-width:640px){
+  body{padding-bottom:150px}
+  .fh .top{grid-template-columns:1fr;gap:12px}
+  .fh h1 br{display:none}
+  .fh .media{aspect-ratio:4/3.4}
+  .fh .row{grid-template-columns:1fr 1fr;gap:14px 10px}
+  .fh .cta{grid-column:1/-1;text-align:left}
+  .fh .cta button{width:100%}
+  .fh.raw .row{grid-template-columns:1fr 1fr}
+  .fh.raw .top{margin-top:6vh}
+  #steps{left:8px;right:8px;transform:none;display:grid;grid-template-columns:1fr 1fr;font-size:11.5px}
+  #steps button{padding:8px;white-space:normal}
+  #steps .all{grid-column:1/-1;border-left:0;border-top:1px solid rgba(238,241,230,.15);border-radius:0 0 10px 10px;justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){.fh{transition:none}}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#clip</code></dt><dd>第 1 步：素材和文案同一个情绪。默认是程序画的冷湖、慢船、水面碎光；关掉换成一段快速乱动的霓虹色块，文案不变，整页立刻不对劲。</dd>
+    <dt><code>#texture</code></dt><dd>第 2 步：一层点阵纹理。每 6 CSS px 一格，格心采一次色；底图是原图混入 30% 的 5 级色阶；亮度分 4 段，段内位置和 4×4 Bayer 阈值比，格中心画一个约半格宽的方点：高出 0.22 提亮（混向浅黄绿），低出 0.5 画压暗的点，其余格不画，点阵才稀疏。</dd>
+    <dt><code>#export</code></dt><dd>第 3 步：按高分辨率输出。开时画布按设备像素比（最多 2）和 960 px 源渲染；关时只用 0.32 倍的缓冲区再拉伸，点会糊成一片。角标显示当前缓冲区尺寸。</dd>
+    <dt><code>#hero</code></dt><dd>第 4 步：给素材做框，界面从简。开：浅米色面板、衬线大标题、圆角 10px 的画框、三栏信息和一个深色按钮。关：常见的满屏视频 + 黑色渐变遮罩 + 居中大写标题 + 毛玻璃胶囊 + 渐变按钮。</dd>
+    <dt><code>#steps</code></dt><dd>四个开关和「全部」。键盘 1–4 也能切，0 切全部。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  brand: "Coldwater",
+  navLink: "Hold a place",
+  headline: ["Four mornings with", "nothing to answer."],
+  lede: "A small writing week on a cold lake. We bring the boats and the long breakfasts. Your inbox stays in town.",
+  facts: [["When", "May 4–8, 2027"], ["Where", "Lake Bohinj, Slovenia"], ["Cost", "€1,280, rooms included"]],
+  cta: "Hold a place",
+  ctaNote: "11 of 40 places left",
+  steps: [
+    { key: "clip",    label: "选对味的素材" },
+    { key: "texture", label: "套一层纹理" },
+    { key: "hires",   label: "按 4K 导出" },
+    { key: "frame",   label: "做框，界面从简" }
+  ],
+  texture: {
+    cell: 6,             // CSS px per dot cell
+    dot: 0.27,           // half-width of the square dot, in cells
+    levels: 4,           // luminance bands for the dither
+    poster: 5,           // colour levels in the base
+    posterMix: 0.3,
+    hi: [0.76, 0.89, 0.36],
+    lo: [0.05, 0.16, 0.14]
+  },
+  hiresSource: 960, loresSource: 320, loresScale: 0.32, maxDpr: 2
+};
+
+function createFramedHero(container, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options);
+  const state = { clip: true, texture: true, hires: true, frame: true };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const root = document.createElement("div");
+  root.innerHTML = `
+    <header class="fh" id="hero">
+      <nav><span class="brand">${cfg.brand}</span><a class="navlink" href="#notes">${cfg.navLink}</a></nav>
+      <div class="top">
+        <h1>${cfg.headline.join("<br> ")}</h1>
+        <p class="lede">${cfg.lede}</p>
+      </div>
+      <figure class="media" id="clip">
+        <canvas id="texture" aria-label="Lake at dawn, a rowboat drifting"></canvas>
+        <span class="badge" id="export"></span>
+      </figure>
+      <div class="row">
+        ${cfg.facts.map(([k, v]) => `<dl class="fact"><dt>${k}</dt><dd>${v}</dd></dl>`).join("")}
+        <div class="cta"><button type="button">${cfg.cta}</button><small>${cfg.ctaNote}</small></div>
+      </div>
+    </header>
+    <div id="steps" role="toolbar" aria-label="四步开关">
+      ${cfg.steps.map((s, i) => `<button type="button" data-k="${s.key}" aria-pressed="true"><span class="n">${i + 1}</span><span class="t">${s.label}</span></button>`).join("")}
+      <button type="button" class="all" data-k="all">全部关</button>
+    </div>`;
+  container.appendChild(root);
+
+  const hero = root.querySelector(".fh");
+  const media = root.querySelector(".media");
+  let canvas = root.querySelector("canvas");
+  const badge = root.querySelector(".badge");
+  const bar = root.querySelector("#steps");
+
+  const src = document.createElement("canvas");
+  const sctx = src.getContext("2d");
+
+  // seeded random so the scene is the same every load
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const R = rng(7);
+  const trees = Array.from({ length: 520 }, () => ({ x: R(), y: R(), r: 0.35 + 0.7 * R(), lime: R() < 0.16, dark: R() }));
+  const rocks = Array.from({ length: 40 }, () => ({ x: R(), y: R() * 0.3, w: 0.02 + R() * 0.06, h: 0.03 + R() * 0.12, a: 0.15 + R() * 0.3 }));
+  const forest = Array.from({ length: 2200 }, () => ({ x: R(), y: 0.25 + 0.75 * Math.sqrt(R()), h: 0.6 + R(), k: Math.floor(R() * 4) }));
+  const FOREST = ["#24583a", "#3c7a40", "#78a653", "#1b4630"];
+  const glints = Array.from({ length: 420 }, () => ({ x: R(), y: R(), w: 0.006 + R() * 0.05, p: R() * 6.28, s: 0.4 + R() }));
+
+  // fixed grain so the dither has photo-like variation to bite on
+  const grain = document.createElement("canvas"); grain.width = 256; grain.height = 128;
+  { const gx = grain.getContext("2d"), d = gx.createImageData(256, 128);
+    for (let i = 0; i < d.data.length; i += 4) { const v = 128 + (R() - 0.5) * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+    gx.putImageData(d, 0, 0); }
+
+  function ridge(x, a, b) { return a + b * (0.55 * Math.sin(x * 5.1 + 1.3) + 0.3 * Math.sin(x * 11.7 + 0.4) + 0.15 * Math.sin(x * 23.3 + 2.1)); }
+
+  function drawLake(c, W, H, t) {
+    const sky = c.createLinearGradient(0, 0, 0, H * 0.45);
+    sky.addColorStop(0, "#d6dccb"); sky.addColorStop(1, "#b9c9a6");
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    const shore = H * 0.455;
+    // far limestone massif
+    c.beginPath(); c.moveTo(0, shore);
+    for (let i = 0; i <= 80; i++) { const x = i / 80; c.lineTo(x * W, H * ridge(x, -0.03, 0.05)); }
+    c.lineTo(W, shore); c.closePath();
+    let g = c.createLinearGradient(0, 0, 0, shore);
+    g.addColorStop(0, "#dfe2d2"); g.addColorStop(0.28, "#a9bf88"); g.addColorStop(0.55, "#5f9450"); g.addColorStop(1, "#2f6b3e");
+    c.fillStyle = g; c.fill();
+    c.save(); c.clip();
+    for (const r of rocks) { c.fillStyle = `rgba(236,236,224,${r.a * 0.35})`; c.beginPath(); c.ellipse(r.x * W, r.y * H, r.w * W * 0.5, r.h * H * 0.5, 0.35, 0, 6.283); c.fill(); }
+    c.globalAlpha = 0.55;
+    for (const f of forest) { c.fillStyle = FOREST[f.k]; c.fillRect(f.x * W, f.y * shore, Math.max(1, W * 0.004), H * 0.014 * f.h); }
+    c.globalAlpha = 1;
+    c.restore();
+    // shaded right slope
+    c.beginPath(); c.moveTo(W * 0.52, shore);
+    for (let i = 0; i <= 40; i++) { const x = 0.52 + 0.48 * i / 40; c.lineTo(x * W, H * (0.42 - 0.34 * Math.pow((x - 0.52) / 0.48, 0.55) + 0.015 * Math.sin(x * 40))); }
+    c.lineTo(W, shore); c.closePath();
+    g = c.createLinearGradient(W * 0.6, 0, W, shore);
+    g.addColorStop(0, "#2b6440"); g.addColorStop(1, "#173f2f");
+    c.fillStyle = g; c.fill();
+    c.save(); c.clip(); c.globalAlpha = 0.5;
+    for (const f of forest) if (f.x > 0.5) { c.fillStyle = f.k === 2 ? "#3c7a40" : "#123826"; c.fillRect(f.x * W, f.y * shore, Math.max(1, W * 0.004), H * 0.014 * f.h); }
+    c.restore();
+    // treeline
+    for (const tr of trees) {
+      const x = tr.x * W, y = shore - H * (0.005 + 0.06 * tr.y * (0.4 + 0.6 * Math.abs(Math.sin(tr.x * 9)))), r = H * 0.012 * tr.r;
+      c.fillStyle = tr.lime ? "#9cbb4c" : (tr.dark > 0.5 ? "#1d4a2c" : "#2c5f34");
+      c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+    }
+    c.fillStyle = "#1d4a2c"; c.fillRect(0, shore - H * 0.01, W, H * 0.012);
+    // water
+    g = c.createLinearGradient(0, shore, 0, H);
+    g.addColorStop(0, "#2c6e60"); g.addColorStop(0.25, "#3c8a7c"); g.addColorStop(1, "#1d5552");
+    c.fillStyle = g; c.fillRect(0, shore, W, H - shore);
+    c.fillStyle = "rgba(20,60,40,.45)"; c.fillRect(0, shore, W, H * 0.05);
+    for (const gl of glints) {
+      const yy = shore + (H - shore) * (0.08 + 0.92 * gl.y);
+      const k = 0.5 + 0.5 * Math.sin(t * gl.s * 1.3 + gl.p);
+      const bright = 0.12 + 1.1 * Math.max(0, gl.x - 0.45) * k;
+      c.fillStyle = `rgba(214,236,196,${bright})`;
+      c.fillRect(((gl.x + t * 0.004 * gl.s) % 1) * W, yy, gl.w * W * (1 + gl.y), Math.max(1, H * 0.003));
+    }
+    // boat, drifting right very slowly
+    const bx = W * (0.36 + 0.06 * ((t / 60) % 1)), by = shore + (H - shore) * 0.29 + Math.sin(t * 0.9) * H * 0.002, bw = W * 0.14;
+    c.strokeStyle = "rgba(230,240,225,.55)"; c.lineWidth = Math.max(1, H * 0.003);
+    c.beginPath(); c.moveTo(bx - W * 0.25, by + H * 0.004); c.lineTo(bx, by + H * 0.002); c.stroke();
+    c.fillStyle = "#4a3418";
+    c.beginPath(); c.moveTo(bx, by - H * 0.012); c.lineTo(bx + bw, by - H * 0.03); c.lineTo(bx + bw * 0.86, by + H * 0.004); c.lineTo(bx + bw * 0.05, by + H * 0.008); c.closePath(); c.fill();
+    c.fillStyle = "#d8b13c";
+    for (let i = 0; i < 7; i++) { c.beginPath(); c.arc(bx + bw * (0.18 + i * 0.075), by - H * 0.016, H * 0.007, 0, 6.283); c.fill(); }
+    c.fillStyle = "#1b1a14"; c.fillRect(bx + bw * 0.12, by - H * 0.065, W * 0.006, H * 0.05);
+    c.beginPath(); c.arc(bx + bw * 0.12 + W * 0.003, by - H * 0.07, H * 0.008, 0, 6.283); c.fill();
+    c.fillStyle = "rgba(10,40,35,.35)"; c.fillRect(bx, by + H * 0.008, bw * 0.9, H * 0.02);
+    c.save(); c.globalCompositeOperation = "overlay"; c.globalAlpha = 0.12; c.imageSmoothingEnabled = true;
+    c.drawImage(grain, 0, 0, W, H); c.restore();
+  }
+
+  function drawLoud(c, W, H, t) {
+    c.fillStyle = "#1b0b42"; c.fillRect(0, 0, W, H);
+    const blobs = [["#ff2bd6", 0.3, 0.4, 2.3], ["#ff8a00", 0.7, 0.6, 3.1], ["#00e5ff", 0.5, 0.3, 1.7], ["#7cff3b", 0.2, 0.8, 2.7]];
+    c.globalCompositeOperation = "lighter";
+    for (const [col, x, y, s] of blobs) {
+      const cx = W * (x + 0.25 * Math.sin(t * s)), cy = H * (y + 0.25 * Math.cos(t * s * 1.3)), r = W * 0.32;
+      const g = c.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+    }
+    c.globalCompositeOperation = "source-over";
+    c.fillStyle = "rgba(255,255,255,.12)";
+    const off = (t * W * 0.6) % (W * 0.12);
+    for (let x = -W; x < W * 2; x += W * 0.12) { c.beginPath(); c.moveTo(x + off, 0); c.lineTo(x + off + W * 0.04, 0); c.lineTo(x + off - W * 0.3, H); c.lineTo(x + off - W * 0.34, H); c.fill(); }
+  }
+
+  // WebGL texture pass
+  let gl = canvas.getContext("webgl", { antialias: false, preserveDrawingBuffer: true });
+  let prog, uni = {}, tex;
+  if (gl) {
+    const vs = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+    const fs = `precision mediump float;
+      uniform sampler2D uSrc;uniform vec2 uRes;uniform float uCell,uOn,uDot,uLv,uPo,uPm;uniform vec3 uHi,uLo;
+      float b2(vec2 a){a=floor(a);return fract(a.x*.5+a.y*a.y*.75);}
+      float b4(vec2 a){return b2(.5*a)*.25+b2(a);}
+      void main(){
+        vec2 fr=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y);
+        vec3 sm=texture2D(uSrc,fr/uRes).rgb;
+        if(uOn<.5){gl_FragColor=vec4(sm,1.);return;}
+        vec2 cell=floor(fr/uCell);
+        vec3 c=texture2D(uSrc,(cell+.5)*uCell/uRes).rgb;
+        float l=dot(c,vec3(.299,.587,.114));
+        vec3 base=mix(sm,floor(sm*uPo+.5)/uPo,uPm);
+        vec2 f=fract(fr/uCell)-.5;
+        float d=max(abs(f.x),abs(f.y));
+        vec3 col=base;
+        if(d<uDot){
+          float q=fract(l*uLv), t=b4(cell);
+          if(q>t+.22) col=mix(c,uHi,.42+.3*l);
+          else if(q<t-.5) col=mix(c,uLo,.38);
+        }
+        gl_FragColor=vec4(col,1.);
+      }`;
+    const sh = (type, s) => { const o = gl.createShader(type); gl.shaderSource(o, s); gl.compileShader(o); return o; };
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) gl = null;
+  }
+  if (gl) {
+    gl.useProgram(prog);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    for (const n of ["uSrc", "uRes", "uCell", "uOn", "uDot", "uLv", "uPo", "uPm", "uHi", "uLo"]) uni[n] = gl.getUniformLocation(prog, n);
+    tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  if (!gl && prog) { const fresh = canvas.cloneNode(); canvas.replaceWith(fresh); canvas = fresh; }
+  const ctx2d = gl ? null : canvas.getContext("2d");
+
+  let scale = 1;
+  function resize() {
+    const r = media.getBoundingClientRect();
+    scale = state.hires ? Math.min(devicePixelRatio || 1, cfg.maxDpr) : cfg.loresScale;
+    const cw = Math.max(1, Math.round(r.width * scale)), ch = Math.max(1, Math.round(r.height * scale));
+    // reassigning an unchanged size still clears the drawing buffer
+    if (canvas.width !== cw) canvas.width = cw;
+    if (canvas.height !== ch) canvas.height = ch;
+    const sw = state.hires ? cfg.hiresSource : cfg.loresSource;
+    src.width = sw; src.height = Math.max(1, Math.round(sw * r.height / Math.max(1, r.width)));
+    badge.textContent = `${state.hires ? "4K" : "低清"} · ${canvas.width}×${canvas.height}`;
+  }
+
+  let t0 = performance.now(), raf = 0, visible = true, last = -1;
+  function frame(now) {
+    const t = reduce ? 8 : (now - t0) / 1000;
+    (state.clip ? drawLake : drawLoud)(sctx, src.width, src.height, state.clip ? t : t * 1.6);
+    if (gl) {
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, src);
+      const T = cfg.texture;
+      gl.uniform1i(uni.uSrc, 0);
+      gl.uniform2f(uni.uRes, canvas.width, canvas.height);
+      gl.uniform1f(uni.uCell, Math.max(1, T.cell * scale));
+      gl.uniform1f(uni.uOn, state.texture ? 1 : 0);
+      gl.uniform1f(uni.uDot, T.dot); gl.uniform1f(uni.uLv, T.levels);
+      gl.uniform1f(uni.uPo, T.poster); gl.uniform1f(uni.uPm, T.posterMix);
+      gl.uniform3fv(uni.uHi, T.hi); gl.uniform3fv(uni.uLo, T.lo);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    } else {
+      ctx2d.imageSmoothingEnabled = true;
+      ctx2d.drawImage(src, 0, 0, canvas.width, canvas.height);
+    }
+  }
+  function loop(now) {
+    raf = 0;
+    if (!visible) return;
+    const step = Math.floor(now / (1000 / 30));
+    if (step !== last) { last = step; frame(now); }
+    if (!reduce) raf = requestAnimationFrame(loop);
+  }
+  function kick() { if (reduce) frame(performance.now()); else if (!raf && visible) raf = requestAnimationFrame(loop); }
+
+  function sync() {
+    hero.classList.toggle("raw", !state.frame);
+    bar.querySelectorAll("button[data-k]").forEach(b => {
+      if (b.dataset.k === "all") b.textContent = Object.values(state).every(Boolean) ? "全部关" : "全部开";
+      else b.setAttribute("aria-pressed", String(state[b.dataset.k]));
+    });
+    resize(); frame(performance.now());
+  }
+  function set(k, on) {
+    if (k === "all") { const v = on ?? !Object.values(state).every(Boolean); for (const key in state) state[key] = v; }
+    else state[k] = on ?? !state[k];
+    if ((k === "frame" || k === "all") && !reduce) {
+      hero.classList.add("fading");
+      setTimeout(() => { sync(); hero.classList.remove("fading"); }, 180);
+    } else sync();
+  }
+
+  const onClick = e => { const b = e.target.closest("button[data-k]"); if (b) set(b.dataset.k); };
+  const onKey = e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
+    const i = "1234".indexOf(e.key);
+    if (i >= 0) set(cfg.steps[i].key); else if (e.key === "0") set("all");
+  };
+  bar.addEventListener("click", onClick);
+  addEventListener("keydown", onKey);
+  const ro = new ResizeObserver(() => { resize(); frame(performance.now()); });
+  ro.observe(media);
+  const io = new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); });
+  io.observe(media);
+  sync(); kick();
+
+  return {
+    set, get: () => Object.assign({}, state),
+    destroy() { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); bar.removeEventListener("click", onClick); removeEventListener("keydown", onKey); root.remove(); }
+  };
+}
+
+window.__framed = createFramedHero(document.getElementById("app"));
+</script>
+</body>
+</html>

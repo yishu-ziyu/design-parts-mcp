@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moorfield ASCII World</title>
+<style>
+  :root {
+    --bg: #0c0c16;
+    --panel: #070707;
+    --line: #b9b9b9;
+    --text: #dcdcdc;
+    --hud: #b4bbb4;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: #9a9cad; }
+  body { font-family: var(--mono); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+  #world { position: relative; width: 100%; height: min(100vh, 820px); min-height: 460px; overflow: hidden; background: var(--bg); touch-action: manipulation; outline: none; cursor: crosshair; }
+  #world canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  #party { position: absolute; left: 10px; top: 10px; width: 226px; font-size: 11px; line-height: 1.55; color: var(--text); pointer-events: none; }
+  .pbox { background: var(--panel); border: 1.5px solid var(--line); border-radius: 2px; padding: 3px 7px 4px; margin-bottom: 3px; }
+  .pbox .nm { font-size: 12px; color: #e8e8e8; }
+  .pbox.hero .nm { font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .row b { font-weight: 400; width: 1.6em; color: #cfcfcf; }
+  .bar { flex: 0 0 112px; height: 9px; border: 1px solid #c9c9c9; padding: 1px; }
+  .bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, #dedede 0 2px, #6c6c6c 2px 3px); transition: width .25s linear; }
+  .tab { display: inline-block; background: var(--panel); border: 1.5px solid var(--line); border-radius: 2px; padding: 0 5px; font-size: 10.5px; line-height: 1.5; }
+  #hud { position: absolute; right: 12px; top: 9px; font-size: 11px; color: var(--hud); white-space: pre; pointer-events: none; }
+  #hint { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font-size: 11px; color: #6c6f86; white-space: nowrap; pointer-events: none; }
+  @media (max-width: 560px) {
+    #world { height: 78vh; }
+    #party { width: 172px; font-size: 9.5px; left: 8px; top: 8px; }
+    .pbox { padding: 2px 5px 3px; }
+    .pbox .nm, .pbox.hero .nm { font-size: 10.5px; }
+    .bar { flex-basis: 76px; height: 8px; }
+    #hud, #hint, .tab { font-size: 9.5px; }
+    #hud { right: 8px; top: 8px; }
+  }
+
+  #notes { padding: 72px clamp(16px, 4vw, 48px) 120px; max-width: 980px; font-size: 14px; line-height: 1.8; color: #9a9cad; }
+  #notes h3 { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; color: #e6e6e6; padding-bottom: 14px; border-bottom: 1.5px solid var(--line); }
+  #notes dt { margin-top: 26px; }
+  #notes dt code { font: inherit; color: #e6e6e6; }
+  #notes dd { margin-top: 4px; }
+  #notes dd code { font: inherit; font-size: 0.93em; color: #d8dbe8; background: rgba(255, 255, 255, 0.06); padding: 0 0.25em; }
+</style>
+</head>
+<body>
+  <main>
+    <div id="world" tabindex="0" aria-label="ASCII world. Move with WASD or arrow keys, Space to cast, click or tap to walk.">
+      <canvas id="ascii"></canvas>
+      <div id="party"></div>
+      <div id="hud"></div>
+      <div id="hint"></div>
+    </div>
+  </main>
+
+  <section id="notes" lang="zh-CN">
+    <h3>可拆</h3>
+    <dl>
+      <dt><code>#ascii</code></dt>
+      <dd>整张画面是一块 canvas 上逐格 <code>fillText</code> 的等宽字。格子 = 字宽（<code>measureText</code> 取整）× 字号 × 1.12；桌面 11px，窄屏 9px。每帧把可见格子按颜色分桶，一个颜色只设一次 <code>fillStyle</code>，约 1 万个字一帧 3–6 ms。底色 <code>#0C0C16</code>，空格子就是夜色。</dd>
+      <dt><code>#world</code></dt>
+      <dd>世界是一张固定种子的格子地图：草（<code>| / ' ,</code> 四种叶片，值噪声定疏密和明暗；叶片字号 = 格高 × 1.3，伸进上一行，每格按哈希错开 ±0.4 格，不然会连成斜排线；一条斜向正弦带当作风，扫过的叶片变成 <code>/</code> 并提亮）、水（暗底上稀疏的 <code>- = .</code> 缓慢横移）、塘边（按法线角度选 <code>( ) / \ _ -</code>）、石路（<code>= :</code> 灰）、树（三角形 <code>Q @ 0 O o 8</code>，左亮右暗）。水面每格取「以塘上沿为轴」的镜像格，叶片字也镜像（<code>/</code>↔<code>\</code>），压暗 55% 再加一点横向抖动，就是倒影。</dd>
+      <dt><code>#party</code></dt>
+      <dd>组队面板：黑底 <code>#070707</code>、1.5px 浅灰边、2px 圆角，三张卡上下叠、间隔 3px，下面一个 <code>party</code> 小标签。血条和蓝条是带 1px 边框的细框，里面用 <code>repeating-linear-gradient</code> 画 2px 亮 1px 暗的竖纹，看起来像一排 <code>|</code>。施法扣蓝，随时间回。</dd>
+      <dt><code>#hud</code></dt>
+      <dd>右上角实测帧率和每帧绘制耗时（<code>FPS · frame ms</code>），淡灰绿 <code>#B4BBB4</code>。数字每 0.5 s 更新一次，是真的量出来的，不是摆设。</dd>
+      <dt><code>#hint</code></dt>
+      <dd>操作：WASD / 方向键走，空格施法；点地面走过去，点自己施法（手机同理）。两个队友沿着你走过的轨迹跟随；另外几个陌生玩家在本地模拟，自己挑目的地闲逛，偶尔放技能。施法是一圈按椭圆展开的符号环，脚下一个白色 <code>( _ )</code> 法阵，技能名用技能色飘在左上。</dd>
+    </dl>
+  </section>
+
+<script>
+const CONFIG = {
+  font: 'ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace',
+  fontPx: 9,
+  weight: 700,
+  bladeScale: 1.3,
+  fontPxNarrow: 8,
+  lineRatio: 1.12,
+  bg: [12, 12, 22],
+  seed: 7,
+  world: { w: 240, h: 170 },
+  speed: 82,
+  hero: { name: 'Wren', lv: 9, gold: 1207, hp: 2140, mp: 96, cape: [150, 46, 52] },
+  party: [
+    { name: 'mossling_k', lv: 6, hp: 318, mp: 402, cape: [70, 92, 150] },
+    { name: 'Orrin', lv: 2, hp: 612, mp: 40, cape: [118, 104, 70] },
+  ],
+  strangers: [
+    { name: 'Tamsin', cape: [96, 60, 130] },
+    { name: 'pebble_99', cape: [60, 110, 100] },
+    { name: 'Lune', cape: [140, 120, 150] },
+    { name: 'oakhart', cape: [90, 90, 96] },
+  ],
+  spells: [
+    { name: 'Ember of Thistle', color: [196, 132, 255], glyphs: '*+x*' },
+    { name: 'Glass Rain', color: [120, 214, 230], glyphs: '+:*.' },
+    { name: 'Moth Lantern', color: [236, 200, 120], glyphs: 'o*+.' },
+  ],
+  hint: 'WASD / arrows walk · Space cast · click to walk',
+  hintTouch: 'tap to walk · tap yourself to cast',
+  partyTab: 'party',
+};
+
+function createAsciiWorld(container, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options);
+  const canvas = container.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const partyEl = container.querySelector('#party');
+  const hudEl = container.querySelector('#hud');
+  const hintEl = container.querySelector('#hint');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const BG = `rgb(${cfg.bg.join(',')})`;
+  const W = cfg.world.w, H = cfg.world.h, S = cfg.seed;
+
+  function hash(x, y, s) {
+    let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(s | 0, 982451653)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  }
+  function vnoise(x, y, s) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  const fbm = (x, y, s) => vnoise(x, y, s) * 0.6 + vnoise(x * 2.1, y * 2.1, s + 1) * 0.3 + vnoise(x * 4.3, y * 4.3, s + 2) * 0.1;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // Palette: every glyph colour is an index, so a frame can be drawn one fillStyle per colour.
+  const pal = [], palRGB = [], palKey = new Map();
+  function col(r, g, b) {
+    r = clamp(Math.round(r / 3) * 3, 0, 255); g = clamp(Math.round(g / 3) * 3, 0, 255); b = clamp(Math.round(b / 3) * 3, 0, 255);
+    const k = (r << 16) | (g << 8) | b;
+    let i = palKey.get(k);
+    if (i === undefined) { i = pal.length; pal.push(`rgb(${r},${g},${b})`); palRGB.push([r, g, b]); palKey.set(k, i); }
+    return i;
+  }
+  const dimCache = new Map(), litCache = new Map();
+  function dim(i) {
+    let j = dimCache.get(i);
+    if (j === undefined) { const c = palRGB[i]; j = col(lerp(c[0], cfg.bg[0], 0.55), lerp(c[1], cfg.bg[1], 0.55), lerp(c[2], cfg.bg[2] + 10, 0.5)); dimCache.set(i, j); }
+    return j;
+  }
+  function lit(i) {
+    let j = litCache.get(i);
+    if (j === undefined) { const c = palRGB[i]; j = col(lerp(c[0], 150, 0.35), lerp(c[1], 240, 0.35), lerp(c[2], 150, 0.35)); litCache.set(i, j); }
+    return j;
+  }
+  const grassShade = k => {
+    const t = clamp(k, 0, 1);
+    return t < 0.55
+      ? col(lerp(22, 50, t / 0.55), lerp(62, 146, t / 0.55), lerp(48, 92, t / 0.55))
+      : col(lerp(50, 140, (t - 0.55) / 0.45), lerp(146, 222, (t - 0.55) / 0.45), lerp(92, 164, (t - 0.55) / 0.45));
+  };
+
+  // Map: tile type, static glyph and colour per cell.
+  const GRASS = 0, WATER = 1, RIM = 2, PATH = 3, CANOPY = 4, TRUNK = 5, ROCK = 6, FLOWER = 7;
+  const JX = new Float32Array(W * H), JY = new Float32Array(W * H);
+  const T = new Uint8Array(W * H), CH = new Array(W * H).fill(' '), CI = new Uint16Array(W * H), PID = new Int16Array(W * H).fill(-1);
+  const sx0 = W >> 1, sy0 = H >> 1;
+  const ponds = [
+    { cx: sx0 + 2, cy: sy0 + 14, rx: 27, ry: 11 },
+    { cx: sx0 - 62, cy: sy0 - 34, rx: 15, ry: 7 },
+    { cx: sx0 + 58, cy: sy0 + 38, rx: 19, ry: 8 },
+    { cx: sx0 + 70, cy: sy0 - 40, rx: 12, ry: 6 },
+  ];
+  const pathY = () => sy0 - 15;
+  const pathX = y => sx0 - 34 + Math.round(4 * Math.sin(y * 0.07));
+  const rimGrey = (x, y) => col(118 + hash(x, y, S + 3) * 50, 120 + hash(x, y, S + 3) * 50, 134 + hash(x, y, S + 3) * 50);
+
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    let done = false;
+    for (let p = 0; p < ponds.length && !done; p++) {
+      const o = ponds[p], nx = (x - o.cx) / o.rx, ny = (y - o.cy) / o.ry, e = nx * nx + ny * ny;
+      if (e < 1) { T[i] = WATER; PID[i] = p; done = true; }
+      else if (e < 1.22) {
+        T[i] = RIM; done = true;
+        const a = Math.atan2(ny, nx) * 180 / Math.PI;
+        CH[i] = a > -150 && a < -120 ? '/' : a >= -120 && a <= -60 ? '_' : a > -60 && a < -30 ? '\\'
+          : a >= -30 && a <= 30 ? ')' : a > 30 && a < 60 ? '/' : a >= 60 && a <= 120 ? '-' : a > 120 && a < 150 ? '\\' : '(';
+        CI[i] = rimGrey(x, y);
+      }
+    }
+    if (done) continue;
+    const h = hash(x, y, S);
+    if (Math.abs(y - pathY(x)) <= 1 || (Math.abs(x - pathX(y)) <= 2 && y > pathY(x))) {
+      T[i] = PATH;
+      const edge = Math.abs(y - pathY(x)) === 1 && Math.abs(x - pathX(y)) > 2;
+      const plank = y === pathY(x) ? x % 4 === 0 : (x - y) % 4 === 0;
+      CH[i] = h < 0.06 ? ' ' : edge ? (plank ? '|' : '=') : (plank ? '|' : h < 0.8 ? '=' : '#');
+      CI[i] = col(104 + h * 70, 106 + h * 70, 118 + h * 66);
+      continue;
+    }
+    const d = fbm(x * 0.06, y * 0.09, S + 4);
+    if (h < 0.0035) { T[i] = ROCK; CH[i] = h < 0.0018 ? '%' : '&'; CI[i] = col(110, 112, 124); continue; }
+    if (h > 0.9955) { T[i] = FLOWER; CH[i] = '*'; CI[i] = hash(x, y, S + 8) < 0.5 ? col(214, 140, 186) : col(222, 206, 120); continue; }
+    T[i] = GRASS;
+    const gap = 0.02 + (0.5 - d) * 0.45;
+    if (hash(x, y, S + 1) < gap) { CH[i] = ' '; continue; }
+    const g = hash(x, y, S + 2);
+    CH[i] = g < 0.4 ? '|' : g < 0.8 ? '/' : g < 0.92 ? "'" : ',';
+    const pale = hash(x, y, S + 6) > 0.985;
+    JX[i] = hash(x, y, S + 40) - 0.5; JY[i] = hash(x, y, S + 41) - 0.5;
+    const patch = fbm(x * 0.12, y * 0.2, S + 42);
+    CI[i] = pale ? col(196, 232, 204) : grassShade(0.04 + d * 0.5 + patch * 0.35 + hash(x, y, S + 5) * 0.35);
+  }
+
+  // Trees on a jittered grid, denser where forest noise is high and along the map border.
+  const treeGlyphs = 'Q@0Oo8dQ';
+  for (let gy = 4; gy < H - 4; gy += 6) for (let gx = 3; gx < W - 3; gx += 9) {
+    const x = gx + Math.floor(hash(gx, gy, S + 11) * 6), y = gy + Math.floor(hash(gx, gy, S + 12) * 4);
+    const border = Math.min(x, y, W - x, H - y) < 14;
+    const f = fbm(x * 0.035, y * 0.04, S + 9);
+    if (!border && (f < 0.6 || hash(x, y, S + 15) < 0.35)) continue;
+    if (Math.hypot((x - sx0) / 1.7, y - sy0) < 13) continue;
+    if (Math.abs(y - pathY(x)) < 4) continue;
+    const hgt = 6 + Math.floor(hash(x, y, S + 13) * 4);
+    let blocked = false;
+    for (let r = 0; r < hgt + 2 && !blocked; r++) for (let dx = -5; dx <= 5; dx++) {
+      const k = (y - hgt + r) * W + x + dx;
+      if (k < 0 || k >= W * H || T[k] === WATER || T[k] === RIM || T[k] === PATH || T[k] === TRUNK) { blocked = true; break; }
+    }
+    if (blocked) continue;
+    for (let r = 0; r < hgt; r++) {
+      const hw = Math.round(r * 0.62);
+      for (let dx = -hw; dx <= hw; dx++) {
+        const k = (y - hgt + r) * W + x + dx;
+        const lightSide = 1 - (dx + hw) / (2 * hw + 1);
+        const hh = hash(x + dx, y + r, S + 14);
+        if (hh < 0.06 && Math.abs(dx) === hw) continue;
+        T[k] = CANOPY;
+        CH[k] = treeGlyphs[Math.floor(hh * treeGlyphs.length)];
+        const l = clamp(0.2 + lightSide * 0.55 + (hh - 0.5) * 0.3 - r / hgt * 0.15, 0, 1);
+        CI[k] = l > 0.82 ? col(150, 220, 170) : col(lerp(30, 104, l), lerp(80, 196, l), lerp(58, 126, l));
+      }
+    }
+    for (let r = 0; r < 2; r++) { const k = (y + r) * W + x; T[k] = TRUNK; CH[k] = r ? '#' : '|'; CI[k] = col(98, 88, 80); }
+  }
+
+  const walkable = (x, y) => {
+    const cx = Math.round(x), cy = Math.round(y);
+    if (cx < 2 || cy < 2 || cx >= W - 2 || cy >= H - 1) return false;
+    const t = T[cy * W + cx];
+    return t !== WATER && t !== RIM && t !== TRUNK;
+  };
+  const pondTop = (p, x) => { const o = ponds[p], nx = (x - o.cx) / o.rx; return o.cy - o.ry * Math.sqrt(Math.max(0, 1 - nx * nx)); };
+  const MIRROR = { '/': '\\', '\\': '/', "'": ',', ',': "'", '_': '-', '-': '_', '(': '(', ')': ')' };
+
+  // Character sprite, 5 x 8 cells. Digits are brightness on a glyph ramp, 'c' is cape, 's' is staff.
+  const RAMP = " .':;=+*o%";
+  const SPRITE = {
+    stand: ['  8  ', ' 898 ', ' 777 ', '  6  ', ' c87 ', 'c8976', 'c7986', ' c87 ', ' c76 ', ' 5 5 ', ' 4 4 '],
+    stepA: ['  8  ', ' 898 ', ' 777 ', '  6  ', ' c87 ', 'c8976', 'c7986', ' c87 ', ' c76 ', ' 5  5', '4   4'],
+    stepB: ['  8  ', ' 898 ', ' 777 ', '  6  ', ' c87 ', 'c8976', 'c7986', ' c87 ', ' c76 ', '  55 ', '  44 '],
+  };
+  function spriteCells(e) {
+    const rows = !e.moving ? SPRITE.stand : (Math.floor(e.walkT * 6.5) % 2 ? SPRITE.stepA : SPRITE.stepB);
+    const out = [];
+    for (let r = 0; r < rows.length; r++) for (let c = 0; c < 5; c++) {
+      const s = rows[r][e.dir < 0 ? 4 - c : c];
+      if (s === ' ') continue;
+      if (s === 'c') out.push([c - 2, r - 10, r > 7 ? '(' : '*', col(...e.cape)]);
+      else { const v = +s; out.push([c - 2, r - 10, RAMP[v], col(84 + v * 16, 88 + v * 16, 100 + v * 16)]); }
+    }
+    if (e.staff) for (let r = 2; r < 11; r++) out.push([e.dir < 0 ? -3 : 3, r - 10, r === 2 ? 'o' : '|', r === 2 ? col(236, 214, 150) : col(150, 132, 108)]);
+    return out;
+  }
+
+  // Entities: hero, followers on the hero's trail, and locally simulated strangers.
+  const mk = (o, x, y, ai) => ({ name: o.name, lv: o.lv || 1, hpMax: o.hp || 500, hp: o.hp || 500, mpMax: o.mp || 100, mp: o.mp || 100,
+    cape: o.cape, x, y, dir: 1, walkT: 0, moving: false, ai, target: null, idle: 0, castIn: 4 + Math.random() * 8, staff: ai === 'hero' });
+  const hero = mk(cfg.hero, sx0, sy0 - 1, 'hero');
+  hero.gold = cfg.hero.gold;
+  const ents = [hero];
+  cfg.party.forEach((p, i) => ents.push(mk(p, sx0 - 13 - i * 13, sy0 - 1, 'follow')));
+  cfg.strangers.forEach((p, i) => {
+    let x, y, n = 0;
+    do { x = sx0 + (hash(i, n, S + 20) - 0.5) * 120; y = sy0 + (hash(i, n, S + 21) - 0.5) * 80; n++; } while (!walkable(x, y) && n < 200);
+    ents.push(mk(p, x, y, 'wander'));
+  });
+  ents.slice(1).forEach(e => { e.hp = Math.round(e.hpMax * (0.6 + Math.random() * 0.4)); e.mp = Math.round(e.mpMax * (0.4 + Math.random() * 0.6)); });
+  const trail = Array.from({ length: 60 }, (_, k) => ({ x: hero.x - 30 + k * 0.5, y: hero.y }));
+  const effects = [];
+  const flies = Array.from({ length: 70 }, (_, i) => ({ x: Math.random(), y: Math.random(), ph: Math.random() * 6.28, sp: 0.4 + Math.random() }));
+
+  let fontPx, cw, chh, vw, vh, dpr;
+  let camX = hero.x, camY = hero.y - 2;
+  function resize() {
+    const r = container.getBoundingClientRect();
+    vw = r.width; vh = r.height; dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+    fontPx = vw < 560 ? cfg.fontPxNarrow : cfg.fontPx;
+    ctx.font = `${cfg.weight} ${fontPx}px ${cfg.font}`;
+    cw = Math.ceil(ctx.measureText('M').width);
+    chh = Math.round(fontPx * cfg.lineRatio) + 1;
+    hintEl.textContent = coarse ? cfg.hintTouch : cfg.hint;
+  }
+
+  function cast(e = hero) {
+    const sp = cfg.spells[(effects.length + ents.indexOf(e)) % cfg.spells.length];
+    if (e.mp < 8) return false;
+    e.mp -= Math.min(e.mp, 8 + Math.round(e.mpMax * 0.06));
+    effects.push({ x: e.x, y: e.y - 5, t: 0, dur: reduce ? 0.9 : 1.15, sp, by: e,
+      sparks: Array.from({ length: 16 }, () => ({ a: Math.random() * 6.28, v: 6 + Math.random() * 10, g: sp.glyphs[Math.floor(Math.random() * sp.glyphs.length)] })) });
+    return true;
+  }
+
+  // Input
+  const keys = new Set();
+  let inView = true;
+  const onKey = ev => {
+    if (!inView || /input|textarea|select/i.test(ev.target.tagName)) return;
+    const k = ev.key.toLowerCase();
+    const map = { arrowup: 'u', w: 'u', arrowdown: 'd', s: 'd', arrowleft: 'l', a: 'l', arrowright: 'r', d: 'r' };
+    if (ev.type === 'keydown' && k === ' ') { ev.preventDefault(); if (!ev.repeat) cast(); return; }
+    if (!map[k]) return;
+    ev.preventDefault();
+    if (ev.type === 'keydown') { keys.add(map[k]); hero.target = null; } else keys.delete(map[k]);
+  };
+  let down = null;
+  const onDown = ev => { down = { x: ev.clientX, y: ev.clientY }; };
+  const onUp = ev => {
+    if (!down || Math.hypot(ev.clientX - down.x, ev.clientY - down.y) > 10) { down = null; return; }
+    down = null;
+    const r = canvas.getBoundingClientRect();
+    const wx = camX - vw / cw / 2 + (ev.clientX - r.left) / cw, wy = camY - vh / chh / 2 + (ev.clientY - r.top) / chh;
+    if (Math.abs(wx - hero.x) < 3 && wy > hero.y - 12 && wy < hero.y + 1.5) cast();
+    else hero.target = { x: wx, y: wy };
+  };
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKey);
+  canvas.addEventListener('pointerdown', onDown);
+  canvas.addEventListener('pointerup', onUp);
+
+  function step(e, dx, dy, dt) {
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-3) { e.moving = false; return; }
+    const pxs = cfg.speed * (e.ai === 'wander' ? 0.55 : 1);
+    const mx = dx / len * pxs / cw * dt, my = dy / len * pxs / chh * dt;
+    if (walkable(e.x + mx, e.y)) e.x += mx;
+    if (walkable(e.x, e.y + my)) e.y += my;
+    if (Math.abs(dx) > 0.05) e.dir = dx > 0 ? 1 : -1;
+    e.moving = true; e.walkT += dt;
+  }
+
+  function update(dt) {
+    let dx = (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0), dy = (keys.has('d') ? 1 : 0) - (keys.has('u') ? 1 : 0);
+    if (!dx && !dy && hero.target) {
+      const tx = hero.target.x - hero.x, ty = (hero.target.y - hero.y) * chh / cw;
+      if (Math.hypot(tx, ty) < 0.6) hero.target = null; else { dx = tx; dy = ty; }
+    }
+    const bx = hero.x, by = hero.y;
+    step(hero, dx, dy, dt);
+    if (hero.target && Math.hypot(hero.x - bx, hero.y - by) < 1e-4) hero.target = null;
+    const last = trail[trail.length - 1];
+    if (!last || Math.hypot(hero.x - last.x, (hero.y - last.y) * 1.7) > 0.5) { trail.push({ x: hero.x, y: hero.y }); if (trail.length > 80) trail.shift(); }
+
+    ents.forEach((e, i) => {
+      e.mp = Math.min(e.mpMax, e.mp + e.mpMax * 0.02 * dt);
+      if (e.ai === 'follow') {
+        const tp = trail[trail.length - 1 - i * 26];
+        if (!tp) { e.moving = false; return; }
+        const fx = tp.x - e.x, fy = (tp.y - e.y) * chh / cw;
+        if (Math.hypot(fx, fy) > 1.2) step(e, fx, fy, dt); else e.moving = false;
+      } else if (e.ai === 'wander') {
+        if (reduce) { e.moving = false; return; }
+        if (e.idle > 0) { e.idle -= dt; e.moving = false; }
+        else if (!e.target) {
+          for (let n = 0; n < 12; n++) {
+            const x = e.x + (Math.random() - 0.5) * 40, y = e.y + (Math.random() - 0.5) * 24;
+            if (walkable(x, y)) { e.target = { x, y }; break; }
+          }
+        } else {
+          const fx = e.target.x - e.x, fy = (e.target.y - e.y) * chh / cw;
+          const ox = e.x, oy = e.y;
+          if (Math.hypot(fx, fy) < 0.6) { e.target = null; e.idle = 1 + Math.random() * 2.5; }
+          else { step(e, fx, fy, dt); if (Math.hypot(e.x - ox, e.y - oy) < 1e-4) { e.target = null; e.idle = 0.5; } }
+        }
+        e.castIn -= dt;
+        if (e.castIn < 0) { e.castIn = 6 + Math.random() * 9; cast(e); }
+      }
+    });
+    effects.forEach(f => { f.t += dt / f.dur; });
+    for (let i = effects.length - 1; i >= 0; i--) if (effects[i].t >= 1) effects.splice(i, 1);
+
+    const k = reduce ? 1 : 1 - Math.pow(0.002, dt);
+    camX = lerp(camX, hero.x, k); camY = lerp(camY, hero.y - 2, k);
+  }
+
+  const buckets = [], blades = [];
+  const put = (px, py, ch, ci) => { (buckets[ci] || (buckets[ci] = [])).push(px, py, ch); };
+  const blade = (px, py, ch, ci) => { (blades[ci] || (blades[ci] = [])).push(px, py, ch); };
+
+  function render(time) {
+    const t = reduce ? 0 : time;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = BG; ctx.fillRect(0, 0, vw, vh);
+    ctx.font = `${cfg.weight} ${fontPx}px ${cfg.font}`;
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < buckets.length; i++) if (buckets[i]) buckets[i].length = 0;
+    for (let i = 0; i < blades.length; i++) if (blades[i]) blades[i].length = 0;
+
+    const ox = camX - vw / cw / 2, oy = camY - vh / chh / 2;
+    const c0 = Math.floor(ox), r0 = Math.floor(oy);
+    const offX = Math.round((c0 - ox) * cw), offY = Math.round((r0 - oy) * chh);
+    const cols = Math.ceil(vw / cw) + 1, rows = Math.ceil(vh / chh) + 1;
+
+    for (let r = 0; r < rows; r++) {
+      const wy = r0 + r, py = offY + r * chh;
+      if (wy < 0 || wy >= H) continue;
+      for (let c = 0; c < cols; c++) {
+        const wx = c0 + c, px = offX + c * cw;
+        if (wx < 0 || wx >= W) continue;
+        const i = wy * W + wx, ty = T[i];
+        if (ty === GRASS) {
+          const ch = CH[i];
+          if (ch === ' ') continue;
+          const gust = Math.sin(t * 1.5 - wx * 0.09 + wy * 0.05) + 0.55 * Math.sin(t * 0.7 + wy * 0.13 - wx * 0.02);
+          const bx = px + Math.round(JX[i] * cw * 0.8), by = py + Math.round(JY[i] * chh * 0.6);
+          if (gust > 1.32) blade(bx, by, '/', lit(lit(CI[i])));
+          else if (gust > 1.1) blade(bx, by, ch === '|' ? '/' : ch, lit(CI[i]));
+          else blade(bx, by, ch, CI[i]);
+        } else if (ty === WATER) {
+          const p = PID[i], top = pondTop(p, wx);
+          const wob = Math.round(Math.sin(t * 2.2 + wy * 0.9) * 0.6);
+          const my = Math.floor(2 * top - wy - 0.5), mx = wx + wob;
+          let drawn = false;
+          if (my >= 0 && mx >= 0 && mx < W && wy - top < 9) {
+            const j = my * W + mx, tj = T[j];
+            if ((tj === GRASS || tj === CANOPY || tj === TRUNK || tj === FLOWER) && CH[j] !== ' ' && hash(wx, wy, S + 30) > 0.35 + (wy - top) / 9 * 0.6) {
+              put(px, py, MIRROR[CH[j]] || CH[j], dim(dim(CI[j]))); drawn = true;
+            }
+          }
+          if (!drawn) {
+            const v = vnoise((wx + t * 0.9) * 0.22, wy * 1.0, S + 31);
+            if (v > 0.8) put(px, py, v > 0.9 ? '=' : '-', col(48 + v * 34, 50 + v * 34, 70 + v * 40));
+            else if (hash(wx, wy, S + 32) < 0.05) put(px, py, '.', col(52, 54, 72));
+          }
+        } else if (CH[i] !== ' ') put(px, py, CH[i], CI[i]);
+      }
+    }
+
+    const toPx = (x, y) => [Math.round((x - ox) * cw - cw / 2), Math.round((y - oy) * chh)];
+
+    // Reflections of characters standing near a pond.
+    ents.forEach(e => {
+      for (let p = 0; p < ponds.length; p++) {
+        const top = pondTop(p, e.x);
+        if (e.y > top - 8 && e.y < top + 0.5 && Math.abs(e.x - ponds[p].cx) < ponds[p].rx) {
+          spriteCells(e).forEach(([dx, dy, ch, ci]) => {
+            const wx = Math.round(e.x) + dx, wy = Math.floor(2 * top - (e.y + dy) + 0.5);
+            if (wx < 0 || wy < 0 || wx >= W || wy >= H || T[wy * W + wx] !== WATER) return;
+            const [px, py] = toPx(wx + Math.round(Math.sin(t * 2.2 + wy * 0.9) * 0.6) + 0.5, wy);
+            put(px, py, MIRROR[ch] || ch, dim(ci));
+          });
+        }
+      }
+    });
+
+    // Grass blades use a taller font so each blade overlaps the row above, which reads as a thick meadow.
+    const bladePx = Math.round(fontPx * cfg.bladeScale), lift = bladePx - fontPx;
+    ctx.font = `${cfg.weight} ${bladePx}px ${cfg.font}`;
+    for (let i = 0; i < blades.length; i++) {
+      const b = blades[i];
+      if (!b || !b.length) continue;
+      ctx.fillStyle = pal[i];
+      for (let k = 0; k < b.length; k += 3) ctx.fillText(b[k + 2], b[k], b[k + 1] - lift);
+      b.length = 0;
+    }
+    ctx.font = `${cfg.weight} ${fontPx}px ${cfg.font}`;
+    for (let i = 0; i < buckets.length; i++) {
+      const b = buckets[i];
+      if (!b || !b.length) continue;
+      ctx.fillStyle = pal[i];
+      for (let k = 0; k < b.length; k += 3) ctx.fillText(b[k + 2], b[k], b[k + 1]);
+      b.length = 0;
+    }
+
+    // Spell rings under and around casters.
+    ctx.textAlign = 'center';
+    effects.forEach(f => {
+      const [cx, cy] = toPx(f.x + 0.5, f.y);
+      const e = 1 - Math.pow(1 - f.t, 3), a = 1 - f.t;
+      const [r, g, b] = f.sp.color;
+      if (f.t < 0.7) {
+        ctx.fillStyle = `rgba(230,232,240,${(0.7 - f.t) * 1.2})`;
+        const [fx, fy] = toPx(f.by.x + 0.5, f.by.y + 0.6);
+        for (let k = 0; k < 18; k++) {
+          const ang = k / 18 * Math.PI * 2;
+          const ch = Math.abs(Math.cos(ang)) > 0.85 ? (Math.cos(ang) > 0 ? ')' : '(') : Math.sin(ang) > 0 ? '-' : '_';
+          ctx.fillText(ch, fx + Math.cos(ang) * cw * 4.2, fy + Math.sin(ang) * chh * 1.1 - chh / 2);
+        }
+      }
+      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+      const R = reduce ? 9 : 3 + e * 11;
+      const n = Math.max(10, Math.round(R * 4.2));
+      for (let k = 0; k < n; k++) {
+        const ang = k / n * Math.PI * 2 + f.t;
+        ctx.fillText(f.sp.glyphs[(k + Math.floor(f.t * 12)) % f.sp.glyphs.length], cx + Math.cos(ang) * R * cw, cy + Math.sin(ang) * R * chh * 0.58 - chh / 2);
+      }
+      if (!reduce) f.sparks.forEach(s => {
+        const d = s.v * e;
+        ctx.fillText(s.g, cx + Math.cos(s.a) * d * cw * 0.6, cy + Math.sin(s.a) * d * chh * 0.35 - f.t * chh * 3);
+      });
+      ctx.textAlign = 'right';
+      ctx.fillText(f.sp.name, cx - cw * 2, cy - chh * 2.2 - f.t * chh * 1.2);
+      ctx.textAlign = 'center';
+    });
+    ctx.textAlign = 'left';
+
+    // Characters, back to front.
+    const order = ents.slice().sort((a, b) => a.y - b.y);
+    order.forEach(e => {
+      spriteCells(e).forEach(([dx, dy, ch, ci]) => {
+        const [px, py] = toPx(Math.round(e.x) + dx + 0.5, Math.round(e.y) + dy);
+        ctx.fillStyle = pal[ci];
+        ctx.fillText(ch, px, py);
+      });
+    });
+    ctx.textAlign = 'center';
+    ctx.font = `${fontPx + 2}px ${cfg.font}`;
+    order.forEach(e => {
+      const [px, py] = toPx(Math.round(e.x) + 0.5 + 0.5, Math.round(e.y) - 12.4);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillText(e.name, px + 1, py + 1);
+      ctx.fillStyle = '#e4e4e8'; ctx.fillText(e.name, px, py);
+    });
+    ctx.textAlign = 'left';
+
+    // Drifting motes over the grass.
+    flies.forEach((m, k) => {
+      const x = (m.x * vw + Math.sin(t * 0.3 * m.sp + m.ph) * 30 - (camX * cw) * 0.15) % vw;
+      const y = (m.y * vh + Math.cos(t * 0.23 * m.sp + m.ph) * 18 - (camY * chh) * 0.15) % vh;
+      const a = 0.25 + 0.75 * Math.max(0, Math.sin(t * 1.7 * m.sp + m.ph));
+      ctx.fillStyle = `rgba(238,240,246,${a})`;
+      ctx.fillRect((x + vw) % vw, (y + vh) % vh, k % 3 ? 1.5 : 2, k % 3 ? 1.5 : 2);
+    });
+  }
+
+  const bar = (v, m) => `<span class="bar"><i style="width:${Math.round(v / m * 100)}%"></i></span>`;
+  let lastPanel = '';
+  function drawPanel() {
+    const party = ents.filter(e => e.ai !== 'wander');
+    const html = party.map((e, i) => `<div class="pbox${i ? '' : ' hero'}"><div class="nm">${e.name}${i ? ' · ' + e.lv : ''}</div>`
+      + `<div class="row"><b>HP</b>${bar(e.hp, e.hpMax)}<span>${Math.round(e.hp)}/${e.hpMax}</span></div>`
+      + `<div class="row"><b>MP</b>${bar(e.mp, e.mpMax)}<span>${Math.floor(e.mp)}/${e.mpMax}</span></div>`
+      + (i ? '' : `<div class="row">LV ${e.lv} · ${hero.gold}g</div>`) + '</div>').join('') + `<span class="tab">${cfg.partyTab}</span>`;
+    if (html !== lastPanel) { partyEl.innerHTML = html; lastPanel = html; }
+  }
+
+  let raf = 0, last = 0, running = true, frames = 0, msAcc = 0, statT = 0;
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016);
+    last = now;
+    update(dt);
+    const t0 = performance.now();
+    render(now / 1000);
+    msAcc += performance.now() - t0; frames++;
+    statT += dt;
+    if (statT > 0.5) {
+      hudEl.textContent = `FPS ${Math.round(frames / statT)}  ·  frame ${(msAcc / frames).toFixed(1)} ms`;
+      frames = 0; msAcc = 0; statT = 0;
+      drawPanel();
+    }
+  }
+  function resume() { if (!raf) { last = 0; raf = requestAnimationFrame(frame); } }
+  function pause() { cancelAnimationFrame(raf); raf = 0; }
+
+  const ro = new ResizeObserver(() => { resize(); render(performance.now() / 1000); });
+  ro.observe(container);
+  const io = new IntersectionObserver(([en]) => { inView = en.intersectionRatio > 0.5; if (en.isIntersecting && running) resume(); else pause(); }, { threshold: [0, 0.5] });
+  io.observe(container);
+  const onVis = () => (document.hidden ? pause() : running && resume());
+  document.addEventListener('visibilitychange', onVis);
+
+  resize();
+  drawPanel();
+  resume();
+
+  return {
+    cast: () => cast(hero),
+    walkTo(x, y) { hero.target = { x, y }; },
+    pause() { running = false; pause(); },
+    resume() { running = true; resume(); },
+    get state() { return { hero: { x: hero.x, y: hero.y, mp: hero.mp }, players: ents.length, effects: effects.length, cell: [cw, chh] }; },
+    destroy() {
+      pause(); ro.disconnect(); io.disconnect();
+      window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onKey);
+      canvas.removeEventListener('pointerdown', onDown); canvas.removeEventListener('pointerup', onUp);
+      document.removeEventListener('visibilitychange', onVis);
+      partyEl.innerHTML = ''; hudEl.textContent = '';
+    },
+  };
+}
+
+window.__world = createAsciiWorld(document.getElementById('world'));
+</script>
+</body>
+</html>

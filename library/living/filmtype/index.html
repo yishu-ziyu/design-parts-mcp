@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set in Film Archive</title>
+<style>
+  @font-face { font-family: "Inter Tight"; font-weight: 400; font-display: swap; src: url("fonts/inter-tight-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Inter Tight"; font-weight: 500; font-display: swap; src: url("fonts/inter-tight-latin-500-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Bebas Neue"; src: url("fonts/bebas-neue-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Playfair Display"; font-style: italic; font-weight: 700; src: url("fonts/playfair-display-latin-700-italic.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Major Mono Display"; src: url("fonts/major-mono-display-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Monoton"; src: url("fonts/monoton-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Abril Fatface"; src: url("fonts/abril-fatface-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Space Mono"; font-weight: 700; src: url("fonts/space-mono-latin-700-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Bungee"; src: url("fonts/bungee-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 500; src: url("fonts/cormorant-garamond-latin-500-italic.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Unbounded"; font-weight: 700; src: url("fonts/unbounded-latin-700-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Syne"; font-weight: 800; src: url("fonts/syne-latin-800-normal.woff2") format("woff2"); font-display: swap; }
+  @font-face { font-family: "Righteous"; src: url("fonts/righteous-latin-400-normal.woff2") format("woff2"); font-display: swap; }
+
+  :root {
+    --paper: #ededE9;
+    --ink: #0e1116;
+    --dim: #8a8c8f;
+    --pad: clamp(16px, 2.43vw, 40px);
+    --ease: cubic-bezier(0.66, 0, 0.34, 1);
+    --ease-scroll: cubic-bezier(0.6, 0, 0, 1);
+    --fs-small: 12.8px;
+    --fs-h3: clamp(22px, 2.27vw, 37.4px);
+    --fs-h2: clamp(40px, 4.9vw, 81px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--paper); }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Inter Tight", "Helvetica Neue", Arial, sans-serif; font-weight: 500;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  body.locked { overflow: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+
+  /* still: a fictional film frame drawn with CSS + type, sized by its own width */
+  .still { position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: inline-size; background: #111; }
+  .still__bg { position: absolute; inset: 0; }
+  .still__type { position: absolute; transform: translate(-50%, -50%); white-space: pre; text-align: center; line-height: 0.95; }
+  .still__sub { display: block; font-family: "Inter Tight", sans-serif; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 0.9em; font-size: 0.16em; opacity: 0.75; }
+  .still::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.45)); }
+
+  /* intro */
+  #intro { position: fixed; inset: 0; z-index: 9; background: var(--ink); color: #ededE9; overflow: hidden;
+    transition: transform 1.2s var(--ease-scroll); }
+  #intro.gone { transform: translateY(-100%); }
+  #intro .blur { position: absolute; inset: 0; filter: brightness(0.42); clip-path: inset(0 0 0 0);
+    transition: clip-path 1s var(--ease), filter 1s var(--ease); }
+  #intro .blur > .still { transition: opacity 1s var(--ease); }
+  #intro.expand .blur { clip-path: inset(6% 8% 8% 7%); filter: brightness(1); }
+  #intro .blur .still, #intro .blur .still__wrap { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; }
+  .intro-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: 1fr 2fr 1fr; }
+  #featured { grid-column: 3 / 6; grid-row: 2; position: relative;
+    transition: transform 1s var(--ease); }
+  #featured .slot { position: absolute; inset: 0; transition: opacity 1s var(--ease); }
+  #featured .slot .still { width: 100%; height: 100%; aspect-ratio: auto; }
+  #intro.expand #featured { transform: translateX(3%) scale(0.88); }
+  .intro-main { grid-column: 2 / 4; grid-row: 2; align-self: center; position: relative; z-index: 2; transition: opacity 0.5s var(--ease); }
+  #intro.expand .intro-main, #intro.expand .scroll-cue { opacity: 0; }
+  .intro-main .pre { font-size: 17.4px; line-height: 1.2; margin-bottom: 18px; }
+  .intro-main h2 { font-size: var(--fs-h2); line-height: 0.9; letter-spacing: -0.02em; font-weight: 500; min-height: 1.8em; }
+  .intro-main h2 span { display: block; transition: opacity 0.5s var(--ease), transform 0.5s var(--ease); }
+  .intro-main h2.swap span { opacity: 0; transform: translateY(12px); }
+  .progress { margin-top: 30px; padding-top: 14px; border-top: 1px solid rgba(237,237,233,0.25); width: 60%; font-size: var(--fs-small); display: flex; gap: 8px; }
+  .scroll-cue { position: absolute; left: 50%; bottom: 28px; width: 38px; height: 38px; margin-left: -19px; border: 1px solid rgba(237,237,233,0.3); border-radius: 50%; display: grid; place-items: center; font-size: 13px; transition: opacity 0.4s, background 0.167s; z-index: 3; }
+  .scroll-cue:hover { background: rgba(237,237,233,0.12); }
+
+  /* index page */
+  #masthead { padding: 18px var(--pad) 0; }
+  #masthead h1 { display: flex; justify-content: space-between; font-size: 12.1vw; line-height: 0.9; letter-spacing: -0.04em; font-weight: 500; margin: 0 -0.04em; }
+  #masthead p { max-width: 1220px; margin: 18px auto 0; text-align: center; font-size: clamp(12.8px, 0.88vw, 14.5px); line-height: 1.5; font-weight: 400; }
+  #toolbar { display: flex; justify-content: space-between; align-items: center; padding: 100px var(--pad) 0; font-size: clamp(13px, 0.91vw, 15px); }
+  #toolbar .view { display: flex; align-items: center; gap: 10px; }
+  #toolbar .view i { display: grid; grid-template-columns: repeat(3, 2px); gap: 2px; }
+  #toolbar .view i b { width: 2px; height: 2px; background: currentColor; }
+  #toolbar .view.is-grid i { grid-template-columns: 9px; gap: 2px; }
+  #toolbar .view.is-grid i b { width: 9px; height: 1px; }
+  #toolbar .view.is-grid i b:nth-child(n+4) { display: none; }
+  .sort { display: flex; gap: 14px; align-items: center; }
+  .sort button { transition: color 0.167s var(--ease); }
+  .sort button.on { color: var(--dim); }
+  .sort button.on::after { content: " \2304"; font-size: 0.8em; display: inline-block; }
+  .sort button.on.desc::after { transform: rotate(180deg) translateY(-0.3em); }
+  #list { position: relative; padding: 86px var(--pad) 120px; transition: opacity 0.167s var(--ease); }
+  #list.fading { opacity: 0; }
+
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; padding: 24px 0; cursor: pointer; position: relative;
+    opacity: 0; transition: opacity 0.333s linear 0.335s; }
+  .row.in { opacity: 1; }
+  .row .yr, .row .ct { font-size: var(--fs-small); }
+  .row .ct { text-align: right; grid-column: 5; }
+  .row .tt { grid-column: 2 / 5; font-size: var(--fs-h3); letter-spacing: -0.02em; line-height: 1; position: relative; justify-self: start; }
+  .row .tt::before, .row .tt::after { content: "+"; position: absolute; top: 50%; font-weight: 300; font-size: 0.8em; opacity: 0; transform: translateY(-55%); transition: opacity 0.167s var(--ease), transform 0.333s var(--ease); }
+  .row .tt::before { left: -0.9em; transform: translate(0.4em, -55%); }
+  .row .tt::after { right: -0.9em; transform: translate(-0.4em, -55%); }
+  .row:hover .tt::before, .row:hover .tt::after, .row:focus-visible .tt::before, .row:focus-visible .tt::after { opacity: 1; transform: translate(0, -55%); }
+  .row .peek { position: absolute; left: 60%; top: 50%; width: 20%; pointer-events: none; z-index: 2;
+    clip-path: inset(50% 0 50% 0); transform: translateY(-50%) scale(1.06);
+    transition: clip-path 0.5s var(--ease), transform 0.5s var(--ease); }
+  .row:hover .peek, .row:focus-visible .peek { clip-path: inset(0 0 0 0); transform: translateY(-50%) scale(1); }
+  .row:focus-visible { outline: none; }
+
+  #list.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px 20px; }
+  .card { cursor: pointer; opacity: 0; transition: opacity 0.333s linear 0.335s; }
+  .card.in { opacity: 1; }
+  .card .ct, .card .yr { font-size: var(--fs-small); }
+  .card .ct { margin-bottom: 10px; }
+  .card .still { transition: transform 0.5s var(--ease); }
+  .card .frame { overflow: hidden; }
+  .card:hover .still { transform: scale(1.03); }
+  .card .tt { font-size: var(--fs-h3); letter-spacing: -0.02em; line-height: 1.05; margin: 10px 0 6px; }
+
+  /* film page */
+  #film { position: fixed; inset: 0; z-index: 8; background: var(--paper); visibility: hidden; opacity: 0;
+    transition: opacity 0.183s linear, visibility 0s 0.183s; overflow: hidden; }
+  #film.open { visibility: visible; opacity: 1; transition: opacity 0.183s linear; }
+  #film .back { position: absolute; left: var(--pad); top: 28px; font-size: 15px; z-index: 2; }
+  #film .head { position: absolute; left: var(--pad); top: 50%; transform: translateY(-50%); width: 30vw; z-index: 2; }
+  #film .head h2 { font-size: var(--fs-h3); letter-spacing: -0.02em; line-height: 1; font-weight: 500; }
+  #film .head .meta { font-size: var(--fs-small); margin-top: 12px; color: var(--dim); }
+  #film .head .cap { font-size: 15px; margin-top: 28px; min-height: 2.6em; transition: opacity 0.25s; }
+  #track { position: absolute; top: 15%; left: 44.7vw; height: 66%; display: flex; gap: 20px;
+    transition: transform 1s var(--ease); }
+  #track .still { height: 100%; width: auto; flex: none; transition: opacity 0.6s var(--ease); }
+  #track .still.past { opacity: 0; }
+  #film .count { position: absolute; left: 62.4vw; top: calc(15% + 66% + 18px); font-size: clamp(20px, 1.94vw, 32px); letter-spacing: -0.01em; display: flex; gap: 0.6em; }
+  #ruler { position: absolute; left: 60vw; right: var(--pad); bottom: 0; height: 64px; }
+  #ruler .tc { position: absolute; top: 4px; font-size: 11px; transform: translateX(-50%); transition: left 1s var(--ease); white-space: nowrap; }
+  #ruler .ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 12px); opacity: 0.55;
+    -webkit-mask: linear-gradient(transparent 40%, #000 40%); mask: linear-gradient(transparent 40%, #000 40%); }
+  #ruler .dot { position: absolute; bottom: 20px; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); opacity: 0.35; transform: translateX(-50%); transition: background 0.3s, opacity 0.3s; }
+  #ruler .dot.on { background: #e5372b; opacity: 1; }
+
+  #notes { padding: 60px var(--pad) 120px; max-width: 1000px; font-size: 14px; line-height: 1.8; color: #45453f; font-weight: 400; }
+  #notes h3 { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; color: var(--ink); padding-bottom: 14px; border-bottom: 2px solid var(--ink); }
+  #notes dt { margin-top: 26px; }
+  #notes dt code, #notes dd code { font-family: inherit; font-weight: 500; color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .intro-grid { grid-template-rows: 1fr auto auto 1fr; }
+    #featured { grid-column: 1 / 7; grid-row: 2; margin: 0 16px; aspect-ratio: 16 / 9; }
+    .intro-main { grid-column: 1 / 7; grid-row: 3; padding: 28px 16px 0; }
+    #intro.expand #featured { transform: scale(0.9); }
+    #toolbar { padding-top: 40px; }
+    .sort span { display: none; }
+    .row { grid-template-columns: 52px 1fr 40px; padding: 16px 0; }
+    .row .tt { grid-column: 2; }
+    .row .ct { grid-column: 3; }
+    .row .peek { display: none; }
+    #list.grid { grid-template-columns: 1fr; gap: 40px; }
+    #film .head { top: 76px; transform: none; width: auto; right: var(--pad); }
+    #track { left: var(--pad); top: 46%; height: auto; }
+    #track .still { width: calc(100vw - 2 * var(--pad)); height: auto; }
+    #film .count { left: var(--pad); top: auto; bottom: 90px; }
+    #ruler { left: var(--pad); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+  }
+</style>
+</head>
+<body class="locked">
+
+<section id="intro" aria-label="Featured">
+  <div class="blur" aria-hidden="true"></div>
+  <div class="intro-grid">
+    <div id="featured"></div>
+    <div class="intro-main">
+      <div class="pre">Set in</div>
+      <h2 id="introTitle"></h2>
+      <div class="progress"><span id="introNum">01</span><span>/</span><span id="introTotal">03</span></div>
+    </div>
+  </div>
+  <button class="scroll-cue" aria-label="Enter archive">&darr;</button>
+</section>
+
+<header id="masthead">
+  <h1><span>Set</span><span>in</span><span>Film</span></h1>
+  <p id="blurb"></p>
+</header>
+
+<div id="toolbar">
+  <button class="view" id="viewBtn"><i><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></i><span>Image view</span></button>
+  <div class="sort"><span>Sort by:</span><button data-k="year" class="on">Year</button><button data-k="title">Title</button><button data-k="frames">Frames</button></div>
+</div>
+
+<main id="list"></main>
+
+<section id="film" aria-hidden="true">
+  <button class="back">Back</button>
+  <div class="head"><h2 id="filmTitle"></h2><div class="meta" id="filmMeta"></div><div class="cap" id="filmCap"></div></div>
+  <div id="track"></div>
+  <div class="count"><span id="fNum">01</span><span>/</span><span id="fTotal">01</span></div>
+  <div id="ruler"><div class="ticks"></div><span class="tc" id="tc">00:00:00:00</span></div>
+</section>
+
+<section id="notes" lang="zh-CN">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#intro</code></dt><dd>暗色开场轮播：6 列 × (1fr 2fr 1fr) 网格，主帧占第 3–5 列中行，背后全屏铺下一部的帧、亮度压到 42%。每 4.5 s 换一部，前后两层都交叉淡入 1 s <code>cubic-bezier(.66,0,.34,1)</code>。第一次滚轮、方向键或点 ↓：背景层 1 s 收成带边框的画面（<code>clip-path: inset(6% 8% 8% 7%)</code>）并提亮，主帧缩到 0.88，再整块 1.2 s <code>cubic-bezier(.6,0,0,1)</code> 上推。</dd>
+    <dt><code>#masthead</code></dt><dd>三个词 <code>justify-content: space-between</code> 铺满整行，字号 12.1vw、字距 -0.04em，靠词间留白而不是字距撑宽。</dd>
+    <dt><code>#list</code></dt><dd>列表行：5 等分网格，年份第 1 列、片名跨 2–4 列 37.4px、帧数第 5 列右对齐，上下 24px。悬停时片名两侧「+」从内往外 0.33 s 滑出，第 4 列弹出一帧预览：<code>clip-path: inset(50% 0 50% 0)</code> → <code>inset(0)</code>，0.5 s，同时 1.06 → 1 缩放。行进入视口后 0.333 s 线性淡入，延迟 0.335 s。</dd>
+    <dt><code>#toolbar</code></dt><dd>列表 / 图片两种视图切换，图片视图 3 列、行距 60 列距 20。排序 Year / Title / Frames，当前项变灰，再点一次反向。切换和重排都是 0.167 s 淡出再淡入。</dd>
+    <dt><code>#film</code></dt><dd>单片页：帧条横排，当前帧左边钉在 44.7vw，滚轮 / 方向键 / 点击一次走一帧，1 s 平移，走过的帧压到 18% 透明。底部时间码尺上每帧一个点，当前点变红，时间码标签跟着滑。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  brand: { pre: 'Set in', blurb: 'Every frame here is invented: a title card, a ticket stub, a motel sign, a wall of a station that never existed. Each one is set in a free typeface, logged with the timecode where it would appear, so you can browse the letters of films nobody shot and see how much of a mood is carried by type alone.' },
+  featured: ['neon-harbor', 'quiet-meridian', 'kilometer-zero'],
+  introInterval: 4500,
+  films: [
+    { id: 'neon-harbor', title: 'Neon Harbor', year: 1984, runtime: 112, frames: [
+      { tc: 141, cap: 'Opening title over the bay', bg: 'linear-gradient(180deg,#0b1030 0%,#1b1a4a 55%,#3a1240 100%)', font: 'Monoton', text: 'NEON\nHARBOR', size: 13, ink: '#ff5fb1', fx: 'neon' },
+      { tc: 1460, cap: 'Motel sign, second act', bg: 'radial-gradient(60% 70% at 50% 45%,#2a0f2e,#090712)', font: 'Monoton', text: 'VACANCY', size: 10, ink: '#7ff3ff', fx: 'neon', rot: -3 },
+      { tc: 4022, cap: 'Matchbook on the bar', bg: 'linear-gradient(135deg,#3b2414,#120a06)', font: 'Righteous', text: 'Pier 9\nLounge', size: 11, ink: '#f4c96b', sub: 'open till dawn' } ] },
+    { id: 'quiet-meridian', title: 'The Quiet Meridian', year: 1962, runtime: 98, frames: [
+      { tc: 64, cap: 'Main title card', bg: '#0c0c0c', font: 'Playfair Display', style: 'italic', weight: 700, text: 'The Quiet\nMeridian', size: 10, ink: '#f2efe6' },
+      { tc: 2210, cap: 'Telegram on the desk', bg: 'linear-gradient(170deg,#d8cfb8,#b9ad8f)', font: 'Space Mono', weight: 700, text: 'ARRIVE NOON STOP\nDO NOT WAIT STOP', size: 4.6, ink: '#2b241a', rot: 1.5 },
+      { tc: 5480, cap: 'End card', bg: '#0c0c0c', font: 'Cormorant Garamond', style: 'italic', weight: 500, text: 'fin', size: 14, ink: '#f2efe6' } ] },
+    { id: 'kilometer-zero', title: 'Kilometer Zero', year: 1979, runtime: 121, frames: [
+      { tc: 210, cap: 'Road barrier stencil', bg: 'repeating-linear-gradient(135deg,#f2c230 0 9%,#181818 9% 18%)', font: 'Bebas Neue', text: 'KM 0', size: 26, ink: '#f7f3e8', fx: 'block' },
+      { tc: 3100, cap: 'Truck door lettering', bg: 'linear-gradient(180deg,#9a3a22,#5c1e10)', font: 'Bebas Neue', text: 'ORTEGA & SONS\nFREIGHT', size: 9, ink: '#f4e3c3', sub: 'est. 1951' },
+      { tc: 6200, cap: 'Mile marker at dusk', bg: 'linear-gradient(180deg,#e88a4a,#5a2a3a 70%,#1d1426)', font: 'Bebas Neue', text: '0', size: 40, ink: '#ffffff', fx: 'shadow' } ] },
+    { id: 'signal-noise', title: 'Signal//Noise', year: 1999, runtime: 104, frames: [
+      { tc: 33, cap: 'Terminal boot screen', bg: '#020a04', font: 'Major Mono Display', text: 'signal//noise', size: 7.5, ink: '#5dff7a', fx: 'glow' },
+      { tc: 2722, cap: 'Access denied prompt', bg: 'radial-gradient(80% 80% at 50% 50%,#04170a,#000)', font: 'Major Mono Display', text: 'access\ndenied', size: 10, ink: '#ff4d4d', fx: 'glow' },
+      { tc: 4410, cap: 'Server rack label', bg: 'linear-gradient(90deg,#1b1f24,#2b3138,#1b1f24)', font: 'Space Mono', weight: 700, text: 'NODE-07 / B', size: 6, ink: '#cfd6dd' },
+      { tc: 5900, cap: 'Final transmission', bg: '#000', font: 'Major Mono Display', text: 'eOf', size: 16, ink: '#5dff7a', fx: 'glow' } ] },
+    { id: 'dust-road', title: 'Dust Road Courier', year: 1956, runtime: 89, frames: [
+      { tc: 95, cap: 'Wanted poster on the depot', bg: 'linear-gradient(160deg,#e9dcc0,#c9b48c)', font: 'Abril Fatface', text: 'WANTED', size: 15, ink: '#8e1d14', sub: 'for crimes against the mail' },
+      { tc: 2900, cap: 'Saloon window', bg: 'linear-gradient(180deg,#3d2a17,#1c120a)', font: 'Abril Fatface', text: 'Salt Creek\nHotel', size: 10, ink: '#e8c27a' } ] },
+    { id: 'orbit-diner', title: 'Orbit Diner', year: 1988, runtime: 95, frames: [
+      { tc: 300, cap: 'Rooftop sign', bg: 'linear-gradient(180deg,#0e6f73,#0a3a45)', font: 'Bungee', text: 'ORBIT\nDINER', size: 12, ink: '#ffd84a', fx: 'shadow' },
+      { tc: 1800, cap: 'Menu board', bg: '#1c1c1c', font: 'Bungee', text: 'PIE 25¢\nCOFFEE 10¢', size: 6.5, ink: '#f6f1e3' },
+      { tc: 4300, cap: 'Napkin print', bg: '#f4efe4', font: 'Righteous', text: 'come back\nsoon', size: 8, ink: '#d23b3b', rot: -6 } ] },
+    { id: 'glass-weather', title: 'Glass Weather', year: 2003, runtime: 117, frames: [
+      { tc: 120, cap: 'Opening titles over rain', bg: 'linear-gradient(180deg,#9fb0bd,#56687a)', font: 'Syne', weight: 800, text: 'GLASS\nWEATHER', size: 12, ink: '#ffffff' },
+      { tc: 3300, cap: 'Gallery wall text', bg: '#f1f1ee', font: 'Syne', weight: 800, text: 'Low Pressure', size: 8, ink: '#111' } ] },
+    { id: 'low-tide-motel', title: 'Low Tide Motel', year: 1993, runtime: 101, frames: [
+      { tc: 45, cap: 'Roadside sign', bg: 'linear-gradient(180deg,#f6a26b,#e05a6a 60%,#4a2a5a)', font: 'Righteous', text: 'Low Tide\nMotel', size: 11, ink: '#fff6e8', fx: 'shadow' },
+      { tc: 2600, cap: 'Room key fob', bg: '#2d5f5a', font: 'Bungee', text: '14', size: 26, ink: '#f2d39a' },
+      { tc: 5100, cap: 'Pool rules', bg: '#d9eef0', font: 'Space Mono', weight: 700, text: 'NO RUNNING\nNO DIVING\nNO REGRETS', size: 5, ink: '#1e4d6b' } ] },
+    { id: 'atlas-rooms', title: 'Atlas of Small Rooms', year: 2011, runtime: 126, frames: [
+      { tc: 180, cap: 'Title over floor plan', bg: 'repeating-linear-gradient(0deg,#e8e4da 0 23px,#d6d1c4 23px 24px),#e8e4da', font: 'Unbounded', weight: 700, text: 'ATLAS OF\nSMALL ROOMS', size: 7.5, ink: '#1d3b8f' },
+      { tc: 3900, cap: 'Door plate, room 3', bg: 'linear-gradient(180deg,#6b5a49,#3d3127)', font: 'Unbounded', weight: 700, text: '3', size: 24, ink: '#e2c88f' } ] },
+    { id: 'ninth-platform', title: 'The Ninth Platform', year: 1947, runtime: 84, frames: [
+      { tc: 75, cap: 'Station board', bg: 'linear-gradient(180deg,#171a1f,#0a0b0d)', font: 'Bebas Neue', text: 'PLATFORM 9\nNIGHT EXPRESS', size: 10, ink: '#f0e7cf' },
+      { tc: 2400, cap: 'Ticket stub', bg: '#c8b48e', font: 'Space Mono', weight: 700, text: 'SINGLE · 3RD CLASS\nNo. 004417', size: 5, ink: '#3a2a1a', rot: -2 },
+      { tc: 4700, cap: 'Newspaper headline', bg: '#e2ddd0', font: 'Abril Fatface', text: 'LAST TRAIN\nVANISHES', size: 10, ink: '#141414' } ] },
+    { id: 'copper-moth', title: 'Copper Moth', year: 1965, runtime: 108, frames: [
+      { tc: 260, cap: 'Typed case file', bg: '#efe7d2', font: 'Space Mono', weight: 700, text: 'CASE 61-B\nCOPPER MOTH', size: 7, ink: '#25211b' },
+      { tc: 3700, cap: 'Nightclub marquee', bg: 'linear-gradient(180deg,#1a0d06,#3a1c0c)', font: 'Playfair Display', style: 'italic', weight: 700, text: 'The Copper Moth', size: 8.5, ink: '#e7a35a', fx: 'glow' } ] },
+    { id: 'velvet-interval', title: 'Velvet Interval', year: 1974, runtime: 132, frames: [
+      { tc: 30, cap: 'Overture card', bg: 'linear-gradient(180deg,#5a0f1f,#2a0610)', font: 'Cormorant Garamond', style: 'italic', weight: 500, text: 'Velvet\nInterval', size: 13, ink: '#f3dfc2' },
+      { tc: 3960, cap: 'Intermission slide', bg: '#2a0610', font: 'Playfair Display', style: 'italic', weight: 700, text: 'Intermission', size: 9, ink: '#e9c98e', sub: 'ten minutes' } ] },
+    { id: 'northbound-static', title: 'Northbound Static', year: 2016, runtime: 99, frames: [
+      { tc: 90, cap: 'Radio dial', bg: 'linear-gradient(180deg,#232a2f,#0f1316)', font: 'Space Mono', weight: 700, text: '88.1  ·  NORTHBOUND', size: 5.4, ink: '#ffb547', fx: 'glow' },
+      { tc: 2050, cap: 'Gas station price sign', bg: 'linear-gradient(180deg,#0d2340,#02070f)', font: 'Bebas Neue', text: 'LAST FUEL\n200 MI', size: 13, ink: '#ffffff' },
+      { tc: 5200, cap: 'Closing title', bg: '#f4f2ec', font: 'Syne', weight: 800, text: 'NORTHBOUND\nSTATIC', size: 8.5, ink: '#0e1116' } ] },
+    { id: 'paper-lanterns', title: 'Paper Lanterns of Oslo', year: 1971, runtime: 103, frames: [
+      { tc: 140, cap: 'Hand-set title on rice paper', bg: 'radial-gradient(70% 70% at 50% 50%,#f7ecd4,#d9c49b)', font: 'Cormorant Garamond', style: 'italic', weight: 500, text: 'Paper Lanterns\nof Oslo', size: 9, ink: '#7a2a16' },
+      { tc: 3333, cap: 'Shop awning', bg: 'linear-gradient(180deg,#24453a,#0f2019)', font: 'Abril Fatface', text: 'Lykt & Co.', size: 10, ink: '#f3e4b9' } ] }
+  ]
+};
+
+function createFilmArchive(root, options) {
+  const cfg = Object.assign({}, CONFIG, options || {});
+  const films = cfg.films;
+  const byId = Object.fromEntries(films.map(f => [f.id, f]));
+  const $ = s => root.querySelector(s);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pad = (n, l = 2) => String(n).padStart(l, '0');
+  const timers = [];
+  const offs = [];
+  const on = (el, ev, fn, o) => { el.addEventListener(ev, fn, o); offs.push(() => el.removeEventListener(ev, fn, o)); };
+  const state = { view: 'list', key: 'year', desc: false, film: null, idx: 0, introIdx: 0, introDone: false };
+
+  const FX = {
+    neon: c => `0 0 0.06em #fff, 0 0 0.18em ${c}, 0 0 0.5em ${c}, 0 0 1.1em ${c}`,
+    glow: c => `0 0 0.25em ${c}`,
+    shadow: () => '0.05em 0.05em 0 rgba(0,0,0,0.55)',
+    block: () => '0.04em 0.04em 0 #111, 0.08em 0.08em 0 #111'
+  };
+  function still(fr) {
+    const el = document.createElement('div');
+    el.className = 'still';
+    const t = document.createElement('div');
+    t.className = 'still__type';
+    t.textContent = fr.text;
+    Object.assign(t.style, {
+      left: (fr.x ?? 50) + '%', top: (fr.y ?? 50) + '%', fontFamily: `"${fr.font}"`, fontSize: fr.size + 'cqw',
+      fontStyle: fr.style || 'normal', fontWeight: fr.weight || 400, color: fr.ink,
+      textShadow: fr.fx ? FX[fr.fx](fr.ink) : 'none',
+      transform: `translate(-50%,-50%) rotate(${fr.rot || 0}deg)`
+    });
+    if (fr.sub) { const s = document.createElement('span'); s.className = 'still__sub'; s.textContent = fr.sub; t.appendChild(s); }
+    const bg = document.createElement('div');
+    bg.className = 'still__bg';
+    bg.style.background = fr.bg;
+    el.append(bg, t);
+    return el;
+  }
+  const timecode = s => `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}:${pad((s * 7) % 24)}`;
+
+  /* intro */
+  const intro = $('#intro'), featured = $('#featured'), blur = $('.blur'), introTitle = $('#introTitle');
+  const feat = cfg.featured.map(id => byId[id]).filter(Boolean);
+  $('#introTotal').textContent = pad(feat.length);
+  $('.pre').textContent = cfg.brand.pre;
+  function showIntro(i, first) {
+    const f = feat[i];
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.appendChild(still(f.frames[0]));
+    if (!first) slot.style.opacity = 0;
+    featured.appendChild(slot);
+    const b = still(feat[(i + 1) % feat.length].frames[0]);
+    b.style.opacity = 0;
+    blur.appendChild(b);
+    const oldBg = [...blur.children].slice(0, -1);
+    timers.push(setTimeout(() => oldBg.forEach(o => o.remove()), reduce ? 0 : 1000));
+    requestAnimationFrame(() => requestAnimationFrame(() => { slot.style.opacity = 1; b.style.opacity = 1; }));
+    const old = [...featured.children].slice(0, -1);
+    timers.push(setTimeout(() => old.forEach(o => o.remove()), reduce ? 0 : 1000));
+    const words = f.title.split(' ');
+    const mid = Math.ceil(words.length / 2);
+    const paint = () => {
+      introTitle.innerHTML = '';
+      [words.slice(0, mid).join(' '), words.slice(mid).join(' ')].filter(Boolean).forEach(w => { const s = document.createElement('span'); s.textContent = w; introTitle.appendChild(s); });
+      introTitle.classList.remove('swap');
+      $('#introNum').textContent = pad(i + 1);
+    };
+    if (first || reduce) paint(); else { introTitle.classList.add('swap'); timers.push(setTimeout(paint, 500)); }
+  }
+  showIntro(0, true);
+  const cycle = setInterval(() => { if (state.introDone) return; state.introIdx = (state.introIdx + 1) % feat.length; showIntro(state.introIdx); }, cfg.introInterval);
+  function leaveIntro() {
+    if (state.introDone) return;
+    state.introDone = true;
+    intro.classList.add('expand');
+    timers.push(setTimeout(() => { intro.classList.add('gone'); document.body.classList.remove('locked'); revealRows(); }, reduce ? 0 : 1000));
+    timers.push(setTimeout(() => { intro.style.display = 'none'; }, reduce ? 0 : 2300));
+  }
+  on(window, 'wheel', e => { if (!state.introDone && e.deltaY > 0) leaveIntro(); }, { passive: true });
+  let ty = 0;
+  on(window, 'touchstart', e => { ty = e.touches[0].clientY; }, { passive: true });
+  on(window, 'touchmove', e => { if (!state.introDone && ty - e.touches[0].clientY > 20) leaveIntro(); }, { passive: true });
+  on($('.scroll-cue'), 'click', leaveIntro);
+
+  /* index */
+  $('#blurb').textContent = cfg.brand.blurb;
+  const list = $('#list');
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -40px 0px' });
+  function revealRows() { list.querySelectorAll('.row,.card').forEach(r => io.observe(r)); }
+  function sorted() {
+    const k = state.key;
+    const arr = films.slice().sort((a, b) => {
+      const va = k === 'frames' ? a.frames.length : a[k], vb = k === 'frames' ? b.frames.length : b[k];
+      return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) || a.title.localeCompare(b.title);
+    });
+    return state.desc ? arr.reverse() : arr;
+  }
+  function render() {
+    list.replaceChildren();
+    list.classList.toggle('grid', state.view === 'grid');
+    sorted().forEach(f => {
+      const n = pad(f.frames.length, 3);
+      const el = document.createElement('a');
+      el.tabIndex = 0;
+      el.setAttribute('role', 'link');
+      if (state.view === 'list') {
+        el.className = 'row';
+        el.innerHTML = `<span class="yr">${f.year}</span><span class="tt"></span><span class="ct">${n}</span><div class="peek"></div>`;
+        el.querySelector('.tt').textContent = f.title;
+        el.querySelector('.peek').appendChild(still(f.frames[0]));
+      } else {
+        el.className = 'card';
+        el.innerHTML = `<div class="ct">${n}</div><div class="frame"></div><div class="tt"></div><div class="yr">${f.year}</div>`;
+        el.querySelector('.frame').appendChild(still(f.frames[0]));
+        el.querySelector('.tt').textContent = f.title;
+      }
+      el.addEventListener('click', () => openFilm(f.id));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') openFilm(f.id); });
+      list.appendChild(el);
+    });
+    if (state.introDone) revealRows();
+  }
+  function rerender() {
+    if (reduce) return render();
+    list.classList.add('fading');
+    timers.push(setTimeout(() => { render(); list.classList.remove('fading'); }, 167));
+  }
+  const viewBtn = $('#viewBtn');
+  on(viewBtn, 'click', () => {
+    state.view = state.view === 'list' ? 'grid' : 'list';
+    viewBtn.classList.toggle('is-grid', state.view === 'grid');
+    viewBtn.querySelector('span').textContent = state.view === 'list' ? 'Image view' : 'List view';
+    rerender();
+  });
+  root.querySelectorAll('.sort button').forEach(b => on(b, 'click', () => {
+    if (state.key === b.dataset.k) state.desc = !state.desc; else { state.key = b.dataset.k; state.desc = false; }
+    root.querySelectorAll('.sort button').forEach(x => x.classList.toggle('on', x === b));
+    b.classList.toggle('desc', state.desc);
+    rerender();
+  }));
+  render();
+
+  /* film page */
+  const film = $('#film'), track = $('#track'), ruler = $('#ruler');
+  function openFilm(id) {
+    const f = byId[id];
+    state.film = f; state.idx = 0;
+    $('#filmTitle').textContent = f.title;
+    $('#filmMeta').textContent = `${f.year} · ${f.runtime} min · ${pad(f.frames.length, 3)} frames`;
+    track.replaceChildren(...f.frames.map(still));
+    ruler.querySelectorAll('.dot').forEach(d => d.remove());
+    f.frames.forEach(fr => { const d = document.createElement('i'); d.className = 'dot'; d.style.left = (fr.tc / (f.runtime * 60) * 100) + '%'; ruler.appendChild(d); });
+    $('#fTotal').textContent = pad(f.frames.length);
+    film.classList.add('open'); film.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('locked');
+    go(0);
+  }
+  function closeFilm() {
+    if (!state.film) return;
+    state.film = null;
+    film.classList.remove('open'); film.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('locked');
+  }
+  function go(i) {
+    const f = state.film; if (!f) return;
+    state.idx = Math.max(0, Math.min(f.frames.length - 1, i));
+    const kids = [...track.children];
+    const step = kids[1] ? kids[1].offsetLeft - kids[0].offsetLeft : 0;
+    track.style.transform = `translateX(${-step * state.idx}px)`;
+    kids.forEach((k, j) => k.classList.toggle('past', j < state.idx));
+    $('#fNum').textContent = pad(state.idx + 1);
+    const fr = f.frames[state.idx];
+    $('#filmCap').textContent = fr.cap + ' — set in ' + fr.font;
+    const tc = $('#tc');
+    tc.textContent = timecode(fr.tc);
+    tc.style.left = (fr.tc / (f.runtime * 60) * 100) + '%';
+    ruler.querySelectorAll('.dot').forEach((d, j) => d.classList.toggle('on', j === state.idx));
+  }
+  let lock = 0;
+  on(film, 'wheel', e => {
+    e.preventDefault();
+    const now = performance.now();
+    if (now < lock || Math.abs(e.deltaY) + Math.abs(e.deltaX) < 4) return;
+    lock = now + (reduce ? 150 : 900);
+    go(state.idx + ((e.deltaY || e.deltaX) > 0 ? 1 : -1));
+  }, { passive: false });
+  on(track, 'click', () => go(state.idx + 1 < state.film.frames.length ? state.idx + 1 : 0));
+  on(film.querySelector('.back'), 'click', closeFilm);
+  let fx = 0;
+  on(film, 'touchstart', e => { fx = e.touches[0].clientX; }, { passive: true });
+  on(film, 'touchend', e => { const d = fx - e.changedTouches[0].clientX; if (Math.abs(d) > 40) go(state.idx + (d > 0 ? 1 : -1)); }, { passive: true });
+  on(window, 'keydown', e => {
+    if (!state.introDone && ['ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); leaveIntro(); return; }
+    if (!state.film) return;
+    if (e.key === 'Escape') closeFilm();
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(state.idx + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(state.idx - 1);
+  });
+  on(window, 'resize', () => { if (state.film) go(state.idx); });
+
+  return {
+    openFilm, closeFilm, go, leaveIntro,
+    setView: v => { if (v !== state.view) viewBtn.click(); },
+    destroy() { clearInterval(cycle); timers.forEach(clearTimeout); offs.forEach(f => f()); io.disconnect(); }
+  };
+}
+
+window.archive = createFilmArchive(document.body);
+</script>
+</body>
+</html>

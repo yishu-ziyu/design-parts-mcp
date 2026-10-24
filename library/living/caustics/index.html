@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shallows Underwater Shot</title>
+<style>
+  :root {
+    --page: #050807;
+    --text: #cfe3df;
+    --muted: #6f8f89;
+    --rule: #16302b;
+    --pad: clamp(16px, 3vw, 48px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--text); }
+  body {
+    font-family: ui-sans-serif, -apple-system, "Helvetica Neue", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  #reel { padding: var(--pad); min-height: 100vh; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+  #shot {
+    position: relative; width: 100%; max-width: calc((100vh - 2 * var(--pad) - 100px) * 2.39);
+    min-width: 0; margin: 0 auto; aspect-ratio: 2.39 / 1; background: #0d2a24; overflow: hidden;
+  }
+  #shot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #caption {
+    width: 100%; max-width: calc((100vh - 2 * var(--pad) - 100px) * 2.39); margin: 0 auto;
+    display: flex; justify-content: space-between; gap: 16px; font-size: 12px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  #caption b { color: var(--text); font-weight: 500; }
+  #layers { width: 100%; max-width: calc((100vh - 2 * var(--pad) - 100px) * 2.39); margin: 0 auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  #layers button { font: inherit; font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--rule); padding: 5px 12px; cursor: pointer; }
+  #layers button[aria-pressed="true"] { color: var(--text); border-color: #2d5a52; }
+  #notes { max-width: 760px; margin: 0 auto; padding: 48px var(--pad) 96px; border-top: 1px solid var(--rule); }
+  #notes h3 { font-size: 15px; font-weight: 600; margin-bottom: 18px; letter-spacing: .04em; }
+  #notes dl { display: grid; gap: 6px 0; }
+  #notes dt { margin-top: 14px; }
+  #notes dt code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #8fd3c6; }
+  #notes dd { font-size: 14px; line-height: 1.7; color: #a9c2bd; }
+  #notes dd code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #cfe3df; }
+  @media (max-width: 560px) {
+    #caption { font-size: 10px; letter-spacing: .12em; }
+    #shot, #caption, #layers { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+  <section id="reel">
+    <div id="shot" role="img" aria-label="从浅水底往上看：一团日光透过水面，光柱向下散开，水里漂着细小悬浮物"></div>
+    <div id="caption"><span><b id="cap-title"></b></span><span id="cap-meta"></span></div>
+    <div id="layers" aria-label="图层开关">
+      <button id="rays" aria-pressed="true">光柱</button>
+      <button id="surface" aria-pressed="true">水面</button>
+      <button id="motes" aria-pressed="true">悬浮物</button>
+    </div>
+  </section>
+
+  <section id="notes">
+    <h3>可拆</h3>
+    <dl>
+      <dt><code>#shot</code></dt>
+      <dd>2.39:1 宽银幕画框（原片 16:9 视频里上下带黑边），，一个全屏片元着色器画整幅画面，没有任何贴图。几层叠在一起：竖向渐变底色（深 <code>#10382F</code> → 中 <code>#4A958A</code>）、横向拉宽 1/0.75 的太阳光晕（两个指数衰减，亮色 <code>#CAE4E1</code>，中心再混 45% 近白）、两层 fbm 浑浊（低频大团 + 横向拉长的细纹，乘到整幅画面上）、水面、光柱、悬浮物。颜色都是从原片 16 s 那一帧缩成 8×4 读出来的。</dd>
+      <dt><code>#rays</code></dt>
+      <dd>光柱：以太阳为原点取角度 <code>atan(d.x, -d.y)</code>，在「角度 × 7、时间 × 0.12」上采 fbm，2.4 次方压暗缝隙，再乘浑浊度，再乘距离衰减 <code>exp(-1.5r)</code> 和「只在太阳下方」的遮罩。角度噪声随时间平移，光柱就会慢慢左右摇。</dd>
+      <dt><code>#surface</code></dt>
+      <dd>水面：画面上 35% 是从下往上看到的水面。用迭代三角函数的焦散图案（4 次迭代，结果取 8 次方，只留细亮线），纵向压缩 2.4 倍做透视，越靠近太阳越亮，越往下越淡出。</dd>
+      <dt><code>#motes</code></dt>
+      <dd>悬浮物：三层网格哈希，只有 18% 的格子有点，近层大而虚、远层小而实，各自以不同速度上漂并横向摆动。点的亮度乘上该处的光照，背光处的点几乎看不见，和原片一样。</dd>
+      <dt><code>#layers</code></dt>
+      <dd>三个图层开关直接改着色器 uniform（强度置 0 或恢复 CONFIG 值），用来单独看每一层贡献了什么。工厂返回的 <code>setLayer(name, on)</code> 就是它。</dd>
+      <dt><code>#caption</code></dt>
+      <dd>片名条：小号大写、字距 0.18em、灰绿色，跟画框同宽。文案全在 <code>CONFIG.caption</code> 里，是自己写的，不是原作的片名卡。</dd>
+    </dl>
+  </section>
+
+<script>
+const CONFIG = {
+  caption: { title: 'Shallows — No. 07', meta: 'Study / looking up / one shader' },
+  sun: [0.53, 0.66],            // uv, y up; centre of the bright cells in the 16 s frame
+  colors: {
+    deep:  [16, 56, 49],
+    mid:   [74, 149, 138],
+    light: [202, 228, 225],
+  },
+  rays: 0.2,
+  surface: 0.8,
+  motes: 0.5,
+  murk: 0.55,
+  speed: 1.0,
+  followPointer: 0.06,          // how far the sun drifts toward the pointer (uv units)
+};
+
+function createCaustics(container, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options, { colors: Object.assign({}, CONFIG.colors, options.colors) });
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canvas = document.createElement('canvas');
+  container.appendChild(canvas);
+  const gl = canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false });
+  if (!gl) {
+    const c = cfg.colors, rgb = a => `rgb(${a.join(',')})`;
+    container.style.background = `radial-gradient(circle at ${cfg.sun[0] * 100}% ${(1 - cfg.sun[1]) * 100}%, ${rgb(c.light)}, ${rgb(c.mid)} 30%, ${rgb(c.deep)} 85%)`;
+    canvas.remove();
+    return { setSun() {}, pause() {}, play() {}, destroy() { container.style.background = ''; } };
+  }
+
+  const vs = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }';
+  const fs = `
+precision highp float;
+uniform vec2 uRes; uniform float uT; uniform vec2 uSun;
+uniform vec3 uDeep, uMid, uLight; uniform float uRays, uSurf, uMotes, uMurk;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float fbm(vec2 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++){ s += a * noise(p); p = p * 2.03 + 7.1; a *= 0.5; } return s; }
+
+float caustic(vec2 p, float t){
+  vec2 q = p; float c = 1.0; const float k = 0.005;
+  for (int n = 0; n < 4; n++){
+    float tt = t * (1.0 - 3.5 / float(n + 1));
+    q = p + vec2(cos(tt - q.x) + sin(tt + q.y), sin(tt - q.y) + cos(tt + q.x));
+    c += 1.0 / length(vec2(p.x / (sin(q.x + tt) / k), p.y / (cos(q.y + tt) / k)));
+  }
+  c /= 4.0; c = 1.17 - pow(c, 1.4);
+  return pow(abs(c), 8.0);
+}
+
+float motes(vec2 p, float scale, float speed, float size, float t, float seed){
+  vec2 g = p * scale + vec2(sin(t * 0.3 + seed) * 0.4, -t * speed);
+  vec2 id = floor(g), f = fract(g);
+  float h = hash(id + seed);
+  if (h < 0.82) return 0.0;
+  vec2 c = vec2(hash(id + seed + 3.1), hash(id + seed + 5.7)) * 0.8 + 0.1;
+  float d = length(f - c);
+  return smoothstep(size, size * 0.25, d) * (h - 0.82) / 0.18;
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float asp = uRes.x / uRes.y;
+  vec2 p = vec2(uv.x * asp, uv.y);
+  vec2 s = vec2(uSun.x * asp, uSun.y);
+  vec2 d = p - s; float r = length(d);
+  float t = uT;
+
+  vec3 col = mix(uDeep, uMid, 0.3 + 0.75 * smoothstep(0.0, 0.9, uv.y));
+  col = mix(col, uDeep * 0.8, smoothstep(0.3, 0.0, uv.y) * 0.5);
+
+  float murk = fbm(p * 2.2 + vec2(t * 0.015, -t * 0.01));
+  float murk2 = fbm(p * vec2(5.0, 11.0) - vec2(t * 0.03, 0.0));
+  float rg = length(d * vec2(0.75, 1.0));
+  float glow = (0.3 * exp(-rg * rg * 14.0) + 0.4 * exp(-rg * 2.3)) * (0.55 + 0.9 * murk);
+  col += uLight * glow;
+  col = mix(col, vec3(0.9, 0.95, 0.94), 0.45 * exp(-rg * rg * 30.0) * (0.6 + 0.6 * murk));
+  col *= 1.0 - uMurk * (0.45 * (1.0 - murk) - 0.12) - uMurk * 0.5 * (murk2 - 0.5);
+
+  float surfMask = smoothstep(0.7, 0.97, uv.y);
+  float window_ = exp(-r * 2.2);
+  col = mix(col, uDeep * 0.9 + uMid * 0.2, surfMask * (1.0 - window_) * 0.55 * (0.6 + 0.8 * murk2));
+  vec2 sp = vec2(p.x * 4.0, (uv.y - 1.0) * 9.6) + vec2(t * 0.05, 0.0);
+  float cs = caustic(sp, t * 0.35 + 23.0);
+  float near = 0.35 + 1.4 * exp(-r * 3.0);
+  col += uLight * clamp(cs, 0.0, 1.4) * surfMask * near * uSurf * 0.45;
+  col += uLight * 0.08 * surfMask * fbm(sp * 0.6 + t * 0.1);
+
+  float ang = atan(d.x, -d.y);
+  float below = smoothstep(0.02, -0.12, d.y);
+  float ray = fbm(vec2(ang * 7.0 + t * 0.12, t * 0.05));
+  ray = pow(ray, 2.4) * 1.6 * (0.4 + murk);
+  float fall = exp(-r * 1.5) * smoothstep(1.8, 0.0, r);
+  col += uLight * ray * fall * below * uRays;
+  col += uLight * 0.10 * pow(noise(vec2(ang * 22.0 - t * 0.2, r * 2.0)), 4.0) * below * fall * uRays;
+
+  float light = clamp(glow * 1.4 + ray * fall * below * 0.8 + uv.y * 0.35, 0.0, 1.2);
+  float m = motes(p, 9.0, 0.06, 0.35, t, 1.0) * 0.35
+          + motes(p, 18.0, 0.10, 0.22, t, 7.0) * 0.55
+          + motes(p, 34.0, 0.16, 0.16, t, 13.0) * 0.6;
+  col += uLight * m * light * uMotes;
+
+  col *= 1.0 - 0.6 * pow(length((uv - 0.5) * vec2(1.0, 1.15)), 2.0);
+  col += (hash(gl_FragCoord.xy + fract(t) * 91.0) - 0.5) * 0.025;
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+  const sh = (type, src) => {
+    const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o);
+    if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o));
+    return o;
+  };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog); gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(prog, n);
+  const u = { res: U('uRes'), t: U('uT'), sun: U('uSun'), deep: U('uDeep'), mid: U('uMid'), light: U('uLight'), rays: U('uRays'), surf: U('uSurf'), motes: U('uMotes'), murk: U('uMurk') };
+  const c3 = a => a.map(v => v / 255);
+  gl.uniform3fv(u.deep, c3(cfg.colors.deep));
+  gl.uniform3fv(u.mid, c3(cfg.colors.mid));
+  gl.uniform3fv(u.light, c3(cfg.colors.light));
+  gl.uniform1f(u.rays, cfg.rays); gl.uniform1f(u.surf, cfg.surface); gl.uniform1f(u.motes, cfg.motes); gl.uniform1f(u.murk, cfg.murk);
+
+  let sun = cfg.sun.slice(), target = cfg.sun.slice();
+  let raf = 0, running = false, visible = true, t0 = performance.now(), tAcc = 8.0;
+
+  const resize = () => {
+    // Shader cost is per pixel; capping DPR at 1.5 keeps fbm x 3 + caustics smooth on laptops.
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const w = Math.max(1, Math.round(container.clientWidth * dpr));
+    const h = Math.max(1, Math.round(container.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    gl.viewport(0, 0, w, h);
+    gl.uniform2f(u.res, w, h);
+  };
+  const draw = () => {
+    sun[0] += (target[0] - sun[0]) * 0.04; sun[1] += (target[1] - sun[1]) * 0.04;
+    gl.uniform2f(u.sun, sun[0], sun[1]);
+    gl.uniform1f(u.t, tAcc);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  };
+  const frame = now => {
+    tAcc += Math.min(0.05, (now - t0) / 1000) * cfg.speed; t0 = now;
+    draw();
+    raf = requestAnimationFrame(frame);
+  };
+  const play = () => { if (running || reduce || !visible) return; running = true; t0 = performance.now(); raf = requestAnimationFrame(frame); };
+  const pause = () => { running = false; cancelAnimationFrame(raf); };
+
+  const ro = new ResizeObserver(() => { resize(); draw(); });
+  ro.observe(container);
+  const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? play() : pause(); });
+  io.observe(container);
+  const onMove = e => {
+    const b = container.getBoundingClientRect();
+    const x = (e.clientX - b.left) / b.width - 0.5, y = (e.clientY - b.top) / b.height - 0.5;
+    target = [cfg.sun[0] + x * cfg.followPointer * 2, cfg.sun[1] - y * cfg.followPointer * 2];
+  };
+  const onLeave = () => { target = cfg.sun.slice(); };
+  if (cfg.followPointer && !reduce) { container.addEventListener('pointermove', onMove); container.addEventListener('pointerleave', onLeave); }
+
+  resize(); draw(); play();
+
+  return {
+    setLayer(name, on) {
+      const key = { rays: 'rays', surface: 'surf', motes: 'motes' }[name];
+      gl.uniform1f(u[key], on ? cfg[name] : 0); if (!running) draw();
+    },
+    setSun(x, y) { target = [x, y]; if (!running) { sun = [x, y]; draw(); } },
+    pause, play,
+    renderAt(t) { tAcc = t; draw(); },
+    destroy() {
+      pause(); ro.disconnect(); io.disconnect();
+      container.removeEventListener('pointermove', onMove); container.removeEventListener('pointerleave', onLeave);
+      gl.deleteProgram(prog); gl.deleteBuffer(buf); canvas.remove();
+    },
+  };
+}
+
+document.getElementById('cap-title').textContent = CONFIG.caption.title;
+document.getElementById('cap-meta').textContent = CONFIG.caption.meta;
+window.__caustics = createCaustics(document.getElementById('shot'));
+for (const id of ['rays', 'surface', 'motes']) {
+  const b = document.getElementById(id);
+  b.addEventListener('click', () => {
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(on));
+    window.__caustics.setLayer(id, on);
+  });
+}
+</script>
+</body>
+</html>

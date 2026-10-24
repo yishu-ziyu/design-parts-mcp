@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bench Blocks</title>
+<style>
+  :root {
+    --ink: #17181a;
+    --muted: #3c3b37;
+    --tint: rgba(23, 24, 26, 0.06);
+    --page: #ffffff;
+    --spring: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--ink); }
+  body {
+    font-family: Inter, "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  header { max-width: 1180px; margin: 0 auto; padding: 56px 20px 28px; text-align: center; }
+  header h1 { font-size: clamp(26px, 3.2vw, 38px); font-weight: 500; letter-spacing: -0.02em; }
+  header p { margin: 12px auto 0; max-width: 34em; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 1180px; margin: 0 auto; padding: 0 20px 14px; }
+  .chip {
+    height: 32px; padding: 0 14px; border: 0; border-radius: 999px; font: inherit; font-size: 13px;
+    background: var(--tint); color: var(--muted); cursor: pointer;
+    transition: background-color 0.16s, color 0.16s;
+  }
+  .chip:hover { background: rgba(23, 24, 26, 0.1); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+    max-width: 1180px; margin: 0 auto; padding: 0 20px 48px;
+  }
+  @media (max-width: 720px) { .grid { grid-template-columns: minmax(0, 1fr); padding: 0 16px 40px; } .chips { padding: 0 16px 14px; } }
+  .cell {
+    position: relative; aspect-ratio: 4 / 3; border-radius: 28px; background: var(--tint);
+    overflow: hidden; touch-action: none;
+  }
+  .cell[hidden] { display: none; }
+  .cell .name {
+    position: absolute; left: 14px; top: 14px; z-index: 5; height: 24px; padding: 0 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; font-size: 12px; background: rgba(255, 255, 255, 0.94); color: var(--muted);
+  }
+  /* Blocks are authored at a fixed natural size and scaled to the cell, same as the source's .dtl-scale wrapper. */
+  .fit { position: absolute; left: 50%; top: 50%; transform-origin: 0 0; }
+
+  /* dot cube */
+  .dc canvas { display: block; cursor: crosshair; }
+
+  /* card swap */
+  .cs { position: relative; }
+  /* Perspective sits on the 196×266 stage itself, so back cards shrink toward the stack's own centre. */
+  .cs-stage { position: absolute; left: 60px; top: 60px; width: 196px; height: 266px; perspective: 1000px; }
+  .cs-card {
+    position: absolute; inset: 0; border-radius: 20px; background: #fff; padding: 3px; cursor: grab;
+    box-shadow: 0 0 0 1px rgba(23, 24, 26, 0.12);
+    transition: transform 0.6s var(--spring);
+    user-select: none; -webkit-user-select: none;
+  }
+  .cs-card:active { cursor: grabbing; }
+  .cs-art { width: 100%; height: 100%; border-radius: 17px; }
+  .cs-tag {
+    position: absolute; left: 14px; bottom: 14px; padding: 6px 12px; border-radius: 999px;
+    background: #fff; font-size: 13px; font-weight: 500; line-height: 1.4;
+  }
+
+  /* signature */
+  .sg-wrap { display: grid; place-items: center; }
+  .sig {
+    position: relative; width: 300px; height: 180px; border-radius: 20px; background: #fff; overflow: hidden;
+    transition: width 0.6s var(--spring), height 0.6s var(--spring), border-radius 0.6s var(--spring);
+  }
+  .sig-face { position: absolute; left: 0; top: 0; width: 300px; height: 180px; transition: scale 0.6s var(--spring), opacity 0.42s 0.16s; }
+  .sig-face svg { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink); transition: color 0.26s; touch-action: none; cursor: crosshair; }
+  .sig-line { position: absolute; left: 28px; top: 128px; width: 244px; height: 1px; background: var(--ink); opacity: 0.16; transition: opacity 0.42s; }
+  .sig-hint { position: absolute; left: 0; right: 0; top: 136px; text-align: center; font-size: 12px; line-height: 18px; opacity: 0.4; transition: opacity 0.16s; pointer-events: none; }
+  .sig-clear {
+    position: absolute; right: 10px; top: 10px; height: 26px; padding: 0 12px; border: 0; border-radius: 10px;
+    background: rgba(23, 24, 26, 0.07); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity 0.16s;
+  }
+  .sig.inked .sig-hint { opacity: 0; }
+  .sig.inked .sig-clear { opacity: 1; pointer-events: auto; }
+  .sig-said {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    border: 0; background: none; color: var(--ink); font-family: inherit; cursor: pointer;
+  }
+  .sig.signed { width: 112px; height: 40px; border-radius: 999px; }
+  .sig.signed .sig-face { scale: 0.4; opacity: 0; transition: scale 0.6s var(--spring), opacity 0.2s; }
+  .sig.signed .sig-said { opacity: 1; pointer-events: auto; transition: opacity 0.3s 0.25s; }
+
+  /* drag ball */
+  .db svg { display: block; overflow: visible; }
+  .db { cursor: grab; touch-action: none; }
+  .db.held { cursor: grabbing; }
+
+  #notes { max-width: 1180px; margin: 0 auto; padding: 8px 20px 64px; font-size: 14px; line-height: 1.6; color: var(--muted); }
+  #notes h3 { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+  #notes dt { margin-top: 12px; color: var(--ink); }
+  #notes code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+  #notes dd { margin-left: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cs-card, .sig, .sig-face, .sig-face svg, .sig-line, .sig-hint, .sig-said, .chip { transition-duration: 0.01s !important; transition-delay: 0s !important; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Small things that answer back</h1>
+  <p>Four interaction studies: a lattice you can stir, a deck you can flick, a pad that signs off, and a ball that gives under your thumb.</p>
+</header>
+<div class="chips" id="chips"></div>
+<main class="grid" id="grid"></main>
+
+<section id="notes"><h3>可拆</h3><dl>
+  <dt><code>#dotcube</code></dt><dd>点阵立方体：6 px 一格，格心对立方体做正交射线求交，三个面三种点径；指针 60 px 内把点换成 # 字符并带 1.2 s 余温，按下放一圈环。</dd>
+  <dt><code>#cardswap</code></dt><dd>纵深卡堆：196×266 卡，skewY 6°，每往后一张 translate3d(34, −26, −70)，perspective 1000 px；点或甩前卡，它绕到最后，其余前进一格，0.6 s cubic-bezier(0.22, 1, 0.36, 1)。</dd>
+  <dt><code>#signature</code></dt><dd>签名板：300×180 白卡，墨线 3 px 随速度变细；停笔约 1.1 s 后宽高 0.6 s 收成 112×40 的「Signed」胶囊，墨色同时 0.26 s 变灰；点胶囊回到签名板并一笔一笔倒回。</dd>
+  <dt><code>#dragball</code></dt><dd>黏球：58 px 白球过 goo 滤镜（模糊 4.5，alpha ×16 −6.17，atop 合成）；抓住时放大到 1.12，按速度沿运动方向拉长最多 36%，身后一个小球追上来被滤镜粘成一体。</dd>
+</dl></section>
+
+<script>
+const CONFIG = {
+  ink: [23, 24, 26],
+  filters: ['All', 'Hover', 'Press', 'Drag'],
+  blocks: [
+    { id: 'dotcube', name: 'Dot lattice', tags: ['Hover', 'Press'], note: 'Rotating cube drawn as a 6 px dot grid. The pointer drags a wake of # glyphs (reach 60, trail 1.2 s, pull 40); a press sends a ring out.' },
+    { id: 'cardswap', name: 'Card deck', tags: ['Press', 'Drag'], note: 'Four cards 196×266 skewed 6°, each step back is translate3d(34, −26, −70). Tap or flick the front card and it goes to the back; 0.6 s cubic-bezier(0.22, 1, 0.36, 1).' },
+    { id: 'signature', name: 'Sign-off pad', tags: ['Drag'], note: '300×180 pad, 3 px ink that thins with speed. Stop for a moment and it folds into a 112×40 “Signed” pill; tap the pill and strokes rewind one by one.' },
+    { id: 'dragball', name: 'Putty ball', tags: ['Drag', 'Press'], note: '58 px white ball through a goo filter (blur 4.5, alpha ×16 −6.17). It swells when grabbed, stretches along velocity (36%), and leaves a trailing blob that catches up.' }
+  ],
+  dotcube: { w: 360, h: 240, cell: 5.5, glyph: 8, half: 52, reach: 60, trail: 1.2, pull: 40, spin: 0.35, ringSpeed: 260, glyphs: '#*+=' },
+  cardswap: { w: 360, h: 350, step: [34, -26, -70], skew: 6, ms: 600, flick: 40, auto: 0,
+    cards: [
+      { tag: 'Tide', art: 'radial-gradient(120% 80% at 20% 90%, #ff5a36 0 18%, transparent 40%), radial-gradient(90% 70% at 70% 40%, #ff9fd1 0 20%, transparent 46%), radial-gradient(80% 60% at 40% 70%, #2bb673 0 14%, transparent 36%), linear-gradient(160deg, #4f7fe0, #6f9cf0 55%, #f4d27a)' },
+      { tag: 'Ember', art: 'radial-gradient(80% 60% at 30% 30%, #ffd166 0 20%, transparent 50%), radial-gradient(90% 80% at 80% 80%, #e63946 0 25%, transparent 60%), linear-gradient(200deg, #1d3557, #457b9d)' },
+      { tag: 'Moss', art: 'radial-gradient(70% 50% at 70% 25%, #f1faee 0 15%, transparent 40%), radial-gradient(100% 80% at 20% 80%, #2a9d8f 0 30%, transparent 60%), linear-gradient(170deg, #264653, #8ab17d)' },
+      { tag: 'Dusk', art: 'radial-gradient(90% 70% at 50% 100%, #f72585 0 20%, transparent 55%), radial-gradient(70% 50% at 30% 30%, #b8c0ff 0 18%, transparent 45%), linear-gradient(180deg, #3a0ca3, #7209b7)' }
+    ] },
+  signature: { w: 360, h: 260, idle: 1100, rewindStep: 110, smoothing: 0.5, minW: 1.6, maxW: 3.4, signedInk: 'rgb(185, 186, 186)', hint: 'Sign here', clear: 'Clear', done: 'Signed' },
+  dragball: { w: 360, h: 260, size: 58, stretch: 0.36, give: 0.5, grip: 0.5, swell: 1.12, blur: 4.5 }
+};
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, cls, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.appendChild(e); return e; };
+const sv = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+function fitInto(container, w, h) {
+  const box = el('div', 'fit', container);
+  box.style.width = w + 'px'; box.style.height = h + 'px';
+  const ro = new ResizeObserver(() => {
+    const s = Math.min(container.clientWidth / w, container.clientHeight / h, 1.25);
+    box.style.transform = `scale(${s}) translate(-50%, -50%)`;
+    box.dataset.scale = s;
+  });
+  ro.observe(container);
+  return { box, scale: () => +box.dataset.scale || 1, destroy() { ro.disconnect(); box.remove(); } };
+}
+
+function createDotCube(container, options = {}) {
+  const o = { ...CONFIG.dotcube, ...options };
+  const fit = fitInto(container, o.w, o.h);
+  fit.box.classList.add('dc');
+  const cv = el('canvas', '', fit.box);
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = o.w * dpr; cv.height = o.h * dpr; cv.style.width = o.w + 'px'; cv.style.height = o.h + 'px';
+  const ctx = cv.getContext('2d');
+  const cols = Math.floor(o.w / o.cell), rows = Math.floor(o.h / o.cell);
+  const ox = (o.w - cols * o.cell) / 2 + o.cell / 2, oy = (o.h - rows * o.cell) / 2 + o.cell / 2;
+  const heat = new Float32Array(cols * rows);
+  let ptr = null, rings = [], raf = 0, last = performance.now(), ang = 0.6;
+  const [r, g, b] = CONFIG.ink;
+
+  function hit(px, py, R) {
+    // orthographic ray along +z, transformed into cube space by R^T
+    const o3 = [R[0] * px + R[3] * py + R[6] * -400, R[1] * px + R[4] * py + R[7] * -400, R[2] * px + R[5] * py + R[8] * -400];
+    const d3 = [R[6], R[7], R[8]];
+    let tmin = -Infinity, tmax = Infinity, axis = -1, sign = 1;
+    for (let i = 0; i < 3; i++) {
+      if (Math.abs(d3[i]) < 1e-9) { if (Math.abs(o3[i]) > o.half) return null; continue; }
+      let t1 = (-o.half - o3[i]) / d3[i], t2 = (o.half - o3[i]) / d3[i];
+      let s = -1;
+      if (t1 > t2) { const t = t1; t1 = t2; t2 = t; s = 1; }
+      if (t1 > tmin) { tmin = t1; axis = i; sign = s * Math.sign(d3[i]) * -1 || 1; }
+      if (t2 < tmax) tmax = t2;
+    }
+    if (tmin > tmax || axis < 0) return null;
+    return axis;
+  }
+  function rot(a) {
+    const ay = a, ax = 0.62 + Math.sin(a * 0.5) * 0.12;
+    const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax);
+    // R = Rx * Ry, row-major; columns map cube axes into view space
+    return [cy, sx * sy, -cx * sy, 0, cx, sx, sy, -sx * cy, cx * cy];
+  }
+  const faceShade = [0.55, 1, 0.78];
+
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    if (!reduce.matches) ang += dt * o.spin;
+    const R = rot(ang);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, o.w, o.h);
+    ctx.font = `600 ${o.glyph}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    rings = rings.filter(rg => (rg.r += o.ringSpeed * dt) < 320);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      const k = j * cols + i;
+      let x = ox + i * o.cell, y = oy + j * o.cell;
+      const axis = hit(x - o.w / 2, y - o.h / 2, R);
+      if (ptr) {
+        const dx = ptr.x - x, dy = ptr.y - y, dd = Math.hypot(dx, dy);
+        if (dd < o.reach) heat[k] = Math.max(heat[k], 1 - dd / o.reach);
+      }
+      for (const rg of rings) { const dd = Math.hypot(rg.x - x, rg.y - y); if (Math.abs(dd - rg.r) < o.cell) heat[k] = Math.max(heat[k], 0.9); }
+      heat[k] = Math.max(0, heat[k] - dt / o.trail);
+      if (axis === null) continue;
+      const h = heat[k];
+      if (ptr && h > 0) {
+        const dx = ptr.x - x, dy = ptr.y - y, dd = Math.hypot(dx, dy) || 1;
+        const p = Math.min(o.pull * h * 0.25, dd * 0.5);
+        x += dx / dd * p; y += dy / dd * p;
+      }
+      const shade = faceShade[axis];
+      if (h > 0.08) {
+        ctx.fillStyle = `rgba(${r},${g},${b},${0.55 + 0.45 * h})`;
+        ctx.fillText(o.glyphs[Math.min(o.glyphs.length - 1, Math.floor((1 - h) * o.glyphs.length))], x, y);
+      } else {
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath(); ctx.arc(x, y, 1.1 + 1.0 * shade, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  const local = e => { const rc = cv.getBoundingClientRect(); return { x: (e.clientX - rc.left) * o.w / rc.width, y: (e.clientY - rc.top) * o.h / rc.height }; };
+  const move = e => { ptr = local(e); };
+  const leave = () => { ptr = null; };
+  const down = e => { const p = local(e); rings.push({ x: p.x, y: p.y, r: 0 }); };
+  cv.addEventListener('pointermove', move); cv.addEventListener('pointerleave', leave); cv.addEventListener('pointerdown', down);
+  raf = requestAnimationFrame(frame);
+  return { el: fit.box, destroy() { cancelAnimationFrame(raf); fit.destroy(); } };
+}
+
+function createCardSwap(container, options = {}) {
+  const o = { ...CONFIG.cardswap, ...options };
+  const fit = fitInto(container, o.w, o.h);
+  fit.box.classList.add('cs');
+  const stage = el('div', 'cs-stage', fit.box);
+  const skew = `skewY(${o.skew}deg)`;
+  const pos = i => `translate3d(${o.step[0] * i}px, ${o.step[1] * i}px, ${o.step[2] * i}px) ${skew}`;
+  let order = o.cards.map((c, i) => {
+    const card = el('div', 'cs-card', stage);
+    const art = el('div', 'cs-art', card); art.style.background = c.art;
+    el('div', 'cs-tag', card).textContent = c.tag;
+    return card;
+  });
+  let busy = false, timer = 0;
+  function layout() { order.forEach((c, i) => { c.style.transform = pos(i); c.style.zIndex = o.cards.length - i; }); }
+  function swap(dir = -1) {
+    if (busy) return; busy = true;
+    const front = order.shift(); order.push(front);
+    order.forEach((c, i) => { if (c !== front) { c.style.transform = pos(i); c.style.zIndex = o.cards.length - i; } });
+    const n = o.cards.length - 1;
+    if (reduce.matches) { front.style.transform = pos(n); front.style.zIndex = 1; busy = false; return; }
+    front.style.transition = 'none';
+    const a = front.animate([
+      { transform: pos(0), zIndex: o.cards.length + 1 },
+      { transform: `translate3d(${dir * 150}px, 40px, 40px) ${skew} rotate(${dir * 8}deg)`, zIndex: o.cards.length + 1, offset: 0.4 },
+      { transform: pos(n), zIndex: 0 }
+    ], { duration: o.ms * 1.3, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+    a.onfinish = () => { front.style.transform = pos(n); front.style.zIndex = 1; requestAnimationFrame(() => { front.style.transition = ''; busy = false; }); };
+  }
+  let start = null;
+  const down = e => { if (e.target.closest('.cs-card') !== order[0]) return; start = { x: e.clientX, y: e.clientY, t: performance.now() }; order[0].setPointerCapture(e.pointerId); };
+  const move = e => { if (!start || busy) return; const s = fit.scale(); const dx = (e.clientX - start.x) / s, dy = (e.clientY - start.y) / s; order[0].style.transition = 'none'; order[0].style.transform = `translate3d(${dx}px, ${dy * 0.4}px, 0) ${skew} rotate(${dx * 0.04}deg)`; };
+  const up = e => {
+    if (!start) return; const dx = (e.clientX - start.x) / fit.scale(); start = null;
+    const front = order[0]; front.style.transition = '';
+    if (Math.abs(dx) < 4 || Math.abs(dx) > o.flick) swap(dx > 0 ? 1 : -1); else front.style.transform = pos(0);
+  };
+  stage.addEventListener('pointerdown', down); stage.addEventListener('pointermove', move); stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+  layout();
+  if (o.auto > 0) timer = setInterval(() => swap(-1), o.auto);
+  return { el: fit.box, next: swap, destroy() { clearInterval(timer); fit.destroy(); } };
+}
+
+function createSignaturePad(container, options = {}) {
+  const o = { ...CONFIG.signature, ...options };
+  const fit = fitInto(container, o.w, o.h);
+  fit.box.classList.add('sg-wrap');
+  const sig = el('div', 'sig', fit.box);
+  const face = el('div', 'sig-face', sig);
+  el('span', 'sig-line', face);
+  const hint = el('span', 'sig-hint', face); hint.textContent = o.hint;
+  const svg = sv('svg', { viewBox: '0 0 300 180' }, face);
+  const clear = el('button', 'sig-clear', face); clear.type = 'button'; clear.textContent = o.clear;
+  const said = el('button', 'sig-said', sig); said.type = 'button';
+  said.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  said.append(o.done);
+  let strokes = [], cur = null, idleT = 0, rewinding = 0;
+  const local = e => { const rc = svg.getBoundingClientRect(); return { x: (e.clientX - rc.left) * 300 / rc.width, y: (e.clientY - rc.top) * 180 / rc.height, t: performance.now() }; };
+  function seg(a, b, w) { return sv('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: 'currentColor', 'stroke-width': w.toFixed(2), 'stroke-linecap': 'round' }, cur.g); }
+  const down = e => {
+    if (sig.classList.contains('signed')) return;
+    clearTimeout(idleT); svg.setPointerCapture(e.pointerId);
+    const p = local(e);
+    cur = { g: sv('g', {}, svg), last: p, s: { ...p }, w: o.maxW };
+    seg(p, p, o.maxW); strokes.push(cur); sig.classList.add('inked');
+  };
+  const move = e => {
+    if (!cur) return;
+    const p = local(e), k = 1 - o.smoothing * 0.8;
+    const s = { x: cur.s.x + (p.x - cur.s.x) * k, y: cur.s.y + (p.y - cur.s.y) * k, t: p.t };
+    const v = Math.hypot(s.x - cur.s.x, s.y - cur.s.y) / Math.max(1, s.t - cur.s.t);
+    const target = Math.max(o.minW, Math.min(o.maxW, o.maxW - v * 1.2));
+    cur.w += (target - cur.w) * 0.35;
+    seg(cur.s, s, cur.w); cur.s = s;
+  };
+  const up = () => { if (!cur) return; cur = null; idleT = setTimeout(sign, o.idle); };
+  function sign() { svg.style.color = o.signedInk; sig.classList.add('signed'); }
+  function rewind(done) {
+    clearInterval(rewinding);
+    const step = () => { const s = strokes.pop(); if (s) s.g.remove(); if (!strokes.length) { clearInterval(rewinding); sig.classList.remove('inked'); done && done(); } };
+    if (reduce.matches) { while (strokes.length) step(); return; }
+    rewinding = setInterval(step, o.rewindStep);
+  }
+  clear.addEventListener('click', () => { clearTimeout(idleT); rewind(); });
+  said.addEventListener('click', () => { svg.style.color = ''; sig.classList.remove('signed'); setTimeout(() => rewind(), 450); });
+  svg.addEventListener('pointerdown', down); svg.addEventListener('pointermove', move); svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  return { el: fit.box, clear: () => rewind(), destroy() { clearTimeout(idleT); clearInterval(rewinding); fit.destroy(); } };
+}
+
+let gooId = 0;
+function createDragBall(container, options = {}) {
+  const o = { ...CONFIG.dragball, ...options };
+  const fit = fitInto(container, o.w, o.h);
+  fit.box.classList.add('db');
+  const id = 'goo' + (++gooId);
+  const svg = sv('svg', { width: o.w, height: o.h, viewBox: `0 0 ${o.w} ${o.h}` }, fit.box);
+  const f = sv('filter', { id, x: '-50%', y: '-50%', width: '200%', height: '200%' }, sv('defs', {}, svg));
+  sv('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: o.blur, result: 'blur' }, f);
+  sv('feColorMatrix', { in: 'blur', mode: 'matrix', values: '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -6.17', result: 'goo' }, f);
+  sv('feComposite', { in: 'SourceGraphic', in2: 'goo', operator: 'atop' }, f);
+  const g = sv('g', { filter: `url(#${id})` }, svg);
+  const tail = sv('ellipse', { fill: '#fff' }, g);
+  const ball = sv('ellipse', { fill: '#fff' }, g);
+  const R = o.size / 2;
+  const home = { x: o.w / 2, y: o.h / 2 };
+  const s = { x: home.x, y: home.y, vx: 0, vy: 0, tx: home.x, ty: home.y, sc: 1, vs: 0, held: false, t: { x: home.x, y: home.y, vx: 0, vy: 0 }, grab: { x: 0, y: 0 } };
+  let raf = 0, last = performance.now();
+  const local = e => { const rc = svg.getBoundingClientRect(); return { x: (e.clientX - rc.left) * o.w / rc.width, y: (e.clientY - rc.top) * o.h / rc.height }; };
+  const down = e => {
+    const p = local(e);
+    if (Math.hypot(p.x - s.x, p.y - s.y) > R * 1.3) return;
+    s.held = true; s.grab = { x: p.x - s.x, y: p.y - s.y }; fit.box.classList.add('held'); svg.setPointerCapture(e.pointerId);
+  };
+  const move = e => { if (!s.held) return; const p = local(e); s.tx = p.x - s.grab.x * (1 - o.grip); s.ty = p.y - s.grab.y * (1 - o.grip); };
+  const up = () => { if (!s.held) return; s.held = false; fit.box.classList.remove('held'); s.tx = home.x; s.ty = home.y; };
+  function step(now) {
+    const dt = Math.min((now - last) / 1000, 0.033); last = now;
+    const k = s.held ? 900 : 260, damp = s.held ? 48 : 14 + 20 * (1 - o.give);
+    s.vx += ((s.tx - s.x) * k - s.vx * damp) * dt; s.vy += ((s.ty - s.y) * k - s.vy * damp) * dt;
+    s.x += s.vx * dt; s.y += s.vy * dt;
+    const goal = s.held ? o.swell : 1;
+    s.vs += ((goal - s.sc) * 420 - s.vs * 18) * dt; s.sc += s.vs * dt;
+    const t = s.t;
+    t.vx += ((s.x - t.x) * 120 - t.vx * 16) * dt; t.vy += ((s.y - t.y) * 120 - t.vy * 16) * dt;
+    t.x += t.vx * dt; t.y += t.vy * dt;
+    const sp = Math.hypot(s.vx, s.vy), st = Math.min(o.stretch, sp / 2400);
+    const ang = Math.atan2(s.vy, s.vx) * 180 / Math.PI;
+    const rx = R * s.sc * (1 + st), ry = R * s.sc * (1 - st * 0.6);
+    ball.setAttribute('cx', s.x); ball.setAttribute('cy', s.y); ball.setAttribute('rx', rx); ball.setAttribute('ry', ry);
+    ball.setAttribute('transform', `rotate(${ang} ${s.x} ${s.y})`);
+    const tr = R * 0.55 * s.sc;
+    tail.setAttribute('cx', t.x); tail.setAttribute('cy', t.y); tail.setAttribute('rx', tr); tail.setAttribute('ry', tr);
+    raf = requestAnimationFrame(step);
+  }
+  if (reduce.matches) { o.stretch = 0; }
+  svg.addEventListener('pointerdown', down); svg.addEventListener('pointermove', move); svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  raf = requestAnimationFrame(step);
+  return { el: fit.box, destroy() { cancelAnimationFrame(raf); fit.destroy(); } };
+}
+
+const FACTORIES = { dotcube: createDotCube, cardswap: createCardSwap, signature: createSignaturePad, dragball: createDragBall };
+const grid = document.getElementById('grid'), chips = document.getElementById('chips');
+const cells = CONFIG.blocks.map(b => {
+  const cell = el('div', 'cell', grid); cell.id = b.id; cell.dataset.tags = b.tags.join(' ');
+  el('span', 'name', cell).textContent = b.name;
+  FACTORIES[b.id](cell);
+  return cell;
+});
+CONFIG.filters.forEach((f, i) => {
+  const c = el('button', 'chip', chips); c.type = 'button'; c.textContent = f; c.setAttribute('aria-pressed', i === 0);
+  c.addEventListener('click', () => {
+    chips.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x === c));
+    cells.forEach(cell => { cell.hidden = f !== 'All' && !cell.dataset.tags.split(' ').includes(f); });
+  });
+});
+</script>
+</body>
+</html>

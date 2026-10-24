@@ -40,6 +40,37 @@
 | [flycam/index.html](living/flycam/index.html) | 左边黄视锥相机沿虚线航线在一块合成上空走位（真 three.js：MOTION 卡、GRAPHICS 卡、UI 面板、cloner 环、文字绕柱），右边是它看见的画面，末帧停在文字绕柱 | 要真 three.js 栈的「看得见的相机」：CameraHelper 视锥 + 虚线航线 + 路径点点火 + POV 铸镜头 + 一个 renderer 两个窗格。**v2**：WebGL 真栈重做（v1 是 CSS 3D 近似、内容是求职物件，已废）；溯源 mo1（three.js WebGPU 演示）。CSS 3D 版标本走 [nightflight](nightflight/index.html) / [rig](rig/index.html) |
 | [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam 的 **v1 系（CSS 3D）**，零件沿用 [#rig](nightflight/index.html#rig) / [#flight](nightflight/index.html#flight) / [#timeline](nightflight/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
 | [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
+| [horizons/index.html](living/horizons/index.html) | 黑洞上方的拱和洞边细环是逐像素弯光线算出来的。点底部 ‹ › 相机连续换机位，滚轮改焦距，四角只有实时读数 | 首屏只放一个真在跑的画面。能按规则算的形状别画。几个作品切换做成同一个框里换机位 |
+| [koi/index.html](living/koi/index.html) | 三张同版式海报：锦鲤、海龟、蜥蜴各由一千多个半透明水彩色点拼成。鼠标划过，点被推开再弹回 | 粒子图案先画一张颜色对的底图。作品封面做成同版式系列，一张一个主色 |
+| [notchpet/index.html](living/notchpet/index.html) | 刘海里一团黏糊小猫被拖出来，脖子越拉越细、拉断，停到代码窗口上沿长出标签，变成输入框，回车后报错消失、那一行闪绿。12 s 自动循环，点一下自己拖 | agent / 桌宠的产品演示。一个形状贯穿所有状态，不弹新控件。结果落在用户自己的窗口里，不回一条聊天。复刻 @imbabybrooklyn |
+| [scanline/index.html](living/scanline/index.html) | 一只猫被扫描线一格一格画出来，12 fps 一顿一顿地动。全页一个黑两个近白，标题也是点阵。能把自己的视频拖进去 | 产品 hero 要一条只属于它的渲染规则。素材和着色器分开，换主角只换素材。复刻 @amananimates |
+| [cutpath/index.html](living/cutpath/index.html) | 透明 PNG 外面长出一圈等距洋红切割线，挂孔贴着图案顶。点 3D，亚克力立起来，旁边一枚 500 日元硬币 | 做实物下单的工具：先把交给印刷厂的文件做对（White / Art / CutContour 三层 SVG），再用一枚硬币回答多大、孔在哪。真 three.js 挤出走这里，可见相机仍走 flycam |
+| [beacon/index.html](living/beacon/index.html) | 三张海报是同一张字形表排的。灯塔从下往上长，2.5s 后光束扫过表格，字变成 0/1 格子。两张浪从左往右长，然后只剩状态灯在闪 | 一组封面要成套：先定字形表和 9 秒先长后停的节奏，每张只换一张密度图。只留一个一直在动的东西，让它演产品的动作。品牌 skerry 是虚构的 |
+| [reliefkit/index.html](living/reliefkit/index.html) | 左边手机主屏九个暖灰塑料小机器，悬停时光跟着偏。右边放大一个，在图上拖，影子、高光和印字一起跟着光源转 | 要一组像产品照的图标：一个机身配方套全家，光从原作截图拟合，不凭眼睛调。正视 3D 感用 SDF 高度场算，不建模，加图标只写数据。品牌 ORDO 是自拟的。手法来自鹿言 & Zhiyi Zhang《Rams System Icons》 |
+| [doodlecard/index.html](living/doodlecard/index.html) | 照片闪一下白光，弹出一张蜡笔涂鸦卡，连做五次。然后照片越切越快地叠上来，停在 App 画面，最后一把纸卡落在木地板上。19 秒、24 fps，帧号逐帧对着原片 | 「照片进去、结果出来」的产品宣传片或揭晓动画；照片变平涂蜡笔小画；日记卡布局。品牌 LOOP、文案和替身场景是自己的。要卡通抖仍走 doodle。复刻 @JaejinBong |
+| [gamespace/index.html](living/gamespace/index.html) | 黑底上一个橙点 Stardew Valley，四个近邻带相似度小字逐字出来。拉远后 18.9 万个彩色点亮起，硬切坍成小球再炸开，镜头钻进去，退出来标出八个类型 | 讲 embedding / 相似度：先一个熟悉的点和近邻，再全景，再标区域。动画是时间 t 的纯函数，能按参考视频逐秒对。数据是合成的，`setData` 换真坐标。复刻 @re_skob |
+| [paperwave/index.html](living/paperwave/index.html) | 一张纸在点阵地面上起伏，纯 SVG 每帧把点投影到屏幕。按住纸往上拉，松手后鼓包沿纸跑到另一头再弹回。底部五个药丸左右拖改振幅、波长、速度、转角、俯角 | 不想引 3D 库又要有空间感：正交投影 + 细带按深度排序，辅助线和影子随高度变化来交代离地多高。真 3D 网格走 cutpath / flycam。复刻 @gabriell_lab |
+| [devicegallery/index.html](living/devicegallery/index.html) | 白底上一格格设备浮着，往哪拖都拖不到头。四条边像透镜一样弯，拖得越快弯得越狠、带色散。悬停时设备外面亮一圈慢慢转的彩虹光，点开从格子里飞到页中。开场是设备飞进来聚成一个球，镜头穿进网格 | 产品 / 硬件 / 作品图鉴要让人「逛」：内容只占中间，手感都在边缘那层光里，UI 退到四角。数据在页内 JSON，换真照片只改 `visual.src`。16 台设备是虚构的。复刻 @openmys |
+| [orbitshelf/index.html](living/orbitshelf/index.html) | 14 件抠图小物绕着衬线大标题慢慢转，前排大而清楚，后排小、淡、糊，边缘一圈磨砂雾 | 落地页首屏要一个安静的动态主视觉，不用 3D 也有景深。一个 cos θ 驱动缩放、透明度、层级、模糊。复刻 @Tanjim38 的 knowspace.si |
+| [artatlas/index.html](living/artatlas/index.html) | 一个风格图鉴站：三列 16:10 卡片、搜索加分类胶囊实时过滤、点开是同页详情（大图、看点、可复制提示词、参考作品）。14 张缩略图全是 canvas 程序画的 | 要做「一类东西的图鉴 / 参考库」时，一种卡片、一种比例、两级灰字就够撑起整站。复刻 @onefifthblue 的 Game Art Style |
+| [hoop/index.html](living/hoop/index.html) | 一块漂在白纸上的等距小球场，三个像素小人自己运球、传球、投篮。整块场景先画到 160 像素宽再整数倍放大，草边碎成散点 | 想要一个“小而完整的世界”当插图或空状态：一块地、一束光、几个会动的小人。复刻 @zzzzshawn |
+| [retroprint/index.html](living/retroprint/index.html) | 一张金属产品照变成粉纸上的蓝墨点，疏密跟着原来的明暗走，暗部带白色细纹。六个 pass 可以逐个点开看，能拖自己的图进来 | 要把照片做成复古单色印刷，不想开 Photoshop。每一步一个 pass，参数和 Photoshop 面板一一对应。复刻 @DesignSpot_Jap |
+| [diagrams/index.html](living/diagrams/index.html) | 左边逐字打出 Mermaid 风格文本，右边每打一个字整张 SVG 重画：流程图、桑基图、柱状图，暖白底配 8 个系列色 | 想让“文本即图”看起来干净、能换主题时用。数值全部取自 Pele 源码。复刻 @kepano |
+| [stitch/index.html](living/stitch/index.html) | 一个小木屋三维模型，拖着转，实时降采样成 115 格宽的十字绣图样；右栏是滑杆、线色表、DMC 色号、针数和 14ct 成品尺寸 | 把任何矢量或三维内容变成「能绣出来」的格子图，同时算出要买几束线、绣出来多大。复刻 @LottieCoxon |
+| [filmtype/index.html](living/filmtype/index.html) | 电影字体档案站：暗色开场轮播三部片，一滚主帧撑满再上推，进到浅色大列表。悬停片名两侧出「+」、第 4 列展开一帧；点开横向一帧一帧走，底部时间码尺跟着点亮。14 部虚构电影、每帧用免费字体画 | 做一个「按条目浏览图片资料」的档案站，要开场有仪式感、列表克制、单条能逐帧翻。复刻 fontsinmovies.com（@VibeEverything 推荐） |
+| [asciimmo/index.html](living/asciimmo/index.html) | 整个小世界用彩色等宽字画：草被风吹成一道道 `/`，塘里有倒影，队友跟着走，陌生玩家闲逛放技能，左上角黑底组队面板 | 想做「字符画游戏世界」时，地形、倒影、角色、法术和 HUD 怎么用同一套格子画出来。复刻 TikTok @Ansenjeo（经 @Ekimko 转帖） |
+| [traces/index.html](living/traces/index.html) | AI 干活时的轨迹列表：状态头跟着当前步骤换字，步骤一条条往下长，结果卡片开两张收一张，最后整段折成一行摘要「Ran 2 searches and read 3 sources」。自己写的书店晨报内容 | 让人看见 agent 在做什么，又不被过程淹没。复刻 @dimitroweb |
+| [genie/index.html](living/genie/index.html) | 作品集首页一列不带框的作品，点开一件，所有作品像 macOS 最小化一样斜着变薄、缩成一条，吸进顶部胶囊 Dock，页面换成暖灰作品页 | 作品集要在"列表"和"单个作品"之间有一个能看懂去向的过渡。0.68 s、右缘先动、过 38% 才淡出。复刻 @dmcgco（dmcg.co） |
+| [sketchbook/index.html](living/sketchbook/index.html) | 白底正中一本摊开的速写本，拖右页往左就翻，页面按圆柱弯起来，松手弹簧落下。下面一行地点日期，左边一列刻度跳页。页面全是代码画的铅笔水彩 | 作品集里放手绘本：翻页本身就是展示，不用再配轮播。复刻 @jeanxcrj |
+| [appliance/index.html](living/appliance/index.html) | 一台等轴手绘烤面包机，按钮放面包、压杆、计时烤、叮一声弹起。线稿套一层位移 + 纸纹 + 斑驳的 SVG 滤镜，滑杆调抖动，色点换机身色 | 想把一个日常物件做成能玩的说明图，既要手绘温度又要能交互。复刻 @Aprilzz423 的 Colorfigures |
+| [framed/index.html](living/framed/index.html) | 一段湖景过一层稀疏点阵纹理，高清输出，装进浅米色面板里的圆角画框，衬线大标题、三栏信息、一个深色按钮。四步各有开关，能看每一步关掉后掉了什么 | 让站看起来贵，最快的是一段对味的素材 + 一层纹理 + 克制的框，界面本身少做。复刻 @davidhaz |
+| [launchreel/index.html](living/launchreel/index.html) | 一片白色键帽铺满地面，蓝键沿对角线升起成轨迹、拼出像素数字、一圈圈涟漪扩开；每幕一行短句从遮罩里升上来，一词强调色。声音全是 WebAudio 合成 | 发布短片的画面、文字、声音都读同一张时间表，拖到哪一帧都对得上。复刻 @LexnLin 的 Cinetic v1.1 发布视频 |
+| [pictionary/index.html](living/pictionary/index.html) | 你画一个词，右边 7 个彩色小生物排成一列抢着猜，猜错划线，第一个猜中的那张卡亮起来，整页换成它的颜色 | 多个 AI 同时作答的比赛界面。每回合换底色，白卡片 + 浮起的白纸，进度按墨量推进。复刻 @nutlope |
+| [lotus/index.html](living/lotus/index.html) | 页面底部一整块 canvas 荷塘：粉白黄三种荷花、立叶、圆石，上沿白雾融进页面，鼠标划过水面起椭圆涟漪。正文里一句手写注释旁的像素图标点开是一个小岛，骑士和羊都是代码画的点阵 | 作品集底部要一块会回应鼠标的「风景」，又不抢首屏。静的部分烘焙一次，只动摇摆的。复刻 @nexvyn |
+| [caustics/index.html](living/caustics/index.html) | 从水底往上看：一团发虚的日光、浑浊的青绿水体、上方水面的焦散亮斑、淡淡的光柱和悬浮物。2.39:1 画框，一个着色器画完，没有贴图 | 要一个写实水下氛围镜头当头图或转场，但不想放视频。复刻 @Yuki_1t0 Houdini 合集里 16 s 的水下仰拍 |
+| [extrude/index.html](living/extrude/index.html) | 一个平面像素小怪逐行刷出、腿掉下来落定，再沿 Z 轴拉成体素，镜头转到四分之三侧，最后体素缝消失变成一整块。9 s 一循环，可拖时间轴逐拍看 | 角色出场要从「平面图标」过渡到「有体积的东西」。一个厚度变量驱动整只角色，换角色只换一张 ASCII 像素图。复刻 @LexnLin |
+| [peel/index.html](living/peel/index.html) | 一张像素贴纸页：按住往里拖，贴纸从边上翻起露出灰背面和模切孔，撕过一半跟手，贴到待办纸上。撕的沙沙声是 WebAudio 现合成的，拖得快就响、撕得开就高 | 拟物交互的手感一半在声音：声音不排进动画时间线，直接挂在指针速度和进度上。复刻 @workcinprogress |
+| [bencho/index.html](living/bencho/index.html) | 四个会回应手的小组件放在一张 2×2 灰格里：被指针搅出字符尾巴的点阵立方体、点一下就把前卡送到最后的纵深卡堆、停笔后收成「✓ Signed」胶囊的签名板、带黏尾巴的白球 | 微交互要有一个「回应」：手一动，东西就变形、变字、收起或粘连。组件按自然尺寸写死再整体缩放。复刻 bencho.dev（@cabralorenzo） |
 | [trace/index.html](living/trace/index.html) | Agent 依次查五个来源：每步长出一行在扫光，结果卡开两张收一张，答案逐词流出，最后整串收成「Ran 2 searches and read 3 sources」 | Agent / AI 助手展示工具调用过程、思考轨迹、引用来源。`?t=` 能和原视频逐秒对帧 |
 
 ## 零件
@@ -232,3 +263,320 @@
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
 | 陌生网址或截图要做成活笔记 | [stranger](living/stranger/index.html) | 先问四句。第一屏先活 |
+
+### 光线追踪 / 换机位 / 仪表
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 黑洞透镜 / 逐像素弯光线 / 吸积盘 | [horizons](living/horizons/index.html#lensing) | 每步 `vel += −1.5·h²·pos/r⁵·dt`，最多 130 步，r<1 吸收，步数用完也算吸收。盘：开普勒 `2.2/r^1.5` + 两层 fbm，朝镜头那侧更亮 |
+| 两个场景是同一个模型换机位 / 连续过渡 | [horizons](living/horizons/index.html#viewpoint) | 一个 uniform `sc` 0→1 同时插距离 19→34、仰角 .17→.022 rad。`cur` 指数逼近目标，约 0.7s。不是切图 |
+| 焦距刻度 / 滚轮改焦距 | [horizons](living/horizons/index.html#focal) | 18–85mm，`fov = 2·atan(12/mm)`。滚轮 0.025mm/格，拖右侧竖刻度 |
+| 小人造物给尺度 | [horizons](living/horizons/index.html#scale) | 2D canvas 叠在 WebGL 上。农舍高约画面 1/6，换机位时和宇航员交叉淡换 |
+| 仪器式 HUD / 四角只放真实读数 | [horizons](living/horizons/index.html#hud) | 10px 等宽、12px 角框，中间全空。ALT、HORIZON 从相机参数实算，单位 Rs |
+| 重 shader 保帧率 / 自适应分辨率 | [horizons](living/horizons/index.html#fps) | 每 0.6s 量帧率：<40 降 0.1，>58 升 0.05，比例 .4–.9。左下 `FPS · %` |
+
+### 粒子 / 取色 / 海报系列
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 粒子从底图取色 / 中间大边缘小 | [koi](living/koi/index.html#sample) | 距离场 + 大点先放的变径泊松。锦鲤 D0 38、r 3–12。点色吸到底图的纯色，接缝不出灰点 |
+| 水彩点 / 花瓣形色块 / 边缘加深 | [koi](living/koi/index.html#dot) | 核心圆 + 6–8 瓣，边缘同色相加深，不往灰走。32 色 × 12 形预画图集，multiply，每帧只 drawImage |
+| 标注点连线框 / 编号标签 | [koi](living/koi/index.html#callouts) | 实心圆 r 4.8 + 1.1px 主色线。两行标签：mono 500 15px + 300 14px 45% 灰。点位按动物外框比例存 |
+| 同一版式出系列 / 一张一个主色 | [koi](living/koi/index.html#series) | 4:5。标题左上 300 字重，只一个词上主色。主色只在标题词、动物、四角虚色块 |
+| 鼠标推散再聚回 / 弹簧粒子 | [koi](living/koi/index.html#scatter) | 半径约 105 斥力，弹簧 0.045、阻尼 0.8。点「重新聚拢」撒开再飞回。停稳不重画 |
+| 换成自己的图 | [koi](living/koi/index.html#upload) | 等比缩进 0.82W × 0.7H，白底亮度 >232 抠掉。点、标注框、标题点数重算 |
+
+### 黏糊形状 / SDF / 跟拍镜头
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 拖出来的拉丝 / smooth union 脖子 / 拉断 | [notchpet](living/notchpet/index.html#goo) | 10 段 round-cone 排在二次贝塞尔上，中段收细。两中心距过 118 断开，两根尖尾巴弹回。颜色跟距离一起混 |
+| 宠物变标签变输入框 / 形状连续变形 | [notchpet](living/notchpet/index.html#goo) | 不换图形。猫的距离场直接 `mix` 到圆角矩形，红胶囊再变灰输入框 |
+| 窗口长出标签 / 拖到目标上吸附 | [notchpet](living/notchpet/index.html#desk) | 窗口和梯形标签 `smin` 成一块，标签高 37 → 67。拖近时窗口朝它鼓起，外沿亮一圈 6.5 宽浅蓝 |
+| DOM 文字和着色器对齐 / 3D 倾斜跟拍 | [notchpet](living/notchpet/index.html#world) | 一个 `DOMMatrix`：DOM 当 transform，着色器用它的逆。镜头 23 帧从原视频拟合 |
+| 自动演示和试玩共用一套逻辑 | [notchpet](living/notchpet/index.html#stage) | 光标脚本喂同一个 `step()`，240 Hz 弹簧。点一下切试玩 |
+| agent 在干活 / 思考点变完成点 | [notchpet](living/notchpet/index.html#faces) | 蓝点 → 绿点，半径是猫宽 0.19。完成散一圈 12 颗红点，代码那一行同时闪绿 |
+| 被拖时的表情 / 出汗冒心 | [notchpet](living/notchpet/index.html#faces) | 眯眼 → 惊讶 → 拉断笑脸 + 3 颗心。不用字就看懂 |
+
+### 扫描线 / 点阵 / 采样感
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 视频变扫描线 / 四档线宽 shader | [scanline](living/scanline/index.html#scan) | 12×8 格，格心采一次亮度。< 0.24 整格、< 0.44 粗线 6/8、< 0.805 细线 3/8，其余空。模糊淡影最多 30% 墨 |
+| 降帧采样感 / 12 fps 步进 | [scanline](living/scanline/index.html#stage) | `floor(t × 12)` 变了才重画。格子不动，动的是源。滚出视口就停 |
+| 点阵大标题 / 像素字 | [scanline](living/scanline/index.html#headline) | 竖笔 2 格、横笔 1 格、字距 2。SVG `rect` + `crispEdges`，单位取整到整像素 |
+| 一个黑两个近白 / 画布亮 4 级 | [scanline](living/scanline/index.html#hero) | `#0A0A0A`、`#F1F1EF`、`#F5F5F2`。画布 41.4% 起，上沿硬，左缘渐变 |
+| 换成自己的视频 / 自动色阶 | [scanline](living/scanline/index.html#swap) | object URL 本地读。直方图 3/7/45/92 百分位对齐四个切点。平坦背景避开细线切点 |
+
+### 切割线 / 白版 / 实物尺寸
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 透明图外扩等距白边 / 切割线 / 距离变换 | [cutpath](living/cutpath/index.html#stage) | `alpha > 40`，两遍倒角距离（1 / 1.4142）≤ 白边 mm × ppm。内洞泛洪填实。每块 8 邻域描边 + 3 遍 Chaikin。工作分辨率长边 560 |
+| 分开的小块连成一块 / 闭运算 | [cutpath](living/cutpath/index.html#merge) | 外扩 6mm 再收回 6mm。关掉，条数从 1 变 2 |
+| 挂链孔贴着图案顶 | [cutpath](living/cutpath/index.html#hole) | 孔 2.2mm + 环 1.8mm。找白版最高点，孔心再上移 0.7 环半径，补一段颈。拖滑块，孔沿上沿走 |
+| 白版 / 切割线 / 图案三种看法 + 尺寸读数 | [cutpath](living/cutpath/index.html#modes) | 白版 `#3a3a40` 实填。读数：外尺寸 mm、面积 cm²、dpi、条数 + 孔 |
+| 交给印刷厂的文件 / 分层 SVG / CutContour | [cutpath](living/cutpath/index.html#export) | White（evenodd 抠孔）、Art（PNG 内嵌）、CutContour（`#E6007E` 0.1mm）。单位 mm。宿主下载不可用就弹文本框 |
+| 3D 亚克力 / 透射材质 / 和硬币比大小 | [cutpath](living/cutpath/index.html#acrylic) | 正交相机，四视角 r = 4L。透射 0.97、ior 1.49、粗糙 0.12、clearcoat 1。30° 边线 `#7d8c90` 0.42。硬币 26.5mm 立在右边 10mm。r147 UMD 在 `vendor/` |
+
+### 字形海报 / 密度 / 光束
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 字形表 / 一套字形管一组图 | [beacon](living/beacon/index.html#legend) | 小点、方点、I/A/0/1/%、十字、菱形、圆环、实心圆、方块反白数字、黄格。字号 = 格 × 0.64。黄色只放几格 |
+| 形状决定密度 / 剪影变字形场 | [beacon](living/beacon/index.html#density) | 剪影画进每格 4×4px 离屏，模糊 0.55–0.7 格取平均 alpha，加噪声按阈值挑字形。打开「显示网格与密度图」 |
+| 光束扫过，文字变格子 | [beacon](living/beacon/index.html#beam) | 双向楔形各 36°，顺时针 40°/s。区内重铺底纹 + 蓝 31%。文字层按 14px 格算笔画覆盖率，≥ 0.07 换字形 |
+| 先长出来再定住 / 9 秒循环 | [beacon](living/beacon/index.html#timeline) | 表格 0.1s 一行，灯塔 0.15→1.9s 自下而上，光束 2.5s 起。浪 0.4–2.2s 左→右。泳道可拖 |
+| 孔版蓝纹理 / 海报坐标系 | [beacon](living/beacon/index.html#poster) | 1240×1754 逻辑坐标，`setTransform` 缩放。蓝 = fbm 浅斑 + 暗坑 + 颗粒，均色 (95.5, 124, 250) |
+
+### 超拟物图标 / 高度场 / 产品光
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 超拟物图标机身 / iOS 圆角 / V 槽 | [reliefkit](living/reliefkit/index.html#shell) | 超椭圆 p=4，角半径 0.2237 × 短边。外圈 2.35u 后一道 V 槽，宽 1.0u 深 0.9u，槽底遮蔽 0.55。面色 `#E1E0D9`。三种外壳只换色板 |
+| 产品摄影光 / 从截图反推光源 | [reliefkit](living/reliefkit/index.html#light) | 方位 47°、高度 16°、wrap 1，key 0.80 / ambient 0.40。用原作五处亮度反解。投影另抬 40°，只剩约 1u 接触阴影 |
+| 正视 3D 感不建模 / SDF 高度场渲染 | [reliefkit](living/reliefkit/index.html#stage) | 两遍 WebGL2：SDF 列表 → MRT 三张 RGBA8（16 位高度）。Sobel 法线、16 采样 AO、≤ 64 步软阴影。< 512px 2× 超采样，颗粒 < 1px 淡出 |
+| 印字 / LCD 段码跟着表面受光 | [reliefkit](living/reliefkit/index.html#print) | 2D canvas 画印刷层当反照率叠进去，有墨处高光乘 0.4。`{dd}` `{MON}` 取当天日期。缓存 60 张 |
+| 新增图标只写数据 | [reliefkit](living/reliefkit/index.html#schema) | 100×100u。part = 形状 + 操作 + 色板键 + 材质键。`under` 压在机身下，`repeat` + `each` 做阵列，push 到 `CONFIG.icons` |
+| 主屏图标网格 / 悬停偏光 / iOS 底板 | [reliefkit](living/reliefkit/index.html#screen) | 4 列 60px。悬停 ±7° 倾斜、光源偏 ±14°，按下 0.93。底板 n=5 超椭圆、物件 0.84、墙影 0.35 |
+| 拖图移光源 / 导出 1024 PNG | [reliefkit](living/reliefkit/index.html#inspector) | 离中心越远高度角越低（80° → 12°）。拖动只重画大图，松手重画全部。Blob 在 `window.lastExport` |
+
+### 涂鸦卡 / 闪白揭晓 / 宣传片节奏
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 照片变平涂蜡笔画 / 分色 + 蜡笔质感 | [doodlecard](living/doodlecard/index.html#doodle) | 先在 120px 整图找主体，再把主体框重读成 170px 做 k-means 7 色 + 3 遍多数滤波。输出 440px，噪声扭曲取样，颗粒 + 纸纹 + 笔触决定哪里露纸。卡上占 19% |
+| 闪白揭晓 / 结果卡弹出 | [doodlecard](living/doodlecard/index.html#flash) | 闪光帧白 100%，下一帧 50%，第三帧正常。卡 0.98 停 3 帧，第 5 帧 1.037，第 8 帧回到 1。约 1 s 一张 |
+| 越切越快的拼贴 / 缩放模糊转场 | [doodlecard](living/doodlecard/index.html#collage) | 切点间隔 11→9→6→7→5→4→3→1→1→1 帧，整体从 1 缩到 0.74。5 层逐层放大到 9% 叠出径向模糊 |
+| 手机弹入 / App 里换卡、翻牌 | [doodlecard](living/doodlecard/index.html#app) | 0.5 → 0.73 → 0.9 → 1 三帧弹入，带竖向拖影。卡每 2 帧换一张，再横向翻牌，推近到 1.9 倍 |
+| 卡片落到桌面 / 俯拍收尾 / 增量缓存 | [doodlecard](living/doodlecard/index.html#table) | 空中 4 张大卡模糊 9px 往下掉；俯拍 17 张从 2.35 倍用 5 帧落定。地板和已落地的卡画进一张缓存位图，一张只画一次 |
+| 粗糙字标 / 结尾徽章 / 缓慢缩小 | [doodlecard](living/doodlecard/index.html#end) | 字标按 3 倍画，模糊后加噪声再阈值。徽章 130×38。字标和工作室名每帧缩 0.09% |
+
+### 点云 / embedding 地图 / 讲解镜头
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 十几万点的点云 / 换成真 embedding | [gamespace](living/gamespace/index.html#cloud) | 一个 `THREE.Points`，加法混合不排序。`setData` 收原始 3D 坐标，按均值居中、95% 分位半径缩到 1。按 groups 在 11 色里上色。剧情里的名字查不到就跳过 |
+| 镜头钻进点云不糊成白雾 / 点云景深 | [gamespace](living/gamespace/index.html#cloud) | 点超过 3.4 px 后只按 0.3 斜率变大并柔化，叠弥散圈后按面积压亮度。远半边按 exp(−1.1Δz) 变暗 |
+| 点 → 折线 → 字的标签 / 相似度小字 | [gamespace](living/gamespace/index.html#labels) | 圈 3.8 → 斜线到偏移 → 短线 20–23 → 空 7–8 → 字，都是 1280×720 参考像素。线 0.22 s 画完，字 0.02 s 一个，从 1.32 倍、模糊落位。出画换边 |
+| 讲解镜头时间轴 / seek 到任意一帧 | [gamespace](living/gamespace/index.html#stage) | 轨道镜头关键帧：target、对数插值的 dist、az / el、`at` 落点像素。景深、点云亮度也是关键帧。按原视频同一秒截图对比 |
+| 硬切坍成小球再炸开 | [gamespace](living/gamespace/index.html#stage) | 顶点着色器把点限制在半径 r ×（0.82–1.18）的球里，r 0.03 → 0.12 → 0.5 → 0.95 → 2.6，共 3 s。数据不动 |
+| 加法点云不发白 / 保色相色调映射 / 颗粒 | [gamespace](living/gamespace/index.html#look) | 钳 1.8 → bloom 0.62 / 0.32 / 0.2 → 按最大通道压亮度，和逐通道映射 65 / 35 混。上下渐变底 screen 叠上。颗粒 0.022，每秒换 24 次 |
+| 章节标签 / 逐字发光字幕 | [gamespace](living/gamespace/index.html#chapter) | 编号 JetBrains Mono 12 + 30 px 线 + Barlow 600 13、字距 0.19em。字幕 Barlow Condensed 700 58，0.033 s 一字，冷白加两层蓝色外发光 |
+
+### 纯 SVG 伪 3D / 纸面 / 弹性拖拽
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 不用 3D 库的 3D / 正交投影 / 画家算法 | [paperwave](living/paperwave/index.html#scene) | `sx = ox + s(x·cosθ − z·sinθ)`，`sy = oy − s(sinT(x·sinθ + z·cosθ) + cosT·y)`。纸 660 × 176 切 128 条，每帧按深度重排；黑边跟着细带画，远边自然被挡。法线·视线定明暗，纸背淡紫灰 |
+| 地面点阵 / 屏幕空间淡出 / 随高度变淡的影子 | [paperwave](living/paperwave/index.html#floor) | 格 30，x ±660、z ±330，点 0.85px 黑 33%，屏幕距离 158 → 471 单位线性淡出。影子逐条 `α = 0.13·e^(−y/150)` |
+| 落地虚线 / 用线的深浅交代高度 | [paperwave](living/paperwave/index.html#guides) | 每 1/16 长度一根，`3.5 4`。不透明度 `min(0.6, y/120)`，远侧 × 0.57，画在纸上面 |
+| 拖起一块再松手 / 波沿着传开 / 阻尼弦 | [paperwave](living/paperwave/index.html#probe) | 拾取细带反解 (x, z)，高斯 σ 35 拉到指针高度，波从手里穿过。c 465、k 6.6、γ 1.95，两端自由。读数是那一点的实际高度 |
+| 左右拖改数值的药丸 / scrub 控件 | [paperwave](living/paperwave/index.html#controls) | 高 32、圆角 16、`#f1f1f3`，悬停 `#e7e6eb`。名字 12px 灰、数值 12px 等宽黑右对齐最小宽 25。画面按 0.15 s 追显示值 |
+
+### 无尽画布 / 边缘透镜 / 悬停光
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 无尽拖动的产品画布 / 不重复平铺 | [devicegallery](living/devicegallery/index.html#gallery) | 格 544×544（窄屏 314×377），一块 3×3。块起点 (bx·s₁ + by·s₂) mod N，步长和 N 互质。主体框面积 = 产品框 × 64%。松手 ×0.95/帧滑行 |
+| 屏幕边缘像透镜一样弯 / 拖动时色散 | [devicegallery](living/devicegallery/index.html#lens) | 离屏 2D canvas → 片元着色器只改四边：左右 min(7%, 110px)、上下 min(10%, 90px)，带内 t − ½c·t²，c 随速度 0.6→0.97。色散 0.09，7 次采样，彩虹油膜 0.26 |
+| 悬停时轮廓外一圈彩虹光 | [devicegallery](living/devicegallery/index.html#lens) | 透明通道外扩三层（2px/模糊 36、4/18、2/6）再挖掉本体。锥形 8 色，24 s 转一圈，260ms 淡入。命中判断用同一张透明通道 |
+| 边线跟着鼠标鼓起来 / 贴边弹竖琴 | [devicegallery](living/devicegallery/index.html#sound) | 离边 150px 内鼓出 46px（σ 64px），跟随 0.14/帧。C 大调五声 C4–C6，三音短句间隔 0.17 s。Karplus–Strong 合成，不加载音频 |
+| 角落玻璃药丸 / 筛选面板 / 搜索浮条 | [devicegallery](living/devicegallery/index.html#dock) | 白 .52 + `blur(20px) saturate(180%)` + 顶部白内描边。底栏 `1fr 440px 1fr`。匹配条露 4 条、按条吸附。有筛选时变成居中的有限网格 |
+| 点卡片飞到页中的详情 / 相关推荐 | [devicegallery](living/devicegallery/index.html#focus) | 画布 380ms 淡白。FLIP 680ms `cubic-bezier(.2,.75,.15,1)`，信息晚 300ms 升 10px，每行再晚 45ms。相关度是标签 Jaccard，当前行 1px 彩虹线 |
+| 物件飞进来聚成球、镜头穿进网格的开场 | [devicegallery](living/devicegallery/index.html#intro) | n(t) = 2·e^(1.95(t−1)) 飞进实心球，缩放用视频三帧拟合。4.2 s 穿入，网格 0.45 倍长到 1。点按跳过 |
+| 页内 JSON 数据 / 换成真照片 | [devicegallery](living/devicegallery/index.html#config) | name / brand / category / line / price / tags / links / repos / visual。`visual.draw` 或 `visual.src`（`bounds` 不给就按透明通道自动裁） |
+
+### 物品转盘 / 景深 / 边缘雾
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 椭圆转盘 / 2D 假景深 | [orbitshelf](living/orbitshelf/index.html#ring) | 600×322 椭圆，83 s 一圈。`d = cos θ`：缩放 `.85+.23d`、透明 `.75+.25d`、层级 `50+50d`、后半圈模糊，旋转 = x/100 度 |
+| 边缘磨砂 / 中间挖空的模糊层 | [orbitshelf](living/orbitshelf/index.html#haze) | 一整层 `backdrop-filter: blur(14px)`，径向遮罩 64% 透明、80% 半遮、100% 全遮。字在雾上面 |
+| 抠图物品统一摆放 | [orbitshelf](living/orbitshelf/index.html#objects) | 168px 盒 × 各自长宽比，contain，统一 `drop-shadow(0 18px 24px rgba(30,28,22,.1))` |
+| 亮台面底色 + 衬线标题分段入场 | [orbitshelf](living/orbitshelf/index.html#hero) | `#f8f8f6` 上两层白色径向光。Newsreader 360 / 0.98 / −0.035em。品牌 0.85 s、标题组 1 s 上浮 10px |
+
+### 图鉴 / 卡片网格 / 过滤
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 图鉴首页头 / 实时计数 | [artatlas](living/artatlas/index.html#collection) | 眉题 9px 字距 1.8px，标题 Inter 40/50 500 字距 -1.6px；右侧 44px 数字随过滤变，和标题居中对齐 |
+| 搜索框 + 分类胶囊 | [artatlas](living/artatlas/index.html#filters) | 搜索框 40px 高 `#EEEFE9` 圆角 3px；胶囊 12px padding 9/13，选中墨底纸字；窄屏胶囊行内横滚 |
+| 16:10 卡片 / hover 放大 + 箭头 | [artatlas](living/artatlas/index.html#grid) | 三列列距 28px，占位底 `#E8E8E1`；图 `scale(1.035)` 0.5s，箭头淡入并从 -6px 滑回；9 / 19 / 11px 三层字 |
+| 同页详情 / hash 路由 | [artatlas](living/artatlas/index.html#detail) | `#style/<id>` 切换不刷新；左标题右描述，16:9 大图占 76% 宽，四栏看点，衬线提示词框，两列参考卡复用画法换种子 |
+
+### 等距像素小场景 / 低分辨率放大
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 低分辨率渲染再放大 / 固定颗粒数 | [hoop](living/hoop/index.html#stage) | 球场菱形固定 160 个像素宽，块大小 = 容器宽 × 0.6 ÷ 160 取整；`imageSmoothingEnabled = false` + `image-rendering: pixelated` |
+| 等距地面逐像素逆投影 / 磨旧沥青 | [hoop](living/hoop/index.html#court) | 屏幕 → (u, v)，圆角范数 p=7 分沥青/土/草；线宽 0.6 像素；两层低频噪声控制亮点概率 |
+| 漂浮小地皮 / 草边散点 | [hoop](living/hoop/index.html#post) | 纯白底无边框；超过草线后按哈希阈值丢像素，离边越远丢得越多 |
+| 统一光向的长投影 / 减少动态 | [hoop](living/hoop/index.html#toggle) | 光向 (0.62, −0.38)，长度 = 高 × 1.6，地面 × 0.5 并偏蓝；reduced-motion 只画一帧 |
+
+### 印刷感 / 阈值抖动 / 双色
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| Photoshop 滤镜链搬到 canvas / 每步一个 pass | [retroprint](living/retroprint/index.html#passes) | 粒子 → 纹理层（半调 2/12 + 龟裂 35）→ 颜色比较（明）60% → 阈值 161 → 渐变映射。点缩略图看每一步 |
+| 强噪声 + 阈值 = 网点疏密 | [retroprint](living/retroprint/index.html#controls) | 噪声强度 0.75、偏移 −0.22，乘 `2.2·√(l(1−l))` 让纯白纯黑不动。原作 0.8 灰处 34% 墨，本页 30% |
+| 双色映射 / 墨和纸 | [retroprint](living/retroprint/index.html#after) | 黑 → `#24207A`，白 → `#F2D4DC`。白底直接变纸色，不用抠图 |
+| 本地换图 / 拖放处理 | [retroprint](living/retroprint/index.html#swap) | object URL 读图，长边缩到 1100 再算，整数哈希噪声，同 seed 结果固定 |
+
+### 图表 / 流程图 / 文本即图
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 流程图节点和箭头的样式 | [diagrams](living/diagrams/index.html#view) | 底 `#f2f0e5`、描边 `#cecdc3` 1px、圆角 6、内边距 18/12、层距 48、箭头 8 实心三角，回边绕右侧 |
+| 边打字边出图 | [diagrams](living/diagrams/index.html#code) | 每 38 ms 一个字，换行停 260 ms，每次整张重画，半截行跳过；光标 2px `#da702c` |
+| 桑基图渐变连线 | [diagrams](living/diagrams/index.html#stage) | 条宽 10、间距 12+15、连线源→目标线性渐变、透明度 0.4、标签 14px 加 3px 背景色描边 |
+| 一套颜色变量管所有图 | [diagrams](living/diagrams/index.html#tabs) | Flexoki 暖白：`#fffcf0` 底、`#100f0f` 字、`#6f6e69` 灰，8 个系列色从红到品红 |
+
+### 十字绣 / 降采样成格子 / 工艺图样
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 三维模型实时变十字绣格子 / 拖动转角 | [stitch](living/stitch/index.html#stage) | 离屏按每格 6×6 子像素画面和轮廓，面只用 4 个色调。yaw 拖横向、pitch 拖纵向（-0.1 到 1.1），背面剔除 + 远到近排序 |
+| 细线降采样不断 / 线优先采样 | [stitch](living/stitch/index.html#sampling) | 每格深色覆盖 ≥ 15% 就整格绣深色，否则取多数色。115 格下 15% 深色格 1,777，60% 只剩 1,389、墙线消失 |
+| X 形针脚 + Aida 布面 | [stitch](living/stitch/index.html#pattern) | 底针左下到右上、加深 22%；面针左上到右下，线宽 0.36 格，内缩 0.16 格；格大于 5px 加高光。布面 2.8% 黑网格 + 格角小孔 |
+| 线色表 / 束数 / 成品尺寸 | [stitch](living/stitch/index.html#key) | hex + RGB 最近 DMC 号 + 针数 + 每束 1,600 针算束数。尺寸 = 格数 / 14 英寸，× 2.54 厘米。点色块换色 |
+| 底部工具浮条 | [stitch](living/stitch/index.html#dock) | 白底 6px 圆角、4px 内边距，按钮 11px 字，激活态深棕 `#2F2A22`。Spin 自转、Smoke 烟圈、Reset view |
+
+### 档案站 / 列表悬停预览 / 逐帧浏览
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 开场轮播 + 撑满上推 | [filmtype](living/filmtype/index.html#intro) | 6 列 × `1fr 2fr 1fr`，主帧占 3–5 列中行，背后同帧模糊压暗。1 s 交叉淡入换片；滚一下主帧 1 s 撑满，再 1.2 s `cubic-bezier(.6,0,0,1)` 上推 |
+| 一行大字铺满刊头 | [filmtype](living/filmtype/index.html#masthead) | 三个词 `space-between`，12.1vw、字距 -0.04em |
+| 列表行悬停弹预览 / 十字标 | [filmtype](living/filmtype/index.html#list) | 5 等分，片名跨 2–4 列 37.4px。预览宽 1 列，`clip-path: inset(50% 0 50% 0)` → `inset(0)` 0.5 s `(.66,0,.34,1)`；「+」从内往外滑 |
+| 列表 / 图片视图切换与排序 | [filmtype](living/filmtype/index.html#toolbar) | 图片视图 3 列 `gap 60 20`。当前排序项变灰，再点反向；切换 0.167 s 淡出淡入 |
+| 横向逐帧 + 时间码尺 | [filmtype](living/filmtype/index.html#film) | 当前帧钉 44.7vw，滚轮节流一帧，1 s 平移；尺上每帧一点，当前点红，时间码标签跟随 |
+
+### ASCII 游戏世界 / 字符画渲染
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 整屏字符画 / canvas 逐格画字 | [asciimmo](living/asciimmo/index.html#ascii) | 格 = 字宽 × 字号 × 1.12。颜色登记成调色板下标，同色一桶，一桶设一次 `fillStyle`。底色 `#0C0C16` |
+| 字符地形 / 风吹草 / 水面倒影 | [asciimmo](living/asciimmo/index.html#world) | 草 `\| / ' ,` 值噪声定疏密，斜向正弦带扫过变 `/` 并提亮。水格以塘上沿为轴取镜像格，字也镜像，压暗两次 |
+| 游戏组队面板 / 血条蓝条 | [asciimmo](living/asciimmo/index.html#party) | 黑底 `#070707`、1.5px 浅灰边、卡间距 3px。血条是细框里 2px 亮 1px 暗的竖纹 |
+| 帧率 / 帧耗时角标 | [asciimmo](living/asciimmo/index.html#hud) | `FPS · frame ms`，每 0.5 s 实测更新，淡灰绿 `#B4BBB4` |
+| 本地模拟多人 / 跟随 / 施法特效 | [asciimmo](living/asciimmo/index.html#hint) | 队友沿你的轨迹隔 26 点跟随；陌生玩家本地闲逛。法术 = 0.58 椭圆符号环 + 火花 + 脚下 `( _ )` 法阵 + 技能名飘字 |
+
+### Agent 轨迹 / 进行中状态
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| agent 步骤时间线 / 状态头跟随 / 折成摘要 | [traces](living/traces/index.html#trace) | 30px 一行，步骤文字缩进 51px。每 1.5 s 一步，换字 180 ms 模糊淡出淡入。结束时橙色图标宽度收到 0，摘要左移 25px |
+| 进行中文字扫光（连胶囊一起） | [traces](living/traces/index.html#shimmer) | `mask-image` 带子 16% 宽、透明度 0.28，mask 宽 300%，1.5 s 从左扫到右 |
+| 展开收起不量高度 / 最多开两张 | [traces](living/traces/index.html#fold) | `grid-template-rows: 0fr ↔ 1fr` 0.5 s，内层 `overflow:hidden`。`keepOpen: 2` |
+| 浅灰底上的「几乎同色」卡片 | [traces](living/traces/index.html#card) | 页 `#EEEEEE`、卡 `#F6F6F6`，1px 4.5% 描边 + 2px/5px 投影 + 顶部 1px 白高光，圆角 12px |
+| 回答逐块淡入 + 引用胶囊 | [traces](living/traces/index.html#answer) | 110 ms 错开，5px 上移 + 2px 模糊。引用和轨迹里同一个胶囊组件 |
+
+### 神灯吸入 / Dock / 作品集切换
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| macOS 神灯最小化 / genie | [genie](living/genie/index.html#tray) | 中心点 + 左右 0.5% 近邻点三次求值，差分出 scaleX 和 skewY。右缘先动，左缘晚 38%；厚度 1 − 0.97n；过 38% 才淡出加 5 px 模糊 |
+| 顶部胶囊 Dock / 作品切换条 | [genie](living/genie/index.html#dock) | 高 52 px、顶 10 px、半透明白 + 14 px 背景模糊，关闭圆钮放在胶囊左外侧，每格 42 px |
+| 无框作品列 / 上下渐隐 | [genie](living/genie/index.html#stack) | 作品不带卡片，竖排居中，滚动容器上下 120 px mask 渐隐；动画期间去掉 mask，否则飞进 Dock 的作品被吃掉 |
+| 作品页 / 标题压图 | [genie](living/genie/index.html#case) | 底色 #F0EFEB，粗衬线标题横向放宽 1.12，主图上移 64 px 压住标题下半 |
+
+### 翻页 / 书本 / WebGL 曲面
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 圆柱翻页曲面 / 页面弯曲着色器 | [sketchbook](living/sketchbook/index.html#curl) | 28 列网格。`x' = sin(xk)/k`、`z' = (1 − cos xk)/k`，再绕书脊转 `−π·r`。`k = 1.15·sin(πt)`，正反面用弯后法线判断 |
+| 拖拽翻页 / 过半或甩动才翻 | [sketchbook](living/sketchbook/index.html#stage) | 进度 = 拖动 / 书宽。过 0.5 或甩速 > 1.4 书宽/秒就翻。弹簧 55 / 18 / 1.2，约 1 秒停稳 |
+| 白底查看器版式 / 书 + 橡皮筋 | [sketchbook](living/sketchbook/index.html#viewer) | 书宽 min(920, 48vw)，单页 1 : 1.01，外侧圆角 5%。淡大阴影，右边紫灰橡皮筋占书高 46% |
+| 竖排刻度导航 | [sketchbook](living/sketchbook/index.html#dial) | 13×2、间距 11px、`#d2cfda`，当前 19px 黑。点了一页一页连续翻过去 |
+| 书下说明行 | [sketchbook](living/sketchbook/index.html#caption) | 书下 48px，对齐书的左右边。地点 14px 大写字距 0.04em，日期灰，右边备注 15px |
+
+### 手绘等轴物件 / 可玩的说明图
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| SVG 手绘质感滤镜 / 线条抖动 + 纸纹 | [appliance](living/appliance/index.html#hand) | `feDisplacementMap` scale 0.94；`feTurbulence` 2.29、3 octave 压到 0.84 以上当纸纹；低频斑驳；两次 multiply 后 `in` 裁回线稿 |
+| 等轴画法 / 面内坐标贴到三个面 | [appliance](living/appliance/index.html#art) | 顶 `(c,.5,−c,.5)`、亮侧 `(c,−.5,0,1)`、暗侧 `(c,.5,0,1)`。三面色 = 提亮 22% / 原色 / 混墨 62%。线宽 0.27–0.86 |
+| 物件交互状态机 / 药丸按钮 | [appliance](living/appliance/index.html#actions) | 放入 → 压杆 → 计时 → 弹起带上抛 → 取出。切片立在槽平面里，clipPath 只露顶面以上 |
+| 抖动滑杆 / 换色点 / 假转台 | [appliance](living/appliance/index.html#controls) | 滑杆直写位移 scale 0–3；5 色点重算三面；Turntable = `scaleX(cos t)` |
+| 透视 / 标注 / 缩放画板 | [appliance](living/appliance/index.html#stage) | viewBox 229.5×172.2；See-through 三面 0.35；虚线引线标签放滤镜外；缩放 60–160% |
+
+### 素材驱动 / 点阵纹理 / 画框版式
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 素材和文案同一个情绪 / 换素材对比 | [framed](living/framed/index.html#clip) | 冷湖慢船 vs 快速霓虹色块，文案不变。素材画在离屏 canvas，换素材只换这一层 |
+| 稀疏点阵纹理 shader / 有序抖动亮点 | [framed](living/framed/index.html#texture) | 6 CSS px 一格，格心采色；亮度 ×4 取小数和 4×4 Bayer 比，高出 0.22 画 0.54 格宽提亮方点，低出 0.5 画暗点，其余不画。底图混 30% 的 5 级色阶 |
+| 高清输出 vs 低清拉伸 | [framed](living/framed/index.html#export) | 缓冲区按 DPR（最多 2）和 960 px 源；关时 0.32 倍再拉伸。角标显示缓冲区尺寸 |
+| 画框版式 vs 满屏遮罩版式 | [framed](living/framed/index.html#hero) | `#f0ede6` 页、`#eceadb` 面板、Newsreader 500 标题 4.6vw、画框 1248:450 圆角 10、三栏 + 36 px 深色按钮；对照组是满屏 + 渐变遮罩 + 渐变胶囊按钮 |
+| before / after 开关栏 | [framed](living/framed/index.html#steps) | 四个 `aria-pressed` 按钮 + 全部，键盘 1–4 / 0；切版式时整块淡出 180 ms 再淡入 |
+
+### 发布短片 / 键帽场 / 时间表驱动
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 3D 键帽场 / Canvas 2D 透视 + 画家算法 | [launchreel](living/launchreel/index.html#reel) | 36×22 键，按深度远到近画。侧面按世界坐标里相机在哪侧判断可见。雾按相机距离 0.8×–2.4× 混向底色 |
+| 一张时间表驱动画面、文字、声音 | [launchreel](living/launchreel/index.html#scrub) | 60 fps、120 BPM，一小节 2 s。五幕各写一个 `heightAt(i, j, t)`，拖进度条任意帧可停 |
+| 相机关键帧 / 只有相机两头都缓 | [launchreel](living/launchreel/index.html#play) | `E.cam` (0.48, 0.1, 0, 0.9)；词入场 `E.outSoft` 0.67 s、间隔 0.12 s；出场 `E.exit` 0.4 s |
+| 代码合成的音效 | [launchreel](living/launchreel/index.html#sound) | 键落：2.4 kHz 高通噪声 35 ms + 180→120 Hz 正弦。重击 120→46 Hz。甩镜：带通 380→2200→500 Hz。一行字只配一声 |
+| 发布短片的工厂接口 / 减少动态效果 | [launchreel](living/launchreel/index.html#controls) | `createLaunchReel(el, opts)` → `{ play, pause, seek, setSound, destroy }`；减少动态效果时停在 6.9 s |
+
+### 你画我猜 / 多模型赛跑 / 贴纸卡片
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 每回合换整页底色 | [pictionary](living/pictionary/index.html#room) | `body` 背景 0.7 s 过渡。底色取 7 个模型的浅色，赢家出现时换成赢家的色 |
+| 浮起来的白纸画板 | [pictionary](living/pictionary/index.html#paper) | 圆角 28 px，三层阴影，7% 纸纹。脚本按墨量画笔，铅笔跟着笔尖 |
+| 多个模型一排卡片抢答 | [pictionary](living/pictionary/index.html#field) | 白卡 20 px 圆角。22 px 当前猜测，猜错划线，旧猜测缩成渐隐小胶囊，右上三点思考气泡 |
+| 圆环倒计时胶囊 | [pictionary](living/pictionary/index.html#clock) | SVG 圆 `pathLength=100` 改 `dashoffset`，剩 10 s 变红 |
+| 几何小生物头像 | [pictionary](living/pictionary/index.html#critters) | 7 种身体放 64×64 盒子，眼睛按 `eyeY`/`gap` 摆。跳、摇头、蹦、眨眼 4 种反应 |
+
+### 荷塘 / 程序化风景 / 像素小游戏
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| canvas 荷塘 / 假透视分层 | [lotus](living/lotus/index.html#pond) | 深度 d 决定 y 和大小。荷叶 = 压扁 0.36 的圆 + 0.44 rad 楔形缺口 + 9 条叶脉。远叶、水面、石头烘焙进离屏 canvas |
+| 水面涟漪 / 指针反馈 | [lotus](living/lotus/index.html#pond) | 移动 26 px 起弱涟漪，按下起强涟漪。3 圈，半径 `√k` 增到 46 px，压扁 0.32，1.6 s，`rgba(244,247,246,0.6)` |
+| 白雾收边 / 无边框画布 | [lotus](living/lotus/index.html#pond) | 最后在上沿 30% 盖白到透明渐变，canvas 与白页面之间没有线 |
+| 像素小游戏 / 字符串点阵精灵 | [lotus](living/lotus/index.html#game) | 160×90 逻辑分辨率 + `pixelated`。精灵是字符串 + 调色板，按脚底 y 排序画。点击或方向键走 |
+| 藏起来的彩蛋入口 | [lotus](living/lotus/index.html#game-toggle) | 正文末句旁一行手写体注释 + 22 px 像素图标，点开才展开游戏 |
+
+### 水下 / 光照氛围 / 程序化着色器
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 水下仰拍 / 日光透水 / 整幅着色器 | [caustics](living/caustics/index.html#shot) | 深 `#10382F` → 中 `#4A958A` 竖向渐变，光晕横向拉宽 1/0.75、乘低频 fbm，中心混 45% 近白。和原片 8×4 色块每通道平均差 11.5 |
+| 光柱 / god rays | [caustics](living/caustics/index.html#rays) | 以太阳为原点取角度，fbm(角度 × 7 + t × 0.12)，2.4 次方，只在太阳下方，按 exp(-1.5r) 衰减。强度 0.2，原片里几乎看不出 |
+| 水面焦散 / 斯涅尔窗 | [caustics](living/caustics/index.html#surface) | 上部 30%，迭代三角焦散 4 次、8 次方留细线，纵向压 2.4 倍做透视；离太阳远的水面压暗 |
+| 悬浮颗粒 / 散景点 | [caustics](living/caustics/index.html#motes) | 三层网格哈希（9 / 18 / 34 格），只 18% 的格子有点，亮度乘光照，背光处看不见 |
+| 图层开关调试着色器 | [caustics](living/caustics/index.html#layers) | 按钮直接把某层 uniform 置 0，`setLayer(name, on)` |
+| 宽银幕片名条 | [caustics](living/caustics/index.html#caption) | 2.39:1 画框下一行小号大写，字距 0.18em，和画框同宽 |
+
+### 平面变立体 / 体素 / CSS 3D 镜头
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 整段时间线 / 一个 t 驱动所有图层 | [extrude](living/extrude/index.html#stage) | `render(t)` 纯函数，rAF 只算 t；关键帧 + 三次缓动；0–2.2 光标、2.2 刷像素、3.0 掉腿、4.2 拉厚转镜、6.0 合缝、8.4 黑场 |
+| CSS 3D 镜头 / 转镜头不转角色 | [extrude](living/extrude/index.html#cam) | `perspective` = 舞台宽 × 1.15 放在舞台上；`.cam` 只做 rotateX −13°、rotateY −34°、scale 0.92 |
+| 开场前景光标 / 景深硬切 | [extrude](living/extrude/index.html#caret) | 前景 `>` 2.3→2.55 倍、blur 递减慢推，2.2 s 硬切成远景 0.62 倍 |
+| 平面阶段的底光 / 地面接手 | [extrude](living/extrude/index.html#glow) | 同色径向光 3.1–3.8 s 亮，4.4–5.4 s 退；地面同时淡入，第一层黑椭圆当软影 |
+| 逐拍对照 / 节拍表跳转 | [extrude](living/extrude/index.html#beats) | 6 拍起止时间，点一下 pause + seek 到那一拍 +0.6 s |
+
+### 贴纸 / 撕开 / 拖拽音效
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 撕贴纸 / 折页 / 翻角 | [peel](living/peel/index.html#peel-layer) | 折线 = 抓点和指针的中垂线。P 侧画正面，G 侧用反射矩阵 `I − 2nnᵀ` 翻过去画背面，带 8px 投影。最底下先画模切孔 |
+| 拖拽跟手的音效 / 速度控音量 | [peel](living/peel/index.html#sound) | 白噪声 → 高通 400 → 带通。音量 = 速度/0.9 px·ms⁻¹，带通 700→3400Hz 跟撕开比例走。每次 move 随机 ±25% 出颗粒感 |
+| 贴纸板 / 像素贴纸 / 模切白边 | [peel](living/peel/index.html#sheet) | 412×415 板、3×3 格。12×12 字符画 × 6px，24 方向平移叠白边。撕过 50% 脱离，`back.out(3)` 落下随机 ±10° |
+| 横线待办纸 / 手账感 | [peel](living/peel/index.html#note) | 行距 56、蓝线 `#c9d4e8`、红边线、转 −3.5°。Playfair Display Italic 23px，勾选加删除线 |
+| 一键复位 / 依次飞回 | [peel](living/peel/index.html#reset) | 间隔 0.05s、0.6s `power3.inOut` 飞回原位，落位时孔消失、各响一个上行小音 |
+
+### 微交互 / 按压 · 拖拽 · 悬停
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 点阵物体 / 指针拖出字符尾巴 | [bencho](living/bencho/index.html#dotcube) | 5.5 px 一格，格心正交射线打立方体定点径。60 px 内加热画 `#`，1.2 s 冷却。按下放一圈环 |
+| 纵深卡堆 / 前卡甩到最后 | [bencho](living/bencho/index.html#cardswap) | 196×266，skewY 6°，第 i 张 `translate3d(34i, −26i, −70i)`，perspective 1000。`0.6s cubic-bezier(0.22,1,0.36,1)` |
+| 签名板 / 签完收成胶囊 | [bencho](living/bencho/index.html#signature) | 300×180 → 112×40，宽高 0.6 s 同一曲线。墨 3 px 随速度变细，签完 0.26 s 变灰。点胶囊倒带清除 |
+| 黏球 / goo 滤镜 | [bencho](living/bencho/index.html#dragball) | `feGaussianBlur 4.5` + alpha `16 −6.17` + `atop`。抓住 1.12 倍，速度拉长上限 36%，尾球追上被粘住 |

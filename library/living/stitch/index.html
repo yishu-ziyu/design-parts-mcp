@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stitch Pattern Tool</title>
+<style>
+  :root {
+    --fabric: #f6f6f3;
+    --panel: #e4dbcc;
+    --panel-2: #d9cfbe;
+    --ink: #2b2620;
+    --muted: #6d6458;
+    --pill: #2f2a22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--fabric); color: var(--ink); }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow-x: hidden; }
+
+  .app { display: grid; grid-template-columns: 1fr 308px; height: 100vh; min-height: 600px; }
+  #stage { position: relative; overflow: hidden; background: var(--fabric); cursor: grab; touch-action: none; }
+  #stage.drag { cursor: grabbing; }
+  #stage canvas.fabric { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #brand { position: absolute; left: 28px; top: 20px; image-rendering: pixelated; pointer-events: none; }
+  .tools { position: absolute; right: 22px; top: 14px; display: flex; gap: 10px; }
+  .tools button { width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: #8d877d; display: grid; place-items: center; cursor: pointer; }
+  .tools button[aria-pressed="true"] { background: #e2e0da; color: #4a453d; }
+  .tools button:hover { color: #3b362e; }
+  .tools svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  #dock { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 4px; background: #fbfbf9; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 4px 14px rgba(0,0,0,.06); white-space: nowrap; max-width: calc(100% - 24px); }
+  #dock button { font: 500 11px/1 inherit; font-family: inherit; padding: 7px 9px; border: 0; border-radius: 4px; background: #ebe9e3; color: #2d2a25; cursor: pointer; }
+  #dock button[aria-pressed="true"] { background: var(--pill); color: #f4efe6; }
+  #dock span { font-size: 11px; color: #5f5a52; padding: 0 8px 0 6px; overflow: hidden; text-overflow: ellipsis; }
+
+  #panel { background: var(--panel); overflow-y: auto; padding: 30px 36px 40px 48px; font-size: 13px; }
+  .sec { margin-bottom: 22px; }
+  .sec > h2 { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin-bottom: 14px; }
+  .sec > h2::after { content: ""; width: 7px; height: 7px; border-right: 1.6px solid #7a7064; border-bottom: 1.6px solid #7a7064; transform: rotate(45deg) translateY(-3px); }
+  .sec:not(.closed) > h2::after { transform: rotate(-135deg) translate(-1px, -1px); }
+  .sec.closed > :not(h2) { display: none; }
+  .sec.closed > h2 { margin-bottom: 0; }
+  .row { margin-bottom: 14px; }
+  .row label.lab { display: flex; justify-content: space-between; font-size: 13px; color: #3a342c; margin-bottom: 7px; }
+  .row label.lab b { font-weight: 600; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: linear-gradient(to right, #9a9184 var(--p, 50%), #cfc6b7 var(--p, 50%)); outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 3px; height: 16px; border-radius: 1px; background: #2c2720; cursor: pointer; }
+  input[type=range]::-moz-range-thumb { width: 3px; height: 16px; border: 0; border-radius: 1px; background: #2c2720; cursor: pointer; }
+  input[type=range]:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2c2720; }
+  select { width: 100%; font: inherit; font-size: 11px; padding: 9px 12px; border: 0; border-radius: 3px; background: #d6cdbe; color: #3a342c; }
+  .check { display: flex; align-items: center; gap: 8px; margin: 7px 0; color: #3a342c; cursor: pointer; }
+  .check input { accent-color: #2c2720; width: 14px; height: 14px; }
+  #key ul { list-style: none; }
+  #key li { display: grid; grid-template-columns: 31px 1fr auto; gap: 9px; align-items: center; margin-bottom: 10px; }
+  #key .sw { width: 31px; height: 31px; border-radius: 2px; border: 0; cursor: pointer; position: relative; overflow: hidden; }
+  #key .sw input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #key .hex { font-size: 11px; font-weight: 700; }
+  #key .dmc { font-size: 10px; color: #5c5449; line-height: 1.35; }
+  #key .cnt { text-align: right; font-size: 11px; font-weight: 600; }
+  #key .cnt small { display: block; font-weight: 400; font-size: 9.5px; color: #5c5449; }
+  #key p { font-size: 11px; color: #4f483f; margin: 4px 0 12px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stats div { background: var(--panel-2); border-radius: 3px; padding: 7px 9px; }
+  .stats dt { font-size: 10px; color: #5c5449; }
+  .stats dd { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  #lettering input[type=text] { width: 100%; font: inherit; padding: 8px 10px; border: 0; border-radius: 3px; background: #efe9de; margin-bottom: 8px; }
+
+  #notes { padding: 72px 40px 120px; max-width: 980px; font-size: 14px; line-height: 1.8; color: #4a443b; }
+  #notes h3 { font-size: 13px; letter-spacing: .08em; color: var(--ink); padding-bottom: 12px; border-bottom: 3px solid var(--ink); }
+  #notes dt { margin-top: 24px; }
+  #notes dt code { font-weight: 600; color: var(--ink); }
+  #notes dd code { font-size: .93em; background: rgba(0,0,0,.06); padding: 0 .25em; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; height: auto; }
+    #stage { height: 92vw; min-height: 360px; }
+    #brand { left: 14px; top: 14px; }
+    .tools { right: 10px; top: 8px; gap: 4px; }
+    #dock { bottom: 10px; }
+    #dock span { display: none; }
+    #panel { padding: 24px 16px 32px; }
+    #notes { padding: 48px 16px 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="stage" aria-label="Cross-stitch preview. Drag to turn the model.">
+    <canvas class="fabric" id="pattern"></canvas>
+    <canvas id="brand" aria-label="slow stitch"></canvas>
+    <div class="tools">
+      <button id="undo" title="Undo" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 7H4V2"/><path d="M4 7a8 8 0 1 1-1 7"/></svg></button>
+      <button id="trim" title="Trim margins" aria-label="Trim margins"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg></button>
+      <button id="mode3d" title="3D model" aria-label="3D model" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg></button>
+      <button id="export" title="Export PNG" aria-label="Export PNG"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 14v6h16v-6"/></svg></button>
+    </div>
+    <div id="dock">
+      <button id="spin" aria-pressed="false">Spin</button>
+      <button id="smoke" aria-pressed="true">Smoke</button>
+      <button id="reset">Reset view</button>
+      <span>Drag to turn the cabin · up and down to tilt</span>
+    </div>
+  </div>
+
+  <aside id="panel">
+    <section class="sec" id="pattern-sec">
+      <h2>Pattern</h2>
+      <div class="row"><label class="lab" for="across">Stitches across <b id="acrossV"></b></label><input type="range" id="across" min="40" max="160" step="1"></div>
+      <div class="row"><label class="lab" for="colours">Thread colours <b id="coloursV"></b></label><input type="range" id="colours" min="2" max="5" step="1"></div>
+      <div class="row"><label class="lab" for="sampling">Sampling</label>
+        <select id="sampling"><option value="lines">Lines win (best for line art)</option><option value="majority">Majority (best for fills)</option></select></div>
+      <div class="row"><label class="lab" for="coverage">Line coverage needed <b id="coverageV"></b></label><input type="range" id="coverage" min="5" max="60" step="1"></div>
+      <label class="check"><input type="checkbox" id="skipWhite"> Leave white areas unstitched</label>
+      <label class="check"><input type="checkbox" id="trimChk"> Trim empty margins</label>
+    </section>
+    <section class="sec closed" id="lettering">
+      <h2>Lettering</h2>
+      <input type="text" id="line1" aria-label="Line 1">
+      <input type="text" id="line2" aria-label="Line 2">
+    </section>
+    <section class="sec closed" id="threads-sec">
+      <h2>Threads</h2>
+      <p style="font-size:11px;color:#4f483f">Two strands on 14-count Aida. One skein ≈ <span id="perSkein"></span> full stitches.</p>
+    </section>
+    <section class="sec" id="key">
+      <h2>Thread key</h2>
+      <ul id="keyList"></ul>
+      <p>Click a swatch to recolour that thread.</p>
+      <dl class="stats">
+        <div><dt>Grid</dt><dd id="sGrid"></dd></div>
+        <div><dt>Stitches</dt><dd id="sCount"></dd></div>
+        <div><dt>Size on 14ct</dt><dd id="sIn"></dd></div>
+        <div><dt>In cm</dt><dd id="sCm"></dd></div>
+      </dl>
+    </section>
+    <section class="sec closed" id="fabric-sec">
+      <h2>Fabric</h2>
+      <p style="font-size:11px;color:#4f483f">White 14-count Aida.</p>
+    </section>
+  </aside>
+</div>
+
+<section id="notes" lang="zh-CN">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#stage</code></dt>
+    <dd>三维模型 → 十字绣格子：先在离屏 canvas 上按 8×8 子采样画出线框和面（面只用 4 个色调 id），每格统计每个色调占比，再画成 X 形针脚。拖动转模型，上下拖倾斜。</dd>
+    <dt><code>#sampling</code></dt>
+    <dd>「线优先」采样：一格里深色线条覆盖超过 <code>Line coverage needed</code>（默认 15%）就整格绣深色，否则按多数色。细轮廓不会在降采样时断掉。</dd>
+    <dt><code>#pattern</code></dt>
+    <dd>针脚画法：每格两笔对角线，先画左下到右上的底针（加深 22%），再画左上到右下的面针并带一条高光；布面是 Aida 网格，格角有小孔。</dd>
+    <dt><code>#key</code></dt>
+    <dd>线色表：每个线色的 hex、最近的 DMC 编号（RGB 距离）、针数、按每束约 1,600 针算的束数；下面是格数、针数、14ct 成品尺寸（英寸和厘米）。点色块换色。</dd>
+    <dt><code>#dock</code></dt>
+    <dd>底部浮条：Spin 自转、Smoke 烟圈从烟囱升起变淡、Reset view 回到初始角度。reduced-motion 下不自转，烟圈静止。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  brand: 'slow stitch',
+  lines: ['Stay a while,', 'the kettle is on'],
+  stitchesAcross: 115,
+  threadColours: 3,
+  sampling: 'lines',
+  lineCoverage: 15,
+  skipWhite: true,
+  trim: true,
+  view: { yaw: -0.62, pitch: 0.32 },
+  // tone ids: 0 white fill, 1 light fill, 2 mid fill, 3 line/shadow
+  threads: ['#ffffff', '#93b0f5', '#5b7fe0', '#1d47c9'],
+  fabric: '#f6f6f3',
+  stitchesPerSkein: 1600,
+  sub: 6
+};
+
+const DMC = [
+  ['336', 'Navy Blue', '#253b73'], ['820', 'Very Dark Royal Blue', '#0e365c'], ['797', 'Royal Blue', '#13477d'],
+  ['798', 'Dark Delft Blue', '#466a8e'], ['799', 'Medium Delft Blue', '#748eb6'], ['800', 'Pale Delft Blue', '#c0ccde'],
+  ['156', 'Medium Light Blue Violet', '#a3aed1'], ['157', 'Very Light Cornflower Blue', '#bbc3d9'], ['3807', 'Cornflower Blue', '#7a8cbe'],
+  ['310', 'Black', '#000000'], ['321', 'Red', '#c72b3b'], ['3865', 'Winter White', '#f9f7f1'], ['704', 'Bright Chartreuse', '#9ecf34']
+];
+
+function createStitchTool(root, options) {
+  const o = Object.assign({}, CONFIG, options || {});
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s) => root.querySelector(s);
+  const stage = $('#stage'), cv = $('#pattern'), ctx = cv.getContext('2d');
+  const state = {
+    across: o.stitchesAcross, colours: o.threadColours, sampling: o.sampling, coverage: o.lineCoverage,
+    skipWhite: o.skipWhite, trim: o.trim, yaw: o.view.yaw, pitch: o.view.pitch,
+    spin: false, smoke: !reduce, threads: o.threads.slice(), lines: o.lines.slice(), t: 0
+  };
+  const history = [];
+  let raf = 0, dirty = true, last = 0, grid = null;
+  const off = document.createElement('canvas'), octx = off.getContext('2d', { willReadFrequently: true });
+
+  const hex = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const shade = (c, k) => 'rgb(' + hex(c).map((v) => Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k)).join(',') + ')';
+  const nearestDMC = (c) => {
+    const a = hex(c); let best = null, bd = 1e9;
+    for (const d of DMC) { const b = hex(d[2]); const dd = (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2; if (dd < bd) { bd = dd; best = d; } }
+    return best;
+  };
+
+  // Cabin: body box, gabled roof prism, chimney. Each face: [verts, tone, decals]
+  function model() {
+    const F = [];
+    const box = (x0, x1, y0, y1, z0, z1, tones) => {
+      const v = [[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]];
+      const f = [[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[3,2,6,7]];
+      f.forEach((q, i) => F.push({ p: q.map((k) => v[k]), tone: tones[i], n: i }));
+    };
+    box(-1.3, 1.3, 0, 1.2, -0.9, 0.9, [0, 0, 0, 0, 1]);
+    const r = [[-1.45,1.15,-1.05],[1.45,1.15,-1.05],[1.45,1.15,1.05],[-1.45,1.15,1.05],[-1.45,2.15,0],[1.45,2.15,0]];
+    F.push({ p: [r[0], r[1], r[5], r[4]], tone: 1 });
+    F.push({ p: [r[3], r[2], r[5], r[4]], tone: 1 });
+    F.push({ p: [r[0], r[3], r[4]], tone: 0 });
+    F.push({ p: [r[1], r[2], r[5]], tone: 0 });
+    box(0.55, 0.9, 1.4, 2.45, 0.15, 0.5, [0, 0, 0, 0, 1]);
+    F.push({ p: [[-0.35,0,-0.901],[0.15,0,-0.901],[0.15,0.8,-0.901],[-0.35,0.8,-0.901]], tone: 0, line: true });
+    F.push({ p: [[0.5,0.45,-0.901],[0.95,0.45,-0.901],[0.95,0.85,-0.901],[0.5,0.85,-0.901]], tone: 2, line: true });
+    F.push({ p: [[-1.301,0.4,-0.35],[-1.301,0.4,0.35],[-1.301,0.85,0.35],[-1.301,0.85,-0.35]], tone: 2, line: true });
+    return F;
+  }
+  const MODEL = model();
+
+  function project(v, W, H, s) {
+    const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw), cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+    const x = v[0] * cy - v[2] * sy, z0 = v[0] * sy + v[2] * cy;
+    const y = (v[1] - 1) * cp - z0 * sp, z = (v[1] - 1) * sp + z0 * cp;
+    return [W / 2 + x * s, H * 0.5 - y * s, z];
+  }
+
+  function rasterize(cols, rows, sub) {
+    const W = cols * sub, H = rows * sub;
+    off.width = W; off.height = H;
+    const toneRGB = ['#ffffff', '#c0c0c0', '#808080', '#000000'];
+    octx.fillStyle = '#fff'; octx.fillRect(0, 0, W, H);
+    const s = W * 0.185, lw = Math.max(1.5, sub * 0.75);
+    octx.lineJoin = 'round'; octx.lineCap = 'round';
+    const textH = rows * sub * 0.22;
+    const top = H - textH;
+    octx.save(); octx.beginPath(); octx.rect(0, 0, W, top); octx.clip();
+    // ground shadow: light from upper left, cast onto y=0
+    const sh = [[-1.3,-0.9],[1.3,-0.9],[1.3,0.9],[-1.3,0.9]].map(([x, z]) => project([x - 1.25, 0, z + 0.35], W, H, s));
+    const base = [[-1.3,-0.9],[1.3,-0.9],[1.3,0.9],[-1.3,0.9]].map(([x, z]) => project([x, 0, z], W, H, s));
+    octx.fillStyle = toneRGB[3]; octx.beginPath();
+    [...base, ...sh].forEach((p, i) => i ? octx.lineTo(p[0], p[1]) : octx.moveTo(p[0], p[1]));
+    octx.fill();
+    sh.forEach((p, i) => { octx.beginPath(); octx.moveTo(base[i][0], base[i][1]); octx.lineTo(p[0], p[1]); octx.lineTo(sh[(i+1)%4][0], sh[(i+1)%4][1]); octx.lineTo(base[(i+1)%4][0], base[(i+1)%4][1]); octx.fill(); });
+    const faces = MODEL.map((f) => {
+      const p = f.p.map((v) => project(v, W, H, s));
+      const area = p.reduce((a, q, i) => { const r = p[(i + 1) % p.length]; return a + (q[0] * r[1] - r[0] * q[1]); }, 0);
+      return { p, tone: f.tone, line: f.line, z: p.reduce((a, q) => a + q[2], 0) / p.length, front: area < 0 };
+    }).filter((f) => f.front).sort((a, b) => b.z - a.z);
+    for (const f of faces) {
+      octx.beginPath(); f.p.forEach((q, i) => i ? octx.lineTo(q[0], q[1]) : octx.moveTo(q[0], q[1])); octx.closePath();
+      octx.fillStyle = toneRGB[f.tone]; octx.fill();
+      octx.strokeStyle = toneRGB[3]; octx.lineWidth = lw; octx.stroke();
+    }
+    if (state.smoke || reduce) {
+      const ch = project([0.72, 2.5, 0.32], W, H, s);
+      for (let i = 0; i < 3; i++) {
+        const k = ((state.t * 0.00018 + i / 3) % 1);
+        const r = s * (0.18 + k * 0.32);
+        const x = ch[0] - k * s * 0.55 + Math.sin(k * 6 + i) * s * 0.08, y = ch[1] - s * 0.15 - k * s * 1.45;
+        octx.globalAlpha = 1;
+        octx.fillStyle = '#fff';
+        octx.beginPath(); octx.arc(x, y, r, 0, 7); octx.fill();
+        octx.strokeStyle = k > 0.62 ? toneRGB[1] : toneRGB[3]; octx.lineWidth = lw; octx.stroke();
+      }
+    }
+    octx.restore();
+    // lettering on its own band, drawn on a coarse grid so glyph strokes land on whole cells
+    const fs = Math.floor(rows * 0.08);
+    const tc = document.createElement('canvas'); tc.width = cols; tc.height = Math.ceil(textH / sub);
+    const tx = tc.getContext('2d');
+    tx.fillStyle = '#000'; tx.textAlign = 'center'; tx.textBaseline = 'top';
+    tx.font = '400 ' + fs + 'px ui-monospace, Menlo, Consolas, monospace';
+    state.lines.forEach((l, i) => tx.fillText(l, cols / 2, 3 + i * Math.round(fs * 1.15)));
+    const td = tx.getImageData(0, 0, tc.width, tc.height).data;
+    return { data: octx.getImageData(0, 0, W, H).data, text: td, textRows: tc.height, top: Math.floor(top / sub) };
+  }
+
+  function build() {
+    const cols = state.across, rows = Math.round(cols * 1.226), sub = o.sub;
+    const { data, text, textRows, top } = rasterize(cols, rows, sub);
+    const W = cols * sub, cells = new Uint8Array(cols * rows).fill(255);
+    const allow = state.colours >= 5 ? [0,1,2,3] : state.colours === 4 ? [0,1,2,3] : state.colours === 3 ? [0,1,3] : [0,3];
+    const remap = (t) => allow.includes(t) ? t : (t === 2 ? (allow.includes(1) ? 1 : 3) : t === 1 ? (allow.includes(2) ? 2 : 0) : t);
+    const cnt = [0,0,0,0];
+    for (let r = 0; r < top; r++) for (let c = 0; c < cols; c++) {
+      cnt.fill(0);
+      for (let y = 0; y < sub; y++) for (let x = 0; x < sub; x++) {
+        const v = data[((r * sub + y) * W + c * sub + x) * 4];
+        cnt[v > 224 ? 0 : v > 160 ? 1 : v > 64 ? 2 : 3]++;
+      }
+      const n = sub * sub; let t;
+      if (state.sampling === 'lines' && cnt[3] / n >= state.coverage / 100) t = 3;
+      else t = cnt.indexOf(Math.max(...cnt));
+      t = remap(t);
+      cells[r * cols + c] = t;
+    }
+    for (let r = 0; r < textRows && top + r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (text[(r * cols + c) * 4 + 3] > 110) cells[(top + r) * cols + c] = allow.includes(1) ? 1 : 3;
+    }
+    let minR = rows, maxR = -1, minC = cols, maxC = -1;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const t = cells[r * cols + c];
+      if (t === 255 || (t === 0 && state.skipWhite)) continue; // 255 = empty lettering cell; white counts only when it is stitched
+      minR = Math.min(minR, r); maxR = Math.max(maxR, r); minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+    }
+    const box = state.trim && maxR >= 0 ? { c0: minC, r0: minR, c1: maxC, r1: maxR } : { c0: 0, r0: 0, c1: cols - 1, r1: rows - 1 };
+    grid = { cols, rows, cells, box };
+  }
+
+  function draw() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const rect = stage.getBoundingClientRect();
+    const Wc = Math.round(rect.width * dpr), Hc = Math.round(rect.height * dpr);
+    if (cv.width !== Wc || cv.height !== Hc) { cv.width = Wc; cv.height = Hc; }
+    const { cols, rows, cells } = grid;
+    ctx.fillStyle = o.fabric; ctx.fillRect(0, 0, Wc, Hc);
+    const narrow = rect.width < 760;
+    const availW = Wc * (narrow ? 0.84 : 0.58), availH = Hc * (narrow ? 0.66 : 0.7);
+    const cs = Math.max(1, Math.min(availW / cols, availH / rows));
+    const ox = Math.round((Wc - cs * cols) / 2), oy = Math.round((Hc - cs * rows) / 2 - (narrow ? Hc * 0.03 : 0));
+    // Aida weave: faint grid across the whole stage, holes at every cell corner
+    ctx.fillStyle = 'rgba(0,0,0,0.028)';
+    const step = cs;
+    for (let x = ox % step; x < Wc; x += step) ctx.fillRect(Math.round(x), 0, 1, Hc);
+    for (let y = oy % step; y < Hc; y += step) ctx.fillRect(0, Math.round(y), Wc, 1);
+    const b = grid.box;
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.setLineDash([1.5 * dpr, 3 * dpr]); ctx.lineWidth = dpr;
+    ctx.strokeRect(ox + b.c0 * cs - cs * 2, oy + b.r0 * cs - cs * 2, (b.c1 - b.c0 + 5) * cs, (b.r1 - b.r0 + 5) * cs);
+    ctx.setLineDash([]);
+    const lw = Math.max(0.8, cs * 0.36);
+    ctx.lineCap = 'round';
+    const passes = [];
+    for (let t = 1; t < 4; t++) passes.push([t, shade(state.threads[t], -0.22), state.threads[t], shade(state.threads[t], 0.35)]);
+    if (!state.skipWhite) passes.unshift([0, shade(state.threads[0], -0.14), state.threads[0], state.threads[0]]);
+    const counts = [0,0,0,0];
+    for (const [t, under, top, hi] of passes) {
+      ctx.strokeStyle = under; ctx.lineWidth = lw; ctx.beginPath();
+      for (let r = b.r0; r <= b.r1; r++) for (let c = b.c0; c <= b.c1; c++) {
+        if (cells[r * cols + c] !== t) continue;
+        counts[t]++;
+        const x = ox + c * cs, y = oy + r * cs, i = cs * 0.16;
+        ctx.moveTo(x + i, y + cs - i); ctx.lineTo(x + cs - i, y + i);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = top; ctx.beginPath();
+      for (let r = b.r0; r <= b.r1; r++) for (let c = b.c0; c <= b.c1; c++) {
+        if (cells[r * cols + c] !== t) continue;
+        const x = ox + c * cs, y = oy + r * cs, i = cs * 0.16;
+        ctx.moveTo(x + i, y + i); ctx.lineTo(x + cs - i, y + cs - i);
+      }
+      ctx.stroke();
+      if (cs >= 5) {
+        ctx.strokeStyle = hi; ctx.lineWidth = Math.max(0.6, lw * 0.28); ctx.beginPath();
+        for (let r = b.r0; r <= b.r1; r++) for (let c = b.c0; c <= b.c1; c++) {
+          if (cells[r * cols + c] !== t) continue;
+          const x = ox + c * cs, y = oy + r * cs, i = cs * 0.24;
+          ctx.moveTo(x + i, y + i - lw * 0.12); ctx.lineTo(x + cs * 0.55, y + cs * 0.55 - lw * 0.12);
+        }
+        ctx.stroke(); ctx.lineWidth = lw;
+      }
+    }
+    if (cs >= 4) {
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
+      for (let x = ox - cs * 40; x < Wc; x += cs) for (let y = oy - cs * 40; y < Hc; y += cs) if (x > 0 && y > 0) ctx.fillRect(x - 0.5, y - 0.5, 1, 1);
+    }
+    updatePanel(counts, b);
+  }
+
+  // draw() runs every animation frame, so the key rows are reused: rebuilding them would drop focus from an open colour picker
+  const keyRows = new Map();
+  let keyOrder = '';
+  function keyRow(t) {
+    if (keyRows.has(t)) return keyRows.get(t);
+    const li = document.createElement('li');
+    li.innerHTML = '<label class="sw"><input type="color" aria-label="Recolour thread"></label>' +
+      '<div><div class="hex"></div><div class="dmc"></div></div><div class="cnt"><span></span><small></small></div>';
+    const row = { li, sw: li.querySelector('.sw'), input: li.querySelector('input'), hex: li.querySelector('.hex'), dmc: li.querySelector('.dmc'), n: li.querySelector('.cnt span'), sk: li.querySelector('.cnt small') };
+    row.input.addEventListener('focus', () => push());
+    row.input.addEventListener('input', (e) => { state.threads[t] = e.target.value; dirty = true; });
+    keyRows.set(t, row);
+    return row;
+  }
+  function updatePanel(counts, b) {
+    const used = [0,1,2,3].filter((t) => counts[t] > 0).sort((a, b2) => b2 - a); // counts[0] is non-zero only when white is stitched
+    const list = $('#keyList');
+    if (used.join() !== keyOrder) { keyOrder = used.join(); list.replaceChildren(...used.map((t) => keyRow(t).li)); }
+    for (const t of used) {
+      const r = keyRow(t), c = state.threads[t], d = nearestDMC(c), sk = Math.max(1, Math.ceil(counts[t] / o.stitchesPerSkein));
+      r.sw.style.background = c;
+      if (document.activeElement !== r.input) r.input.value = c;
+      r.input.setAttribute('aria-label', 'Recolour thread ' + c);
+      r.hex.textContent = c.toUpperCase();
+      r.dmc.textContent = '≈ DMC ' + d[0] + ' ' + d[1];
+      r.n.textContent = counts[t].toLocaleString('en-US');
+      r.sk.textContent = sk + ' skein' + (sk > 1 ? 's' : '');
+    }
+    const w = b.c1 - b.c0 + 1, h = b.r1 - b.r0 + 1, tot = counts.reduce((a, x) => a + x, 0);
+    $('#sGrid').textContent = w + ' × ' + h;
+    $('#sCount').textContent = tot.toLocaleString('en-US');
+    $('#sIn').textContent = (w / 14).toFixed(1) + '″ × ' + (h / 14).toFixed(1) + '″';
+    $('#sCm').textContent = (w / 14 * 2.54).toFixed(1) + ' × ' + (h / 14 * 2.54).toFixed(1);
+  }
+
+  function drawBrand() {
+    const b = $('#brand'), words = o.brand.split(' '), px = innerWidth < 760 ? 2 : 2.5;
+    const fs = 11, c = document.createElement('canvas'); c.width = 80; c.height = 24;
+    const x = c.getContext('2d'); x.font = '400 ' + fs + 'px ui-monospace, Menlo, Consolas, monospace'; x.textBaseline = 'top';
+    words.forEach((w, i) => x.fillText(w, 0, i * 11));
+    const d = x.getImageData(0, 0, 80, 24).data;
+    b.width = 80 * px; b.height = 24 * px; b.style.width = 80 * px + 'px'; b.style.height = 24 * px + 'px';
+    const bx = b.getContext('2d'); bx.fillStyle = '#2b2620';
+    for (let yy = 0; yy < 24; yy++) for (let xx = 0; xx < 80; xx++) if (d[(yy * 80 + xx) * 4 + 3] > 120) bx.fillRect(xx * px, yy * px, px, px);
+  }
+
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(64, now - (last || now)); last = now;
+    if (state.spin) { state.yaw += dt * 0.0006; dirty = true; }
+    if (state.smoke && !reduce) { state.t += dt; dirty = true; }
+    if (dirty) { dirty = false; build(); draw(); }
+  }
+
+  function push() { history.push(JSON.stringify({ across: state.across, colours: state.colours, coverage: state.coverage, threads: state.threads, yaw: state.yaw, pitch: state.pitch })); if (history.length > 50) history.shift(); }
+
+  const bind = (id, key, fmt) => {
+    const el = $('#' + id), out = $('#' + id + 'V');
+    const paint = () => { el.value = state[key]; if (out) out.textContent = fmt ? fmt(state[key]) : state[key]; el.style.setProperty('--p', ((state[key] - el.min) / (el.max - el.min) * 100) + '%'); };
+    el.addEventListener('pointerdown', push);
+    el.addEventListener('input', () => { state[key] = +el.value; paint(); dirty = true; });
+    paint(); return paint;
+  };
+  const painters = [bind('across', 'across'), bind('colours', 'colours'), bind('coverage', 'coverage', (v) => v + '%')];
+  $('#sampling').value = state.sampling;
+  $('#sampling').addEventListener('change', (e) => { state.sampling = e.target.value; dirty = true; });
+  $('#skipWhite').checked = state.skipWhite; $('#skipWhite').addEventListener('change', (e) => { state.skipWhite = e.target.checked; dirty = true; });
+  $('#trimChk').checked = state.trim; $('#trimChk').addEventListener('change', (e) => { state.trim = e.target.checked; dirty = true; });
+  $('#perSkein').textContent = o.stitchesPerSkein.toLocaleString('en-US');
+  $('#line1').value = state.lines[0]; $('#line2').value = state.lines[1];
+  ['line1', 'line2'].forEach((id, i) => $('#' + id).addEventListener('input', (e) => { state.lines[i] = e.target.value; dirty = true; }));
+  root.querySelectorAll('.sec > h2').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
+
+  const setPressed = (id, v) => $('#' + id).setAttribute('aria-pressed', String(v));
+  $('#spin').addEventListener('click', () => { state.spin = !state.spin && !reduce; setPressed('spin', state.spin); });
+  $('#smoke').addEventListener('click', () => { state.smoke = !state.smoke; setPressed('smoke', state.smoke); dirty = true; });
+  setPressed('smoke', state.smoke);
+  $('#reset').addEventListener('click', () => { push(); state.yaw = o.view.yaw; state.pitch = o.view.pitch; dirty = true; });
+  $('#trim').addEventListener('click', () => { state.trim = !state.trim; $('#trimChk').checked = state.trim; dirty = true; });
+  $('#undo').addEventListener('click', () => {
+    const s = history.pop(); if (!s) return; Object.assign(state, JSON.parse(s)); painters.forEach((p) => p()); dirty = true;
+  });
+  $('#export').addEventListener('click', () => {
+    cv.toBlob((blob) => { if (!blob) return; const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pattern.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
+  });
+
+  let drag = null;
+  const down = (e) => { if (e.target.closest('button, #dock')) return; push(); drag = { x: e.clientX, y: e.clientY, yaw: state.yaw, pitch: state.pitch }; stage.classList.add('drag'); stage.setPointerCapture(e.pointerId); };
+  const move = (e) => { if (!drag) return; state.yaw = drag.yaw + (e.clientX - drag.x) * 0.008; state.pitch = Math.max(-0.1, Math.min(1.1, drag.pitch + (e.clientY - drag.y) * 0.006)); dirty = true; };
+  const up = () => { drag = null; stage.classList.remove('drag'); };
+  stage.addEventListener('pointerdown', down); stage.addEventListener('pointermove', move);
+  stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+  const onResize = () => { drawBrand(); dirty = true; };
+  addEventListener('resize', onResize);
+
+  drawBrand();
+  raf = requestAnimationFrame(frame);
+
+  return {
+    state,
+    render: () => { build(); draw(); return grid; },
+    set: (patch) => { Object.assign(state, patch); painters.forEach((p) => p()); dirty = true; },
+    destroy: () => { cancelAnimationFrame(raf); removeEventListener('resize', onResize); stage.removeEventListener('pointerdown', down); stage.removeEventListener('pointermove', move); stage.removeEventListener('pointerup', up); }
+  };
+}
+
+window.__stitch = createStitchTool(document.body);
+</script>
+</body>
+</html>

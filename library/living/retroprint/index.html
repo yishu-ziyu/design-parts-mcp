@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retro Print Filter</title>
+<style>
+  :root {
+    --paper: #F2D4DC;
+    --ink: #24207A;
+    --page: #F4F1EC;
+    --text: #1C1B22;
+    --muted: #6B6874;
+    --line: rgba(28, 27, 34, 0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--text); }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Sans", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    font-size: 14px; line-height: 1.6; overflow-x: hidden;
+  }
+  header { max-width: 1100px; margin: 0 auto; padding: 36px 24px 18px; }
+  header .kicker { font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
+  header h1 { font-size: clamp(30px, 6vw, 56px); line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; }
+  header p { margin-top: 10px; color: var(--muted); max-width: 640px; }
+
+  #stage { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { position: relative; background: var(--paper); aspect-ratio: 4 / 5; overflow: hidden; }
+  .panel canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+  .panel .tag { position: absolute; left: 0; bottom: 10px; width: 100%; text-align: center; font-size: 15px; color: var(--text); pointer-events: none; }
+  #before { background: #FFFFFF; }
+  #stage.dragging .panel { outline: 2px dashed var(--ink); outline-offset: -8px; }
+
+  #passes { max-width: 1100px; margin: 18px auto 0; padding: 0 24px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  #passes button { all: unset; cursor: pointer; display: block; border: 1px solid var(--line); background: #fff; }
+  #passes button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  #passes canvas { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  #passes span { display: block; padding: 5px 6px 6px; font-size: 11px; line-height: 1.35; color: var(--muted); }
+  #passes span b { display: block; color: var(--text); font-weight: 600; }
+
+  #controls { max-width: 1100px; margin: 22px auto 0; padding: 0 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 24px; }
+  #controls label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 12px; color: var(--muted); }
+  #controls label output { color: var(--text); font-variant-numeric: tabular-nums; }
+  #controls input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
+  #controls input[type=color] { grid-column: 1 / -1; width: 100%; height: 26px; border: 1px solid var(--line); background: none; padding: 0; }
+  #swap { max-width: 1100px; margin: 18px auto 0; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; }
+  #swap button, #swap label.btn { cursor: pointer; font: inherit; font-size: 13px; color: var(--page); background: var(--ink); border: 0; padding: 8px 14px; }
+  #swap input[type=file] { display: none; }
+
+  #notes { max-width: 1100px; margin: 0 auto; padding: 56px 24px 96px; font-size: 14px; line-height: 1.8; color: #44424C; }
+  #notes h3 { font-size: 13px; letter-spacing: 0.08em; color: var(--text); padding-bottom: 12px; border-bottom: 3px solid var(--ink); }
+  #notes dt { margin-top: 22px; }
+  #notes dt code, #notes dd code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; color: var(--ink); }
+
+  @media (max-width: 720px) {
+    #stage { grid-template-columns: 1fr; }
+    #passes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    #passes button { transition: box-shadow 120ms ease, border-color 120ms ease; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker" id="kicker"></div>
+  <h1 id="title"></h1>
+  <p id="lede"></p>
+</header>
+
+<section id="stage" aria-label="对比">
+  <div class="panel" id="before"><canvas id="srcCanvas"></canvas><div class="tag" id="tagBefore"></div></div>
+  <div class="panel" id="after"><canvas id="outCanvas"></canvas><div class="tag" id="tagAfter"></div></div>
+</section>
+
+<section id="passes" aria-label="每一步的输出"></section>
+
+<section id="controls" aria-label="参数"></section>
+
+<section id="swap">
+  <label class="btn" for="file">换一张图</label>
+  <input type="file" id="file" accept="image/*">
+  <button type="button" id="reset">恢复示例</button>
+  <span id="swapHint"></span>
+</section>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#passes</code></dt>
+    <dd>六个 pass 依次是：原图、粒子、纹理层（半调图案 + 龟裂缝）、<code>颜色比较（明）</code> 60%、2 阶调化 161、渐变映射。点缩略图，右边大图换成那一步的输出。</dd>
+    <dt><code>#after</code></dt>
+    <dd>最后一步只认两个颜色：阈值以下是墨 <code>#24207A</code>，以上是纸 <code>#F2D4DC</code>。白底直接变成纸色，不用另外抠图。</dd>
+    <dt><code>#controls</code></dt>
+    <dd>影响最大的是阈值和粒子强度。粒子把每个像素随机推上推下，阈值一刀切下去，原来的灰度就变成了墨点的疏密。纹理层只会提亮：白斑处按 <code>0.4·b + 0.6</code> 计算，暗部也能被打出白色细纹。</dd>
+    <dt><code>#swap</code></dt>
+    <dd>拖一张图到上面任一画布，或点按钮选图。只在本页内存里处理，不上传。长边缩到 <code>CONFIG.workSize</code> 再算，纹理按像素生成，所以不同尺寸的图颗粒大小一致。</dd>
+    <dt><code>#title</code></dt>
+    <dd>示例图是代码画的：一颗镀铬球压在一根带螺纹的金属柱上，白底。大部分是 0.7–0.95 的浅灰，暗部只在反光带和螺纹缝里，跟金属产品照的明暗分布接近。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  copy: {
+    kicker: 'Photoshop 六步 → 浏览器六个 pass',
+    title: 'Retro Print',
+    lede: '粒子打底，叠一层半调加龟裂的灰色纹理，用「颜色比较（明）」60% 盖上，2 阶调化之后换成墨和纸两种颜色。',
+    before: '原图',
+    after: '印刷后',
+    swapHint: '也可以直接拖到画布上。图片只在本页处理。'
+  },
+  workSize: 1100,
+  seed: 7,
+  grain: { amount: 100, size: 25, roughness: 50, strength: 0.75, bias: -0.22 },
+  fill: 0.5,
+  halftone: { size: 2, contrast: 12 },
+  craquelure: { spacing: 35, depth: 15, brightness: 3 },
+  texture: { gain: 0.28, lift: 0 },
+  blend: { opacity: 0.6 },
+  threshold: 161,
+  gradientMap: { ink: '#24207A', paper: '#F2D4DC' }
+};
+
+function createRetroPrint(root, options) {
+  const cfg = Object.assign({}, CONFIG, options || {});
+  const W = (k) => root.querySelector(k);
+  const srcCanvas = W('#srcCanvas');
+  const outCanvas = W('#outCanvas');
+  let source = null;
+  let passes = {};
+  let shown = 'final';
+  let raf = 0;
+  const cleanups = [];
+
+  const hash = (x, y, s) => {
+    let h = (x * 374761393 + y * 668265263 + s * 2147483647) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+  };
+  const vnoise = (x, y, s) => {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  const hex = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+
+  function drawSample(w, h) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+    const metal = (x0, x1) => {
+      const lg = g.createLinearGradient(x0, 0, x1, 0);
+      [[0, '#5c5c5c'], [0.12, '#c4c4c4'], [0.26, '#ffffff'], [0.38, '#e4e4e4'], [0.52, '#a0a0a0'], [0.63, '#2e2e2e'], [0.76, '#c8c8c8'], [0.9, '#f4f4f4'], [1, '#7a7a7a']]
+        .forEach(([o, col]) => lg.addColorStop(o, col));
+      return lg;
+    };
+    const cx = w * 0.5, colW = w * 0.2, top = h * 0.44, bot = h * 0.9;
+    const ribs = 13, ribH = (bot - top) / ribs;
+    for (let i = ribs - 1; i >= 0; i--) {
+      const y = top + i * ribH;
+      g.fillStyle = metal(cx - colW / 2, cx + colW / 2);
+      g.beginPath();
+      g.ellipse(cx, y + ribH * 0.55, colW / 2, ribH * 0.62, -0.18, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = 'rgba(0,0,0,0.42)';
+      g.beginPath();
+      g.ellipse(cx, y + ribH * 0.98, colW * 0.42, ribH * 0.18, -0.18, 0, Math.PI * 2);
+      g.fill();
+    }
+
+    const r = w * 0.27, sx = cx, sy = h * 0.28;
+    g.save();
+    g.beginPath(); g.arc(sx, sy, r, 0, Math.PI * 2); g.clip();
+    const rg = g.createRadialGradient(sx - r * 0.35, sy - r * 0.4, r * 0.05, sx, sy, r);
+    [[0, '#ffffff'], [0.3, '#f0f0f0'], [0.66, '#b8b8b8'], [0.9, '#6e6e6e'], [1, '#3c3c3c']].forEach(([o, col]) => rg.addColorStop(o, col));
+    g.fillStyle = rg; g.fillRect(sx - r, sy - r, 2 * r, 2 * r);
+    const band = g.createLinearGradient(0, sy - r * 0.1, 0, sy + r * 0.35);
+    band.addColorStop(0, 'rgba(20,20,20,0)'); band.addColorStop(0.35, 'rgba(20,20,20,0.6)'); band.addColorStop(1, 'rgba(120,120,120,0.2)');
+    g.fillStyle = band; g.fillRect(sx - r, sy - r * 0.1, 2 * r, r * 0.45);
+    const bounce = g.createRadialGradient(sx + r * 0.2, sy + r * 0.85, 0, sx + r * 0.2, sy + r * 0.85, r * 0.6);
+    bounce.addColorStop(0, 'rgba(255,255,255,0.75)'); bounce.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = bounce; g.fillRect(sx - r, sy - r, 2 * r, 2 * r);
+    g.restore();
+    return c;
+  }
+
+  function fit(img) {
+    const s = Math.min(1, cfg.workSize / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.width * s));
+    c.height = Math.max(1, Math.round(img.height * s));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c;
+  }
+
+  // Pure white and pure black must come through untouched, or the paper fills with specks after the threshold.
+  function passGrain(rgb, w, h) {
+    const { amount, size, roughness } = cfg.grain;
+    const out = new Float32Array(rgb.length);
+    const cell = 0.4 + size / 25 * 0.4;
+    const amp = amount / 100 * cfg.grain.strength;
+    const bias = cfg.grain.bias;
+    const rough = roughness / 100;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      const smooth = vnoise(x / cell, y / cell, cfg.seed) * 2 - 1;
+      const fine = hash(x, y, cfg.seed + 1) * 2 - 1;
+      const n = smooth * (1 - rough * 0.6) + fine * rough * 0.6;
+      const l = (rgb[i * 3] * 0.299 + rgb[i * 3 + 1] * 0.587 + rgb[i * 3 + 2] * 0.114);
+      const wgt = Math.min(1, 2.2 * Math.sqrt(l * (1 - l)));
+      const d = (n * amp + bias) * wgt;
+      for (let k = 0; k < 3; k++) out[i * 3 + k] = Math.min(1, Math.max(0, rgb[i * 3 + k] + d));
+    }
+    return out;
+  }
+
+  // A flat 50% gray through Halftone Pattern gives a dot checker; Craquelure's relief
+  // lighting then bends it into short worms. Both are rebuilt here from noise.
+  function passTexture(w, h) {
+    const { size, contrast } = cfg.halftone;
+    const { spacing, depth, brightness } = cfg.craquelure;
+    const out = new Float32Array(w * h);
+    const cell = size * 1.6;
+    const warpScale = Math.max(1.5, spacing / 12);
+    const warpAmp = cell * (0.6 + depth / 30);
+    const k = 1 + contrast / 3;
+    const crackCell = spacing;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const wx = x + (vnoise(x / warpScale, y / warpScale, cfg.seed + 3) - 0.5) * 2 * warpAmp;
+      const wy = y + (vnoise(x / warpScale, y / warpScale, cfg.seed + 4) - 0.5) * 2 * warpAmp;
+      const dot = 0.5 + 0.5 * Math.cos(Math.PI * 2 * wx / cell) * Math.cos(Math.PI * 2 * wy / cell);
+      const jitter = (hash(x, y, cfg.seed + 5) - 0.5) * 0.5;
+      const ridge = Math.abs(vnoise(x / crackCell * 3, y / crackCell * 3, cfg.seed + 6) - 0.5) < 0.03 ? -depth / 60 : 0;
+      let t = cfg.fill + cfg.texture.lift + (dot - 0.5 + jitter) * k * cfg.texture.gain + ridge + brightness / 200;
+      out[y * w + x] = t < 0 ? 0 : t > 1 ? 1 : t;
+    }
+    return out;
+  }
+
+  function passLighter(rgb, tex, w, h) {
+    const a = cfg.blend.opacity;
+    const out = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const l = rgb[i * 3] * 0.299 + rgb[i * 3 + 1] * 0.587 + rgb[i * 3 + 2] * 0.114;
+      const t = tex[i];
+      const top = t > l ? t : l;
+      out[i] = l + (top - l) * a;
+    }
+    return out;
+  }
+
+  function passThreshold(lum, w, h) {
+    const t = cfg.threshold / 255;
+    const out = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) out[i] = lum[i] >= t ? 1 : 0;
+    return out;
+  }
+
+  function toImage(w, h, fn) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    const id = g.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) { const p = fn(i); id.data[i * 4] = p[0]; id.data[i * 4 + 1] = p[1]; id.data[i * 4 + 2] = p[2]; id.data[i * 4 + 3] = 255; }
+    g.putImageData(id, 0, 0);
+    return c;
+  }
+
+  function run() {
+    const w = source.width, h = source.height;
+    const px = source.getContext('2d').getImageData(0, 0, w, h).data;
+    const rgb = new Float32Array(w * h * 3);
+    for (let i = 0; i < w * h; i++) {
+      const a = px[i * 4 + 3] / 255;
+      for (let k = 0; k < 3; k++) rgb[i * 3 + k] = (px[i * 4 + k] / 255) * a + (1 - a);
+    }
+    const grained = passGrain(rgb, w, h);
+    const tex = passTexture(w, h);
+    const lit = passLighter(grained, tex, w, h);
+    const bin = passThreshold(lit, w, h);
+    const ink = hex(cfg.gradientMap.ink), paper = hex(cfg.gradientMap.paper);
+    const g8 = (v) => Math.round(v * 255);
+    passes = {
+      source: source,
+      grain: toImage(w, h, i => [g8(grained[i * 3]), g8(grained[i * 3 + 1]), g8(grained[i * 3 + 2])]),
+      texture: toImage(w, h, i => { const v = g8(tex[i]); return [v, v, v]; }),
+      lighter: toImage(w, h, i => { const v = g8(lit[i]); return [v, v, v]; }),
+      threshold: toImage(w, h, i => bin[i] ? [255, 255, 255] : [0, 0, 0]),
+      final: toImage(w, h, i => bin[i] ? paper : ink)
+    };
+    paint();
+  }
+
+  function blit(canvas, img) {
+    canvas.width = img.width; canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+  }
+
+  function paint() {
+    blit(srcCanvas, passes.source);
+    blit(outCanvas, passes[shown] || passes.final);
+    root.querySelectorAll('#passes button').forEach(b => {
+      b.setAttribute('aria-pressed', String(b.dataset.pass === shown));
+      const c = b.querySelector('canvas');
+      const img = passes[b.dataset.pass];
+      const s = 160 / img.width;
+      c.width = 160; c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    });
+  }
+
+  function schedule() {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => { if (source) run(); });
+  }
+
+  function setImage(img) { source = fit(img); schedule(); }
+  function setParam(path, value) {
+    const keys = path.split('.');
+    let o = cfg;
+    for (let i = 0; i < keys.length - 1; i++) { o[keys[i]] = Object.assign({}, o[keys[i]]); o = o[keys[i]]; }
+    o[keys[keys.length - 1]] = value;
+    if (path.startsWith('gradientMap')) root.style.setProperty(path.endsWith('ink') ? '--ink' : '--paper', value);
+    schedule();
+  }
+  function showPass(name) { shown = name; if (passes.final) paint(); }
+  function loadSample() { source = drawSample(Math.round(cfg.workSize * 0.8), cfg.workSize); schedule(); }
+
+  const on = (el, ev, fn) => { el.addEventListener(ev, fn); cleanups.push(() => el.removeEventListener(ev, fn)); };
+  const stage = W('#stage');
+  const readFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { setImage(img); URL.revokeObjectURL(url); };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+  };
+  on(stage, 'dragover', e => { e.preventDefault(); stage.classList.add('dragging'); });
+  on(stage, 'dragleave', () => stage.classList.remove('dragging'));
+  on(stage, 'drop', e => { e.preventDefault(); stage.classList.remove('dragging'); readFile(e.dataTransfer.files[0]); });
+  on(W('#file'), 'change', e => readFile(e.target.files[0]));
+  on(W('#reset'), 'click', loadSample);
+
+  loadSample();
+  return {
+    setImage, setParam, showPass, render: schedule,
+    getPass: (name) => passes[name],
+    config: () => cfg,
+    destroy() { cancelAnimationFrame(raf); cleanups.forEach(f => f()); }
+  };
+}
+
+(function mount() {
+  const c = CONFIG.copy;
+  document.getElementById('kicker').textContent = c.kicker;
+  document.getElementById('title').textContent = c.title;
+  document.getElementById('lede').textContent = c.lede;
+  document.getElementById('tagBefore').textContent = c.before;
+  document.getElementById('tagAfter').textContent = c.after;
+  document.getElementById('swapHint').textContent = c.swapHint;
+
+  const passList = [
+    ['source', '0 原图', '白底'],
+    ['grain', '1 粒子', `${CONFIG.grain.amount} / ${CONFIG.grain.size} / ${CONFIG.grain.roughness}`],
+    ['texture', '2–4 纹理层', `#808080 · 半调 ${CONFIG.halftone.size}/${CONFIG.halftone.contrast} · 龟裂 ${CONFIG.craquelure.spacing}`],
+    ['lighter', '5 颜色比较（明）', `不透明度 ${CONFIG.blend.opacity * 100}%`],
+    ['threshold', '6 2 阶调化', `${CONFIG.threshold}`],
+    ['final', '+ 渐变映射', '墨 → 纸']
+  ];
+  const passesEl = document.getElementById('passes');
+  passList.forEach(([key, name, sub]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.pass = key;
+    b.innerHTML = `<canvas></canvas><span><b>${name}</b>${sub}</span>`;
+    passesEl.appendChild(b);
+  });
+
+  const api = createRetroPrint(document.body);
+  window.retroPrint = api;
+  passesEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) api.showPass(b.dataset.pass); });
+
+  const sliders = [
+    ['grain.amount', '粒子 · 适用量', 0, 100, 1, CONFIG.grain.amount],
+    ['halftone.size', '半调 · 大小', 1, 6, 0.5, CONFIG.halftone.size],
+    ['halftone.contrast', '半调 · 对比度', 0, 50, 1, CONFIG.halftone.contrast],
+    ['craquelure.spacing', '龟裂 · 间距', 5, 100, 1, CONFIG.craquelure.spacing],
+    ['blend.opacity', '纹理层 · 不透明度', 0, 1, 0.01, CONFIG.blend.opacity],
+    ['threshold', '2 阶调化 · 阈值', 1, 255, 1, CONFIG.threshold]
+  ];
+  const ctl = document.getElementById('controls');
+  sliders.forEach(([path, label, min, max, step, val]) => {
+    const l = document.createElement('label');
+    l.innerHTML = `${label}<output>${val}</output><input type="range" min="${min}" max="${max}" step="${step}" value="${val}">`;
+    const input = l.querySelector('input'), out = l.querySelector('output');
+    input.addEventListener('input', () => { out.textContent = input.value; api.setParam(path, parseFloat(input.value)); });
+    ctl.appendChild(l);
+  });
+  [['gradientMap.ink', '墨色', CONFIG.gradientMap.ink], ['gradientMap.paper', '纸色', CONFIG.gradientMap.paper]].forEach(([path, label, val]) => {
+    const l = document.createElement('label');
+    l.innerHTML = `${label}<output>${val}</output><input type="color" value="${val}">`;
+    const input = l.querySelector('input'), out = l.querySelector('output');
+    input.addEventListener('input', () => { out.textContent = input.value; api.setParam(path, input.value); });
+    ctl.appendChild(l);
+  });
+})();
+</script>
+</body>
+</html>

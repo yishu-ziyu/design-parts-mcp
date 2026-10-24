@@ -1,0 +1,1245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relief Icon Kit</title>
+<style>
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/inter-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/inter-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/inter-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/inter-latin-700-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Jost"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/jost-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Jost"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/jost-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+:root {
+  --bg: #F3F1F2;
+  --panel: #FAF9F8;
+  --line: #E2DFDC;
+  --text: #2F2D2A;
+  --muted: #8A877F;
+  --accent: #F4602A;
+  --wall-a: #F3F1F2;
+  --wall-b: #E9E6E3;
+  --label: #3A3936;
+  --phone: #1E1E1D;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1B1A19; --panel: #232220; --line: #34322F; --text: #ECEAE5; --muted: #9C988F;
+    --wall-a: #2A2927; --wall-b: #201F1D; --label: #E6E3DD; --phone: #0E0E0D;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1B1A19; --panel: #232220; --line: #34322F; --text: #ECEAE5; --muted: #9C988F;
+  --wall-a: #2A2927; --wall-b: #201F1D; --label: #E6E3DD; --phone: #0E0E0D;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.45 Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 28px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+header h1 { font: 600 17px/1.2 Jost, Inter, sans-serif; letter-spacing: .02em; margin: 0; }
+header p { margin: 0; color: var(--muted); font-size: 12px; }
+.layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 780px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* phone */
+.phone { width: 100%; max-width: 340px; margin: 0 auto; background: var(--phone); border-radius: 44px; padding: 10px; }
+.screen { position: relative; border-radius: 35px; overflow: hidden; aspect-ratio: 320 / 640;
+  background: linear-gradient(180deg, var(--wall-a), var(--wall-b)); display: flex; flex-direction: column; }
+.screen.tile { --label: #F6F4F0; background: radial-gradient(120% 80% at 30% 10%, #8C8983, #5E5B56 70%, #4A4844); }
+.status { display: flex; justify-content: space-between; padding: 14px 26px 0; font: 600 13px/1 Inter, sans-serif; color: var(--label); }
+.page { padding: 26px 14px 0; flex: 1; }
+.dock { margin: 0 10px 10px; padding: 12px 6px 10px; border-radius: 28px; background: rgba(255,255,255,.38); backdrop-filter: blur(10px); }
+.screen.tile .dock { background: rgba(255,255,255,.16); }
+:root[data-theme="dark"] .dock { background: rgba(255,255,255,.06); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dock { background: rgba(255,255,255,.06); } }
+
+/* icon grid (factory output) */
+.ri-grid { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 18px; justify-items: center; }
+.ri-cell { all: unset; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; perspective: 420px; }
+.ri-cell canvas { display: block; transition: transform .18s cubic-bezier(.2,.7,.3,1), filter .18s; will-change: transform; }
+.ri-cell.pressed canvas { transform: scale(.93) !important; filter: brightness(.97); transition-duration: .08s; }
+.ri-cell:focus-visible canvas { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 22%; }
+.ri-cell span { font: 500 11px/1.1 Inter, -apple-system, sans-serif; color: var(--label); letter-spacing: .01em; }
+.ri-cell[aria-current="true"] span { color: var(--accent); }
+.dock .ri-cell span { display: none; }
+
+/* inspector */
+.inspector { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px; gap: 18px; }
+@media (max-width: 980px) { .inspector { grid-template-columns: minmax(0, 1fr); } }
+.stage { position: relative; background: var(--bg); border-radius: 12px; display: grid; place-items: center; padding: 18px; min-height: 300px; }
+.stage canvas { width: min(100%, 420px); height: auto; aspect-ratio: 1; touch-action: none; cursor: crosshair; }
+.stage .hint { position: absolute; left: 14px; bottom: 10px; font-size: 11px; color: var(--muted); }
+.stage .meta { position: absolute; right: 14px; top: 10px; font: 500 11px/1.3 Inter, sans-serif; color: var(--muted); text-align: right; }
+.controls { display: flex; flex-direction: column; gap: 14px; font-size: 12px; }
+.controls h2 { font: 600 15px/1.2 Inter, sans-serif; margin: 0; }
+.controls .sub { color: var(--muted); margin-top: 2px; }
+.ctl label { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 4px; }
+.ctl label b { font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatches button { all: unset; cursor: pointer; width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.swatches button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.seg button { all: unset; flex: 1; text-align: center; padding: 6px 4px; cursor: pointer; color: var(--muted); font-size: 12px; }
+.seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.btn { all: unset; cursor: pointer; text-align: center; padding: 9px 12px; border-radius: 10px; background: var(--text); color: var(--bg); font-weight: 500; }
+.btn.ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1; }
+.credit { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.credit a { color: inherit; }
+.export { display: none; margin-top: 4px; }
+.export.on { display: block; }
+.export img { width: 100%; border-radius: 10px; background: var(--bg); display: block; }
+.export p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+.err { padding: 24px; color: var(--muted); }
+
+#notes { max-width: 880px; padding: 44px 0 24px; font-size: 13px; line-height: 1.8; color: var(--text); }
+#notes h3 { margin: 0; font: 500 13px/1.2 Inter, sans-serif; letter-spacing: .08em; padding-bottom: 14px; border-bottom: 2px solid var(--text); }
+#notes dl { margin: 0; }
+#notes dt { margin-top: 24px; }
+#notes dt code { font: inherit; font-weight: 600; }
+#notes dd { margin: 4px 0 0; }
+#notes dd code { font: inherit; font-size: .93em; background: var(--line); padding: 0 .25em; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Relief Icon Kit</h1>
+    <p>Rams 风格超拟物图标 · 9 个原创图标 · WebGL2 浮雕渲染（SDF 高度场 + 软阴影 + 材质）</p>
+  </header>
+  <div class="layout">
+    <div class="phone"><div class="screen" id="screen">
+      <div class="status"><span id="clock">9:41</span><span>●●● ▮</span></div>
+      <div class="page" id="print"><div id="home"></div></div>
+      <div class="dock"><div id="dock"></div></div>
+    </div></div>
+    <section class="inspector" id="inspector">
+      <div class="stage" id="stage">
+        <canvas id="big" width="840" height="840" aria-label="放大的图标"></canvas>
+        <div class="meta" id="meta"></div>
+        <div class="hint">在图上拖动可移动光源</div>
+      </div>
+      <div class="controls">
+        <div id="schema"><h2 id="title">Camera</h2><div class="sub" id="subtitle"></div></div>
+        <div class="ctl" id="light"><label>光源方位 <b id="vAz"></b></label><input id="az" type="range" min="0" max="360" step="1"></div>
+        <div class="ctl"><label>光源高度角 <b id="vEl"></b></label><input id="el" type="range" min="12" max="80" step="1"></div>
+        <div class="ctl"><label>阴影柔和度 <b id="vSoft"></b></label><input id="soft" type="range" min="0.05" max="1" step="0.01"></div>
+        <div class="ctl"><label>强调色</label><div class="swatches" id="accents"></div></div>
+        <div class="ctl" id="shell"><label>外壳</label><div class="seg" id="shells"></div></div>
+        <div class="ctl"><label>主屏样式</label><div class="seg" id="modes"></div></div>
+        <div class="row"><button class="btn" id="exportBtn">导出 1024 PNG</button><button class="btn ghost" id="resetBtn">重置光源</button></div>
+        <div class="export" id="export"><img id="exportImg" alt="导出的 1024 像素图标"><p id="exportInfo"></p></div>
+        <div class="credit">视觉语言参考：鹿言 &amp; Zhiyi Zhang《<a href="https://www.behance.net/gallery/242098083/-Rams-System-Icons" target="_blank" rel="noopener">Rams System Icons</a>》。图标造型为原创，未复刻原作图标或任何具体产品。</div>
+      </div>
+    </section>
+  </div>
+
+  <section id="notes">
+    <h3>可拆</h3>
+    <dl>
+      <dt><code>#shell</code></dt>
+      <dd>机身配方，九个图标共用，变的只是正面的功能件。外轮廓是 p=4 超椭圆角，角半径 = 0.2237 × 机身短边（原作沿槽线拟合，p=4 比圆弧误差小 85 倍；换算到外轮廓约 22.3%，和 iOS 的 22.37% 基本相同）。机身 86 × 85.4u 放在 100u 画布里，厚 5u，边缘圆角 1.2u。外圈 2.35u（原作 19.5 px，占机身宽 2.7%）后面是一道 V 槽：宽 1.0u、深 0.9u，S 曲线截面，槽底烘焙遮蔽 0.55，朝光那一壁自己出一条亮线。面色 <code>#E1E0D9</code>（R≈G，B 低），颗粒 0.10。外壳预设只覆盖色板键：象牙白、石灰 <code>#C3C2BC</code>、石墨 <code>#454442</code>。</dd>
+      <dt><code>#light</code></dt>
+      <dd>拟合出来的光：方位 47°、高度角 16°，外壳材质 wrap 1（半兰伯特），key 0.80、ambient 0.40。在原作机身的左、下、上、右边缘和正面各取亮度（164–174、155–177、226–230、232–240、213），按「亮度对法线线性」解出光照方向，不凭眼睛调。投影另用「高度角 + 40°」算（<code>shadowLift</code>，默认 56°），所以凸起只在左下留约 1u 的接触阴影，机身外侧没有投影。<code>falloff</code> 0.12 让正面沿光的方向渐暗（原作右上 219.6、左下 202.5）。</dd>
+      <dt><code>#stage</code></dt>
+      <dd>两遍高度场渲染，WebGL2，整页共享一个上下文。正交正视图里每个像素只看到一个高度，所以不建网格。第一遍逐像素遍历 SDF 几何体列表（圆角矩形、圆、胶囊、圆环，配凸起、凹陷、V 槽、孔阵、上色），用 MRT 写 3 张 RGBA8：16 位高度、覆盖率、反照率、材质号。第二遍 Sobel 求法线，算半兰伯特主光、天光、16 个采样的 AO、沿光线最多 64 步的软阴影、Blinn 或各向异性高光（同心、唱片纹、横向拉丝、竖棱）、摄影棚环境反射（暗顶、亮地、柔光箱）和颗粒。小于 512 px 内部 2× 超采样，否则 1.5×，最后用 2D canvas 缩小。颗粒在噪声单元小于约 1 px 时淡出，小图不起斑。</dd>
+      <dt><code>#print</code></dt>
+      <dd>印刷层：品牌字、型号、刻度、表盘数字、弧形字、七段 LCD、字形先画在一张 2D canvas 上，再作为反照率叠进表面，所以印字和表面一起受光；有墨的地方高光和反射压到 40%。<code>{dd} {MON} {DOW} {HH} {mm}</code> 取当前日期时间，日历图标每天变。LCD 段码是尖头六边形，<code>ghost</code> 再垫一层淡「8」（本页 0.06–0.07）。品牌 ORDO 用 Jost 600，左对齐在机身宽 9.8% 处；型号用 Inter 400 小写，右对齐到 90%（都是原作实测位置）。印刷层按图标、尺寸、配色、日期缓存，最多 60 张。</dd>
+      <dt><code>#schema</code></dt>
+      <dd>图标就是数据：<code>{ id, name, label, under, parts, prints }</code>，画布 100 × 100u，y 向下，角度从 12 点起顺时针。part = 形状（<code>rrect</code> 带角指数 p、<code>circle</code>、<code>capsule</code>、<code>ring</code>、<code>hand</code>）+ 操作（<code>raise</code>、<code>recess</code>、<code>groove</code>、<code>paint</code>、<code>holes</code>）+ 色板键 + 材质键，按顺序叠，后画的压在上面。<code>under</code> 画在机身下层，做从侧边、顶边伸出的按钮；<code>stack:'max'</code> 按绝对高度叠，给纸张和唱臂用。<code>repeat</code> + <code>each</code> 做阵列，计算器 16 个键是一条 part。新增图标往 <code>CONFIG.icons</code> 里 push，不改渲染器；材质最多 19 种。标题下的「N 个几何体」就是从这份数据数出来的。</dd>
+      <dt><code>#screen</code></dt>
+      <dd>主屏和底板模式：<code>createIconGrid</code> 生成 4 列网格，图标 60 px，按设备像素比渲染（上限 3×）。悬停时图标在 ±7° 内倾斜，光源方位同步偏 ±14°、高度角偏 ±8°，用 rAF 节流重画；按下缩到 0.93。「实物」模式物件直接放在浅色壁纸上；「iOS 底板」模式放进 n=5 超椭圆底板，物件缩到 0.84，墙面阴影 0.35，壁纸换成深灰。</dd>
+      <dt><code>#inspector</code></dt>
+      <dd>检查器和导出：在大图上拖动改光，方位跟着指针角度走，离中心越远高度角越低（中心 80°，到边 12°）；三根滑块是方位 0–360°、高度角 12–80°、柔和度 0.05–1。拖动和拉滑块时只重画大图，松手后主屏一起重画。4 种强调色、3 种外壳、2 种主屏样式。「导出 1024 PNG」调 <code>ReliefIcons.exportPNG</code>，预览出现在按钮下方，Blob 留在 <code>window.lastExport</code>。</dd>
+    </dl>
+  </section>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIG — palette, materials, light, shell recipe, icon definitions.
+   Units: an icon is drawn in a 100 × 100 "u" space (y down). Heights are in u too.
+   ========================================================================= */
+const CONFIG = {
+  brand: 'ordo',
+  fonts: {
+    label: 'Inter, "Helvetica Neue", Helvetica, Arial, sans-serif',
+    brand: 'Jost, Futura, "Avenir Next", Inter, sans-serif',
+  },
+  palette: {
+    page: '#F3F1F2', tile: '#F3F1F2',
+    shell: '#E1E0D9', key: '#E7E6E0', key2: '#CDCCC5', dial: '#EBEAE5',
+    accent: '#F2622A', accent2: '#F0B13B', signal: '#43A564',
+    ink: '#2F2D2A', inkSoft: '#8A877F', inkOnAccent: '#FFF4EC', hand: '#2A2927',
+    dialInk: '#2F2D2A', dialInkSoft: '#8A877F',   // print on light dials / paper: stays dark on every shell
+    lcd: '#CCCEC5', lcdInk: '#34332F',
+    metal: '#C6C9CB', rubber: '#353433', glass: '#2C2B33', vinyl: '#1B1A1C',
+    paper: '#EDEBE5', screen: '#232629', hole: '#3A3835', frost: '#DFDED8',
+  },
+  // Shell presets override palette keys.
+  shells: {
+    ivory:    {},
+    stone:    { shell: '#C3C2BC', key: '#CFCEC8', key2: '#B1B0A9', dial: '#E3E2DD' },
+    graphite: { shell: '#454442', key: '#555452', key2: '#3A3937', ink: '#E6E4DE', inkSoft: '#9E9B95', dial: '#E5E4DF' },
+  },
+  accents: { orange: '#F4602A', yellow: '#F2B33D', green: '#43A564', blue: '#3B6FD8' },
+  // spec: highlight strength · gloss: Blinn exponent · wrap: soft diffuse wrap · metal: tint highlights by albedo
+  // grain: albedo noise · bump: micro normal noise · aniso: concentric | vinyl | brushX | ribs · env: reflection
+  // emissive · sss: light bleed for saturated plastics
+  materials: {
+    shell:     { spec: 0.10, gloss: 14, wrap: 1.0, grain: 0.10, bump: 0.10 },
+    key:       { spec: 0.16, gloss: 22, wrap: 1.0, grain: 0.03, bump: 0.05 },
+    dial:      { spec: 0.06, gloss: 10, wrap: 0.9, grain: 0.02, bump: 0.03 },
+    accent:    { spec: 0.24, gloss: 34, wrap: 0.8, grain: 0.02, bump: 0.04, sss: 0.35 },
+    label:     { spec: 0.04, gloss: 8,  wrap: 0.8, grain: 0.03, bump: 0.04, sss: 0.20 },
+    metal:     { spec: 1.60, gloss: 20, wrap: 0.5, metal: 1, grain: 0.030, aniso: 'concentric', env: 0.50 },
+    brushed:   { spec: 1.40, gloss: 18, wrap: 0.5, metal: 1, grain: 0.030, aniso: 'brushX', env: 0.50 },
+    hand:      { spec: 0.30, gloss: 40, wrap: 0.5 },
+    rubber:    { spec: 0.08, gloss: 10, wrap: 0.6, grain: 0.060, bump: 0.22 },
+    glass:     { spec: 1.60, gloss: 180, wrap: 0.0, env: 0.75 },
+    clearcoat: { spec: 1.00, gloss: 160, wrap: 0.9, env: 0.20, grain: 0.004 },
+    lcd:       { spec: 0.05, gloss: 12, wrap: 0.9, grain: 0.012, bump: 0.02 },
+    screen:    { spec: 0.50, gloss: 90, wrap: 0.3, env: 0.18 },
+    paper:     { spec: 0.00, gloss: 4,  wrap: 0.9, grain: 0.035, bump: 0.16 },
+    vinyl:     { spec: 0.90, gloss: 60, wrap: 0.3, aniso: 'vinyl', env: 0.12 },
+    frost:     { spec: 0.60, gloss: 40, wrap: 0.8, aniso: 'ribs', env: 0.15, grain: 0.01 },
+    led:       { spec: 0.40, gloss: 80, emissive: 0.9 },
+    hole:      { spec: 0.00, gloss: 4,  wrap: 0.3 },
+  },
+  // Key light from upper right, lowish, large soft box; strong flat fill (product-shot look).
+  // Fitted from the reference rim: brightness vs. normal is linear → wrapped (half-Lambert) key at az 47°, el 16°.
+  // shadowLift: cast shadows use elevation + lift, which keeps contact shadows short like a large soft box.
+  light: { azimuth: 47, elevation: 16, shadowLift: 40, key: 0.80, ambient: 0.40, softness: 0.5, shadow: 0.7, falloff: 0.12, ao: 0.85, specular: 1.0 },
+  // Shell recipe measured from the reference (body ≈ 712 px wide): corner = superellipse p=4, r = 22.4 % of width.
+  shell: { cornerRatio: 0.2237, cornerExp: 4, thickness: 5, edge: 1.2, edgeDrop: 0, rim: 2.35, grooveWidth: 1.0, grooveDepth: 0.9, grooveCavity: 0.55 },
+  body: { x: 50, y: 50.7, w: 86, h: 85.4 },
+  labels: { brand: [15.4, 87.3, 'left'], model: [84.6, 87.3, 'right'], brandSize: 5.0, modelSize: 4.9 },
+  // iOS-style tile: whole-shape superellipse n=5 (cornerRatio 0.5 = one curve per side), object scaled into it.
+  tile: { scale: 0.84, cornerRatio: 0.5, cornerExp: 5 },
+  icons: [],
+};
+
+/* ---- icon definitions (data). parts are drawn in order; `under` parts go behind the shell. ---- */
+CONFIG.icons = [
+  { id: 'clock', name: 'Clock', label: 'clock 2',
+    under: [ { shape: 'rrect', x: 94.4, y: 30, w: 4.6, h: 10, r: 1.6, H: 3.0, e: 1.1, color: 'accent', mat: 'accent' } ],
+    parts: [
+      { shape: 'circle', x: 50, y: 46, r: 33.5, H: 1.0, e: 0.8, color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 50, y: 46, r: 30, op: 'recess', depth: 1.8, e: 0.35, floor: 0.5, color: 'dial', mat: 'dial' },
+      { shape: 'hand', x: 50, y: 46, angle: 304, len: 15.5, tail: 3.5, w: 2.5, H: 1.0, e: 0.5, color: 'hand', mat: 'hand' },
+      { shape: 'hand', x: 50, y: 46, angle: 62, len: 24.5, tail: 3.5, w: 1.9, H: 1.4, e: 0.5, color: 'hand', mat: 'hand' },
+      { shape: 'hand', x: 50, y: 46, angle: 196, len: 25, tail: 7, w: 0.8, H: 2.0, e: 0.3, color: 'accent', mat: 'accent' },
+      { shape: 'circle', x: 51.38, y: 41.19, r: 1.7, H: 2.0, e: 0.4, color: 'accent', mat: 'accent' },
+      { shape: 'circle', x: 50, y: 46, r: 2.4, H: 2.4, e: 0.7, color: 'hand', mat: 'hand' },
+      { shape: 'circle', x: 50, y: 46, r: 1.0, H: 0.3, e: 0.3, color: 'metal', mat: 'metal' },
+    ],
+    prints: [
+      { type: 'ticks', x: 50, y: 46, r1: 26.6, r2: 28.2, n: 60, width: 0.32, color: 'dialInkSoft', skip: 5 },
+      { type: 'ticks', x: 50, y: 46, r1: 23.0, r2: 28.2, n: 12, width: 1.05, color: 'dialInk' },
+    ] },
+
+  { id: 'weather', name: 'Weather', label: 'meteo 1',
+    parts: [
+      { shape: 'circle', x: 50, y: 41, r: 27, H: 0.6, e: 0.6, color: 'shell', mat: 'shell' },
+      { shape: 'circle', x: 50, y: 41, r: 24.5, op: 'recess', depth: 1.6, e: 0.4, floor: 0.6, color: 'dial', mat: 'dial' },
+      { shape: 'hand', x: 50, y: 41, angle: 58.5, len: 19, tail: 4, w: 1.1, H: 0.8, e: 0.3, color: 'accent', mat: 'accent' },
+      { shape: 'circle', x: 50, y: 41, r: 2.8, H: 1.2, e: 0.6, color: 'hand', mat: 'hand' },
+      { shape: 'circle', x: 50, y: 41, r: 24.3, H: 0, e: 0.1, dome: 1.6, mat: 'clearcoat' },
+      { shape: 'rrect', x: 44, y: 75, w: 46, h: 10.5, r: 2.2, op: 'recess', depth: 1.4, e: 0.45, floor: 0.9, color: 'lcd', mat: 'lcd' },
+      { shape: 'circle', x: 80.5, y: 75, r: 4.3, H: 1.6, e: 1.2, dome: 0.3, color: 'accent2', mat: 'accent' },
+    ],
+    prints: [
+      { type: 'ticks', x: 50, y: 41, r1: 18.6, r2: 20.6, n: 41, from: -130, to: 130, width: 0.3, color: 'dialInkSoft' },
+      { type: 'ticks', x: 50, y: 41, r1: 17.4, r2: 20.6, n: 7, from: -130, to: 130, width: 0.75, color: 'dialInk' },
+      { type: 'arc', x: 50, y: 41, r: 21.8, from: 66, to: 130, width: 1.0, color: 'accent' },
+      { type: 'dial', x: 50, y: 41, r: 13.4, from: -130, to: 130, values: ['-20', '-10', '0', '10', '20', '30', '40'], size: 2.9, color: 'dialInk' },
+      { type: 'text', text: '°C', x: 50, y: 55.5, size: 3.2, color: 'dialInkSoft', align: 'center', baseline: 'middle' },
+      { type: 'glyph', name: 'sun', x: 28.5, y: 75, size: 6.2, color: 'lcdInk' },
+      { type: 'lcd', text: '23.5', x: 63, y: 78.3, h: 6.4, color: 'lcdInk', align: 'right', ghost: 0.07 },
+      { type: 'text', text: '°', x: 64.2, y: 73.2, size: 4.4, color: 'lcdInk', align: 'left', baseline: 'middle' },
+    ] },
+
+  { id: 'calendar', name: 'Calendar', label: 'date 1',
+    under: [ { shape: 'rrect', x: 73, y: 7.4, w: 13, h: 5, r: 2.2, H: 2.8, e: 1.1, color: 'accent', mat: 'accent' } ],
+    parts: [
+      { shape: 'rrect', x: 50, y: 40.5, w: 62, h: 47, r: 5, p: 4, op: 'recess', depth: 1.8, e: 0.45, floor: 0.5, color: 'paper', mat: 'paper' },
+      { shape: 'rrect', x: 50, y: 40.5, w: 62, h: 0.7, r: 0.3, op: 'recess', depth: 0.7, e: 0.1, color: '#C9C6BE', mat: 'paper' },
+      { shape: 'rrect', x: 50, y: 73, w: 46, h: 9, r: 2, p: 4, op: 'recess', depth: 1.0, e: 0.35, floor: 0.3, color: 'screen', mat: 'screen' },
+    ],
+    prints: [
+      { type: 'text', text: '{dd}', x: 50, y: 41.6, size: 37, weight: 600, color: 'dialInk', align: 'center', baseline: 'middle', track: -0.03 },
+      { type: 'text', text: '{DOW}  {MON}', x: 50, y: 73.2, size: 4.0, weight: 500, color: '#E9E7E1', align: 'center', baseline: 'middle', track: 0.14 },
+    ] },
+
+  { id: 'camera', name: 'Camera', label: 'photo 3',
+    parts: [
+      { shape: 'circle', x: 47, y: 54, r: 27, H: 2.4, e: 1.5, ridges: 96, ridgeDepth: 0.22, color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 47, y: 54, r: 21.5, H: 0.8, e: 0.6, color: 'rubber', mat: 'rubber' },
+      { shape: 'circle', x: 47, y: 54, r: 15.5, op: 'recess', depth: 2.6, e: 0.9, floor: 0.8, color: 'rubber', mat: 'rubber' },
+      { shape: 'circle', x: 47, y: 54, r: 14.0, op: 'groove', depth: 0.35, width: 0.5, inset: 0 },
+      { shape: 'circle', x: 47, y: 54, r: 12.6, op: 'groove', depth: 0.35, width: 0.5, inset: 0 },
+      { shape: 'circle', x: 47, y: 54, r: 11.0, H: 0.6, e: 0.2, dome: 1.8, color: 'glass', mat: 'glass' },
+      { shape: 'rrect', x: 76.5, y: 22.5, w: 15, h: 9, r: 1.8, op: 'recess', depth: 0.9, e: 0.4, floor: 0.2, color: 'frost', mat: 'frost' },
+      { shape: 'circle', x: 22.5, y: 21.5, r: 5.0, H: 2.0, e: 1.6, dome: 0.4, color: 'accent', mat: 'accent' },
+      { shape: 'circle', x: 33.5, y: 21.5, r: 1.1, H: 0.25, e: 0.2, color: 'signal', mat: 'led' },
+    ],
+    prints: [
+      { type: 'arcText', text: '1:2.8   f=35 mm   ordo optic', x: 47, y: 54, r: 17.9, at: 0, size: 2.0, color: '#E4E2DC', track: 0.12 },
+    ] },
+
+  { id: 'calculator', name: 'Calculator', label: 'calc 4',
+    parts: [
+      { shape: 'rrect', x: 50, y: 22.5, w: 70, h: 13, r: 2.4, p: 4, op: 'recess', depth: 1.6, e: 0.5, floor: 1.1, color: 'lcd', mat: 'lcd' },
+      { shape: 'rrect', x: 22, y: 39.4, w: 15, h: 8.6, r: 3.0, p: 3, H: 1.7, e: 1.4, dome: 0.35, color: 'key', mat: 'key',
+        repeat: { nx: 4, ny: 4, dx: 18.667, dy: 11.0 },
+        each: { 3: { color: 'key2' }, 7: { color: 'key2' }, 11: { color: 'key2' }, 14: { color: 'accent', mat: 'accent' }, 15: { color: 'key2' } } },
+    ],
+    prints: [
+      { type: 'lcd', text: '1287.5', x: 82, y: 26.2, h: 7.0, color: 'lcdInk', align: 'right', ghost: 0.06 },
+      { type: 'text', texts: ['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−', '0', '.', '=', '+'],
+        x: 22, y: 39.5, size: 4.6, weight: 500, color: 'ink', align: 'center', baseline: 'middle',
+        repeat: { nx: 4, ny: 4, dx: 18.667, dy: 11.0 }, eachColor: { 14: 'inkOnAccent' } },
+    ] },
+
+  { id: 'notes', name: 'Notes', label: 'memo 1',
+    parts: [
+      { shape: 'rrect', x: 50, y: 34.6, w: 48, h: 3.0, r: 1.3, op: 'recess', depth: 2.2, e: 0.3, color: 'hole', mat: 'hole' },
+      { shape: 'rrect', x: 50, y: 17.5, w: 40, h: 33, r: 0.6, p: 2, H: 5.5, e: 0.2, stack: 'max', color: 'paper', mat: 'paper' },
+      { shape: 'rrect', x: 50, y: 31.6, w: 52, h: 3.8, r: 1.6, H: 0.9, e: 0.7, color: 'metal', mat: 'brushed' },
+      { shape: 'circle', x: 30, y: 62, r: 11, op: 'holes', depth: 1.4, e: 0.15, pitch: 2.3, hole: 0.62, color: 'hole' },
+      { shape: 'circle', x: 70, y: 62, r: 9.5, H: 2.2, e: 1.7, dome: 0.5, color: 'accent', mat: 'accent' },
+      { shape: 'circle', x: 84, y: 44, r: 1.0, H: 0.25, e: 0.2, color: 'signal', mat: 'led' },
+    ],
+    prints: [
+      { type: 'text', text: 'NOTES · {dd} {MON}', x: 33, y: 5.6, size: 2.3, weight: 600, color: 'dialInk', align: 'left', baseline: 'middle', track: 0.14 },
+      { type: 'rects', color: '#8E8B83', items: [[33, 9.0, 28, 0.85], [33, 12.0, 21, 0.85], [33, 15.0, 30, 0.85], [33, 18.0, 15, 0.85], [33, 21.0, 26, 0.85], [33, 24.0, 19, 0.85]] },
+      { type: 'glyph', name: 'plus', x: 70, y: 62, size: 6.5, color: 'inkOnAccent' },
+    ] },
+
+  { id: 'settings', name: 'Settings', label: 'control 1',
+    parts: [
+      { shape: 'circle', x: 50, y: 44, r: 21, H: 4.2, e: 1.2, ridges: 80, ridgeDepth: 0.35, color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 50, y: 44, r: 17.5, H: 0, e: 0.3, dome: -0.6, mat: 'metal' },
+      { shape: 'circle', x: 40.04, y: 35.64, r: 1.7, op: 'recess', depth: 0.4, e: 0.2, color: 'accent', mat: 'accent' },
+      { shape: 'rrect', x: 70, y: 76.5, w: 28, h: 2.6, r: 1.3, op: 'recess', depth: 1.6, e: 0.3, color: 'hole', mat: 'hole' },
+      { shape: 'rrect', x: 77, y: 76.5, w: 4.6, h: 7.2, r: 1.6, H: 2.4, e: 1.1, dome: 0.2, color: 'accent', mat: 'accent' },
+    ],
+    prints: [
+      { type: 'ticks', x: 50, y: 44, r1: 24.0, r2: 25.6, n: 31, from: -135, to: 135, width: 0.3, color: 'inkSoft' },
+      { type: 'ticks', x: 50, y: 44, r1: 23.4, r2: 26.2, n: 7, from: -135, to: 135, width: 0.8, color: 'ink' },
+      { type: 'dial', x: 50, y: 44, r: 29.6, from: -135, to: 135, values: ['0', '2', '4', '6', '8', '10', '12'], size: 2.8, color: 'ink' },
+      { type: 'rects', color: 'inkSoft', items: [[57, 71.2, 0.3, 1.6], [63.5, 71.2, 0.3, 1.6], [70, 71.2, 0.3, 1.6], [76.5, 71.2, 0.3, 1.6], [83, 71.2, 0.3, 1.6]] },
+    ] },
+
+  { id: 'mail', name: 'Mail', label: 'post 1',
+    under: [ { shape: 'rrect', x: 95.2, y: 46, w: 6, h: 14, r: 2, H: 3.2, e: 1.2, color: 'accent', mat: 'accent' } ],
+    parts: [
+      { shape: 'rrect', x: 50, y: 38.5, w: 58, h: 4, r: 1.8, op: 'recess', depth: 2.4, e: 0.3, color: 'hole', mat: 'hole' },
+      { shape: 'rrect', x: 50, y: 20, w: 46, h: 36, r: 1.0, p: 2, H: 5.6, e: 0.25, stack: 'max', color: 'paper', mat: 'paper' },
+      { shape: 'rrect', x: 50, y: 37, w: 62, h: 6.5, r: 2.6, H: 1.4, e: 1.0, color: 'metal', mat: 'brushed' },
+      { shape: 'rrect', x: 50, y: 63, w: 44, h: 14, r: 3, p: 4, op: 'recess', depth: 0.6, e: 0.3, color: 'dial', mat: 'dial' },
+    ],
+    prints: [
+      { type: 'poly', points: [[27.5, 2.6], [50, 16.5], [72.5, 2.6]], width: 0.5, color: '#C4C1B9' },
+      { type: 'rect', x: 62.5, y: 5.5, w: 7, h: 8.4, color: 'accent' },
+      { type: 'rect', x: 63.6, y: 6.6, w: 4.8, h: 6.2, color: '#F6F3EC' },
+      { type: 'glyph', name: 'drop', x: 66, y: 9.9, size: 3.6, color: 'accent' },
+      { type: 'rects', color: '#9A978F', items: [[32, 20, 18, 0.85], [32, 23, 25, 0.85], [32, 26, 13, 0.85]] },
+      { type: 'text', text: '3 new', x: 50, y: 63.4, size: 5.0, weight: 500, color: 'dialInk', align: 'center', baseline: 'middle' },
+    ] },
+
+  { id: 'music', name: 'Music', label: 'phono 1',
+    parts: [
+      { shape: 'circle', x: 43, y: 47, r: 31, H: 0.9, e: 0.6, color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 43, y: 47, r: 29.3, H: 0.5, e: 0.25, color: 'vinyl', mat: 'vinyl' },
+      { shape: 'circle', x: 43, y: 47, r: 20.5, op: 'groove', depth: 0.08, width: 0.7, inset: 0 },
+      { shape: 'circle', x: 43, y: 47, r: 13.6, op: 'groove', depth: 0.08, width: 0.7, inset: 0 },
+      { shape: 'circle', x: 43, y: 47, r: 9.2, op: 'paint', color: 'accent', mat: 'label' },
+      { shape: 'circle', x: 43, y: 47, r: 1.0, H: 1.8, e: 0.4, color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 81, y: 19.5, r: 5.6, H: 2.0, e: 1.0, color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 81, y: 19.5, r: 2.6, H: 1.6, e: 0.8, color: 'hand', mat: 'hand' },
+      { shape: 'capsule', x1: 83.9, y1: 12.6, x2: 65.4, y2: 56.7, r: 0.95, H: 9.0, e: 0.8, stack: 'max', color: 'metal', mat: 'metal' },
+      { shape: 'circle', x: 84.3, y: 11.9, r: 3.4, H: 9.6, e: 1.6, stack: 'max', color: 'hand', mat: 'hand' },
+      { shape: 'rrect', x: 64.2, y: 59.5, w: 4.4, h: 7.5, r: 0.9, rot: 22.8, H: 9.3, e: 0.5, stack: 'max', color: 'hand', mat: 'hand' },
+      { shape: 'rrect', x: 84, y: 44, w: 7, h: 4.4, r: 1.6, H: 1.3, e: 1.0, color: 'key', mat: 'key' },
+      { shape: 'rrect', x: 84, y: 51, w: 7, h: 4.4, r: 1.6, H: 1.3, e: 1.0, color: 'key2', mat: 'key' },
+      { shape: 'circle', x: 84, y: 69, r: 4.6, H: 1.8, e: 1.3, dome: 0.4, color: 'accent', mat: 'accent' },
+    ],
+    prints: [
+      { type: 'text', text: 'side a', x: 43, y: 51.2, size: 1.9, weight: 500, color: 'inkOnAccent', align: 'center', baseline: 'middle', track: 0.1 },
+      { type: 'text', text: '33', x: 84, y: 44.2, size: 2.4, weight: 600, color: 'ink', align: 'center', baseline: 'middle' },
+      { type: 'text', text: '45', x: 84, y: 51.2, size: 2.4, weight: 600, color: 'ink', align: 'center', baseline: 'middle' },
+      { type: 'glyph', name: 'play', x: 84.4, y: 69, size: 3.8, color: 'inkOnAccent' },
+    ] },
+];
+
+/* =========================================================================
+   Renderer — ReliefIcons factory (no DOM assumptions besides canvases).
+   renderIcon(def, size, options) → HTMLCanvasElement
+   createIconGrid(container, defs, options) → { update(options), select(id), destroy() }
+   ========================================================================= */
+const ReliefIcons = (() => {
+  const SHAPES = { rrect: 0, circle: 1, capsule: 2, ring: 3 };
+  const OPS = { raise: 0, recess: 1, groove: 2, paint: 3, holes: 4 };
+  const HOLE = { circle: 0, square: 1, slot: 2 };
+  const ANISO = { concentric: 1, vinyl: 2, brushX: 3, ribs: 4 };
+  const TEX_W = 7; // texels per primitive row
+
+  const VS = `#version 300 es
+void main() { vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }`;
+
+  // Pass 1: evaluate the SDF primitive list → packed height, coverage, albedo, material, aux.
+  const FS_SCENE = `#version 300 es
+precision highp float; precision highp int;
+uniform highp sampler2D uPrims;
+uniform int uCount;
+uniform vec2 uRes;
+uniform vec3 uView;   // u = uView.xy + pixel * uView.z  (y down)
+layout(location = 0) out vec4 oG0;
+layout(location = 1) out vec4 oG1;
+layout(location = 2) out vec4 oG2;
+vec4 T(int i, int k) { return texelFetch(uPrims, ivec2(k, i), 0); }
+float sdBox(vec2 p, vec2 b, float r, float e) {
+  r = min(r, min(b.x, b.y));
+  vec2 q = abs(p) - b + r;
+  vec2 qp = max(q, 0.0);
+  float outer;
+  if (abs(e - 2.0) < 0.01) outer = length(qp) - r;
+  else {
+    float L = pow(pow(qp.x, e) + pow(qp.y, e), 1.0 / e);
+    if (L > 1e-5) {
+      vec2 g = pow(qp / L, vec2(e - 1.0));
+      outer = (L - r) / max(length(g), 0.5);   // p-norm → approx. Euclidean distance
+    } else outer = -r;
+  }
+  return outer + min(max(q.x, q.y), 0.0);
+}
+float sdCapsule(vec2 p, vec2 b, float r) { float h = clamp(dot(p, b) / max(dot(b, b), 1e-6), 0.0, 1.0); return length(p - b * h) - r; }
+float shapeSD(int type, vec2 p, vec4 g) {
+  if (type == 0) return sdBox(p, g.xy, g.z, g.w);
+  if (type == 1) return length(p) - g.x;
+  if (type == 2) return sdCapsule(p, g.xy, g.z);
+  return abs(length(p) - g.x) - g.y * 0.5;
+}
+float inradius(int type, vec4 g) {
+  if (type == 0) return min(g.x, g.y);
+  if (type == 1) return g.x;
+  if (type == 2) return g.z;
+  return g.y * 0.5;
+}
+// Dome profile from smooth level sets (an SDF-based dome would crease along the medial axis).
+float domeShape(int type, vec2 p, vec4 g, float t) {
+  if (type == 0) { vec2 q = abs(p) / max(g.xy, vec2(1e-4)); float s = pow(pow(q.x, 4.0) + pow(q.y, 4.0), 0.25); return clamp(1.0 - s * s, 0.0, 1.0); }
+  if (type == 1) { float s = length(p) / g.x; return clamp(1.0 - s * s, 0.0, 1.0); }
+  float x = 1.0 - clamp(t / inradius(type, g), 0.0, 1.0); return 1.0 - x * x;
+}
+float qr(float x) { x = clamp(x, 0.0, 1.0); return sqrt(max(1.0 - (1.0 - x) * (1.0 - x), 0.0)); }
+// Elliptical fillet: e = horizontal extent, ev = vertical drop (0 → circular, ev = e).
+float raiseH(float t, float H, float e, float ev) { float rr = min(ev > 0.0 ? ev : e, H); return (H - rr) + rr * qr(t / max(e, 1e-4)); }
+float recessH(float t, float D, float e, float f) {
+  e = min(e, D); f = min(f, max(D - e, 0.0));
+  if (t < e) return -e + sqrt(max(e * e - t * t, 0.0));
+  float s = t - e;
+  if (s < f) return -D + f - sqrt(max(f * f - (f - s) * (f - s), 0.0));
+  return -D;
+}
+void main() {
+  vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  vec2 p = uView.xy + px * uView.z;
+  float aa = uView.z;
+  float h = 0.0, cov = 0.0, mat = 0.0;
+  vec3 alb = vec3(0.0);
+  vec2 aux = vec2(0.5, 0.0);
+  for (int i = 0; i < 2048; i++) {
+    if (i >= uCount) break;
+    vec4 a0 = T(i, 0), a1 = T(i, 1), a2 = T(i, 2);
+    int type = int(a0.x + 0.5), op = int(a0.y + 0.5);
+    vec2 lp = p - a0.zw;
+    if (a2.w != 0.0) { float cs = cos(a2.w), sn = sin(a2.w); lp = vec2(cs * lp.x + sn * lp.y, -sn * lp.x + cs * lp.y); }
+    float d = shapeSD(type, lp, a1);
+    vec4 a5 = T(i, 5), a6 = T(i, 6);
+    if (op == 2) {
+      float hw = a6.w * 0.5;
+      float hwE = max(hw, 0.9 * aa);            // keep sub-pixel grooves visible at small sizes
+      float depth = a2.x * hw / hwE;
+      float dd = abs(d + a6.z);
+      if (dd < hwE) {
+        // V-groove with rounded lips: the wall facing the light reads as a thin bright line, the other as a dark one.
+        h -= depth * (1.0 - smoothstep(0.0, 1.0, dd / hwE));
+        alb *= 1.0 - a5.x * smoothstep(hwE * 0.5, 0.0, dd);   // baked occlusion at the bottom of the slot
+      }
+      continue;
+    }
+    if (d > aa) continue;
+    vec4 a3 = T(i, 3), a4 = T(i, 4);
+    float c = clamp(0.5 - d / aa, 0.0, 1.0);
+    float t = max(-d, 0.0);
+    float flags = a5.w;
+    bool stackMax = mod(flags, 2.0) >= 1.0;
+    bool auxOn = mod(floor(flags / 2.0), 2.0) >= 1.0;
+    float paintC = c;
+    float covPrev = cov;
+    if (op == 0) {
+      float hp = raiseH(t, a2.x, a2.y, a6.x);
+      if (a2.z != 0.0) hp += a2.z * domeShape(type, lp, a1, t);
+      if (a5.z > 0.0) {
+        float ang = atan(lp.y, lp.x);
+        hp += a6.y * (0.5 + 0.5 * cos(ang * a5.z)) * (1.0 - clamp(t / max(a2.y * 1.3, aa), 0.0, 1.0));
+      }
+      if (stackMax) h = mix(h, max(h, hp), c); else h += hp * c;
+      cov = max(cov, c);
+    } else if (op == 1) {
+      h += recessH(t, a2.x, a2.y, a6.x) * c;
+    } else if (op == 4) {
+      vec2 pitch = a4.yz;
+      vec2 cell = floor(lp / pitch + 0.5);
+      vec2 cc = cell * pitch;
+      vec2 q = lp - cc;
+      float dc = shapeSD(type, cc, a1);
+      int hs = int(a4.w + 0.5);
+      float dH;
+      if (hs == 0) dH = length(q) - a5.x;
+      else if (hs == 1) dH = sdBox(q, vec2(a5.x, a5.y), min(a5.x, a5.y) * 0.3, 2.0);
+      else dH = sdBox(q, vec2(a5.x, a5.y), min(a5.x, a5.y), 2.0);
+      float valid = step(dc, -max(a5.x, a5.y) * 0.6);
+      float hc = clamp(0.5 - dH / aa, 0.0, 1.0) * valid;
+      float th = max(-dH, 0.0);
+      h += recessH(th, a2.x, a2.y, 0.0) * hc;
+      paintC = hc * smoothstep(0.0, a2.y * 2.0 + aa, th);
+    }
+    float w = paintC;
+    if (op == 0 && covPrev < 1.0) w = max(paintC, 1.0 - covPrev);
+    if (a3.w > 0.5) alb = mix(alb, a3.rgb, clamp(w, 0.0, 1.0));
+    if (w > 0.5 && a4.x >= 0.0) {
+      mat = a4.x;
+      aux = auxOn ? vec2(atan(lp.y, lp.x) / 6.2831853 + 0.5, length(lp) / 100.0) : vec2(0.5, 0.0);
+    }
+  }
+  float hv = clamp((h + 8.0) / 32.0, 0.0, 1.0);
+  float v16 = floor(hv * 65535.0 + 0.5);
+  float hi = floor(v16 / 256.0);
+  oG0 = vec4(hi / 255.0, (v16 - hi * 256.0) / 255.0, mat / 255.0, cov);
+  oG1 = vec4(alb, 1.0);
+  oG2 = vec4(aux, 0.0, 1.0);
+}`;
+
+  // Pass 2: studio lighting on the height field.
+  const FS_LIGHT = `#version 300 es
+precision highp float; precision highp int;
+uniform highp sampler2D uG0, uG1, uG2, uInk;
+uniform vec2 uRes;
+uniform vec3 uView;
+uniform vec3 uL;      // unit light dir, x right / y up / z to viewer
+uniform vec3 uLs;     // direction used for cast shadows (higher than uL: big soft box → short contact shadows)
+uniform vec4 uK;      // key, ambient, softness, -
+uniform vec4 uK2;     // shadow strength, falloff, ao strength, specular scale
+uniform vec4 uBg;     // background sRGB + alpha
+uniform vec4 uBgS;    // bg shadow strength, wall gap
+uniform vec4 uMat[60];
+out vec4 o;
+float H(ivec2 q) {
+  q = clamp(q, ivec2(0), ivec2(uRes) - 1);
+  vec4 g = texelFetch(uG0, q, 0);
+  float v16 = floor(g.r * 255.0 + 0.5) * 256.0 + floor(g.g * 255.0 + 0.5);
+  return v16 / 65535.0 * 32.0 - 8.0;
+}
+vec3 toLin(vec3 c) { return pow(max(c, 0.0), vec3(2.2)); }
+vec3 toSrgb(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
+float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  float a = hash(i), b = hash(i + vec2(1, 0)), c = hash(i + vec2(0, 1)), d = hash(i + vec2(1, 1));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+float shadowRay(vec2 q, float h0) {
+  vec2 dir = normalize(uLs.xy);
+  float tanE = uLs.z / max(length(uLs.xy), 1e-3);
+  float res = 1.0, dist = 1.0;
+  for (int k = 0; k < 64; k++) {
+    vec2 sp = q + dir * dist;
+    if (sp.x < 0.0 || sp.y < 0.0 || sp.x >= uRes.x || sp.y >= uRes.y) break;
+    float du = dist * uView.z;
+    float hs = H(ivec2(sp));
+    float pen = uK.z * du + 0.04;
+    res = min(res, clamp(0.5 + (h0 + du * tanE - hs) / pen, 0.0, 1.0));
+    if (res < 0.01 || du > 24.0) break;
+    dist += max(1.0, dist * 0.09);
+  }
+  return res;
+}
+float aoAt(vec2 q, float h0) {
+  float occ = 0.0;
+  for (int k = 0; k < 8; k++) {
+    float a = float(k) * 0.7853982 + 0.39;
+    vec2 dv = vec2(cos(a), sin(a));
+    float r1 = max(0.6 / uView.z, 1.0), r2 = max(2.0 / uView.z, 2.0);
+    occ += clamp((H(ivec2(q + dv * r1)) - h0) / (r1 * uView.z), 0.0, 1.2) * 0.6;
+    occ += clamp((H(ivec2(q + dv * r2)) - h0) / (r2 * uView.z), 0.0, 1.2) * 0.4;
+  }
+  return clamp(1.0 - uK2.z * occ / 8.0, 0.0, 1.0);
+}
+// Studio environment: dark ceiling, light floor sweep below, soft box in the key-light direction.
+vec3 env(vec3 R) {
+  float sky = mix(0.08, 0.20, smoothstep(-0.2, 0.9, R.y));
+  float floorB = smoothstep(-0.05, -0.5, R.y) * 0.5;
+  float box = smoothstep(0.88, 0.975, dot(R, uL)) * 3.0;
+  return vec3(sky + floorB + box);
+}
+void main() {
+  ivec2 q = ivec2(gl_FragCoord.xy);
+  vec2 qf = vec2(q);
+  vec4 g0 = texelFetch(uG0, q, 0);
+  float cov = g0.a;
+  // background (optionally receives the object's shadow on a wall behind it)
+  float bgSh = 0.0;
+  if (cov < 0.999 && uBgS.x > 0.0) bgSh = (1.0 - shadowRay(qf, -uBgS.y)) * uBgS.x;
+  vec3 bgC = uBg.rgb * (1.0 - 0.45 * bgSh);
+  float bgA = uBg.a;
+  if (bgA < 0.5) { bgC = vec3(0.12, 0.11, 0.10); bgA = bgSh * 0.30; }
+  if (cov < 0.002) { o = vec4(bgC * bgA, bgA); return; }
+
+  float h0 = H(q);
+  float h00 = H(q + ivec2(-1, -1)), h10 = H(q + ivec2(0, -1)), h20 = H(q + ivec2(1, -1));
+  float h01 = H(q + ivec2(-1, 0)),                              h21 = H(q + ivec2(1, 0));
+  float h02 = H(q + ivec2(-1, 1)),  h12 = H(q + ivec2(0, 1)),  h22 = H(q + ivec2(1, 1));
+  float gx = ((h20 + 2.0 * h21 + h22) - (h00 + 2.0 * h01 + h02)) / (8.0 * uView.z);
+  float gy = ((h02 + 2.0 * h12 + h22) - (h00 + 2.0 * h10 + h20)) / (8.0 * uView.z);
+  vec3 N = normalize(vec3(-gx, -gy, 1.0));
+
+  int mid = int(g0.b * 255.0 + 0.5);
+  vec4 m0 = uMat[mid * 3], m1 = uMat[mid * 3 + 1], m2 = uMat[mid * 3 + 2];
+  // m0: spec, gloss, wrap, metal | m1: grain, bump, aniso, env | m2: emissive, sss, -, -
+  vec3 albS = texelFetch(uG1, q, 0).rgb;
+  vec4 ink = texelFetch(uInk, ivec2(q.x, int(uRes.y) - 1 - q.y), 0);
+  albS = mix(albS, ink.rgb, ink.a);
+  vec3 alb = toLin(albS);
+  vec2 pu = uView.xy + vec2(qf.x + 0.5, uRes.y - qf.y - 0.5) * uView.z;
+  vec4 g2 = texelFetch(uG2, q, 0);
+  float ang = (g2.x - 0.5) * 6.2831853, rad = g2.y * 100.0;
+
+  // Grain octaves fade out once a noise cell is smaller than ~1 px; otherwise they alias into blotches.
+  float cpx = 1.0 / uView.z;   // px per u
+  float o1 = smoothstep(0.6, 1.6, cpx / 9.0), o2 = smoothstep(0.6, 1.6, cpx / 23.0), ob = smoothstep(0.6, 1.6, cpx / 14.0);
+  float gn = o1 * (vnoise(pu * 9.0) - 0.5) + 0.6 * o2 * (vnoise(pu * 23.0 + 3.1) - 0.5);
+  alb *= 1.0 + m1.x * gn * 2.0;
+  N = normalize(N + vec3(vnoise(pu * 14.0 + 7.1) - 0.5, vnoise(pu * 14.0 + 3.3) - 0.5, 0.0) * m1.y * 0.6 * ob);
+
+  int an = int(m1.z + 0.5);
+  vec3 Tg = vec3(0.0);
+  if (an == 1 || an == 2) {
+    Tg = normalize(vec3(sin(ang), cos(ang), 0.0));
+    // angle enters through cos/sin so the noise has no seam where atan wraps
+    float circ = 0.5 * (vnoise(vec2(rad * 30.0, 3.0 * cos(ang))) + vnoise(vec2(rad * 30.0 + 41.0, 3.0 * sin(ang))));
+    if (an == 1) alb *= 1.0 + (circ - 0.5) * 0.16;
+    else {
+      float amp = smoothstep(1.5, 3.0, 0.32 / uView.z);
+      alb *= 1.0 + amp * 0.35 * sin(rad / 0.32 * 6.2831853) + (circ - 0.5) * 0.3;
+    }
+  } else if (an == 3) {
+    Tg = vec3(1.0, 0.0, 0.0);
+    alb *= 1.0 + (vnoise(vec2(pu.x * 1.5, pu.y * 40.0)) - 0.5) * 0.14;
+  } else if (an == 4) {
+    Tg = vec3(0.0, 1.0, 0.0);
+    float amp = smoothstep(1.5, 3.0, 0.9 / uView.z);
+    N = normalize(N + vec3(sin(pu.x / 0.9 * 6.2831853) * 0.35 * amp, 0.0, 0.0));
+  }
+
+  vec3 L = uL, V = vec3(0.0, 0.0, 1.0), Hh = normalize(L + V);
+  float NdL = dot(N, L);
+  float diff = clamp((NdL + m0.z) / (1.0 + m0.z), 0.0, 1.0);
+  float shadow = mix(1.0, shadowRay(qf, h0), uK2.x);
+  float ao = aoAt(qf, h0);
+  vec2 ld = normalize(uL.xy);
+  float fall = 1.0 + uK2.y * dot(ld, vec2(pu.x - 50.0, 50.0 - pu.y) / 50.0);
+  float lit = uK.x * diff * shadow * fall;
+  vec3 col = alb * (uK.y * (1.0 + 0.15 * N.y) * ao + lit);
+  col += alb * m2.y * (1.0 - min(lit / max(uK.x, 1e-3), 1.0)) * 0.22 * ao;   // light bleed in saturated plastic
+
+  float gloss = max(m0.y, 1.0);
+  float spec;
+  if (an > 0) { float th = dot(Tg, Hh); spec = pow(sqrt(max(1.0 - th * th, 0.0)), gloss) * max(NdL, 0.0) * 0.5; }
+  else spec = pow(max(dot(N, Hh), 0.0), gloss) * (gloss + 8.0) / 60.0;
+  float fres = pow(1.0 - max(N.z, 0.0), 5.0);
+  vec3 tint = mix(vec3(1.0), alb / max(max(alb.r, max(alb.g, alb.b)), 1e-3), m0.w);
+  float inkDull = 1.0 - 0.6 * ink.a;
+  col += tint * spec * m0.x * (1.0 + 3.0 * fres) * uK2.w * uK.x * shadow * inkDull;
+  if (m1.w > 0.0) { vec3 R = reflect(-V, N); col += env(R) * m1.w * (0.35 + 0.65 * fres + 0.5 * m0.w) * tint * ao * inkDull; }
+  col += alb * m2.x;
+
+  vec3 objS = toSrgb(col);
+  o = vec4(objS * cov + bgC * bgA * (1.0 - cov), cov + bgA * (1.0 - cov));
+}`;
+
+  let gl = null, glCanvas = null, progScene = null, progLight = null, primTex = null, inkTex = null, fbo = null;
+  const gTex = [];
+  const inkCache = new Map();
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  function link(fs) {
+    const p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, VS));
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(p, i); const name = info.name.replace(/\[0\]$/, ''); u[name] = gl.getUniformLocation(p, info.name); }
+    return { p, u };
+  }
+  function makeTex() {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return t;
+  }
+  function initGL() {
+    if (progLight) return;
+    glCanvas = document.createElement('canvas');
+    gl = glCanvas.getContext('webgl2', { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: false, alpha: true });
+    if (!gl) throw new Error('WebGL2 不可用');
+    progScene = link(FS_SCENE);
+    progLight = link(FS_LIGHT);
+    primTex = makeTex(); inkTex = makeTex();
+    for (let i = 0; i < 3; i++) gTex.push(makeTex());
+    fbo = gl.createFramebuffer();
+  }
+
+  /* ---------- colour / config helpers ---------- */
+  function hexToRgb(hex) {
+    const h = hex.replace('#', '');
+    const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    return [parseInt(v.slice(0, 2), 16) / 255, parseInt(v.slice(2, 4), 16) / 255, parseInt(v.slice(4, 6), 16) / 255];
+  }
+  function paletteFor(cfg, opts) {
+    const pal = Object.assign({}, cfg.palette, (cfg.shells || {})[opts.shell] || {}, opts.palette || {});
+    if (opts.accent) pal.accent = opts.accent;
+    return pal;
+  }
+  function colorOf(c, pal) { return c == null ? null : (pal[c] || c); }
+  function materialIndex(cfg) {
+    const names = Object.keys(cfg.materials);
+    const idx = {}; names.forEach((n, i) => { idx[n] = i + 1; });
+    return { names, idx };
+  }
+  function lightVector(az, el) {
+    const a = az * Math.PI / 180, e = el * Math.PI / 180;
+    return [Math.cos(e) * Math.cos(a), Math.cos(e) * Math.sin(a), Math.sin(e)];
+  }
+
+  /* ---------- scene expansion: def → primitive list ---------- */
+  function expand(list) {
+    const out = [];
+    for (const part of list || []) {
+      if (!part.repeat) { out.push(part); continue; }
+      const { nx = 1, ny = 1, dx = 0, dy = 0 } = part.repeat;
+      let k = 0;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++, k++) {
+        const inst = Object.assign({}, part, { x: part.x + i * dx, y: part.y + j * dy, repeat: null, each: null }, (part.each || {})[k] || {});
+        out.push(inst);
+      }
+    }
+    return out;
+  }
+  function shellParts(cfg, def) {
+    const S = cfg.shell, b = Object.assign({}, cfg.body, def.body || {});
+    const r = S.cornerRatio * Math.min(b.w, b.h);
+    const base = { shape: 'rrect', x: b.x, y: b.y, w: b.w, h: b.h, r, p: S.cornerExp };
+    return [
+      Object.assign({}, base, { op: 'raise', H: S.thickness, e: S.edge, ev: S.edgeDrop, color: b.color || 'shell', mat: b.mat || 'shell', stack: 'max' }),
+      Object.assign({}, base, { op: 'groove', depth: S.grooveDepth, width: S.grooveWidth, inset: S.rim, cavity: S.grooveCavity }),
+    ];
+  }
+  function scenePrims(cfg, def) {
+    const list = [].concat(expand(def.under), def.body === false ? [] : shellParts(cfg, def), expand(def.parts));
+    return list.map(p => {
+      if (p.shape !== 'hand') return p;
+      const a = p.angle * Math.PI / 180, dx = Math.sin(a), dy = -Math.cos(a);
+      return Object.assign({}, p, { shape: 'capsule', x1: p.x - dx * (p.tail || 0), y1: p.y - dy * (p.tail || 0), x2: p.x + dx * p.len, y2: p.y + dy * p.len, r: p.w / 2 });
+    });
+  }
+  function packPrims(prims, pal, cfg, mi) {
+    const data = new Float32Array(Math.max(prims.length, 1) * TEX_W * 4);
+    prims.forEach((p, i) => {
+      const o = i * TEX_W * 4;
+      const type = SHAPES[p.shape] ?? 0, op = OPS[p.op || 'raise'];
+      let cx = p.x, cy = p.y, g = [0, 0, 0, 2];
+      if (p.shape === 'rrect') g = [p.w / 2, p.h / 2, p.r || 0, p.p || 2];
+      else if (p.shape === 'circle') g = [p.r, 0, 0, 0];
+      else if (p.shape === 'capsule') { cx = p.x1; cy = p.y1; g = [p.x2 - p.x1, p.y2 - p.y1, p.r, 0]; }
+      else if (p.shape === 'ring') g = [p.r, p.width, 0, 0];
+      const H = op === 1 || op === 4 || op === 2 ? (p.depth ?? 1) : (p.H ?? 1);
+      const col = colorOf(p.color, pal);
+      const rgb = col ? hexToRgb(col) : [0, 0, 0];
+      const matName = p.mat || (op === 4 ? 'hole' : null);
+      const mat = matName ? (mi.idx[matName] || 0) : 0;
+      const m = matName ? cfg.materials[matName] || {} : {};
+      const auxOn = m.aniso === 'concentric' || m.aniso === 'vinyl';
+      const flags = (p.stack === 'max' ? 1 : 0) + (auxOn ? 2 : 0);
+      const pitch = p.pitch || 2;
+      data.set([
+        type, op, cx, cy,
+        g[0], g[1], g[2], g[3],
+        H, p.e ?? 0.5, p.dome || 0, (p.rot || 0) * Math.PI / 180,
+        rgb[0], rgb[1], rgb[2], col ? 1 : 0,
+        matName ? mat : (op === 0 ? 0 : -1), p.pitchX || pitch, p.pitchY || pitch, HOLE[p.holeShape || 'circle'],
+        op === 2 ? (p.cavity ?? 0.45) : (p.hole || 0.5), p.holeB || p.hole || 0.5, p.ridges || 0, flags,
+        op === 0 ? (p.ev || 0) : (p.floor || 0), p.ridgeDepth || 0, p.inset || 0, p.width || 0.6,
+      ], o);
+    });
+    return data;
+  }
+
+  /* ---------- print layer (ink): text, LCD digits, glyphs, scales ---------- */
+  const SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcfgd',
+    '-': 'g', ' ': '', 'A': 'abcefg', 'b': 'cdefg', 'C': 'adef', 'd': 'bcdeg', 'E': 'adefg', 'F': 'aefg', 'H': 'bcefg', 'L': 'def', 'o': 'cdeg', 'P': 'abefg', 'r': 'eg', 'U': 'bcdef', 'n': 'ceg' };
+  const GLYPHS = {
+    play: { d: 'M8 5.2 L19 12 L8 18.8 Z', fill: true },
+    pause: { d: 'M6.5 5h3.8v14H6.5z M13.7 5h3.8v14h-3.8z', fill: true },
+    prev: { d: 'M5.5 5.5h2.6v13H5.5z M19 5.5 L9.2 12 L19 18.5Z', fill: true },
+    next: { d: 'M15.9 5.5h2.6v13h-2.6z M5 5.5 L14.8 12 L5 18.5Z', fill: true },
+    plus: { d: 'M12 4.5v15 M4.5 12h15', lw: 2.4 },
+    minus: { d: 'M4.5 12h15', lw: 2.4 },
+    power: { d: 'M12 3.5v8 M7.2 6.6a7.6 7.6 0 1 0 9.6 0', lw: 2.2 },
+    sun: { d: 'M12 8.2a3.8 3.8 0 1 0 0.01 0Z M12 1.8v3 M12 19.2v3 M1.8 12h3 M19.2 12h3 M4.8 4.8l2.1 2.1 M17.1 17.1l2.1 2.1 M4.8 19.2l2.1-2.1 M17.1 6.9l2.1-2.1', lw: 1.8 },
+    drop: { d: 'M12 3 C12 3 5.5 10.5 5.5 14.5 a6.5 6.5 0 0 0 13 0 C18.5 10.5 12 3 12 3Z', fill: true },
+    bell: { d: 'M6 17h12l-1.6-2.4V10a4.4 4.4 0 0 0-8.8 0v4.6Z M10.2 19.2a1.9 1.9 0 0 0 3.6 0', lw: 1.8 },
+  };
+  const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  function tokens(s, date) {
+    return String(s).replace(/\{dd\}/g, String(date.getDate()).padStart(2, '0')).replace(/\{MON\}/g, MON[date.getMonth()]).replace(/\{DOW\}/g, DOW[date.getDay()])
+      .replace(/\{HH\}/g, String(date.getHours()).padStart(2, '0')).replace(/\{mm\}/g, String(date.getMinutes()).padStart(2, '0'));
+  }
+  function fontOf(cfg, name, weight, size) { return `${weight || 400} ${size}px ${cfg.fonts[name || 'label'] || name}`; }
+  function drawText(ctx, str, x, y, o, cfg, color) {
+    const size = o.size || 4;
+    ctx.font = fontOf(cfg, o.font, o.weight, size);
+    ctx.fillStyle = color;
+    ctx.textBaseline = o.baseline || 'alphabetic';
+    const track = (o.track || 0) * size;
+    if (!track) { ctx.textAlign = o.align || 'left'; ctx.fillText(str, x, y); return; }
+    const chars = [...str];
+    const widths = chars.map(c => ctx.measureText(c).width);
+    const total = widths.reduce((a, b) => a + b, 0) + track * (chars.length - 1);
+    let cx = o.align === 'center' ? x - total / 2 : o.align === 'right' ? x - total : x;
+    ctx.textAlign = 'left';
+    chars.forEach((c, i) => { ctx.fillText(c, cx, y); cx += widths[i] + track; });
+  }
+  function hseg(ctx, x0, x1, y, t) { ctx.moveTo(x0, y); ctx.lineTo(x0 + t / 2, y - t / 2); ctx.lineTo(x1 - t / 2, y - t / 2); ctx.lineTo(x1, y); ctx.lineTo(x1 - t / 2, y + t / 2); ctx.lineTo(x0 + t / 2, y + t / 2); ctx.closePath(); }
+  function vseg(ctx, x, y0, y1, t) { ctx.moveTo(x, y0); ctx.lineTo(x + t / 2, y0 + t / 2); ctx.lineTo(x + t / 2, y1 - t / 2); ctx.lineTo(x, y1); ctx.lineTo(x - t / 2, y1 - t / 2); ctx.lineTo(x - t / 2, y0 + t / 2); ctx.closePath(); }
+  function drawDigit(ctx, ch, x, yTop, h) {
+    const w = h * 0.54, t = h * 0.12, g = h * 0.025;
+    const L = x + t / 2, R = x + w - t / 2, top = yTop + t / 2, mid = yTop + h / 2, bot = yTop + h - t / 2;
+    const segs = SEG[ch] || '';
+    ctx.beginPath();
+    for (const s of segs) {
+      if (s === 'a') hseg(ctx, L + g, R - g, top, t);
+      if (s === 'g') hseg(ctx, L + g, R - g, mid, t);
+      if (s === 'd') hseg(ctx, L + g, R - g, bot, t);
+      if (s === 'f') vseg(ctx, L, top + g, mid - g, t);
+      if (s === 'b') vseg(ctx, R, top + g, mid - g, t);
+      if (s === 'e') vseg(ctx, L, mid + g, bot - g, t);
+      if (s === 'c') vseg(ctx, R, mid + g, bot - g, t);
+    }
+    ctx.fill();
+  }
+  function drawLCD(ctx, o, color) {
+    const h = o.h, adv = h * 0.54 + h * 0.2, yTop = o.y - h;
+    const cells = [];
+    for (const ch of String(o.text)) { if (ch === '.' || ch === ':') { if (cells.length) cells[cells.length - 1].dot = ch; } else cells.push({ ch }); }
+    const total = cells.length * adv - h * 0.2;
+    let x = o.align === 'right' ? o.x - total : o.align === 'center' ? o.x - total / 2 : o.x;
+    for (const c of cells) {
+      if (o.ghost) { ctx.globalAlpha = o.ghost; ctx.fillStyle = color; drawDigit(ctx, '8', x, yTop, h); }
+      ctx.globalAlpha = 1; ctx.fillStyle = color; drawDigit(ctx, c.ch, x, yTop, h);
+      if (c.dot) {
+        const s = h * 0.12, dx = x + h * 0.54 + h * 0.04;
+        if (c.dot === '.') ctx.fillRect(dx, o.y - s, s, s);
+        else { ctx.fillRect(dx, yTop + h * 0.28, s, s); ctx.fillRect(dx, yTop + h * 0.66, s, s); }
+      }
+      x += adv;
+    }
+    ctx.globalAlpha = 1;
+  }
+  function polar(cx, cy, r, deg) { const a = deg * Math.PI / 180; return [cx + Math.sin(a) * r, cy - Math.cos(a) * r]; }
+  function drawPrints(ctx, def, pal, cfg, opts) {
+    const date = opts.date || new Date();
+    const prints = expandPrints(def.prints || []);
+    const L = cfg.labels;
+    if (def.label !== false) {
+      const lb = Object.assign({}, L, def.labels || {});
+      if (lb.brand && cfg.brand) drawText(ctx, cfg.brand.toUpperCase(), lb.brand[0], lb.brand[1], { size: L.brandSize, font: 'brand', weight: 600, align: lb.brand[2], track: 0.06 }, cfg, colorOf('ink', pal));
+      if (lb.model && def.label) drawText(ctx, def.label, lb.model[0], lb.model[1], { size: L.modelSize, weight: 400, align: lb.model[2] }, cfg, colorOf('ink', pal));
+    }
+    for (const o of prints) {
+      const color = colorOf(o.color || 'ink', pal);
+      ctx.save();
+      ctx.fillStyle = color; ctx.strokeStyle = color;
+      if (o.type === 'text') drawText(ctx, tokens(o.text, date), o.x, o.y, o, cfg, color);
+      else if (o.type === 'lcd') drawLCD(ctx, Object.assign({}, o, { text: tokens(o.text, date) }), color);
+      else if (o.type === 'glyph') {
+        const g = GLYPHS[o.name]; if (!g) { ctx.restore(); continue; }
+        const s = o.size / 24;
+        ctx.translate(o.x - 12 * s, o.y - 12 * s); ctx.scale(s, s);
+        const path = new Path2D(g.d);
+        if (g.fill) ctx.fill(path); else { ctx.lineWidth = g.lw || 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path); }
+      } else if (o.type === 'ticks') {
+        const n = o.n, from = o.from ?? 0, to = o.to ?? 360, full = Math.abs(to - from) >= 360;
+        ctx.lineWidth = o.width; ctx.lineCap = 'butt';
+        for (let i = 0; i < n; i++) {
+          if (o.skip && i % o.skip === 0) continue;
+          const a = from + (to - from) * i / (full ? n : n - 1);
+          const [x1, y1] = polar(o.x, o.y, o.r1, a), [x2, y2] = polar(o.x, o.y, o.r2, a);
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        }
+      } else if (o.type === 'dial') {
+        const n = o.values.length;
+        ctx.font = fontOf(cfg, o.font, o.weight || 500, o.size); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        o.values.forEach((v, i) => { const [x, y] = polar(o.x, o.y, o.r, o.from + (o.to - o.from) * i / (n - 1)); ctx.fillText(v, x, y); });
+      } else if (o.type === 'arc') {
+        ctx.lineWidth = o.width; ctx.beginPath();
+        ctx.arc(o.x, o.y, o.r, (o.from - 90) * Math.PI / 180, (o.to - 90) * Math.PI / 180); ctx.stroke();
+      } else if (o.type === 'arcText') {
+        ctx.font = fontOf(cfg, o.font, o.weight || 500, o.size); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const chars = [...tokens(o.text, date)], track = (o.track || 0) * o.size;
+        const widths = chars.map(c => ctx.measureText(c).width + track);
+        const total = widths.reduce((a, b) => a + b, 0);
+        let a = (o.at || 0) - (total / o.r) * 90 / Math.PI;
+        chars.forEach((c, i) => {
+          const da = widths[i] / o.r * 180 / Math.PI;
+          const mid = a + da / 2, [x, y] = polar(o.x, o.y, o.r, mid);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(mid * Math.PI / 180); ctx.fillText(c, 0, 0); ctx.restore();
+          a += da;
+        });
+      } else if (o.type === 'rect') { ctx.fillRect(o.x, o.y, o.w, o.h); }
+      else if (o.type === 'rects') { for (const [x, y, w, h] of o.items) ctx.fillRect(x, y, w, h); }
+      else if (o.type === 'poly') {
+        ctx.lineWidth = o.width || 0.5; ctx.lineJoin = 'round'; ctx.beginPath();
+        o.points.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        if (o.fill) ctx.fill(); else ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  function expandPrints(list) {
+    const out = [];
+    for (const o of list) {
+      if (!o.repeat) { out.push(o); continue; }
+      const { nx = 1, ny = 1, dx = 0, dy = 0 } = o.repeat;
+      let k = 0;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++, k++) {
+        const inst = Object.assign({}, o, { x: o.x + i * dx, y: o.y + j * dy, repeat: null });
+        if (o.texts) inst.text = o.texts[k] ?? '';
+        if (o.eachColor && o.eachColor[k]) inst.color = o.eachColor[k];
+        out.push(inst);
+      }
+    }
+    return out;
+  }
+
+  /* ---------- main entry ---------- */
+  function superellipsePath(ctx, x, y, w, h, r, n) {
+    const steps = 24;
+    const corners = [[x + w - r, y + r, 0], [x + w - r, y + h - r, 1], [x + r, y + h - r, 2], [x + r, y + r, 3]];
+    ctx.beginPath();
+    corners.forEach(([cx, cy, k]) => {
+      for (let i = 0; i <= steps; i++) {
+        const t = (k * 90 + i * 90 / steps - 90) * Math.PI / 180;
+        const c = Math.cos(t), s = Math.sin(t);
+        const px = cx + r * Math.sign(c) * Math.pow(Math.abs(c), 2 / n);
+        const py = cy + r * Math.sign(s) * Math.pow(Math.abs(s), 2 / n);
+        (k === 0 && i === 0) ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+    });
+    ctx.closePath();
+  }
+
+  /**
+   * renderIcon(def, size, options) → HTMLCanvasElement (size × size px)
+   * options: { cfg, light:{azimuth,elevation,softness,...}, accent, shell, palette, tile:boolean,
+   *            background:'#hex'|null, wallShadow:0..1, supersample, date, target:HTMLCanvasElement }
+   */
+  function renderIcon(def, size, options = {}) {
+    initGL();
+    const cfg = options.cfg || CONFIG;
+    const light = Object.assign({}, cfg.light, options.light || {});
+    const pal = paletteFor(cfg, options);
+    const mi = materialIndex(cfg);
+    const ss = options.supersample || (size >= 512 ? 1.5 : 2);
+    const S = Math.max(8, Math.round(size * ss));
+    const tile = !!options.tile;
+    const ts = tile ? cfg.tile.scale : 1;
+    const k = S * ts / 100;                       // internal px per u
+    const off = tile ? S * (1 - ts) / 2 : 0;      // internal px offset of the object square
+    const view = [-off / k, -off / k, 1 / k];
+
+    const prims = scenePrims(cfg, def);
+    const data = packPrims(prims, pal, cfg, mi);
+
+    // ink layer (cached: fonts/text are the slowest part). The key holds everything drawPrints reads,
+    // so an edited definition or a different cfg with the same id never reuses stale text.
+    const day = options.date || new Date();
+    const inkKey = JSON.stringify([def.id, def.label, def.labels, def.prints, cfg.brand, cfg.labels, cfg.fonts, pal, S, ts,
+      day.toDateString(), day.getHours(), day.getMinutes()]);
+    let ink = inkCache.get(inkKey);
+    if (!ink) {
+      ink = document.createElement('canvas'); ink.width = S; ink.height = S;
+      const ictx = ink.getContext('2d');
+      ictx.setTransform(k, 0, 0, k, off, off);
+      drawPrints(ictx, def, pal, cfg, options);
+      inkCache.set(inkKey, ink);
+      if (inkCache.size > 60) inkCache.delete(inkCache.keys().next().value);
+    }
+
+    glCanvas.width = S; glCanvas.height = S;
+    gl.viewport(0, 0, S, S);
+    gl.disable(gl.BLEND);
+
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, primTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, TEX_W, Math.max(prims.length, 1), 0, gl.RGBA, gl.FLOAT, data);
+    gTex.forEach(t => { gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, S, S, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); });
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gTex.forEach((t, i) => gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, t, 0));
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1, gl.COLOR_ATTACHMENT2]);
+    gl.useProgram(progScene.p);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, primTex);
+    gl.uniform1i(progScene.u.uPrims, 0);
+    gl.uniform1i(progScene.u.uCount, prims.length);
+    gl.uniform2f(progScene.u.uRes, S, S);
+    gl.uniform3f(progScene.u.uView, view[0], view[1], view[2]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    // lighting pass → default framebuffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(progLight.p);
+    gTex.forEach((t, i) => { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, t); });
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, inkTex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, ink);
+    const u = progLight.u;
+    gl.uniform1i(u.uG0, 0); gl.uniform1i(u.uG1, 1); gl.uniform1i(u.uG2, 2); gl.uniform1i(u.uInk, 3);
+    gl.uniform2f(u.uRes, S, S);
+    gl.uniform3f(u.uView, view[0], view[1], view[2]);
+    gl.uniform3fv(u.uL, lightVector(light.azimuth, light.elevation));
+    gl.uniform3fv(u.uLs, lightVector(light.azimuth, Math.min(85, light.elevation + light.shadowLift)));
+    gl.uniform4f(u.uK, light.key, light.ambient, light.softness, 0);
+    gl.uniform4f(u.uK2, light.shadow, light.falloff, light.ao, light.specular);
+    const bg = options.background !== undefined ? options.background : (tile ? pal.tile : null);
+    const bgc = bg ? hexToRgb(bg) : [0, 0, 0];
+    gl.uniform4f(u.uBg, bgc[0], bgc[1], bgc[2], bg ? 1 : 0);
+    gl.uniform4f(u.uBgS, options.wallShadow ?? (tile ? 0.35 : 0), options.wallGap ?? 4, 0, 0);
+    const mats = new Float32Array(60 * 4);
+    mi.names.forEach((n, i) => {
+      const m = cfg.materials[n], o = (i + 1) * 12;
+      if (o + 12 > mats.length) return;
+      mats.set([m.spec || 0, m.gloss || 8, m.wrap ?? 0.2, m.metal || 0, m.grain || 0, m.bump || 0, ANISO[m.aniso] || 0, m.env || 0, m.emissive || 0, m.sss || 0, 0, 0], o);
+    });
+    gl.uniform4fv(u.uMat, mats);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    const out = options.target || document.createElement('canvas');
+    out.width = size; out.height = size;
+    const ctx = out.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+    ctx.save();
+    if (tile) {
+      const r = cfg.tile.cornerRatio * size;
+      superellipsePath(ctx, 0, 0, size, size, r, cfg.tile.cornerExp);
+      ctx.clip();
+    }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(glCanvas, 0, 0, S, S, 0, 0, size, size);
+    ctx.restore();
+    return out;
+  }
+
+  function fontsReady(cfg = CONFIG) {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    const fams = [`400 20px ${cfg.fonts.label}`, `500 20px ${cfg.fonts.label}`, `600 20px ${cfg.fonts.label}`, `600 20px ${cfg.fonts.brand}`];
+    return Promise.race([Promise.all(fams.map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]).then(() => inkCache.clear());
+  }
+
+  /**
+   * createIconGrid(container, defs, options)
+   * options: renderIcon options + { size (CSS px), labels:true, onSelect(def), tilt:true, columns }
+   */
+  function createIconGrid(container, defs, options = {}) {
+    let opts = Object.assign({ size: 60, labels: true, tilt: true }, options);
+    const grid = document.createElement('div');
+    grid.className = 'ri-grid';
+    if (opts.columns) grid.style.gridTemplateColumns = `repeat(${opts.columns}, 1fr)`;
+    const cells = defs.map(def => {
+      const btn = document.createElement('button');
+      btn.className = 'ri-cell'; btn.type = 'button'; btn.setAttribute('aria-label', def.name);
+      const cv = document.createElement('canvas');
+      const span = document.createElement('span'); span.textContent = def.name;
+      btn.append(cv, span);
+      if (!opts.labels) span.hidden = true;
+      grid.append(btn);
+      const cell = { def, btn, cv, raf: 0, tilt: [0, 0] };
+      const draw = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const L = Object.assign({}, CONFIG.light, opts.light || {});
+        const light = Object.assign({}, L, { azimuth: L.azimuth - cell.tilt[0] * 14, elevation: Math.max(8, L.elevation + cell.tilt[1] * 8) });
+        renderIcon(def, Math.round(opts.size * dpr), Object.assign({}, opts, { light, target: cv }));
+        cv.style.width = cv.style.height = opts.size + 'px';
+      };
+      cell.draw = draw;
+      btn.addEventListener('pointermove', e => {
+        if (!opts.tilt || e.pointerType === 'touch') return;
+        const r = cv.getBoundingClientRect();
+        const dx = ((e.clientX - r.left) / r.width - 0.5) * 2, dy = ((e.clientY - r.top) / r.height - 0.5) * 2;
+        cell.tilt = [Math.max(-1, Math.min(1, dx)), Math.max(-1, Math.min(1, dy))];
+        cv.style.transform = `rotateX(${(-cell.tilt[1] * 7).toFixed(2)}deg) rotateY(${(cell.tilt[0] * 7).toFixed(2)}deg)`;
+        if (!cell.raf) cell.raf = requestAnimationFrame(() => { cell.raf = 0; draw(); });
+      });
+      btn.addEventListener('pointerleave', () => { cell.tilt = [0, 0]; cv.style.transform = ''; btn.classList.remove('pressed'); draw(); });
+      btn.addEventListener('pointerdown', () => btn.classList.add('pressed'));
+      btn.addEventListener('pointerup', () => btn.classList.remove('pressed'));
+      btn.addEventListener('pointercancel', () => btn.classList.remove('pressed'));
+      btn.addEventListener('click', () => opts.onSelect && opts.onSelect(def));
+      return cell;
+    });
+    container.append(grid);
+    const api = {
+      update(next = {}) { opts = Object.assign(opts, next); cells.forEach(c => c.draw()); },
+      select(id) { cells.forEach(c => c.btn.setAttribute('aria-current', c.def.id === id ? 'true' : 'false')); },
+      destroy() { grid.remove(); },
+    };
+    api.update();
+    return api;
+  }
+
+  function exportPNG(defOrId, size = 1024, options = {}) {
+    const def = typeof defOrId === 'string' ? (options.cfg || CONFIG).icons.find(d => d.id === defOrId) : defOrId;
+    const cv = renderIcon(def, size, options);
+    return new Promise(res => cv.toBlob(res, 'image/png'));
+  }
+
+  return { config: CONFIG, renderIcon, createIconGrid, exportPNG, fontsReady, superellipsePath, lightVector };
+})();
+window.ReliefIcons = ReliefIcons;
+
+/* =========================================================================
+   Demo shell
+   ========================================================================= */
+(function demo() {
+  const state = {
+    id: 'camera', accent: 'orange', shell: 'ivory', tile: false,
+    light: { azimuth: CONFIG.light.azimuth, elevation: CONFIG.light.elevation, softness: CONFIG.light.softness },
+  };
+  const $ = s => document.querySelector(s);
+  const big = $('#big');
+  const defs = Object.fromEntries(CONFIG.icons.map(d => [d.id, d]));
+  const pageIds = ['clock', 'weather', 'calendar', 'camera', 'calculator', 'notes'];
+  const dockIds = ['mail', 'music', 'settings'];
+  let home, dock, bigRaf = 0;
+
+  function common() {
+    return { accent: CONFIG.accents[state.accent], shell: state.shell, light: Object.assign({}, state.light) };
+  }
+  function renderBig() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const css = Math.min(420, big.parentElement.clientWidth - 36);
+    const px = Math.max(240, Math.round(css * dpr));
+    ReliefIcons.renderIcon(defs[state.id], px, Object.assign(common(), { target: big }));
+    $('#meta').textContent = `${defs[state.id].label} · ${px}px`;
+    $('#vAz').textContent = Math.round(state.light.azimuth) + '°';
+    $('#vEl').textContent = Math.round(state.light.elevation) + '°';
+    $('#vSoft').textContent = state.light.softness.toFixed(2);
+    $('#az').value = state.light.azimuth; $('#el').value = state.light.elevation; $('#soft').value = state.light.softness;
+  }
+  function scheduleBig() { if (!bigRaf) bigRaf = requestAnimationFrame(() => { bigRaf = 0; renderBig(); }); }
+  function renderAll() {
+    const tileOpts = { tile: state.tile };
+    home.update(Object.assign(common(), tileOpts));
+    dock.update(Object.assign(common(), tileOpts));
+    renderBig();
+  }
+  function select(def) {
+    state.id = def.id;
+    $('#title').textContent = def.name;
+    $('#subtitle').textContent = `${def.label} · ${(def.parts || []).length + (def.under || []).length + 2} 个几何体`;
+    home.select(def.id); dock.select(def.id);
+    document.querySelector('#export').classList.remove('on');
+    renderBig();
+  }
+  function seg(el, items, key, onChange) {
+    el.innerHTML = '';
+    items.forEach(([val, text]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = text;
+      b.setAttribute('aria-pressed', String(state[key] === val));
+      b.addEventListener('click', () => { state[key] = val; [...el.children].forEach(c => c.setAttribute('aria-pressed', String(c === b))); onChange(); });
+      el.append(b);
+    });
+  }
+
+  ReliefIcons.fontsReady().then(() => {
+    try {
+      home = ReliefIcons.createIconGrid($('#home'), pageIds.map(i => defs[i]), Object.assign(common(), { size: 60, onSelect: select }));
+      dock = ReliefIcons.createIconGrid($('#dock'), dockIds.map(i => defs[i]), Object.assign(common(), { size: 60, onSelect: select, labels: false }));
+    } catch (err) {
+      document.querySelector('.layout').innerHTML = `<div class="err">无法渲染：${err.message}。这个页面需要浏览器支持 WebGL2。</div>`;
+      return;
+    }
+    const sw = $('#accents');
+    Object.entries(CONFIG.accents).forEach(([k, v]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.style.background = v; b.setAttribute('aria-label', k);
+      b.setAttribute('aria-pressed', String(state.accent === k));
+      b.addEventListener('click', () => { state.accent = k; [...sw.children].forEach(c => c.setAttribute('aria-pressed', String(c === b))); document.documentElement.style.setProperty('--accent', v); renderAll(); });
+      sw.append(b);
+    });
+    seg($('#shells'), [['ivory', '象牙白'], ['stone', '石灰'], ['graphite', '石墨']], 'shell', renderAll);
+    seg($('#modes'), [[false, '实物'], [true, 'iOS 底板']], 'tile', () => { $('#screen').classList.toggle('tile', state.tile); renderAll(); });
+    $('#az').addEventListener('input', e => { state.light.azimuth = +e.target.value; scheduleBig(); });
+    $('#el').addEventListener('input', e => { state.light.elevation = +e.target.value; scheduleBig(); });
+    $('#soft').addEventListener('input', e => { state.light.softness = +e.target.value; scheduleBig(); });
+    ['az', 'el', 'soft'].forEach(id => $('#' + id).addEventListener('change', renderAll));
+    $('#resetBtn').addEventListener('click', () => { state.light = { azimuth: CONFIG.light.azimuth, elevation: CONFIG.light.elevation, softness: CONFIG.light.softness }; renderAll(); });
+    let dragging = false;
+    const fromPointer = e => {
+      const r = big.getBoundingClientRect();
+      const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5;
+      state.light.azimuth = (Math.atan2(-dy, dx) * 180 / Math.PI + 360) % 360;
+      state.light.elevation = Math.max(12, Math.min(80, 80 - Math.hypot(dx, dy) * 2 * 68));
+      scheduleBig();
+    };
+    big.addEventListener('pointerdown', e => { dragging = true; big.setPointerCapture(e.pointerId); fromPointer(e); });
+    big.addEventListener('pointermove', e => dragging && fromPointer(e));
+    big.addEventListener('pointerup', () => { dragging = false; renderAll(); });
+    $('#exportBtn').addEventListener('click', async () => {
+      const blob = await ReliefIcons.exportPNG(defs[state.id], 1024, common());
+      window.lastExport = blob;
+      const img = $('#exportImg');
+      if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
+      img.dataset.url = URL.createObjectURL(blob); img.src = img.dataset.url;
+      $('#exportInfo').textContent = `${defs[state.id].id}.png · 1024 × 1024 · ${(blob.size / 1024).toFixed(0)} KB · window.lastExport 持有 Blob`;
+      $('#export').classList.add('on');
+    });
+    const t = new Date(); $('#clock').textContent = `${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`;
+    select(defs[state.id]);
+    let rt = 0;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderBig, 120); });
+  });
+})();
+</script>
+</body>
+</html>

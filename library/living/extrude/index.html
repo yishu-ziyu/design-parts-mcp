@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extrude · 像素拉成体素</title>
+<style>
+  :root {
+    --page: #08090c;
+    --ink: #e9ebf0;
+    --mute: #8a909c;
+    --line: #1c1f27;
+    --accent: #5fd0b0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--page); color: var(--ink); }
+  body {
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif;
+    overflow-x: hidden;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 64px; }
+  header h1 { font-size: clamp(22px, 3vw, 32px); margin: 0 0 6px; font-weight: 650; letter-spacing: -0.01em; }
+  header p { margin: 0 0 20px; color: var(--mute); max-width: 60ch; }
+
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
+    border-radius: 10px; background: #050608;
+    perspective: var(--persp, 1100px); perspective-origin: 50% 42%;
+    contain: layout paint;
+  }
+  .stage .sky {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(176deg, transparent 0 9%, rgba(160,170,190,.16) 9.4% 9.9%, transparent 10.4%),
+      radial-gradient(120% 70% at 50% 0%, #161a22 0%, #07080b 60%);
+  }
+  .stage .slot {
+    position: absolute; left: 42%; top: 20%; width: 9%; height: 46%;
+    background: #020203; border-radius: 3px; opacity: 0;
+  }
+  .stage .caret {
+    position: absolute; left: 6%; top: 30%; width: 9%; aspect-ratio: 1; transform-origin: 50% 50%;
+  }
+  .stage .caret svg { width: 100%; height: 100%; display: block; }
+  .stage .glow {
+    position: absolute; left: 50%; top: 74%; width: 52%; height: 22%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(50% 50% at 50% 50%, var(--glowc, rgba(95,208,176,.6)), transparent 72%);
+    opacity: 0; pointer-events: none;
+  }
+  .stage .fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+
+  .cam { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
+  .floor {
+    position: absolute; transform-style: preserve-3d;
+    background:
+      radial-gradient(16% 13% at 50% 50%, rgba(0,0,0,.6), transparent 100%),
+      linear-gradient(90deg, transparent 0 30%, rgba(170,180,200,.10) 45% 55%, transparent 70%),
+      linear-gradient(180deg, #1a1e27, #2a2f3a 55%, #11141a);
+    opacity: 0;
+  }
+  .rig { position: absolute; transform-style: preserve-3d; }
+  .vx { position: absolute; transform-style: preserve-3d; }
+  .vx > i {
+    position: absolute; display: block; backface-visibility: hidden;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,var(--seam, 0));
+  }
+  /* 体素比像素细一半：原片的体素网格密度约是平面像素的 2 倍 */
+  .vx > .f {
+    background-image:
+      linear-gradient(90deg, rgba(0,0,0,calc(var(--seam, 0) * .6)) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(0,0,0,calc(var(--seam, 0) * .6)) 1px, transparent 1px);
+    background-size: calc(var(--s) * .5) calc(var(--s) * .5);
+  }
+  .vx > .l, .vx > .r {
+    background-image:
+      linear-gradient(90deg, rgba(0,0,0,var(--seam, 0)) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(0,0,0,calc(var(--seam, 0) * .6)) 1px, transparent 1px);
+    background-size: calc(var(--s) * .5) calc(var(--s) * .5); background-position: calc(50% + var(--s) * .25) 0;
+  }
+  .vx > .t, .vx > .u {
+    background-image:
+      linear-gradient(180deg, rgba(0,0,0,var(--seam, 0)) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,calc(var(--seam, 0) * .6)) 1px, transparent 1px);
+    background-size: calc(var(--s) * .5) calc(var(--s) * .5); background-position: 0 calc(50% + var(--s) * .25);
+  }
+  .vx > .f { inset: -0.5px; transform: translateZ(calc(var(--d) * .5)); }
+  .vx > .b { inset: 0; transform: rotateY(180deg) translateZ(calc(var(--d) * .5)); }
+  .vx > .l, .vx > .r { top: 0; height: 100%; width: var(--d); left: calc(50% - var(--d) * .5); }
+  .vx > .l { transform: rotateY(-90deg) translateZ(calc(var(--s) * .5)); }
+  .vx > .r { transform: rotateY(90deg) translateZ(calc(var(--s) * .5)); }
+  .vx > .t, .vx > .u { left: 0; width: 100%; height: var(--d); top: calc(50% - var(--d) * .5); }
+  .vx > .t { transform: rotateX(90deg) translateZ(calc(var(--s) * .5)); }
+  .vx > .u { transform: rotateX(-90deg) translateZ(calc(var(--s) * .5)); }
+  .vx > .shine {
+    inset: 0; transform: translateZ(calc(var(--d) * .5 + .5px)); box-shadow: none;
+    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+    background-size: 300% 100%; background-position: var(--shine, 120%) 0; opacity: var(--shineo, 0);
+  }
+
+  .bar { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .bar button {
+    font: inherit; color: var(--ink); background: #15181f; border: 1px solid #262a33;
+    border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  }
+  .bar button:hover { background: #1c2029; }
+  .bar input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--accent); }
+  .bar output { font-variant-numeric: tabular-nums; color: var(--mute); min-width: 4.5em; text-align: right; }
+
+  .beats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+  .beats li { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--mute); cursor: pointer; }
+  .beats li b { display: block; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .beats li.on { border-color: var(--accent); }
+
+  #notes { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 20px; }
+  #notes h3 { margin: 0 0 10px; font-size: 16px; }
+  #notes dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; }
+  #notes dt code { color: var(--accent); }
+  #notes dd { margin: 0; color: var(--mute); }
+  @media (max-width: 560px) {
+    #notes dl { grid-template-columns: 1fr; gap: 2px; }
+    #notes dd { margin-bottom: 10px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>一个平面像素小怪，长出厚度</h1>
+    <p>终端光标先占住画面，像素一行一行刷出来，腿掉下来落定；然后每个像素沿 Z 轴拉成体素，镜头同时转到四分之三侧，最后体素缝消失，变成一整块。</p>
+  </header>
+
+  <div class="stage" id="stage" aria-label="像素角色拉伸成三维体素的动画">
+    <div class="sky"></div>
+    <div class="slot" id="slot"></div>
+    <div class="caret" id="caret"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M30 18 L70 50 L30 82" fill="none" stroke="#a7adb8" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="glow" id="glow"></div>
+    <div class="cam" id="cam"></div>
+    <div class="fade" id="fade"></div>
+  </div>
+
+  <div class="bar" id="controls">
+    <button type="button" id="toggle">暂停</button>
+    <input type="range" id="scrub" min="0" max="9" step="0.01" value="0" aria-label="时间">
+    <output id="clock">0.00 s</output>
+  </div>
+  <ul class="beats" id="beats"></ul>
+
+  <section id="notes">
+    <h3>可拆</h3>
+    <dl>
+      <dt><code>#stage</code></dt><dd>整段时间线：一个 <code>t</code> 驱动所有图层，关键帧插值 + 每段自己的缓动；9 s 一循环，最后 0.6 s 黑场。</dd>
+      <dt><code>#cam</code></dt><dd>CSS 3D 镜头：<code>perspective</code> 放在舞台上，<code>.cam</code> 只做 rotateX / rotateY / scale，角色和地面都挂在它下面，转镜头不动角色。</dd>
+      <dt><code>#caret</code></dt><dd>开场前景：大号光标贴近镜头、带景深模糊，2.2 s 硬切成远景小光标，用来交代「这是在终端里」。</dd>
+      <dt><code>#glow</code></dt><dd>平面阶段的底光：角色还没有厚度时，用脚下一团同色径向光撑住体积感，拉伸开始后退场，换地面和地面上的软影接手。</dd>
+      <dt><code>#beats</code></dt><dd>节拍表：每一拍的起止时间，点一下跳到那一拍，方便逐拍对照原片。</dd>
+    </dl>
+  </section>
+</main>
+
+<script>
+/* CONFIG — 角色、颜色、节拍都在这里改 */
+const CONFIG = {
+  // 像素图：# 身体，o 眼睛，m 嘴，a 天线，L 腿（腿会单独做掉落）
+  sprite: [
+    "......aa......",
+    "......aa......",
+    "....######....",
+    "..##########..",
+    ".############.",
+    "##############",
+    "###oo####oo###",
+    "###oo####oo###",
+    "######mm######",
+    ".############.",
+    "...LL....LL...",
+    "...LL....LL...",
+  ],
+  depthCells: 8,           // 拉伸后的厚度（格）
+  colors: {
+    body: "#5fd0b0", top: "#8ae6cb", side: "#3a9d84", under: "#2a7362",
+    eye: "#0d1416", antenna: "#ffd166", antennaSide: "#c9a144",
+  },
+  cellOfWidth: 0.03,       // 体素边长 = 舞台宽 × 这个比例
+  loop: 9.0,
+  beats: [
+    { t: 0.0, name: "光标 + 黑屏" },
+    { t: 2.2, name: "像素逐行刷出" },
+    { t: 3.0, name: "腿掉下来" },
+    { t: 4.2, name: "拉成体素 + 转镜" },
+    { t: 6.0, name: "体素缝合并" },
+    { t: 8.4, name: "黑场" },
+  ],
+  // 镜头关键帧：[秒, rotateX, rotateY, scale]
+  camera: [
+    [0.0, 0, 0, 1.0],
+    [4.2, 0, 0, 1.0],
+    [6.0, -13, -34, 0.92],
+    [8.4, -10, -24, 1.0],
+  ],
+};
+
+function createExtrude(container, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options, { colors: Object.assign({}, CONFIG.colors, options.colors || {}) });
+  const $ = (id) => container.querySelector("#" + id) || document.getElementById(id);
+  const stage = container.querySelector(".stage") || container;
+  const cam = $("cam"), caret = $("caret"), slot = $("slot"), glow = $("glow"), fade = $("fade");
+
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const seg = (t, a, b) => clamp01((t - a) / (b - a));
+  const ease = {
+    io: (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2,
+    out: (x) => 1 - Math.pow(1 - x, 3),
+    back: (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
+  };
+
+  const rows = cfg.sprite.length, cols = cfg.sprite[0].length;
+  const at = (r, c) => (r >= 0 && r < rows && c >= 0 && c < cols) ? cfg.sprite[r][c] : ".";
+  const solid = (ch) => ch !== ".";
+
+  const floor = document.createElement("div");
+  floor.className = "floor";
+  const rig = document.createElement("div");
+  rig.className = "rig";
+  cam.append(floor, rig);
+
+  const cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const ch = at(r, c);
+    if (!solid(ch)) continue;
+    const el = document.createElement("div");
+    el.className = "vx";
+    const isEye = ch === "o" || ch === "m", isAnt = ch === "a";
+    const front = isEye ? cfg.colors.eye : isAnt ? cfg.colors.antenna : cfg.colors.body;
+    const side = isAnt ? cfg.colors.antennaSide : cfg.colors.side;
+    // 只给暴露面建 DOM：相邻有体素的那一面永远看不见
+    const faces = [["f", front], ["b", side]];
+    if (!solid(at(r, c - 1))) faces.push(["l", side]);
+    if (!solid(at(r, c + 1))) faces.push(["r", side]);
+    if (!solid(at(r - 1, c))) faces.push(["t", isAnt ? cfg.colors.antenna : cfg.colors.top]);
+    if (!solid(at(r + 1, c))) faces.push(["u", cfg.colors.under]);
+    for (const [k, col] of faces) {
+      const f = document.createElement("i");
+      f.className = k; f.style.backgroundColor = col;
+      el.appendChild(f);
+    }
+    if (!isEye) { const s = document.createElement("i"); s.className = "shine"; el.appendChild(s); }
+    rig.appendChild(el);
+    cells.push({ el, r, c, leg: ch === "L" });
+  }
+
+  let s = 20;
+  function layout() {
+    const w = stage.clientWidth;
+    s = Math.max(8, Math.round(w * cfg.cellOfWidth));
+    stage.style.setProperty("--s", s + "px");
+    stage.style.setProperty("--persp", Math.round(w * 1.15) + "px");
+    const W = cols * s, H = rows * s;
+    rig.style.left = -W / 2 + "px";
+    rig.style.top = -H / 2 + s * 0.6 + "px";
+    for (const k of cells) {
+      k.el.style.width = k.el.style.height = s + "px";
+      k.el.style.left = k.c * s + "px";
+      k.el.style.top = k.r * s + "px";
+    }
+    const fw = s * 46, fd = s * 30;
+    floor.style.width = fw + "px"; floor.style.height = fd + "px";
+    floor.style.left = -fw / 2 + "px"; floor.style.top = -fd / 2 + "px";
+    floor.style.transform = `translateY(${H / 2 + s * 0.6}px) rotateX(90deg)`;
+  }
+
+  function camAt(t) {
+    const K = cfg.camera;
+    if (t <= K[0][0]) return K[0].slice(1);
+    for (let i = 1; i < K.length; i++) {
+      if (t <= K[i][0]) {
+        const a = K[i - 1], b = K[i], x = ease.io(seg(t, a[0], b[0]));
+        return [1, 2, 3].map((j) => a[j] + (b[j] - a[j]) * x);
+      }
+    }
+    return K[K.length - 1].slice(1);
+  }
+
+  let current = 0;
+  function render(t) {
+    current = t;
+    const intro = t < 2.2;
+    // 开场：前景大光标慢推，2.2 s 硬切
+    const push = ease.io(seg(t, 0, 2.2));
+    caret.style.transform = intro ? `translate(${push * 20}%, ${12 - push * 6}%) scale(${2.3 + push * 0.25})` : `translate(18%, -20%) scale(0.62)`;
+    caret.style.filter = intro ? `blur(${(3 - push * 1.4) * s / 20}px)` : "none";
+    caret.style.opacity = intro ? Math.min(1, t / 0.4) : 0.75;
+    slot.style.opacity = intro ? 0.9 * Math.min(1, t / 0.3) : 0;
+
+    const d = s * cfg.depthCells * ease.io(seg(t, 4.2, 5.8));
+    stage.style.setProperty("--d", d.toFixed(2) + "px");
+    const seam = 1 - ease.out(seg(t, 6.0, 6.6));
+    stage.style.setProperty("--seam", (seg(t, 4.0, 4.4) * seam * 0.55).toFixed(3));
+
+    // 刷像素：一行 0.055 s，行内从左到右 0.008 s/格
+    for (const k of cells) {
+      let o, y = 0;
+      if (k.leg) {
+        const p = seg(t, 3.0 + k.c * 0.04, 3.45 + k.c * 0.04);
+        o = p > 0 ? 1 : 0;
+        y = -(1 - ease.back(p)) * s * 2.2;
+      } else {
+        o = t >= 2.2 + k.r * 0.055 + k.c * 0.008 ? 1 : 0;
+      }
+      k.el.style.opacity = o;
+      k.el.style.transform = y ? `translateY(${y.toFixed(2)}px)` : "";
+    }
+    // 刷完一道高光扫过
+    const sh = seg(t, 2.7, 3.5);
+    stage.style.setProperty("--shine", (120 - sh * 140) + "%");
+    stage.style.setProperty("--shineo", sh > 0 && sh < 1 ? 1 : 0);
+
+    glow.style.opacity = (ease.out(seg(t, 3.1, 3.8)) * (1 - seg(t, 4.4, 5.4))).toFixed(3);
+    floor.style.opacity = (ease.out(seg(t, 4.3, 5.4)) * 0.95).toFixed(3);
+
+    const [rx, ry, sc] = camAt(t);
+    const bob = t > 6.6 ? Math.sin((t - 6.6) * 2.4) * s * 0.06 : 0;
+    cam.style.transform = `translateY(${bob.toFixed(2)}px) scale(${sc}) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    rig.style.transform = "";
+
+    fade.style.opacity = Math.max(1 - t / 0.25, seg(t, cfg.loop - 0.6, cfg.loop)).toFixed(3);
+  }
+
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let playing = !reduce.matches, start = performance.now(), raf = 0, onTick = null;
+  function frame(now) {
+    const t = ((now - start) / 1000) % cfg.loop;
+    render(t);
+    if (onTick) onTick(t);
+    raf = requestAnimationFrame(frame);
+  }
+  function play() { if (raf) return; playing = true; start = performance.now() - current * 1000; raf = requestAnimationFrame(frame); }
+  function pause() { playing = false; cancelAnimationFrame(raf); raf = 0; }
+  function seek(t) { render(Math.max(0, Math.min(cfg.loop - 0.001, t))); if (onTick) onTick(current); }
+
+  const ro = new ResizeObserver(() => { layout(); render(current); });
+  ro.observe(stage);
+  layout();
+  if (playing) play(); else seek(7.6);
+
+  return {
+    play, pause, seek,
+    get time() { return current; },
+    get playing() { return !!raf; },
+    set onTick(fn) { onTick = fn; },
+    destroy() { pause(); ro.disconnect(); floor.remove(); rig.remove(); },
+  };
+}
+
+(function boot() {
+  const root = document.querySelector("main");
+  const anim = createExtrude(root);
+  window.__extrude = anim;
+  const scrub = document.getElementById("scrub"), clock = document.getElementById("clock");
+  const toggle = document.getElementById("toggle"), beats = document.getElementById("beats");
+  scrub.max = CONFIG.loop;
+  const items = CONFIG.beats.map((b, i) => {
+    const li = document.createElement("li");
+    const end = CONFIG.beats[i + 1] ? CONFIG.beats[i + 1].t : CONFIG.loop;
+    li.innerHTML = `<b>${b.t.toFixed(1)}–${end.toFixed(1)} s</b>`;
+    li.append(b.name);
+    li.addEventListener("click", () => { anim.pause(); anim.seek(b.t + 0.6); sync(); });
+    beats.appendChild(li);
+    return li;
+  });
+  function sync() { toggle.textContent = anim.playing ? "暂停" : "播放"; }
+  anim.onTick = (t) => {
+    scrub.value = t.toFixed(2);
+    clock.textContent = t.toFixed(2) + " s";
+    CONFIG.beats.forEach((b, i) => {
+      const end = CONFIG.beats[i + 1] ? CONFIG.beats[i + 1].t : CONFIG.loop;
+      items[i].classList.toggle("on", t >= b.t && t < end);
+    });
+  };
+  anim.seek(anim.time);
+  toggle.addEventListener("click", () => { anim.playing ? anim.pause() : anim.play(); sync(); });
+  scrub.addEventListener("input", () => { anim.pause(); anim.seek(+scrub.value); sync(); });
+  sync();
+})();
+</script>
+</body>
+</html>

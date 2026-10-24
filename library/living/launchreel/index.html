@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keycap Launch Reel</title>
+<style>
+  :root {
+    --page: #eef0f3;
+    --ink: #0d0e10;
+    --mute: #686d76;
+    --accent: #1a74d6;
+    --sans: "Geist", "Inter", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--ink); }
+  body { font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 0; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  header p { font-size: 12px; color: var(--mute); }
+
+  .reel { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #f7f9fc; border-radius: 6px; }
+  .reel canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .reel .type { position: absolute; inset: 0; pointer-events: none; }
+  .line {
+    position: absolute; white-space: pre; font-weight: 600; line-height: 1;
+    letter-spacing: -0.045em; color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .line .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding: 0.06em 0.04em 0.14em; margin: 0 -0.04em; }
+  .line .w > span { display: inline-block; will-change: transform; }
+  .line .w.acc > span { color: var(--accent); }
+
+  .bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--mute); }
+  .bar button {
+    font: inherit; font-weight: 500; color: var(--ink); background: #fff; border: 1px solid #d6d9de;
+    border-radius: 4px; padding: 5px 10px; cursor: pointer; min-width: 64px;
+  }
+  .bar button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .bar input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .bar output { font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
+
+  #notes { padding: 48px 0 96px; font-size: 14px; line-height: 1.8; color: #3d4047; }
+  #notes h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--ink); padding-bottom: 12px; border-bottom: 3px solid var(--ink); }
+  #notes dt { margin-top: 22px; }
+  #notes dt code { font: inherit; font-weight: 600; color: var(--ink); }
+  #notes dd { margin-top: 4px; }
+  #notes dd code { font-size: 0.93em; background: rgba(13, 14, 16, 0.06); padding: 0 0.25em; }
+  @media (max-width: 520px) {
+    header { flex-direction: column; gap: 2px; }
+    .bar { flex-wrap: wrap; }
+    .bar input[type=range] { flex-basis: 100%; order: 3; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Keycap launch reel</h1>
+    <p>键帽场 + 透视相机 + 遮罩升字 + WebAudio 合成音，全部时间来自一张时间表</p>
+  </header>
+
+  <div id="reel" class="reel" role="img" aria-label="A field of white keycaps; blue keys rise into a trail, a glyph and a ripple while short lines of type arrive"></div>
+  <div id="controls" class="bar">
+    <button id="play" type="button">Pause</button>
+    <button id="sound" type="button" aria-pressed="false">Sound</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline">
+    <output id="clock">0.00 s</output>
+  </div>
+
+  <section id="notes" lang="zh-CN">
+    <h3>可拆</h3>
+    <dl>
+      <dt><code>#reel</code></dt>
+      <dd>键帽场渲染：36×22 个圆角键帽，每帧按深度从远到近画。每个键先画朝向相机的侧面，再画圆角顶面。远处按深度混向底色当作景深雾，上下两条再叠一层模糊副本当移轴景深。高度场 <code>heightAt(i, j, t)</code> 是每一幕唯一要写的东西。</dd>
+      <dt><code>#scrub</code></dt>
+      <dd>整片只认一张时间表 <code>CONFIG.scenes</code>。画面、文字、声音都从同一个 <code>t</code> 算出来，所以拖动进度条能停在任意一帧，声音事件也读同一批时间点。</dd>
+      <dt><code>#play</code></dt>
+      <dd>相机：关键帧之间用 <code>E.cam</code>（0.48, 0.1, 0, 0.9）插值，慢起、约 27% 处最快、长收尾。只有相机两头都缓，入场用 <code>E.outSoft</code>，出场用 <code>E.exit</code>。</dd>
+      <dt><code>#sound</code></dt>
+      <dd>声音全在代码里合成：键落是 2.4 kHz 高通噪声 + 180 Hz 正弦，6–60 ms；相机甩动是带通噪声扫频；文字落定一声 880 Hz 软音。一行字只配一声，不是每个词一声。</dd>
+      <dt><code>#controls</code></dt>
+      <dd>工厂接口 <code>createLaunchReel(el, options)</code> 返回 <code>{ play, pause, seek, setSound, destroy, duration }</code>。减少动态效果时不自动播放，停在第二幕落定的那一帧。</dd>
+    </dl>
+  </section>
+</main>
+
+<script>
+const CONFIG = {
+  fps: 60,
+  bpm: 120,
+  grid: { cols: 36, rows: 22, key: 0.8, round: 0.16, base: 0.22 },
+  colors: {
+    bg: [247, 249, 252],
+    white: { top: [253, 254, 255], side: [224, 228, 234], edge: [206, 211, 218] },
+    blue: { top: [34, 120, 214], side: [16, 82, 160], edge: [12, 64, 130] },
+    black: { top: [22, 23, 26], side: [8, 8, 10], edge: [0, 0, 0] },
+    capped: { top: [34, 120, 214], side: [212, 218, 227], edge: [12, 64, 130] },
+    shadow: 'rgba(40, 52, 72, 0.19)'
+  },
+  fog: { near: 0.8, far: 2.4, max: 0.9 },
+  // Tilt-shift stand-in for depth of field: blur px at 1080p, and the sharp band as fractions of height.
+  dof: { blur: 7, sharp: [0.42, 0.82] },
+  // Five acts on the 120 BPM grid (one bar = 2 s). Text: words rise out of a mask, stagger 0.12 s.
+  scenes: [
+    { kind: 'trail', from: 0, to: 4, text: { words: ['fresh', 'today'], accent: [0], at: 0.7, out: 3.4, pos: 'bl', role: 'line' } },
+    { kind: 'glyph', from: 4, to: 8, glyph: '2.0', text: { words: ['keyreel'], accent: [], at: 5.2, out: 7.5, pos: 'bl', role: 'display' } },
+    { kind: 'press', from: 8, to: 11, text: { words: ['type', 'settles'], accent: [1], at: 8.75, out: 10.6, pos: 'anchor', role: 'line' } },
+    { kind: 'ripple', from: 11, to: 14, text: { words: ['sound', 'from', 'code'], accent: [2], at: 11.6, out: 13.6, pos: 'tl', role: 'line' } },
+    { kind: 'lockup', from: 14, to: 17, glyph: 'ring', text: { words: ['keyreel', 'v2.0'], accent: [1], at: 14.9, out: 99, pos: 'center', role: 'display' } }
+  ],
+  // Camera keyframes: target (tx, ty) on the key plane, yaw/pitch/roll in degrees, dist in key units.
+  camera: [
+    { t: 0.0, tx: 4, ty: -1, yaw: 118, pitch: 13, roll: -2, dist: 14, fov: 40 },
+    { t: 3.6, tx: -2, ty: -1, yaw: 112, pitch: 17, roll: -3, dist: 15, fov: 40 },
+    { t: 4.4, tx: 3, ty: 0, yaw: 12, pitch: 52, roll: 8, dist: 18, fov: 40 },
+    { t: 7.6, tx: 1, ty: 0, yaw: 8, pitch: 46, roll: 3, dist: 16, fov: 40 },
+    { t: 8.3, tx: 3.5, ty: 0, yaw: 0, pitch: 74, roll: 0, dist: 9.5, fov: 40 },
+    { t: 10.8, tx: 3.8, ty: 0, yaw: 0, pitch: 70, roll: 0, dist: 10.5, fov: 40 },
+    { t: 11.6, tx: 0, ty: 0, yaw: 30, pitch: 44, roll: -3, dist: 19, fov: 40 },
+    { t: 14.0, tx: 0, ty: 0, yaw: 22, pitch: 50, roll: 0, dist: 18, fov: 40 },
+    { t: 15.6, tx: 0, ty: 0, yaw: 0, pitch: 62, roll: 0, dist: 21, fov: 40 },
+    { t: 17.0, tx: 0, ty: 0, yaw: -3, pitch: 64, roll: 0, dist: 22, fov: 40 }
+  ],
+  type: { display: 132, line: 84 },
+  duration: 17,
+  posterTime: 6.9,
+  loop: true
+};
+
+(function () {
+  'use strict';
+
+  function bezier(x1, y1, x2, y2) {
+    const ax = 3 * x1 - 3 * x2 + 1, bx = 3 * x2 - 6 * x1, cx = 3 * x1;
+    const ay = 3 * y1 - 3 * y2 + 1, by = 3 * y2 - 6 * y1, cy = 3 * y1;
+    const sx = (t) => ((ax * t + bx) * t + cx) * t;
+    const sy = (t) => ((ay * t + by) * t + cy) * t;
+    const dx = (t) => (3 * ax * t + 2 * bx) * t + cx;
+    return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let t = x;
+      for (let i = 0; i < 6; i++) {
+        const d = dx(t);
+        if (Math.abs(d) < 1e-6) break;
+        t -= (sx(t) - x) / d;
+      }
+      t = Math.min(1, Math.max(0, t));
+      return sy(t);
+    };
+  }
+  // Easing tokens as named in Cinetic's src/lib/anim.ts.
+  const E = {
+    out: bezier(0.16, 1, 0.3, 1),
+    outSoft: bezier(0.22, 1, 0.36, 1),
+    exit: bezier(0.55, 0.055, 0.675, 0.19),
+    inOut: bezier(0.87, 0, 0.13, 1),
+    smooth: bezier(0.65, 0, 0.35, 1),
+    cam: bezier(0.48, 0.1, 0, 0.9),
+    glide: bezier(0.47, 0.2, 0.15, 1)
+  };
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+  const lerp = (a, b, k) => a + (b - a) * k;
+  // Damped-spring step response; detent = {damping 24, stiffness 380, mass 0.6} -> zeta 0.79.
+  function spring(t, k, c, m) {
+    if (t <= 0) return 0;
+    const w0 = Math.sqrt(k / m), z = c / (2 * Math.sqrt(k * m));
+    if (z >= 1) return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+    const wd = w0 * Math.sqrt(1 - z * z);
+    return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+  }
+  const detent = (t) => spring(t, 380, 24, 0.6);
+  function hitPulse(x, attack, decay) {
+    if (x <= 0) return 0;
+    if (x < attack) return E.out(x / attack);
+    return Math.exp(-(x - attack) / decay);
+  }
+
+  const PIX = {
+    '2': ['111', '001', '111', '100', '111'],
+    '.': ['0', '0', '0', '0', '1'],
+    '0': ['111', '101', '101', '101', '111'],
+    ring: ['11111', '10001', '10101', '10001', '11111']
+  };
+  function glyphCells(str, cols, rows) {
+    const parts = str === 'ring' ? [PIX.ring] : str.split('').map((ch) => PIX[ch]).filter(Boolean);
+    const width = parts.reduce((n, g) => n + g[0].length, 0) + parts.length - 1;
+    const x0 = Math.round(cols / 2 - width / 2), y0 = Math.round(rows / 2 - 2.5);
+    const out = [];
+    let x = x0;
+    parts.forEach((g) => {
+      g.forEach((row, r) => row.split('').forEach((v, c) => { if (v === '1') out.push([x + c, y0 + (4 - r)]); }));
+      x += g[0].length + 1;
+    });
+    out.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    return out;
+  }
+
+  function createLaunchReel(container, options) {
+    const cfg = Object.assign({}, CONFIG, options || {});
+    const G = cfg.grid, C = cfg.colors;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canvas = document.createElement('canvas');
+    const typeLayer = document.createElement('div');
+    typeLayer.className = 'type';
+    container.appendChild(canvas);
+    container.appendChild(typeLayer);
+    const ctx = canvas.getContext('2d');
+    let W = 0, H = 0, dpr = 1, U = 1;
+
+    const glyphs = {};
+    cfg.scenes.forEach((s) => { if (s.glyph) glyphs[s.glyph] = glyphCells(s.glyph, G.cols, G.rows); });
+    const glyphIndex = {};
+    Object.keys(glyphs).forEach((k) => {
+      const m = new Map();
+      glyphs[k].forEach(([i, j], n) => m.set(i + ',' + j, n));
+      glyphIndex[k] = m;
+    });
+    const midI = Math.floor(G.cols / 2), midJ = Math.floor(G.rows / 2);
+    const pressKey = [midI - 2, midJ];
+
+    function sceneAt(t) {
+      for (const s of cfg.scenes) if (t >= s.from && t < s.to) return s;
+      return cfg.scenes[cfg.scenes.length - 1];
+    }
+
+    // The one thing each act writes: a key's height and colour at time t.
+    function heightAt(i, j, t, s) {
+      const base = G.base;
+      const lt = t - s.from, dur = s.to - s.from;
+      const tail = 1 - E.smooth(prog(t, s.to - 0.45, s.to));
+      if (s.kind === 'trail') {
+        const lineJ = midJ + (i - midI) * 0.32;
+        if (Math.abs(j - lineJ) > 0.5) return [base, 0];
+        const head = lerp(-2, G.cols + 4, E.out(prog(lt, 0.05, 1.9)));
+        const passed = head - i;
+        if (passed <= 0) return [base, 0];
+        const rail = 0.16 * E.outSoft(clamp(passed / 2, 0, 1));
+        const post = i % 3 === 0 ? 0.42 * E.outSoft(clamp(passed / 4, 0, 1)) + 0.4 * hitPulse(passed / 8, 0.1, 0.3) : 0;
+        return [base + (rail + post) * tail, tail > 0.02 ? 1 : 0];
+      }
+      if (s.kind === 'glyph' || s.kind === 'lockup') {
+        const n = glyphIndex[s.glyph].get(i + ',' + j);
+        if (n === undefined) {
+          if (s.kind === 'lockup') {
+            const r = Math.hypot(i - midI, j - midJ);
+            return [base + 0.25 * hitPulse(lt - 0.9 - r * 0.05, 0.1, 0.3), 0];
+          }
+          return [base, 0];
+        }
+        const rise = detent(lt - 0.35 - n * 0.045);
+        const h = base + 1.25 * rise * (s.kind === 'glyph' ? tail : 1);
+        return [h, rise > 0.04 ? 3 : 0];
+      }
+      if (s.kind === 'press') {
+        if (i === pressKey[0] && j === pressKey[1]) {
+          const p = hitPulse(lt - 0.55, 0.09, 0.22);
+          return [base + 0.32 - 0.36 * p, 2];
+        }
+        if (j === pressKey[1] && i > pressKey[0] && i <= pressKey[0] + 13) {
+          const open = E.outSoft(prog(lt, 0.55, 1.1)) * tail;
+          return [base - 0.2 * open, 0];
+        }
+        return [base, 0];
+      }
+      if (s.kind === 'ripple') {
+        const r = Math.hypot(i - midI + 0.5, (j - midJ + 0.5) * 1.0);
+        const R = 19 * E.glide(prog(lt, 0.25, dur - 0.1));
+        const d = r - R;
+        const env = Math.exp(-(d * d) / 3.2) * (1 - prog(lt, dur - 0.9, dur));
+        return [base + 0.8 * env, env > 0.45 ? 1 : 0];
+      }
+      return [base, 0];
+    }
+
+    function camAt(t) {
+      const K = cfg.camera;
+      if (t <= K[0].t) return K[0];
+      for (let n = 0; n < K.length - 1; n++) {
+        const a = K[n], b = K[n + 1];
+        if (t <= b.t) {
+          const k = E.cam((t - a.t) / (b.t - a.t));
+          const o = {};
+          for (const key in a) o[key] = lerp(a[key], b[key], k);
+          return o;
+        }
+      }
+      return K[K.length - 1];
+    }
+
+    let cam = null;
+    function setCam(c) {
+      const yaw = c.yaw * Math.PI / 180, pitch = c.pitch * Math.PI / 180, roll = c.roll * Math.PI / 180;
+      cam = {
+        tx: c.tx, ty: c.ty, cy: Math.cos(yaw), sy: Math.sin(yaw),
+        cp: Math.cos(pitch), sp: Math.sin(pitch), cr: Math.cos(roll), sr: Math.sin(roll),
+        dist: c.dist, wx: c.tx - c.dist * Math.cos(pitch) * Math.sin(yaw), wy: c.ty - c.dist * Math.cos(pitch) * Math.cos(yaw), F: (H / 2) / Math.tan(c.fov * Math.PI / 360) * Math.max(1, (W / H) / (16 / 9))
+      };
+    }
+    // World: x right, y away, z up. Returns [sx, sy, depth].
+    function project(x, y, z) {
+      const px = x - cam.tx, py = y - cam.ty;
+      const rx = px * cam.cy - py * cam.sy, ry = px * cam.sy + py * cam.cy;
+      const dy = ry + cam.dist * cam.cp, dz = z - cam.dist * cam.sp;
+      const vx = rx, vy = dy * cam.sp + dz * cam.cp, vz = dy * cam.cp - dz * cam.sp;
+      const depth = Math.max(0.2, vz);
+      let sx = (vx * cam.F) / depth, sy = -(vy * cam.F) / depth;
+      const qx = sx * cam.cr - sy * cam.sr, qy = sx * cam.sr + sy * cam.cr;
+      return [W / 2 + qx, H / 2 + qy, depth];
+    }
+
+    const keys = [];
+    for (let j = 0; j < G.rows; j++) for (let i = 0; i < G.cols; i++) keys.push({ i, j, x: i - G.cols / 2 + 0.5, y: j - G.rows / 2 + 0.5, h: 0, c: 0, d: 0 });
+
+    function mix(rgb, fog) {
+      const b = C.bg;
+      return 'rgb(' + Math.round(lerp(rgb[0], b[0], fog)) + ',' + Math.round(lerp(rgb[1], b[1], fog)) + ',' + Math.round(lerp(rgb[2], b[2], fog)) + ')';
+    }
+
+    const NORMALS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    function drawKey(k) {
+      const s = G.key / 2, r = G.round, z = k.h;
+      const pal = k.c === 1 ? C.blue : k.c === 2 ? C.black : k.c === 3 ? C.capped : C.white;
+      const near = cam.dist * cfg.fog.near, far = cam.dist * cfg.fog.far;
+      const fog = Math.min(cfg.fog.max, Math.max(0, (k.d - near) / (far - near)) * cfg.fog.max);
+      const cx = k.x, cy = k.y;
+      const corners = [[cx - s, cy - s], [cx + s, cy - s], [cx + s, cy + s], [cx - s, cy + s]];
+      const top = corners.map(([x, y]) => project(x, y, z));
+      const bot = corners.map(([x, y]) => project(x, y, 0));
+      ctx.fillStyle = mix(pal.side, fog);
+      for (let e = 0; e < 4; e++) {
+        const a = e, b = (e + 1) % 4;
+        const n = NORMALS[e];
+        if ((cam.wx - (cx + n[0] * s)) * n[0] + (cam.wy - (cy + n[1] * s)) * n[1] <= 0) continue;
+        ctx.beginPath();
+        ctx.moveTo(bot[a][0], bot[a][1]); ctx.lineTo(bot[b][0], bot[b][1]);
+        ctx.lineTo(top[b][0], top[b][1]); ctx.lineTo(top[a][0], top[a][1]);
+        ctx.closePath(); ctx.fill();
+      }
+      const ins = r / G.key;
+      ctx.beginPath();
+      for (let e = 0; e < 4; e++) {
+        const p = top[e], prev = top[(e + 3) % 4], next = top[(e + 1) % 4];
+        const ax = lerp(p[0], prev[0], ins), ay = lerp(p[1], prev[1], ins);
+        const bx = lerp(p[0], next[0], ins), by = lerp(p[1], next[1], ins);
+        if (e === 0) ctx.moveTo(ax, ay); else ctx.lineTo(ax, ay);
+        ctx.quadraticCurveTo(p[0], p[1], bx, by);
+      }
+      ctx.closePath();
+      ctx.fillStyle = mix(pal.top, fog);
+      ctx.fill();
+      ctx.strokeStyle = mix(pal.edge, Math.min(1, fog + 0.35));
+      ctx.lineWidth = Math.max(0.5, U * 1.2);
+      ctx.stroke();
+    }
+
+    const blurCanvas = document.createElement('canvas');
+    const bctx = blurCanvas.getContext('2d');
+    function tiltShift() {
+      if (blurCanvas.width !== canvas.width || blurCanvas.height !== canvas.height) {
+        blurCanvas.width = canvas.width; blurCanvas.height = canvas.height;
+      }
+      const ch = canvas.height, [a, b] = cfg.dof.sharp;
+      bctx.globalCompositeOperation = 'copy';
+      bctx.filter = 'blur(' + (cfg.dof.blur * U * dpr * 1.6).toFixed(1) + 'px)';
+      bctx.drawImage(canvas, 0, 0);
+      bctx.filter = 'none';
+      bctx.globalCompositeOperation = 'destination-in';
+      const g = bctx.createLinearGradient(0, 0, 0, ch);
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(a, 'rgba(0,0,0,0)');
+      g.addColorStop(b, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.85)');
+      bctx.fillStyle = g; bctx.fillRect(0, 0, blurCanvas.width, ch);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(blurCanvas, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function render(t) {
+      const s = sceneAt(t);
+      setCam(camAt(t));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = 'rgb(' + C.bg.join(',') + ')';
+      ctx.fillRect(0, 0, W, H);
+      for (const k of keys) {
+        const hc = heightAt(k.i, k.j, t, s);
+        k.h = hc[0]; k.c = hc[1];
+        k.d = project(k.x, k.y, k.h * 0.5)[2];
+      }
+      // Contact shadows of raised keys fall toward +x/-y on the plate.
+      ctx.fillStyle = C.shadow;
+      ctx.beginPath();
+      for (const k of keys) {
+        const lift = k.h - G.base;
+        if (lift < 0.06) continue;
+        const o = lift * 0.55, s2 = G.key / 2 + 0.05;
+        const p = [[-s2, -s2], [s2, -s2], [s2, s2], [-s2, s2]].map(([dx, dy]) => project(k.x + dx + o, k.y + dy - o * 0.6, 0.001));
+        ctx.moveTo(p[0][0], p[0][1]); for (let n = 1; n < 4; n++) ctx.lineTo(p[n][0], p[n][1]); ctx.closePath();
+      }
+      ctx.fill();
+      keys.sort((a, b) => b.d - a.d);
+      for (const k of keys) if (k.d > 0.4 && k.h > 0.04) drawKey(k);
+      if (cfg.dof && cfg.dof.blur > 0) tiltShift();
+      renderType(t, s);
+    }
+
+    // Type: one line per act, each word rising out of its own mask.
+    const lines = cfg.scenes.map((s) => {
+      const el = document.createElement('div');
+      el.className = 'line';
+      s.text.words.forEach((w, n) => {
+        const m = document.createElement('span');
+        m.className = 'w' + (s.text.accent.includes(n) ? ' acc' : '');
+        const inner = document.createElement('span');
+        inner.textContent = w;
+        m.appendChild(inner);
+        el.appendChild(m);
+        if (n < s.text.words.length - 1) el.appendChild(document.createTextNode(' '));
+      });
+      typeLayer.appendChild(el);
+      return { s, el, inners: [...el.querySelectorAll('.w > span')] };
+    });
+
+    function renderType(t) {
+      for (const L of lines) {
+        const tx = L.s.text, el = L.el;
+        const visible = t >= tx.at - 0.05 && t < tx.out + 0.5;
+        el.style.display = visible ? '' : 'none';
+        if (!visible) continue;
+        const size = cfg.type[tx.role] * U;
+        el.style.fontSize = size + 'px';
+        el.style.fontWeight = tx.role === 'display' ? 600 : 500;
+        L.inners.forEach((sp, n) => {
+          const k = E.outSoft(prog(t, tx.at + n * 0.12, tx.at + n * 0.12 + 0.67));
+          sp.style.transform = 'translateY(' + ((1 - k) * 112).toFixed(2) + '%)';
+        });
+        const ex = E.exit(prog(t, tx.out, tx.out + 0.4));
+        el.style.opacity = (1 - ex).toFixed(3);
+        const pad = Math.max(16, 64 * U * 1.4);
+        el.style.transform = '';
+        if (tx.pos === 'bl') { el.style.left = pad + 'px'; el.style.top = ''; el.style.bottom = pad + 'px'; el.style.transform = 'translateY(' + (-ex * 18 * U) + 'px)'; }
+        else if (tx.pos === 'tl') { el.style.left = pad + 'px'; el.style.top = pad + 'px'; el.style.bottom = ''; el.style.transform = 'translateY(' + (-ex * 18 * U) + 'px)'; }
+        else if (tx.pos === 'center') { el.style.left = '50%'; el.style.top = ''; el.style.bottom = (H * 0.13) + 'px'; el.style.transform = 'translateX(-50%)'; }
+        else if (tx.pos === 'anchor') {
+          const k = keys.find((q) => q.i === pressKey[0] && q.j === pressKey[1]);
+          const p = project(k.x + 0.9, k.y, G.base);
+          el.style.left = p[0] + 'px'; el.style.top = (p[1] - size * 0.62) + 'px'; el.style.bottom = '';
+        }
+      }
+    }
+
+    // Sound: every event is synthesised; times come from the same scene table as the picture.
+    const events = [];
+    cfg.scenes.forEach((s) => {
+      if (s.kind === 'trail') for (let n = 0; n < 6; n++) events.push({ t: s.from + 0.6 + n * 0.5, kind: 'land', w: 0.5 });
+      if (s.kind === 'glyph' || s.kind === 'lockup') {
+        const g = glyphs[s.glyph];
+        for (let n = 0; n < g.length; n += 3) events.push({ t: s.from + 0.42 + n * 0.045, kind: 'land', w: 0.55 });
+      }
+      if (s.kind === 'press') events.push({ t: s.from + 0.55, kind: 'hit', w: 1 });
+      if (s.kind === 'ripple') events.push({ t: s.from + 0.3, kind: 'hit', w: 0.7 });
+      events.push({ t: s.text.at + 0.12 * (s.text.words.length - 1) + 0.4, kind: 'text', w: 0.8 });
+    });
+    cfg.camera.forEach((k, n) => {
+      const nx = cfg.camera[n + 1];
+      if (nx && nx.t - k.t < 1.0) events.push({ t: k.t + (nx.t - k.t) * 0.3, kind: 'whoosh', w: 1, dur: nx.t - k.t });
+    });
+    events.sort((a, b) => a.t - b.t);
+
+    let actx = null, bus = null, noiseBuf = null, soundOn = false;
+    function ensureAudio() {
+      if (actx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      actx = new AC();
+      noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let n = 0; n < d.length; n++) d[n] = Math.random() * 2 - 1;
+    }
+    function voice(ev, when) {
+      const g = actx.createGain();
+      g.connect(bus);
+      if (ev.kind === 'land' || ev.kind === 'hit') {
+        const n = actx.createBufferSource(); n.buffer = noiseBuf;
+        const hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = ev.kind === 'hit' ? 1200 : 2400;
+        const ng = actx.createGain();
+        ng.gain.setValueAtTime(0.0001, when); ng.gain.exponentialRampToValueAtTime(0.35 * ev.w, when + 0.002);
+        ng.gain.exponentialRampToValueAtTime(0.0001, when + 0.035);
+        n.connect(hp); hp.connect(ng); ng.connect(g); n.start(when); n.stop(when + 0.05);
+        const o = actx.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(ev.kind === 'hit' ? 120 : 180, when);
+        o.frequency.exponentialRampToValueAtTime(ev.kind === 'hit' ? 46 : 120, when + (ev.kind === 'hit' ? 0.28 : 0.06));
+        const og = actx.createGain();
+        og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime((ev.kind === 'hit' ? 0.55 : 0.18) * ev.w, when + 0.004);
+        og.gain.exponentialRampToValueAtTime(0.0001, when + (ev.kind === 'hit' ? 0.34 : 0.07));
+        o.connect(og); og.connect(g); o.start(when); o.stop(when + 0.4);
+      } else if (ev.kind === 'whoosh') {
+        const dur = Math.max(0.4, ev.dur);
+        const n = actx.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
+        // sound switched on mid-attack: start the envelope where it would be now, never at a negative time
+        const att = dur * 0.3, a0 = Math.max(actx.currentTime, when - att), k = 1 - (when - a0) / att;
+        const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
+        bp.frequency.setValueAtTime(380 * Math.pow(2200 / 380, k), a0);
+        bp.frequency.exponentialRampToValueAtTime(2200, when);
+        bp.frequency.exponentialRampToValueAtTime(500, when + dur * 0.7);
+        const ng = actx.createGain();
+        ng.gain.setValueAtTime(0.0001 * Math.pow(0.22 / 0.0001, k), a0);
+        ng.gain.exponentialRampToValueAtTime(0.22, when);
+        ng.gain.exponentialRampToValueAtTime(0.0001, when + dur * 0.7);
+        n.connect(bp); bp.connect(ng); ng.connect(g);
+        n.start(a0); n.stop(when + dur * 0.75);
+      } else if (ev.kind === 'text') {
+        const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = 880;
+        const o2 = actx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 1320;
+        const og = actx.createGain();
+        og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.07 * ev.w, when + 0.006);
+        og.gain.exponentialRampToValueAtTime(0.0001, when + 0.45);
+        o.connect(og); o2.connect(og); og.connect(g);
+        o.start(when); o2.start(when); o.stop(when + 0.5); o2.stop(when + 0.5);
+      }
+    }
+    function scheduleFrom(t0) {
+      if (!actx || !soundOn) return;
+      if (bus) { try { bus.disconnect(); } catch (e) { /* already detached */ } }
+      bus = actx.createGain(); bus.gain.value = 0.8;
+      const comp = actx.createDynamicsCompressor();
+      bus.connect(comp); comp.connect(actx.destination);
+      const now = actx.currentTime + 0.03;
+      for (const ev of events) if (ev.t >= t0) voice(ev, now + (ev.t - t0));
+    }
+    function silence() { if (bus) { try { bus.disconnect(); } catch (e) { /* already detached */ } bus = null; } }
+
+    let t = 0, playing = false, raf = 0, last = 0, listeners = [];
+    function loop(now) {
+      raf = requestAnimationFrame(loop);
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      if (!playing) return;
+      t += dt;
+      if (t >= cfg.duration) {
+        if (cfg.loop) { t = 0; scheduleFrom(0); } else { t = cfg.duration; pause(); }
+      }
+      render(t); emit();
+    }
+    function emit() { listeners.forEach((fn) => fn(t)); }
+    function play() { if (playing) return; playing = true; last = performance.now(); scheduleFrom(t); emit(); }
+    function pause() { playing = false; silence(); emit(); }
+    function seek(nt) { t = clamp(nt, 0, cfg.duration - 1e-3); render(t); if (playing) scheduleFrom(t); emit(); }
+    function setSound(on) {
+      soundOn = !!on;
+      if (soundOn) { ensureAudio(); if (actx && actx.state === 'suspended') actx.resume(); if (playing) scheduleFrom(t); }
+      else silence();
+    }
+    function resize() {
+      const r = container.getBoundingClientRect();
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      U = Math.min(W, H) / 1080;
+      render(t);
+    }
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+    resize();
+    raf = requestAnimationFrame(loop);
+    if (reduce) seek(cfg.posterTime); else play();
+
+    return {
+      play, pause, seek, setSound,
+      get time() { return t; },
+      get playing() { return playing; },
+      duration: cfg.duration,
+      onTick(fn) { listeners.push(fn); },
+      destroy() {
+        cancelAnimationFrame(raf); ro.disconnect(); silence();
+        if (actx) actx.close();
+        canvas.remove(); typeLayer.remove(); listeners = [];
+      }
+    };
+  }
+
+  window.createLaunchReel = createLaunchReel;
+
+  const reel = createLaunchReel(document.getElementById('reel'));
+  const btn = document.getElementById('play'), snd = document.getElementById('sound');
+  const scrub = document.getElementById('scrub'), clock = document.getElementById('clock');
+  reel.onTick((tt) => {
+    scrub.value = Math.round((tt / reel.duration) * 1000);
+    clock.textContent = tt.toFixed(2) + ' s';
+    btn.textContent = reel.playing ? 'Pause' : 'Play';
+  });
+  btn.textContent = reel.playing ? 'Pause' : 'Play';
+  clock.textContent = reel.time.toFixed(2) + ' s';
+  scrub.value = Math.round((reel.time / reel.duration) * 1000);
+  btn.addEventListener('click', () => (reel.playing ? reel.pause() : reel.play()));
+  snd.addEventListener('click', () => {
+    const on = snd.getAttribute('aria-pressed') !== 'true';
+    snd.setAttribute('aria-pressed', String(on));
+    reel.setSound(on);
+  });
+  scrub.addEventListener('input', () => reel.seek((scrub.value / 1000) * reel.duration));
+})();
+</script>
+</body>
+</html>

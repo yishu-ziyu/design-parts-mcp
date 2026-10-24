@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appliance · 手绘等轴小电器</title>
+<style>
+  :root {
+    --paper: #f2efe7;
+    --ink: #1d1b18;
+    --muted: #7a746b;
+    --rule: #d9d3c7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--mono); }
+  body { overflow-x: hidden; }
+  .top { height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 70px 0 24px; border-bottom: 1px solid var(--rule); }
+  .mark { font-weight: 700; font-size: 15px; letter-spacing: .02em; }
+  .top nav { display: flex; gap: 32px; font-size: 13px; color: #4a453f; }
+  .shell { display: grid; grid-template-columns: 186px 1fr; min-height: calc(100vh - 76px); }
+  #index { border-right: 1px solid var(--rule); padding: 20px 13px; position: sticky; top: 0; align-self: start; max-height: calc(100vh - 76px); overflow-y: auto; }
+  #index h2 { font-size: 13px; margin: 6px 0 10px; }
+  #index p { font-size: 11.5px; line-height: 1.3; color: var(--muted); margin: 0 0 18px; }
+  #index ol { list-style: none; margin: 0; padding: 0; }
+  #index li { padding: 7px 9px; border-radius: 5px; margin-bottom: 4px; font-size: 12.5px; line-height: 1.25; color: var(--ink); }
+  #index li small { display: block; font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
+  #index li.on { background: #2a2521; color: #f2efe7; }
+  #index li.on small { color: #bdb6aa; }
+  #index li.soon { opacity: .45; }
+  main { padding: 20px 24px 40px; display: flex; justify-content: center; }
+  .plate { width: 100%; max-width: 645px; }
+  .fig-title { font-weight: 700; font-size: 12.5px; margin: 6px 0 4px; }
+  #stage { position: relative; aspect-ratio: 229.5 / 172.2; }
+  #stage .zoomer { position: absolute; inset: 0; transform-origin: 50% 55%; transition: transform .25s ease; }
+  #stage svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .pill { font: 12.5px/1 var(--mono); color: var(--ink); background: transparent; border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px 11px 6px; cursor: pointer; white-space: nowrap; }
+  .pill:hover { background: rgba(29,27,24,.07); }
+  .pill[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .pill:disabled { opacity: .35; cursor: default; }
+  #actions { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; z-index: 2; }
+  .toggles { position: absolute; right: 0; top: 0; display: flex; gap: 5px; z-index: 2; }
+  .zoom { position: absolute; right: 0; bottom: 6px; display: flex; align-items: center; gap: 10px; border: 1px solid #c9c2b5; border-radius: 999px; padding: 3px 9px; font-size: 10.5px; font-weight: 700; z-index: 2; }
+  .zoom button { border: 0; background: none; font: inherit; cursor: pointer; padding: 0 2px; color: var(--ink); }
+  #controls { border-top: 1px solid var(--rule); margin-top: 8px; padding-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  #controls h4 { margin: 0 0 8px; font-size: 10.5px; font-weight: 400; letter-spacing: .08em; color: #6d675e; }
+  #wobble { width: 100%; max-width: 200px; accent-color: var(--ink); }
+  .swatches { display: flex; gap: 7px; }
+  .sw { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ink); cursor: pointer; padding: 0; }
+  .sw[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--paper), 0 0 0 4px var(--ink); }
+  .views { display: flex; gap: 6px; flex-wrap: wrap; }
+  #notes { max-width: 760px; margin: 40px auto 60px; padding: 0 24px; font-size: 13px; line-height: 1.65; }
+  #notes h3 { font-size: 14px; }
+  #notes dt { margin-top: 14px; }
+  #notes dd { margin: 4px 0 0 0; color: #3d3933; }
+  #notes code { background: rgba(29,27,24,.06); padding: 0 3px; border-radius: 3px; }
+  @media (max-width: 760px) {
+    .top { padding: 0 16px; height: 56px; }
+    .top nav { display: none; }
+    .shell { grid-template-columns: 1fr; }
+    #index { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--rule); padding: 12px 16px; }
+    #index ol { display: flex; gap: 6px; overflow-x: auto; }
+    #index li { flex: 0 0 auto; margin: 0; }
+    #index p { margin-bottom: 10px; }
+    main { padding: 14px 16px 30px; }
+    #stage { aspect-ratio: auto; }
+    #stage .zoomer { position: relative; inset: auto; aspect-ratio: 229.5 / 172.2; }
+    #actions { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .toggles { position: static; margin-bottom: 4px; }
+    #controls { grid-template-columns: 1fr; }
+    #notes { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="mark">Inkshelf</div>
+  <nav><span>Figures</span><span>Notes</span><span>Process</span></nav>
+</header>
+<div class="shell">
+  <aside id="index">
+    <h2>Inkshelf</h2>
+    <p>Small kitchen things, inked in isometric, that you can poke.</p>
+    <ol>
+      <li class="on"><small>Fig. 01</small>Pop-up toaster</li>
+      <li class="soon"><small>Fig. 02</small>Rice cooker</li>
+      <li class="soon"><small>Fig. 03</small>Stand mixer</li>
+      <li class="soon"><small>Fig. 04</small>Kitchen scale</li>
+    </ol>
+  </aside>
+  <main>
+    <div class="plate" id="plate"></div>
+  </main>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#hand</code></dt>
+    <dd>手绘质感是一个 SVG 滤镜套在整张图上：<code>feDisplacementMap</code>（scale 0.94，viewBox 单位）把直线推出轻微抖动；<code>feTurbulence</code> baseFrequency 2.29、3 octave 经色阶矩阵压到 0.84–1.14 当纸纹，再叠一层低频斑驳（0.85–1.15）做墨色不匀，都用 multiply 叠，最后 <code>in</code> 合成回原形状。原作的位移图和斑驳是两张预烘的 PNG，这里换成 feTurbulence 现算。</dd>
+    <dt><code>#art</code></dt>
+    <dd>等轴画法：所有部件都在“面内坐标”里画，再用一个 <code>matrix()</code> 贴到三个可见面上——顶面 <code>(c,.5,-c,.5)</code>、亮侧面 <code>(c,-.5,0,1)</code>、暗侧面 <code>(c,.5,0,1)</code>，c = cos30°。文字、旋钮、刻度跟着面一起斜，不用手算每个点。线宽 0.27–0.9 个 viewBox 单位，三面颜色 = 主色提亮 / 主色 / 主色混墨 62%。</dd>
+    <dt><code>#actions</code></dt>
+    <dd>交互是一个很小的状态机：放面包 → 压杆 → 按焦度计时烤 → 叮一声弹起（带回弹）→ 取出。面包是立在槽平面里的切片，只裁出顶面以上的部分，下沉时自然“掉进”槽里；烤色随时间从米黄插值到焦褐。</dd>
+    <dt><code>#controls</code></dt>
+    <dd>底栏三组：手绘抖动滑杆直接改位移 scale（0 = 机器直线，3 = 很抖）；五个色点换机身主色，三面颜色按规则重算；视图里 Turntable 用 <code>scaleX(cos t)</code> 假装转台，Front view 复位。</dd>
+    <dt><code>#stage</code></dt>
+    <dd>画板 viewBox 229.5 × 172.2（与原作同比例），右下角缩放 60–160%。See-through 把三面填色降到 35% 透明，露出槽里的加热丝和整片面包；Labels 用细引线加等宽小字标出部件，标签放在滤镜外面保证可读。</dd>
+  </dl>
+</section>
+
+<script>
+const CONFIG = {
+  title: 'Fig. 01 — Pop-up toaster',
+  viewBox: [229.5, 172.2],
+  ink: '#1d1b18',
+  shadow: '#3c4c93',
+  colors: ['#f2b630', '#ea6a4f', '#8fd3b0', '#7d9fe6', '#f0a3c0'],
+  colorIndex: 1,
+  wobble: 0.94,
+  wobbleMax: 3,
+  grain: { baseFrequency: 2.2937, octaves: 3, seed: 11, lift: 0.84, blotFrequency: 0.35, blotLift: 0.85 },
+  body: { W: 50, L: 86, H: 56 },
+  brand: 'CRUMB · 2',
+  browning: { min: 1, max: 6, start: 3, secondsPerLevel: 1.1, baseSeconds: 1.6 },
+  bread: { raw: '#f3dca0', done: '#7e4520', crust: '#b7793a' },
+  text: {
+    insert: 'Insert bread', lever: 'Push lever', browning: 'Browning', stop: 'Cancel / pop up',
+    takeOut: 'Take toast out', crumbs: 'Empty crumb tray', seeThrough: 'See-through', labels: 'Labels',
+    wobble: 'HAND-DRAWN WOBBLE', colour: 'COLOUR', view: 'VIEW', front: 'Front view', turntable: 'Turntable'
+  },
+  labels: { slots: 'bread slots', lever: 'carriage lever', dial: 'browning dial', stop: 'cancel', tray: 'crumb tray' }
+};
+
+function createToaster(container, options) {
+  const cfg = Object.assign({}, CONFIG, options || {});
+  const T = cfg.text;
+  const NS = 'http://www.w3.org/2000/svg';
+  const c = Math.cos(Math.PI / 6);
+  const { W, L, H } = cfg.body;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const uid = 'tst' + Math.random().toString(36).slice(2, 7);
+  const fid = document.getElementById('hand') ? 'hand-' + uid : 'hand';
+  const ox = cfg.viewBox[0] / 2 - (W - L) * c / 2;
+  const oy = 34 + H;
+  const P = (x, y, z) => [ox + (x - y) * c, oy + (x + y) * 0.5 - z];
+  const pts = arr => arr.map(p => P(...p).map(n => n.toFixed(2)).join(',')).join(' ');
+  const mTop = () => { const o = P(0, 0, H); return `matrix(${c},0.5,${-c},0.5,${o[0]},${o[1]})`; };
+  const mRight = (x = W) => { const o = P(x, L, H); return `matrix(${c},-0.5,0,1,${o[0]},${o[1]})`; };
+  const mLeft = () => { const o = P(0, L, H); return `matrix(${c},0.5,0,1,${o[0]},${o[1]})`; };
+
+  const state = {
+    color: cfg.colorIndex, bread: false, down: false, doneness: 0, level: cfg.browning.start,
+    lever: 0, breadZ: 0, see: false, labels: false, zoom: 1, spin: false, tray: 0, timer: null
+  };
+
+  container.innerHTML = `
+    <div class="fig-title">${cfg.title}</div>
+    <div id="stage">
+      <div id="actions">
+        <button class="pill" data-a="insert">${T.insert}</button>
+        <button class="pill" data-a="lever">${T.lever}</button>
+        <button class="pill" data-a="browning">${T.browning} <span data-k="lvl"></span> ▾</button>
+        <button class="pill" data-a="stop">${T.stop}</button>
+        <button class="pill" data-a="takeOut">${T.takeOut}</button>
+        <button class="pill" data-a="crumbs">${T.crumbs}</button>
+      </div>
+      <div class="toggles">
+        <button class="pill" data-a="see" aria-pressed="false">${T.seeThrough}</button>
+        <button class="pill" data-a="labels" aria-pressed="false">${T.labels}</button>
+      </div>
+      <div class="zoomer"></div>
+      <div class="zoom"><button data-a="zout" aria-label="zoom out">–</button><span data-k="zoom">100%</span><button data-a="zin" aria-label="zoom in">+</button></div>
+    </div>
+    <div id="controls">
+      <div><h4>${T.wobble}</h4><input id="wobble" type="range" min="0" max="${cfg.wobbleMax}" step="0.01" value="${cfg.wobble}"></div>
+      <div><h4>${T.colour}</h4><div class="swatches">${cfg.colors.map((col, i) => `<button class="sw" data-sw="${i}" style="background:${col}" aria-label="colour ${i + 1}"></button>`).join('')}</div></div>
+      <div><h4>${T.view}</h4><div class="views"><button class="pill" data-a="front">${T.front}</button><button class="pill" data-a="spin" aria-pressed="false">${T.turntable}</button></div></div>
+    </div>`;
+
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${cfg.viewBox[0]} ${cfg.viewBox[1]}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', cfg.title);
+  container.querySelector('.zoomer').appendChild(svg);
+
+  const g = cfg.grain;
+  const sx = W * 0.32, sx2 = W * 0.68, slotW = 4.2, sy0 = 8, sy1 = L - 8;
+  const leverU = L * 0.80, dialU = L * 0.80, dialV = H * 0.74;
+  svg.innerHTML = `
+  <defs>
+    <filter id="${fid}" x="-3%" y="-3%" width="106%" height="106%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="4" result="warp"/>
+      <feDisplacementMap data-k="disp" in="SourceGraphic" in2="warp" scale="${cfg.wobble}" xChannelSelector="R" yChannelSelector="G" result="wob"/>
+      <feTurbulence type="fractalNoise" baseFrequency="${g.baseFrequency}" numOctaves="${g.octaves}" seed="${g.seed}" result="n1"/>
+      <feColorMatrix in="n1" type="matrix" values=".3 0 0 0 ${g.lift}  .3 0 0 0 ${g.lift}  .3 0 0 0 ${g.lift}  0 0 0 0 1" result="grain"/>
+      <feTurbulence type="fractalNoise" baseFrequency="${g.blotFrequency}" numOctaves="3" seed="7" result="n2"/>
+      <feColorMatrix in="n2" type="matrix" values=".3 0 0 0 ${g.blotLift}  .3 0 0 0 ${g.blotLift}  .3 0 0 0 ${g.blotLift}  0 0 0 0 1" result="blot"/>
+      <feBlend in="wob" in2="grain" mode="multiply" result="g1"/>
+      <feBlend in="g1" in2="blot" mode="multiply" result="g2"/>
+      <feComposite in="g2" in2="wob" operator="in"/>
+    </filter>
+    <clipPath id="above-${uid}" clipPathUnits="userSpaceOnUse"><rect x="-10" y="-120" width="${L + 20}" height="120"/></clipPath>
+  </defs>
+  <g id="art" filter="url(#${fid})" stroke="${cfg.ink}" stroke-linejoin="round" stroke-linecap="round">
+    <g data-k="spin">
+      <polygon data-k="shadow" fill="${cfg.shadow}" stroke="none" points="${pts([[2, -2, 0], [W + 3, 0, 0], [W + 14, L + 46, 0], [10, L + 52, 0], [-2, L + 4, 0]])}"/>
+      <g data-k="crumbsOnGround" fill="#d9a560" stroke="${cfg.ink}" stroke-width="0.22" opacity="0"></g>
+      <g data-k="feet" fill="${cfg.ink}" stroke="none">
+        ${[[W - 5, 5], [W - 5, L - 5], [5, L - 5]].map(([x, y]) => { const p = P(x, y, -1.6); return `<ellipse cx="${p[0]}" cy="${p[1]}" rx="3" ry="1.9"/>`; }).join('')}
+      </g>
+      <g data-k="inner" opacity="0">
+        ${[sx, sx2].map(x => `<g transform="${mRight(x)}"><path d="M${L - sy1},10 ${Array.from({ length: 14 }, (_, i) => `L${L - sy1 + (i + 0.5) * (sy1 - sy0) / 14},${i % 2 ? 10 : H - 10}`).join(' ')}" fill="none" stroke="#e0612e" stroke-width="0.45"/></g>`).join('')}
+      </g>
+      <g data-k="faces">
+        <polygon data-k="left" stroke-width="0.86" points="${pts([[0, L, H], [W, L, H], [W, L, 0], [0, L, 0]])}"/>
+        <polygon data-k="right" stroke-width="0.86" points="${pts([[W, 0, H], [W, L, H], [W, L, 0], [W, 0, 0]])}"/>
+        <polygon data-k="top" stroke-width="0.86" points="${pts([[0, 0, H], [W, 0, H], [W, L, H], [0, L, H]])}"/>
+      </g>
+      <polygon data-k="outline" fill="none" stroke-width="1.25" points="${pts([[0, 0, H], [W, 0, H], [W, 0, 0], [W, L, 0], [0, L, 0], [0, L, H]])}"/>
+      <g transform="${mLeft()}" data-k="leftDetail" fill="none">
+        ${Array.from({ length: 6 }, (_, i) => `<line x1="8" y1="${10 + i * 3.2}" x2="${W - 8}" y2="${10 + i * 3.2}" stroke-width="0.31" opacity=".7"/>`).join('')}
+        <g data-k="tray"><rect x="6" y="${H - 9}" width="${W - 12}" height="4.2" rx="1" fill="#3a2f28" stroke-width="0.47"/><rect x="${W / 2 - 4}" y="${H - 8}" width="8" height="2.2" rx="1" fill="#cfc7b8" stroke-width="0.35"/></g>
+      </g>
+      <g transform="${mRight()}" data-k="rightDetail">
+        <line x1="3" y1="${H - 5}" x2="${L - 3}" y2="${H - 5}" stroke-width="0.39" opacity=".8"/>
+        <line x1="3" y1="4" x2="${L - 3}" y2="4" stroke-width="0.27" opacity=".55"/>
+        <rect x="${L * 0.12}" y="${H * 0.32}" width="${L * 0.42}" height="${H * 0.36}" rx="2.4" fill="#fff8e6" stroke-width="0.47" opacity=".9"/>
+        <text x="${L * 0.33}" y="${H * 0.53}" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-weight="700" font-size="5" fill="${cfg.ink}" stroke="none">${cfg.brand}</text>
+        <text x="${L * 0.33}" y="${H * 0.62}" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="2.6" fill="${cfg.ink}" stroke="none" opacity=".7">2 SLICE · 900 W</text>
+        <rect x="${leverU - 1.6}" y="7" width="3.2" height="${H * 0.46}" rx="1.6" fill="#2a221d" stroke-width="0.39"/>
+        <g data-k="leverKnob"><rect x="${leverU - 6}" y="7.6" width="12" height="4.6" rx="2" fill="#2a221d" stroke-width="0.47"/><rect x="${leverU - 5}" y="7.9" width="10" height="2" rx="1" fill="#f2efe7" stroke="none" opacity=".35"/></g>
+        <circle cx="${dialU}" cy="${dialV}" r="6" fill="#f2efe7" stroke-width="0.59"/>
+        ${Array.from({ length: 6 }, (_, i) => { const a = (-210 + i * 48) * Math.PI / 180; return `<line x1="${dialU + Math.cos(a) * 7.3}" y1="${dialV + Math.sin(a) * 7.3}" x2="${dialU + Math.cos(a) * 8.6}" y2="${dialV + Math.sin(a) * 8.6}" stroke-width="0.35"/>`; }).join('')}
+        <g data-k="needle"><line x1="${dialU}" y1="${dialV}" x2="${dialU}" y2="${dialV - 5}" stroke="#d2412b" stroke-width="0.86"/><circle cx="${dialU}" cy="${dialV}" r="1.4" fill="${cfg.ink}" stroke="none"/></g>
+        <rect x="${L * 0.62}" y="${dialV - 2.6}" width="7" height="5.2" rx="1.4" fill="#f2efe7" stroke-width="0.47"/>
+        <text x="${L * 0.62 + 3.5}" y="${dialV + 0.9}" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="2.2" fill="${cfg.ink}" stroke="none">STOP</text>
+        <circle data-k="led" cx="${L * 0.62 + 3.5}" cy="${dialV - 5}" r="0.9" fill="#5a5148" stroke-width="0.25"/>
+      </g>
+      <g transform="${mTop()}" data-k="topDetail">
+        ${[sx, sx2].map(x => `<rect x="${x - slotW / 2}" y="${sy0}" width="${slotW}" height="${sy1 - sy0}" rx="1.6" fill="#1d1b18" stroke-width="0.47"/><rect data-k="glow" x="${x - slotW / 2 + 0.8}" y="${sy0 + 1.2}" width="${slotW - 1.6}" height="${sy1 - sy0 - 2.4}" rx="1" fill="#ff7a2f" stroke="none" opacity="0"/>`).join('')}
+        <path d="M4,3 Q${W / 2},1.5 ${W - 4},3" fill="none" stroke="#fff" stroke-width="0.6" opacity=".55"/>
+      </g>
+      <g data-k="breads">
+        ${[sx, sx2].map((x, i) => `<g transform="${mRight(x)}"><g clip-path="url(#above-${uid})"><g data-k="slice" data-i="${i}">
+          <path d="M${L - sy1 + 1},40 L${L - sy1 + 1},-14 Q${L - sy1 - 1},-24 ${L - sy1 + 9},-23 Q${L / 2},-29 ${sy1 - 9},-23 Q${sy1 + 1},-24 ${sy1 - 1},-14 L${sy1 - 1},40 Z" fill="${cfg.bread.crust}" stroke-width="0.59"/>
+          <path data-k="crumb" d="M${L - sy1 + 4},40 L${L - sy1 + 4},-13 Q${L - sy1 + 3},-20 ${L - sy1 + 10},-20 Q${L / 2},-25.5 ${sy1 - 10},-20 Q${sy1 - 3},-20 ${sy1 - 4},-13 L${sy1 - 4},40 Z" fill="${cfg.bread.raw}" stroke-width="0.27"/>
+          ${Array.from({ length: 9 }, (_, k) => `<circle cx="${L - sy1 + 9 + (k * 37) % (sy1 - sy0 - 16)}" cy="${-16 + (k * 13) % 14}" r="${0.35 + (k % 3) * 0.15}" fill="none" stroke-width="0.25" opacity=".6"/>`).join('')}
+        </g></g></g>`).join('')}
+      </g>
+      <g data-k="heat" fill="none" stroke-width="0.39" opacity="0">
+        ${[sx, sx2].map(x => [0.3, 0.55, 0.8].map(f => { const p = P(x, L - f * L, H + 6); return `<path d="M${p[0]},${p[1]} q-1.6,-3 0,-6 q1.6,-3 0,-6" />`; }).join('')).join('')}
+      </g>
+    </g>
+  </g>
+  <g data-k="labels" font-family="ui-monospace, Menlo, monospace" font-size="4" fill="${cfg.ink}" opacity="0" style="transition:opacity .2s">
+  </g>`;
+
+  const q = k => svg.querySelector(`[data-k="${k}"]`);
+  const qa = k => [...svg.querySelectorAll(`[data-k="${k}"]`)];
+  const btn = a => container.querySelector(`[data-a="${a}"]`);
+
+  const lab = q('labels');
+  const labelSpots = [
+    [P(sx2, L * 0.55, H), [cfg.viewBox[0] - 22, 26], cfg.labels.slots],
+    [P(W, L - leverU, H - 9), [cfg.viewBox[0] - 30, 62], cfg.labels.lever],
+    [P(W, L - dialU, H - dialV), [cfg.viewBox[0] - 30, 120], cfg.labels.dial],
+    [P(W, L - L * 0.62 - 3.5, H - dialV), [cfg.viewBox[0] - 40, 150], cfg.labels.stop],
+    [P(W / 2, L, 6), [26, 96], cfg.labels.tray]
+  ];
+  lab.innerHTML = labelSpots.map(([a, b, t]) => `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${cfg.ink}" stroke-width="0.3" stroke-dasharray="1 1"/><circle cx="${a[0]}" cy="${a[1]}" r="0.9"/><text x="${b[0]}" y="${b[1] - 1.5}" text-anchor="middle">${t}</text>`).join('');
+
+  function mix(a, b, t) {
+    const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16));
+    return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  }
+
+  function paint() {
+    const base = cfg.colors[state.color];
+    q('top').setAttribute('fill', mix(base, '#ffffff', 0.22));
+    q('right').setAttribute('fill', base);
+    q('left').setAttribute('fill', mix(base, '#14100d', 0.62));
+    const op = state.see ? 0.35 : 1;
+    ['top', 'right', 'left'].forEach(k => q(k).setAttribute('fill-opacity', op));
+    q('inner').setAttribute('opacity', state.see ? 1 : 0);
+    svg.querySelectorAll(`#above-${uid} rect`).forEach(r => r.setAttribute('height', state.see ? 200 : 120));
+    container.querySelectorAll('.sw').forEach((b, i) => b.setAttribute('aria-pressed', i === state.color));
+    btn('see').setAttribute('aria-pressed', state.see);
+    btn('labels').setAttribute('aria-pressed', state.labels);
+    lab.setAttribute('opacity', state.labels ? 1 : 0);
+    container.querySelector('[data-k="lvl"]').textContent = state.level;
+    const ang = -210 + (state.level - 1) * 48 + 90;
+    q('needle').setAttribute('transform', `rotate(${ang} ${dialU} ${dialV})`);
+    q('leverKnob').setAttribute('transform', `translate(0 ${state.lever * (H * 0.46 - 5)})`);
+    q('led').setAttribute('fill', state.down ? '#ff5a2a' : '#5a5148');
+    const hidden = state.bread ? 0 : 60;
+    qa('slice').forEach(s => s.setAttribute('transform', `translate(0 ${state.breadZ + hidden})`));
+    const t = Math.min(1, state.doneness);
+    qa('crumb').forEach(p => p.setAttribute('fill', mix(cfg.bread.raw, cfg.bread.done, t)));
+    qa('glow').forEach(gl => gl.setAttribute('opacity', state.down ? 0.85 : 0));
+    q('heat').setAttribute('opacity', state.down ? 0.8 : 0);
+    btn('insert').disabled = state.bread;
+    btn('lever').disabled = !state.bread || state.down;
+    btn('stop').disabled = !state.down;
+    btn('takeOut').disabled = !state.bread || state.down;
+    container.querySelector('[data-k="zoom"]').textContent = Math.round(state.zoom * 100) + '%';
+    container.querySelector('.zoomer').style.transform = `scale(${state.zoom})`;
+  }
+
+  const tweens = new Set();
+  function tween(dur, fn, done, ease = e => 1 - Math.pow(1 - e, 3)) {
+    if (reduce) { fn(1); done && done(); return; }
+    const t0 = performance.now();
+    const tw = { tick(now) { const e = Math.min(1, (now - t0) / dur); fn(ease(e)); if (e >= 1) { tweens.delete(tw); done && done(); } } };
+    tweens.add(tw);
+    loop();
+  }
+  const back = e => { const s = 1.9; return 1 + (s + 1) * Math.pow(e - 1, 3) + s * Math.pow(e - 1, 2); };
+
+  let raf = 0, spinT = 0, last = 0;
+  function loop() {
+    if (raf) return;
+    const step = now => {
+      raf = 0;
+      const dt = last ? (now - last) / 1000 : 0; last = now;
+      tweens.forEach(tw => tw.tick(now));
+      if (state.down) {
+        const total = cfg.browning.baseSeconds + state.level * cfg.browning.secondsPerLevel;
+        state.doneness += dt * (state.level / cfg.browning.max) / total;
+        state.cook += dt;
+        qa('glow').forEach(gl => gl.setAttribute('opacity', 0.65 + 0.25 * Math.sin(now / 140)));
+        q('heat').style.transform = `translateY(${-(now / 60) % 4}px)`;
+        if (state.cook >= total) popUp();
+      }
+      if (state.spin && !reduce) {
+        spinT += dt;
+        const s = Math.cos(spinT * 1.2);
+        q('spin').setAttribute('transform', `translate(${cfg.viewBox[0] / 2} 0) scale(${s.toFixed(3)} 1) translate(${-cfg.viewBox[0] / 2} 0)`);
+      }
+      paint();
+      if (tweens.size || state.down || (state.spin && !reduce)) raf = requestAnimationFrame(step); else last = 0;
+    };
+    raf = requestAnimationFrame(step);
+  }
+
+  function insert() {
+    if (state.bread) return;
+    state.bread = true; state.doneness = 0; state.breadZ = -40;
+    tween(520, e => { state.breadZ = -40 * (1 - e); paint(); }, null, back);
+    paint();
+  }
+  function lever() {
+    if (!state.bread || state.down) return;
+    state.cook = 0;
+    tween(260, e => { state.lever = e; state.breadZ = 21 * e; paint(); }, () => { state.down = true; loop(); });
+  }
+  function popUp() {
+    state.down = false;
+    tween(560, e => { state.lever = 1 - e; state.breadZ = 21 * (1 - e) - Math.sin(e * Math.PI) * 9; paint(); }, null, e => e);
+  }
+  function takeOut() {
+    if (!state.bread || state.down) return;
+    tween(380, e => { state.breadZ = -60 * e; paint(); }, () => { state.bread = false; state.breadZ = 0; paint(); });
+  }
+  function crumbs() {
+    const ground = q('crumbsOnGround');
+    ground.innerHTML = Array.from({ length: 14 }, (_, i) => { const p = P(6 + (i * 17) % (W - 10), L + 6 + (i * 7) % 14, 0); return `<circle cx="${p[0]}" cy="${p[1]}" r="${0.5 + (i % 3) * 0.25}"/>`; }).join('');
+    tween(600, e => { q('tray').setAttribute('transform', `translate(${-6 * Math.sin(e * Math.PI)} 0)`); ground.setAttribute('opacity', e); });
+    setTimeout(() => tween(900, e => ground.setAttribute('opacity', 1 - e)), reduce ? 0 : 1600);
+  }
+
+  const onClick = ev => {
+    const sw = ev.target.closest('[data-sw]');
+    if (sw) { state.color = +sw.dataset.sw; paint(); return; }
+    const b = ev.target.closest('[data-a]');
+    if (!b) return;
+    const a = b.dataset.a;
+    if (a === 'insert') insert();
+    else if (a === 'lever') lever();
+    else if (a === 'browning') { state.level = state.level >= cfg.browning.max ? cfg.browning.min : state.level + 1; paint(); }
+    else if (a === 'stop') { if (state.down) popUp(); }
+    else if (a === 'takeOut') takeOut();
+    else if (a === 'crumbs') crumbs();
+    else if (a === 'see') { state.see = !state.see; paint(); }
+    else if (a === 'labels') { state.labels = !state.labels; paint(); }
+    else if (a === 'zin') { state.zoom = Math.min(1.6, +(state.zoom + 0.1).toFixed(2)); paint(); }
+    else if (a === 'zout') { state.zoom = Math.max(0.6, +(state.zoom - 0.1).toFixed(2)); paint(); }
+    else if (a === 'spin') { state.spin = !state.spin; b.setAttribute('aria-pressed', state.spin); if (state.spin) loop(); else q('spin').removeAttribute('transform'); }
+    else if (a === 'front') { state.spin = false; spinT = 0; btn('spin').setAttribute('aria-pressed', false); q('spin').removeAttribute('transform'); state.zoom = 1; paint(); }
+  };
+  const onWobble = ev => q('disp').setAttribute('scale', ev.target.value);
+  container.addEventListener('click', onClick);
+  const range = container.querySelector('#wobble');
+  range.addEventListener('input', onWobble);
+  paint();
+
+  return {
+    insert, lever, popUp, takeOut, crumbs,
+    setColor(i) { state.color = i; paint(); },
+    setWobble(v) { range.value = v; q('disp').setAttribute('scale', v); },
+    state,
+    destroy() {
+      cancelAnimationFrame(raf); tweens.clear();
+      container.removeEventListener('click', onClick);
+      range.removeEventListener('input', onWobble);
+      container.innerHTML = '';
+    }
+  };
+}
+
+window.toaster = createToaster(document.getElementById('plate'));
+</script>
+</body>
+</html>

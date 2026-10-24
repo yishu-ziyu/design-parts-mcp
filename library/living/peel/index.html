@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peel Sticker Sheet</title>
+<style>
+  @font-face { font-family: "Playfair Display"; font-style: italic; font-weight: 400; font-display: swap; src: url("fonts/playfair-display-latin-400-italic.woff2") format("woff2"); }
+  :root {
+    --page: #f3f3f1;
+    --grid: #e8e8e6;
+    --sheet: #f9f9f7;
+    --ink: #2b2b29;
+    --muted: #8d8d89;
+    --rule: #c9d4e8;
+    --margin: #e9a5a5;
+    --k: 1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page); color: var(--ink); }
+  body {
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #board {
+    position: relative; height: 100vh; min-height: 560px; overflow: hidden;
+    background-color: var(--page);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: calc(31px * var(--k)) calc(31px * var(--k));
+    background-position: -1px -1px;
+    user-select: none; -webkit-user-select: none;
+  }
+
+  #sheet {
+    position: absolute; left: var(--sheet-x); top: var(--sheet-y);
+    width: calc(412px * var(--k)); height: calc(415px * var(--k));
+    background: var(--sheet); border-radius: calc(4px * var(--k));
+    box-shadow: 0 calc(5px * var(--k)) calc(9px * var(--k)) rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.025);
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+    padding: calc(20px * var(--k));
+  }
+  #sheet .cell { display: grid; place-items: center; }
+  #reset {
+    font: 500 calc(13px * var(--k)) / 1 ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    letter-spacing: 0.16em; color: var(--muted); background: none; border: 0; cursor: pointer;
+    padding: 0.8em 1em; text-transform: uppercase; touch-action: manipulation;
+  }
+  #reset:hover { color: var(--ink); }
+
+  #note {
+    position: absolute; left: var(--note-x); top: var(--note-y);
+    width: calc(600px * var(--k)); padding: calc(34px * var(--k)) 0 calc(46px * var(--k)) calc(26px * var(--k));
+    background-color: #fdfdfb;
+    background-image:
+      linear-gradient(90deg, transparent calc(22px * var(--k)), var(--margin) calc(22px * var(--k)), var(--margin) calc(23.5px * var(--k)), transparent calc(23.5px * var(--k))),
+      repeating-linear-gradient(transparent 0, transparent calc(55px * var(--k)), var(--rule) calc(55px * var(--k)), var(--rule) calc(56px * var(--k)));
+    background-position: 0 0, 0 calc(-6px * var(--k));
+    transform: rotate(-3.5deg); transform-origin: 0 0;
+    box-shadow: 0 calc(3px * var(--k)) calc(8px * var(--k)) rgba(0,0,0,0.12);
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-style: italic;
+    font-size: calc(23px * var(--k)); color: var(--ink);
+  }
+  #note h2 { font: inherit; height: calc(56px * var(--k)); line-height: calc(56px * var(--k)); padding-left: calc(12px * var(--k)); }
+  #note ul { list-style: none; }
+  #note li { height: calc(56px * var(--k)); display: flex; align-items: center; gap: calc(14px * var(--k)); padding-left: calc(10px * var(--k)); white-space: nowrap; }
+  #note input { appearance: none; -webkit-appearance: none; flex: none; cursor: pointer;
+    width: calc(18px * var(--k)); height: calc(18px * var(--k)); border: 1.5px solid #6f6f6b; border-radius: 3px; background: #fff; position: relative; }
+  #note input:checked::after { content: ""; position: absolute; left: 22%; top: -18%; width: 35%; height: 85%;
+    border: solid #222; border-width: 0 2.4px 2.4px 0; transform: rotate(40deg); }
+  #note input:checked + span { text-decoration: line-through; text-decoration-thickness: 1.6px; color: #4b4b48; }
+
+  .sticker, .hole { position: absolute; left: 0; top: 0; display: block; }
+  .sticker { cursor: grab; z-index: 5; filter: drop-shadow(0 1px 1.2px rgba(0,0,0,0.18)); touch-action: none; }
+  .sticker.lifted { cursor: grabbing; filter: drop-shadow(0 12px 12px rgba(0,0,0,0.20)) drop-shadow(0 2px 3px rgba(0,0,0,0.12)); }
+  .sticker.decor { cursor: default; pointer-events: none; }
+  .hole { z-index: 2; opacity: 0; pointer-events: none; }
+  #peel-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 900; }
+
+  #sound {
+    position: absolute; right: 16px; bottom: 16px; z-index: 1000;
+    font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.04em;
+    color: var(--ink); background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.1); border-radius: 999px;
+    padding: 9px 13px; cursor: pointer; touch-action: manipulation;
+  }
+  #sound[aria-pressed="false"] { color: var(--muted); }
+
+  @media (max-width: 700px) {
+    #board { height: auto; min-height: 0; padding: 24px 0 72px; }
+    #sheet, #note { position: relative; left: auto; top: auto; }
+    #sheet { margin: 0 auto; }
+    #note { margin: 44px 0 0 calc(20px + 4vw); width: calc(100% - 20px); transform-origin: 0 50%; }
+  }
+
+  #notes { padding: 72px 16px 120px; max-width: 960px; margin: 0 auto; font-size: 14px; line-height: 1.8; color: #4a4a46; }
+  #notes h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: var(--ink); padding-bottom: 14px; border-bottom: 2px solid var(--ink); }
+  #notes dt { margin-top: 24px; }
+  #notes dt code { font: 600 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink); }
+  #notes dd { margin-top: 4px; }
+  #notes dd code { font: 0.93em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink); background: rgba(0,0,0,0.05); padding: 0 0.25em; }
+</style>
+</head>
+<body>
+<main id="board" aria-label="Sticker sheet: peel a sticker and stick it anywhere">
+  <div id="sheet"></div>
+  <button id="reset" type="button">reset</button>
+  <article id="note"></article>
+  <canvas id="peel-layer"></canvas>
+  <button id="sound" type="button" aria-pressed="true">sound on</button>
+</main>
+
+<section id="notes" lang="zh-CN">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#peel-layer</code></dt>
+    <dd>折页算法：抓点 G、指针 P，折线是 GP 的中垂线。贴纸在折线 P 侧的部分原地画正面；G 侧那块用反射矩阵 <code>I − 2nnᵀ</code> 翻到折线另一边，画背面（<code>#e9e9e8</code>，做成卷边：折线上 10% 暗缝，1.5px 处 85% 白高光，6px 处 30%，16px 后消失，远端 12% 暗），带 8px 投影压在正面上。最底下先画灰色模切孔。全部是一张 Canvas 2D，每次 pointermove 重画一次。</dd>
+    <dt><code>#sheet</code></dt>
+    <dd>贴纸板：412×415、圆角 4、3×3 格、内边距 20，底色 <code>#f9f9f7</code> 压在 <code>#f3f3f1</code> 方格纸上（格距 31、线色 <code>#e8e8e6</code>）。贴纸 = 12×12 像素图 × 6.4px，外扩 7px 白色模切边。撕到一半以上（折线越过贴纸 50%）贴纸脱离，先背面朝上、0.42s 绕 Y 轴翻回正面，跟手放大到 1.12、按横向速度倾斜，松手 <code>back.out(3)</code> 落下并随机转 ±10°。没撕够就松手，折页 0.22s 弹回。</dd>
+    <dt><code>#sound</code></dt>
+    <dd>音效全部 WebAudio 现合成：撕的时候一路白噪声 → 高通 400Hz → 带通，拖动速度决定音量（0.9 px/ms 到满）、撕开比例决定带通中心频率（700 → 3400Hz），每次 pointermove 音量再随机 ±25%，听起来是胶面一点点剥开的沙沙声。脱离时一声短 pop，贴上时一声低频 thump，复位时每张一个上行小音。</dd>
+    <dt><code>#note</code></dt>
+    <dd>横线纸：行距 56、蓝线 <code>#c9d4e8</code>、左侧红边线 <code>#e9a5a5</code>，整张转 −3.5°，字体 Playfair Display Italic 23px。勾选框 18px、1.5px 边、勾选后文字加删除线。贴纸可以贴在纸上任何地方，也可以贴回空白处。</dd>
+    <dt><code>#reset</code></dt>
+    <dd>复位：所有撕下的贴纸按 0.05s 间隔、0.6s <code>power3.inOut</code> 飞回原位，落位时模切孔消失、各响一声。</dd>
+  </dl>
+</section>
+
+<script src="vendor/gsap.min.js"></script>
+<script>
+const CONFIG = {
+  design: { width: 1108, height: 720, sheetX: 154, sheetY: 150, noteX: 640, noteY: 205 },
+  pixel: 6.4,
+  border: 7,
+  popAt: 0.5,
+  liftScale: 1.12,
+  dropTilt: 10,
+  colors: {
+    back: '#e9e9e8', hole: '#e4e4e3', outline: '#ffffff', k: '#2a2a28'
+  },
+  note: {
+    title: 'to do:',
+    items: [
+      { text: 'water the basil before it gives up', done: true },
+      { text: 'finish the sticker sheet', done: false },
+      { text: 'reply to the long email I keep starring', done: false },
+      { text: 'go outside while it is still light', done: false }
+    ]
+  },
+  palette: {
+    k: '#2a2a28', w: '#ffffff', s: '#c9c9c4', b: '#7a4a2a', g: '#5fa84a', G: '#3e7f34', t: '#c8683c',
+    r: '#e2453c', y: '#ffd23f', o: '#f29a2e', c: '#f4ead8', m: '#f6e7a1', l: '#e9e4ff', p: '#f2a6c4'
+  },
+  stickers: [
+    { id: 'tag', type: 'tag', text: ['peel', 'me'], fill: '#f8e7a6', ink: '#c2a24a' },
+    { id: 'cup', map: [
+      '............', '...s..s.....', '....s..s....', '...s..s.....',
+      '.kkkkkkkk...', '.kbbbbbbkkk.', '.kwwwwwwk.k.', '.kwwwwwwk.k.',
+      '.kwwwwwwkkk.', '.kwwwwwwk...', '..kwwwwk....', '...kkkk.....'] },
+    { id: 'cactus', map: [
+      '.....kk.....', '....kggk....', '.kk.kgGk....', 'kggkkgGk.kk.',
+      'kgGkkgGkkggk', '.kgggGGkkgGk', '..kkkgGggGk.', '....kgGkkk..',
+      '...kkkkkkk..', '...ktttttk..', '....ktttk...', '....kkkkk...'] },
+    { id: 'cherry', map: [
+      '........kk..', '.......kgk..', '......kk.k..', '.....k...k..',
+      '....k....k..', '...k....kk..', '.kkk...krrk.', 'krrrk.krrrrk',
+      'krwrrkkrwrrk', 'krrrrkkrrrrk', '.krrk..krrk.', '..kk....kk..'] },
+    { id: 'bolt', map: [
+      '......kkkk..', '.....kyyyk..', '....kyyyk...', '...kyyyk....',
+      '..kyyyykkk..', '.kyyoyyyyk..', '..kkkyyyk...', '....kyok....',
+      '...kyyk.....', '...kyk......', '..kok.......', '..kk........'] },
+    { id: 'mushroom', map: [
+      '....kkkk....', '..kkrrrrkk..', '.krwwrrrrrk.', '.krwwrrwwrk.',
+      'krrrrrrwwrrk', 'krrwwrrrrrrk', 'kkkkkkkkkkkk', '...kcccck...',
+      '...kckcck...', '...kcccck...', '...kcccck...', '....kkkk....'] },
+    { id: 'moon', map: [
+      '....kkkk....', '..kkmmmk....', '.kmmmkk.....', '.kmmk.......',
+      'kmmk........', 'kmmk........', 'kmmk........', 'kmmmk.......',
+      '.kmmmk....k.', '.kmmmmkkkmk.', '..kkmmmmmk..', '....kkkkk...'] },
+    { id: 'ghost', map: [
+      '....kkkk....', '..kkllllkk..', '.kllllllllk.', '.kllkllkllk.',
+      '.kllkllkllk.', '.kllllllllk.', '.klllpplllk.', '.kllllllllk.',
+      '.kllllllllk.', '.kllllllllk.', '.klkkllkklk.', '.kk..kk..kk.'] }
+  ],
+  decor: [{ id: 'cup', on: 'note', x: -34, y: -58, rot: -9 }],
+  sound: {
+    on: true, master: 0.7, peelGain: 0.32, speedFull: 0.9,
+    pitchLo: 700, pitchHi: 3400, q: 1.1, jitter: 0.25
+  }
+};
+
+function createSfx(cfg) {
+  let ctx = null, master = null, noise = null, peel = null;
+  let enabled = cfg.on;
+  function ensure() {
+    if (!enabled) return null;
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = cfg.master; master.connect(ctx.destination);
+      noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function burst({ dur, type = 'bandpass', freq, q = 1, gain }) {
+    const src = ctx.createBufferSource(); src.buffer = noise;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); const t = ctx.currentTime;
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(master); src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.02);
+  }
+  function tone({ type = 'sine', from, to, dur, gain }) {
+    const o = ctx.createOscillator(); o.type = type; const g = ctx.createGain(); const t = ctx.currentTime;
+    o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  return {
+    unlock() { ensure(); },
+    setEnabled(v) { enabled = v; if (!v) this.peelStop(); },
+    get enabled() { return enabled; },
+    peelStart() {
+      if (!ensure() || peel) return;
+      const src = ctx.createBufferSource(); src.buffer = noise; src.loop = true;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 400;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = cfg.pitchLo; bp.Q.value = cfg.q;
+      const g = ctx.createGain(); g.gain.value = 0;
+      src.connect(hp).connect(bp).connect(g).connect(master); src.start();
+      peel = { src, bp, g };
+    },
+    // speed (px/ms) drives loudness, peel fraction drives pitch
+    peelUpdate(speed, frac) {
+      if (!peel) return;
+      const t = ctx.currentTime;
+      const v = Math.min(1, speed / cfg.speedFull) * cfg.peelGain * (1 - cfg.jitter + Math.random() * cfg.jitter * 2);
+      peel.g.gain.setTargetAtTime(v, t, 0.025);
+      peel.bp.frequency.setTargetAtTime(cfg.pitchLo + (cfg.pitchHi - cfg.pitchLo) * Math.min(1, Math.max(0, frac)), t, 0.04);
+    },
+    peelStop() {
+      if (!peel) return;
+      const p = peel; peel = null; const t = ctx.currentTime;
+      p.g.gain.setTargetAtTime(0, t, 0.03); p.src.stop(t + 0.25);
+    },
+    pop() { if (!ensure()) return; burst({ dur: 0.05, freq: 2600, q: 0.8, gain: 0.5 }); tone({ from: 1300, to: 320, dur: 0.08, gain: 0.22 }); },
+    stick() { if (!ensure()) return; tone({ from: 190, to: 80, dur: 0.12, gain: 0.45 }); burst({ dur: 0.06, type: 'lowpass', freq: 900, gain: 0.35 }); },
+    snapBack() { if (!ensure()) return; tone({ type: 'triangle', from: 700, to: 240, dur: 0.05, gain: 0.18 }); },
+    tick() { if (!ensure()) return; tone({ type: 'triangle', from: 1500, to: 900, dur: 0.035, gain: 0.12 }); },
+    blip(i) { if (!ensure()) return; const f = 520 * Math.pow(2, (i * 2) / 12); tone({ type: 'triangle', from: f, to: f * 1.02, dur: 0.07, gain: 0.12 }); }
+  };
+}
+
+function renderSticker(def, k, cfg) {
+  const px = Math.max(2, Math.round(cfg.pixel * k));
+  const b = Math.max(3, Math.round(cfg.border * k));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const art = document.createElement('canvas');
+  const ac = art.getContext('2d');
+  let aw, ah;
+  if (def.type === 'tag') {
+    aw = px * 13; ah = px * 10;
+    art.width = aw * dpr; art.height = ah * dpr; ac.scale(dpr, dpr);
+    ac.fillStyle = def.fill;
+    const r = px * 2.4;
+    ac.beginPath(); ac.roundRect ? ac.roundRect(0, 0, aw, ah, r) : ac.rect(0, 0, aw, ah); ac.fill();
+    ac.fillStyle = def.ink; ac.textAlign = 'center'; ac.textBaseline = 'middle';
+    ac.font = `600 ${Math.round(px * 2.3)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    def.text.forEach((line, i) => ac.fillText(line, aw / 2, ah / 2 + (i - (def.text.length - 1) / 2) * px * 2.8));
+  } else {
+    const n = def.map.length; aw = ah = px * n;
+    art.width = aw * dpr; art.height = ah * dpr; ac.scale(dpr, dpr);
+    def.map.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ac.fillStyle = cfg.palette[ch] || ch; ac.fillRect(x * px, y * px, px, px);
+    }));
+  }
+  const W = aw + b * 2, H = ah + b * 2;
+  const mk = () => { const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); const x = c.getContext('2d'); x.scale(dpr, dpr); return [c, x]; };
+  const [shape, sx] = mk();
+  for (let a = 0; a < 24; a++) {
+    const t = (a / 24) * Math.PI * 2;
+    sx.drawImage(art, b + Math.cos(t) * b, b + Math.sin(t) * b, aw, ah);
+  }
+  sx.drawImage(art, b * 0.5, b, aw, ah); sx.drawImage(art, b * 1.5, b, aw, ah);
+  sx.globalCompositeOperation = 'source-in'; sx.fillStyle = cfg.colors.outline; sx.fillRect(0, 0, W, H);
+  const tint = (color, blur) => {
+    const [c, x] = mk(); if (blur) x.filter = `blur(${blur}px)`;
+    x.drawImage(shape, 0, 0, W, H); x.filter = 'none';
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, W, H); return c;
+  };
+  const [front, fx] = mk();
+  fx.drawImage(shape, 0, 0, W, H); fx.drawImage(art, b, b, aw, ah);
+  const back = tint(cfg.colors.back);
+  const hole = tint(cfg.colors.hole, 0.8 * k);
+  const mask = new Uint8Array(Math.ceil(W) * Math.ceil(H));
+  const small = document.createElement('canvas'); small.width = Math.ceil(W); small.height = Math.ceil(H);
+  const smx = small.getContext('2d'); smx.drawImage(shape, 0, 0, W, H);
+  const data = smx.getImageData(0, 0, small.width, small.height).data;
+  for (let i = 0; i < mask.length; i++) mask[i] = data[i * 4 + 3] > 40 ? 1 : 0;
+  return { W, H, dpr, front, back, hole, mask, mw: small.width, mh: small.height };
+}
+
+function createStickerSheet(board, options = {}) {
+  const cfg = Object.assign({}, CONFIG, options);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const dur = (s) => (reduce.matches ? 0 : s);
+  const sheet = board.querySelector('#sheet');
+  const note = board.querySelector('#note');
+  const layer = board.querySelector('#peel-layer');
+  const lctx = layer.getContext('2d');
+  const soundBtn = board.querySelector('#sound');
+  const sfx = createSfx(cfg.sound);
+  let k = 1, z = 10, active = null;
+  const items = [];
+  const cleanups = [];
+  const on = (el, ev, fn, opt) => { el.addEventListener(ev, fn, opt); cleanups.push(() => el.removeEventListener(ev, fn, opt)); };
+
+  note.innerHTML = '';
+  const h2 = document.createElement('h2'); h2.textContent = cfg.note.title; note.appendChild(h2);
+  const ul = document.createElement('ul');
+  cfg.note.items.forEach((it) => {
+    const li = document.createElement('li');
+    const lab = document.createElement('label'); lab.style.display = 'contents';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = it.done;
+    const sp = document.createElement('span'); sp.textContent = it.text;
+    on(cb, 'change', () => sfx.tick());
+    lab.append(cb, sp); li.appendChild(lab); ul.appendChild(li);
+  });
+  note.appendChild(ul);
+
+  sheet.innerHTML = '';
+  const cells = [];
+  for (let i = 0; i < 9; i++) { const c = document.createElement('div'); c.className = 'cell'; sheet.appendChild(c); cells.push(c); }
+  const resetBtn = board.querySelector('#reset');
+  cells[8].appendChild(resetBtn);
+
+  const byId = Object.fromEntries(cfg.stickers.map((s) => [s.id, s]));
+  cfg.stickers.slice(0, 8).forEach((def, i) => {
+    const el = document.createElement('canvas'); el.className = 'sticker'; el.setAttribute('aria-label', def.id + ' sticker');
+    const hole = document.createElement('canvas'); hole.className = 'hole';
+    board.insertBefore(hole, layer); board.insertBefore(el, layer);
+    items.push({ def, el, hole, cell: cells[i], home: true, x: 0, y: 0, rot: 0, img: null });
+  });
+  const decor = cfg.decor.map((d) => {
+    const el = document.createElement('canvas'); el.className = 'sticker decor'; el.setAttribute('aria-hidden', 'true');
+    board.insertBefore(el, layer);
+    return { d, def: byId[d.id], el, img: null };
+  });
+
+  function paint(canvas, src, W, H) {
+    canvas.width = src.width; canvas.height = src.height;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    canvas.getContext('2d').drawImage(src, 0, 0);
+  }
+  function homePos(it) {
+    const br = board.getBoundingClientRect(), cr = it.cell.getBoundingClientRect();
+    return { x: cr.left - br.left + cr.width / 2 - it.img.W / 2, y: cr.top - br.top + cr.height / 2 - it.img.H / 2 };
+  }
+
+  function layout() {
+    const vw = board.clientWidth, vh = window.innerHeight;
+    const narrow = vw <= 700;
+    k = narrow ? Math.min(1, (vw - 32) / 412) : Math.max(0.55, Math.min(1.35, vw / cfg.design.width, vh / cfg.design.height));
+    board.style.setProperty('--k', k.toFixed(4));
+    if (!narrow) {
+      const ox = (vw - cfg.design.width * k) / 2;
+      const oy = Math.max(0, (Math.max(vh, 560) - cfg.design.height * k) / 2);
+      board.style.setProperty('--sheet-x', ox + cfg.design.sheetX * k + 'px');
+      board.style.setProperty('--sheet-y', oy + cfg.design.sheetY * k + 'px');
+      board.style.setProperty('--note-x', ox + cfg.design.noteX * k + 'px');
+      board.style.setProperty('--note-y', oy + cfg.design.noteY * k + 'px');
+    }
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    layer.width = Math.round(board.clientWidth * dpr); layer.height = Math.round(board.clientHeight * dpr);
+    items.forEach((it) => {
+      const oldW = it.img ? it.img.W : 0;
+      it.img = renderSticker(it.def, k, cfg);
+      paint(it.el, it.img.front, it.img.W, it.img.H);
+      paint(it.hole, it.img.hole, it.img.W, it.img.H);
+      const h = homePos(it);
+      gsap.set(it.hole, { x: h.x, y: h.y });
+      if (it.home) { it.x = h.x; it.y = h.y; gsap.set(it.el, { x: h.x, y: h.y, rotation: 0, scale: 1 }); }
+      else {
+        it.x += (oldW - it.img.W) / 2; it.y += (oldW - it.img.W) / 2;
+        it.x = Math.min(Math.max(-it.img.W / 2, it.x), board.clientWidth - it.img.W / 2);
+        it.y = Math.min(Math.max(-it.img.H / 2, it.y), board.clientHeight - it.img.H / 2);
+        gsap.set(it.el, { x: it.x, y: it.y });
+      }
+    });
+    decor.forEach((dc) => {
+      dc.img = renderSticker(dc.def, k, cfg);
+      paint(dc.el, dc.img.front, dc.img.W, dc.img.H);
+      gsap.set(dc.el, { x: note.offsetLeft + dc.d.x * k, y: note.offsetTop + dc.d.y * k, rotation: dc.d.rot, zIndex: 6 });
+    });
+  }
+
+  function local(e) { const r = board.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+  function edgeBehind(it, g, dx, dy) {
+    const L = Math.hypot(dx, dy) || 1, ux = -dx / L, uy = -dy / L;
+    const { mask, mw, mh } = it.img;
+    const solid = (x, y) => { const ix = Math.floor(x), iy = Math.floor(y); return ix >= 0 && iy >= 0 && ix < mw && iy < mh && mask[iy * mw + ix] === 1; };
+    if (!solid(g.x, g.y)) return { x: g.x, y: g.y };
+    let x = g.x, y = g.y;
+    for (let s = 0; s < 400; s++) { const nx = x + ux, ny = y + uy; if (!solid(nx, ny)) break; x = nx; y = ny; }
+    return { x, y };
+  }
+
+  function halfPlane(ctx, mx, my, nx, ny, sign) {
+    const B = 4000, tx = -ny, ty = nx;
+    ctx.beginPath();
+    ctx.moveTo(mx + tx * B, my + ty * B); ctx.lineTo(mx - tx * B, my - ty * B);
+    ctx.lineTo(mx - tx * B + sign * nx * B, my - ty * B + sign * ny * B);
+    ctx.lineTo(mx + tx * B + sign * nx * B, my + ty * B + sign * ny * B);
+    ctx.closePath();
+  }
+
+  const flapBuf = document.createElement('canvas');
+  function drawPeel(it, G, P) {
+    const dpr = layer.width / board.clientWidth;
+    lctx.setTransform(1, 0, 0, 1, 0, 0); lctx.clearRect(0, 0, layer.width, layer.height);
+    if (!it) return 0;
+    const { W, H, front, back, hole } = it.img;
+    lctx.setTransform(dpr, 0, 0, dpr, it.x * dpr, it.y * dpr);
+    const dx = P.x - G.x, dy = P.y - G.y, L = Math.hypot(dx, dy);
+    lctx.drawImage(hole, 0, 0, W, H);
+    if (L < 0.5) { lctx.drawImage(front, 0, 0, W, H); return 0; }
+    const nx = dx / L, ny = dy / L, mx = (G.x + P.x) / 2, my = (G.y + P.y) / 2;
+    lctx.save(); halfPlane(lctx, mx, my, nx, ny, 1); lctx.clip(); lctx.drawImage(front, 0, 0, W, H); lctx.restore();
+
+    flapBuf.width = back.width; flapBuf.height = back.height;
+    const fb = flapBuf.getContext('2d'); const s = back.width / W;
+    fb.setTransform(1, 0, 0, 1, 0, 0); fb.drawImage(back, 0, 0);
+    fb.setTransform(s, 0, 0, s, 0, 0); fb.globalCompositeOperation = 'source-atop';
+    const reach = Math.max(8, L / 2 + Math.hypot(W, H) * 0.25);
+    const gr = fb.createLinearGradient(mx, my, mx - nx * reach, my - ny * reach);
+    const f = (d) => Math.min(0.95, (d * k) / reach);
+    gr.addColorStop(0, 'rgba(0,0,0,0.10)'); gr.addColorStop(f(1.5), 'rgba(255,255,255,0.85)');
+    gr.addColorStop(f(6), 'rgba(255,255,255,0.3)'); gr.addColorStop(f(16), 'rgba(255,255,255,0)');
+    gr.addColorStop(1, 'rgba(0,0,0,0.12)');
+    fb.fillStyle = gr; fb.fillRect(0, 0, W, H); fb.globalCompositeOperation = 'source-over';
+
+    lctx.save();
+    const c = mx * nx + my * ny;
+    lctx.transform(1 - 2 * nx * nx, -2 * nx * ny, -2 * nx * ny, 1 - 2 * ny * ny, 2 * c * nx, 2 * c * ny);
+    halfPlane(lctx, mx, my, nx, ny, -1); lctx.clip();
+    lctx.shadowColor = 'rgba(0,0,0,0.22)'; lctx.shadowBlur = 8 * dpr; lctx.shadowOffsetY = 2 * dpr;
+    lctx.drawImage(flapBuf, 0, 0, W, H);
+    lctx.restore();
+
+    const corners = [[0, 0], [W, 0], [0, H], [W, H]].map(([x, y]) => x * nx + y * ny);
+    const gp = G.x * nx + G.y * ny, far = Math.max(...corners);
+    return Math.max(0, (mx * nx + my * ny - gp) / Math.max(1, far - gp));
+  }
+
+  function lift(it, p, grab) {
+    it.home = false; it.el.style.visibility = ''; it.el.classList.add('lifted');
+    it.el.style.zIndex = String(++z);
+    gsap.set(it.hole, { opacity: 1 });
+    gsap.to(it.el, { scale: cfg.liftScale, duration: dur(0.3), ease: 'back.out(3)', overwrite: 'auto' });
+    it.qx = gsap.quickTo(it.el, 'x', { duration: dur(0.16), ease: 'power3' });
+    it.qy = gsap.quickTo(it.el, 'y', { duration: dur(0.16), ease: 'power3' });
+    it.qr = gsap.quickTo(it.el, 'rotation', { duration: dur(0.35), ease: 'power2' });
+    it.grab = grab;
+    it.x = p.x - grab.x; it.y = p.y - grab.y; it.qx(it.x); it.qy(it.y);
+  }
+
+  // No perspective: the element is translated far from its layout origin, so perspective() would skew it. Past 90deg the back silhouette shows mirrored, like a real sticker's back.
+  function flipIn(it) {
+    if (reduce.matches) return;
+    const { W, H } = it.img;
+    paint(it.el, it.img.back, W, H);
+    let swapped = false;
+    const toFront = () => { if (!swapped) { swapped = true; paint(it.el, it.img.front, W, H); } };
+    gsap.fromTo(it.el, { rotationY: 180 }, {
+      rotationY: 0, duration: 0.42, ease: 'power2.inOut',
+      onUpdate: () => { if (gsap.getProperty(it.el, 'rotationY') < 90) toFront(); },
+      onComplete: toFront
+    });
+  }
+
+  function drop(it) {
+    it.el.classList.remove('lifted');
+    const cx = it.x + it.img.W / 2, cy = it.y + it.img.H / 2;
+    const h = homePos(it);
+    const nearHome = Math.hypot(cx - (h.x + it.img.W / 2), cy - (h.y + it.img.H / 2)) < it.img.W * 0.35;
+    if (nearHome) { sendHome(it, 0); return; }
+    it.rot = Math.round((Math.random() * 2 - 1) * cfg.dropTilt);
+    gsap.to(it.el, { x: it.x, y: it.y, scale: 1, rotation: it.rot, duration: dur(0.38), ease: 'back.out(3)', overwrite: 'auto' });
+    sfx.stick();
+  }
+
+  function sendHome(it, i) {
+    const h = homePos(it);
+    it.home = true; it.x = h.x; it.y = h.y; it.rot = 0;
+    it.el.classList.remove('lifted');
+    gsap.to(it.el, {
+      x: h.x, y: h.y, rotation: 0, scale: 1, duration: dur(0.6), delay: dur(i * 0.05), ease: 'power3.inOut', overwrite: 'auto',
+      onComplete: () => { gsap.set(it.hole, { opacity: 0 }); sfx.blip(i); }
+    });
+  }
+
+  function onDown(e) {
+    const it = items.find((x) => x.el === e.currentTarget);
+    if (!it || active) return;
+    e.preventDefault();
+    sfx.unlock();
+    const p = local(e);
+    it.el.setPointerCapture && it.el.setPointerCapture(e.pointerId);
+    active = { it, id: e.pointerId, start: p, last: p, lt: performance.now(), speed: 0, mode: it.home ? 'arming' : 'drag' };
+    if (!it.home) {
+      gsap.killTweensOf(it.el);
+      lift(it, p, { x: p.x - it.x, y: p.y - it.y });
+      it.el.style.zIndex = String(++z);
+      sfx.pop();
+    }
+  }
+
+  function onMove(e) {
+    if (!active || e.pointerId !== active.id) return;
+    const it = active.it, p = local(e), now = performance.now();
+    const dt = Math.max(1, now - active.lt);
+    const inst = Math.hypot(p.x - active.last.x, p.y - active.last.y) / dt;
+    active.speed = active.speed * 0.6 + inst * 0.4;
+    const vx = (p.x - active.last.x) / dt;
+    active.last = p; active.lt = now;
+    const dx = p.x - active.start.x, dy = p.y - active.start.y;
+    if (active.mode === 'arming') {
+      if (Math.hypot(dx, dy) < 4) return;
+      const g = { x: active.start.x - it.x, y: active.start.y - it.y };
+      active.G = edgeBehind(it, g, dx, dy);
+      active.mode = 'peel';
+      it.el.style.visibility = 'hidden';
+      sfx.peelStart();
+    }
+    if (active.mode === 'peel') {
+      const P = { x: active.G.x + dx, y: active.G.y + dy };
+      const frac = drawPeel(it, active.G, P);
+      active.P = P;
+      sfx.peelUpdate(active.speed, frac);
+      if (frac >= cfg.popAt) {
+        sfx.peelStop(); drawPeel(null); sfx.pop();
+        const grab = { x: active.start.x - it.x, y: active.start.y - it.y };
+        lift(it, p, grab);
+        flipIn(it);
+        active.mode = 'drag';
+      }
+      return;
+    }
+    if (active.mode === 'drag') {
+      it.x = p.x - it.grab.x; it.y = p.y - it.grab.y;
+      it.qx(it.x); it.qy(it.y);
+      it.qr(Math.max(-18, Math.min(18, vx * 14)));
+    }
+  }
+
+  function onUp(e) {
+    if (!active || e.pointerId !== active.id) return;
+    const { it, mode } = active;
+    const a = active; active = null;
+    if (mode === 'peel') {
+      sfx.peelStop();
+      const state = { x: a.P.x, y: a.P.y };
+      gsap.to(state, {
+        x: a.G.x, y: a.G.y, duration: dur(0.22), ease: 'power3.in',
+        onUpdate: () => drawPeel(it, a.G, state),
+        onComplete: () => { drawPeel(null); it.el.style.visibility = ''; sfx.snapBack(); }
+      });
+      if (reduce.matches) { drawPeel(null); it.el.style.visibility = ''; }
+    } else if (mode === 'drag') {
+      drop(it);
+    }
+  }
+
+  items.forEach((it) => {
+    on(it.el, 'pointerdown', onDown);
+    on(it.el, 'pointermove', onMove);
+    on(it.el, 'pointerup', onUp);
+    on(it.el, 'pointercancel', onUp);
+  });
+  on(resetBtn, 'click', () => { sfx.unlock(); items.filter((x) => !x.home).forEach((x, i) => sendHome(x, i)); });
+  on(soundBtn, 'click', () => {
+    const v = !sfx.enabled; sfx.setEnabled(v);
+    soundBtn.setAttribute('aria-pressed', String(v)); soundBtn.textContent = v ? 'sound on' : 'sound off';
+  });
+  let rz = 0;
+  on(window, 'resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(layout); });
+  layout();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+
+  return {
+    reset() { items.filter((x) => !x.home).forEach((x, i) => sendHome(x, i)); },
+    setSound(v) { sfx.setEnabled(v); },
+    destroy() {
+      cleanups.forEach((f) => f()); sfx.peelStop();
+      items.forEach((it) => { gsap.killTweensOf(it.el); it.el.remove(); it.hole.remove(); });
+      decor.forEach((d) => d.el.remove());
+      drawPeel(null);
+    }
+  };
+}
+
+window.peel = createStickerSheet(document.getElementById('board'));
+</script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Wave SVG</title>
+<style>
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/inter-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  :root {
+    --bg: #ffffff;
+    --ink: #0a0a0a;
+    --label: #4a4a50;
+    --pill: #f1f1f3;
+    --pill-on: #e7e6eb;
+    --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body { font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+  .stage { position: relative; height: 100vh; height: 100svh; min-height: 520px; overflow: hidden; }
+  .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .stage svg.can-grab { cursor: grab; }
+  .stage svg.grabbing { cursor: grabbing; }
+
+  .pw-bar {
+    position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%);
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+    width: max-content; max-width: calc(100% - 32px);
+  }
+  .pw-pill {
+    height: 32px; padding: 0 14px; border-radius: 16px; background: var(--pill);
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 400 12px/1 var(--sans); color: var(--label); letter-spacing: 0;
+    cursor: ew-resize; user-select: none; -webkit-user-select: none; touch-action: none;
+    outline: none; transition: background-color 0.12s;
+  }
+  .pw-pill:hover, .pw-pill.on, .pw-pill:focus-visible { background: var(--pill-on); }
+  .pw-pill:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 3px #9a99a3; }
+  .pw-pill .v { font: 400 12px/1 var(--mono); color: var(--ink); min-width: 25px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .pw-probe { transition: opacity 0.35s ease; }
+  .pw-probe text { font: 400 11px var(--mono); }
+
+  #notes { padding: 72px 16px 120px; max-width: 1000px; margin: 0 auto; font-size: 14px; line-height: 1.8; color: #45454a; }
+  #notes h3 { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; color: var(--ink); padding-bottom: 14px; border-bottom: 3px solid var(--ink); }
+  #notes dt { margin-top: 26px; }
+  #notes dt code { font: 500 14px var(--mono); color: var(--ink); }
+  #notes dd { margin-top: 4px; }
+  #notes dd code { font: 13px var(--mono); color: var(--ink); background: rgba(10, 10, 10, 0.06); padding: 0 0.25em; }
+
+  @media (max-width: 720px) {
+    .stage { height: 78vh; height: 78svh; min-height: 460px; }
+    .pw-bar { bottom: 20px; gap: 6px; }
+    #notes { padding-top: 48px; }
+  }
+</style>
+</head>
+<body>
+  <main>
+    <section class="stage" id="stage" aria-label="Paper wave demo">
+      <svg id="scene" data-pw="scene" role="img">
+        <g id="floor" data-pw="floor"></g>
+        <g id="sheet" data-pw="sheet"></g>
+        <g id="guides" data-pw="guides"></g>
+        <g id="probe" data-pw="probe"></g>
+      </svg>
+      <div id="controls" data-pw="controls"></div>
+    </section>
+
+    <section id="notes" lang="zh-CN">
+      <h3>可拆</h3>
+      <dl>
+        <dt><code>#scene</code></dt>
+        <dd>纯 SVG 的 3D：每个点用正交投影手算到屏幕，<code>sx = ox + s(x·cosθ − z·sinθ)</code>，<code>sy = oy − s(sinT(x·sinθ + z·cosθ) + cosT·y)</code>，θ = Rotate，T = Tilt，没有透视，平行线始终平行。纸是 660 × 176 的长条，沿长度切成 128 条细带；每帧按细带中心到相机的深度从远到近重排再画（画家算法），每条带自己带着两段黑边，所以纸拱起来时远处的边被近处的带子挡住，不用另做消隐。带子颜色由法线和视线的点积 f 决定：f ≥ 0 时从 <code>rgb(228,228,235)</code> 线性亮到白（f = 0.565 时到顶），f &lt; 0（看到纸背）换成淡紫灰 <code>rgb(235,234,242)</code>。Rotate / Tilt / Amplitude / Wavelength 的显示值立刻变，画面按 0.15 s 时间常数追上去。</dd>
+        <dt><code>#floor</code></dt>
+        <dd>地面：30 单位一格的点阵，x ±660、z ±330，点半径 0.85px、黑 33%，按屏幕上离投影中心的距离淡出（158 → 471 个单位乘缩放，线性）；纸下的影子也按细带画，每条的深浅跟它自己的高度走，<code>α = 0.13·e^(−y/150)</code>，纸抬得越高影子越淡。</dd>
+        <dt><code>#guides</code></dt>
+        <dd>透视线：两条长边每 1/16 长度一根竖直虚线落到地面，加上地面轮廓虚线，画在纸的上面，像 X 光一样穿过纸。虚线 <code>3.5 4</code>、1px 黑，不透明度跟那一点的高度成正比 <code>min(0.6, y/120)</code>，远侧那条边再乘 0.57：纸贴地时几乎看不见，抬起来线就变深，高度和前后都读得出来。</dd>
+        <dt><code>#probe</code></dt>
+        <dd>拖纸：从最近的细带往远处找指针落在哪条带里，反解出纸面上的点 (x, z)，显示手柄（半径 2.9）、落到地面的虚线、地面小点和 <code>height</code> 读数（11px 等宽，前灰后黑）。按住上下拖，以抓点为中心、σ = 35 的高斯范围被弹簧拉到指针高度，波照常从手里穿过；松手后按带回复力的阻尼弦传开：波速 465、回复 6.6、阻尼 1.95，两端自由，脉冲到端点会翘起来再弹回。</dd>
+        <dt><code>#controls</code></dt>
+        <dd>五个可左右拖的数值药丸（Amplitude / Wavelength / Speed / Rotate / Tilt），底边离容器 48px、间距 8px、居中：药丸高 32、圆角 16、左右内边距 14、底 <code>#f1f1f3</code>，悬停和拖动时 <code>#e7e6eb</code>；名字 12px 无衬线灰，数值 12px 等宽黑、右对齐、最小宽 25px，名字和数值隔 10px。指针变成左右箭头，键盘方向键也能调，Shift 一次 10 步。</dd>
+      </dl>
+    </section>
+  </main>
+
+<script>
+const CONFIG = {
+  params: { amplitude: 20, wavelength: 200, speed: 0.2, rotate: 145, tilt: 20 },
+  controls: [
+    { key: 'amplitude', label: 'Amplitude', min: 0, max: 60, step: 1, perPx: 0.25, digits: 0, unit: '' },
+    { key: 'wavelength', label: 'Wavelength', min: 60, max: 600, step: 1, perPx: 1, digits: 0, unit: '' },
+    { key: 'speed', label: 'Speed', min: 0, max: 1, step: 0.01, perPx: 0.005, digits: 2, unit: '' },
+    { key: 'rotate', label: 'Rotate', min: 0, max: 360, step: 1, perPx: 0.5, digits: 0, unit: '°', wrap: true },
+    { key: 'tilt', label: 'Tilt', min: 5, max: 85, step: 1, perPx: 0.25, digits: 0, unit: '°' },
+  ],
+  sheet: { length: 660, width: 176, rest: 34, strips: 128, crossEvery: 16, hairEvery: 8 },
+  physics: { c: 465, k: 6.6, damping: 1.95, dt: 1 / 240, grabSigma: 35, grabK: 6000, grabD: 150, maxHeight: 420, reducedDamping: 12, reducedRelax: 0.25 },
+  floor: { spacing: 30, halfX: 660, halfZ: 330, dotRadius: 0.85, dotAlpha: 0.33, fadeFrom: 158, fadeTo: 471 },
+  shadow: { alpha: 0.13, falloff: 150 },
+  shade: { top: [228, 228, 235], lit: [255, 255, 255], litAt: 0.565, under: [235, 234, 242], underDeep: [224, 223, 234] },
+  stroke: { edge: '#111111', edgeWidth: 1.2, cross: 'rgba(0,0,0,0.17)', crossWidth: 1, guide: '#000', guideWidth: 1, dash: '3.5 4' },
+  guides: { perUnit: 1 / 120, maxAlpha: 0.6, farFactor: 0.57, floorAlpha: 0.25 },
+  ease: 0.15,
+  layout: { refWidth: 995, refHeight: 746, narrowAt: 700, narrowRefWidth: 760, targetY: 17 },
+  probe: {
+    radius: 2.9, floorRadius: 1.7, labelDx: 11, labelDy: -10,
+    hover: { dot: '#8e8e93', line: 'rgba(0,0,0,0.3)', key: '#ababb0', value: '#8e8e93' },
+    drag: { dot: '#111111', line: 'rgba(0,0,0,0.55)', key: '#8a8a8f', value: '#111111' },
+  },
+  copy: { heightLabel: 'height', sceneLabel: 'A sheet of paper drawn in SVG, waving above a dotted floor. Drag it up and let go.', controlsLabel: 'Wave controls' },
+};
+
+function createPaperWave(container, options = {}) {
+  const cfg = mergeDeep(structuredClone(CONFIG), options.config || {});
+  const params = Object.assign({}, cfg.params, options.params || {});
+  const showControls = options.controls !== false;
+  const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduced = reduceMQ.matches;
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (name, attrs, parent) => {
+    const n = document.createElementNS(NS, name);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+
+  const L = cfg.sheet.length, W = cfg.sheet.width, M = cfg.sheet.strips, N = M + 1;
+  const DX = L / M;
+  const xs = new Float64Array(N);
+  for (let i = 0; i < N; i++) xs[i] = -L / 2 + i * DX;
+
+  // ---------- DOM: reuse a static skeleton (data-pw="…") when the page ships one ----------
+  const created = [];
+  const part = (name, tag, parent, keepChildren) => {
+    let n = container.querySelector(`[data-pw="${name}"]`);
+    if (!n) {
+      n = tag === 'div' ? document.createElement('div') : el(tag, {});
+      n.setAttribute('data-pw', name);
+      (parent || container).appendChild(n);
+      created.push(n);
+    }
+    if (!keepChildren) n.replaceChildren();
+    return n;
+  };
+  const setAttrs = (n, attrs) => { for (const k in attrs) n.setAttribute(k, attrs[k]); return n; };
+  const svg = setAttrs(part('scene', 'svg', null, true), { role: 'img', 'aria-label': cfg.copy.sceneLabel });
+  const gFloor = part('floor', 'g', svg);
+  const gShadow = el('g', {}, gFloor);
+  const gDots = el('g', {}, gFloor);
+  const gSheet = setAttrs(part('sheet', 'g', svg), { 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+  const gGuides = setAttrs(part('guides', 'g', svg), { fill: 'none', stroke: cfg.stroke.guide, 'stroke-width': cfg.stroke.guideWidth, 'stroke-dasharray': cfg.stroke.dash });
+  const hairIdx = [];
+  for (let i = 0; i <= M; i += cfg.sheet.hairEvery) hairIdx.push(i);
+  const hairs = hairIdx.map(() => [el('path', {}, gGuides), el('path', {}, gGuides)]);
+  const floorNear = el('path', {}, gGuides);
+  const floorFar = el('path', {}, gGuides);
+  const gProbe = setAttrs(part('probe', 'g', svg), { class: 'pw-probe', opacity: 0, 'pointer-events': 'none' });
+  const probeLine = el('path', { fill: 'none', 'stroke-width': 1, 'stroke-dasharray': cfg.stroke.dash }, gProbe);
+  const probeFloor = el('circle', { r: cfg.probe.floorRadius }, gProbe);
+  const probeDot = el('circle', { r: cfg.probe.radius }, gProbe);
+  const probeText = el('text', {}, gProbe);
+  const probeKey = el('tspan', {}, probeText);
+  const probeVal = el('tspan', {}, probeText);
+  probeKey.textContent = cfg.copy.heightLabel;
+
+  const shadowPaths = [], strips = [];
+  for (let j = 0; j < M; j++) {
+    shadowPaths.push(el('path', { 'stroke-width': 0.6 }, gShadow));
+    const g = el('g', {}, gSheet);
+    const fill = el('path', { 'stroke-width': 0.6 }, g);
+    const edge = el('path', { fill: 'none', stroke: cfg.stroke.edge, 'stroke-width': cfg.stroke.edgeWidth }, g);
+    strips.push({ g, fill, edge, depth: 0, j });
+  }
+  const crossIdx = [];
+  for (let i = cfg.sheet.crossEvery; i < M; i += cfg.sheet.crossEvery) crossIdx.push(i);
+  const crossPaths = crossIdx.map(() => el('path', { fill: 'none', stroke: cfg.stroke.cross, 'stroke-width': cfg.stroke.crossWidth }));
+
+  const dots = [];
+  for (let x = -cfg.floor.halfX; x <= cfg.floor.halfX + 1e-6; x += cfg.floor.spacing)
+    for (let z = -cfg.floor.halfZ; z <= cfg.floor.halfZ + 1e-6; z += cfg.floor.spacing)
+      dots.push({ x, z, n: el('circle', { r: cfg.floor.dotRadius, fill: '#000' }, gDots) });
+
+  // ---------- controls ----------
+  let bar = null;
+  const pills = {};
+  if (showControls) {
+    bar = part('controls', 'div');
+    bar.className = 'pw-bar';
+    bar.setAttribute('role', 'group');
+    bar.setAttribute('aria-label', cfg.copy.controlsLabel);
+    for (const c of cfg.controls) {
+      const p = document.createElement('div');
+      p.className = 'pw-pill';
+      p.tabIndex = 0;
+      p.setAttribute('role', 'slider');
+      p.setAttribute('aria-label', c.label);
+      p.setAttribute('aria-valuemin', c.min);
+      p.setAttribute('aria-valuemax', c.max);
+      const k = document.createElement('span'); k.className = 'k'; k.textContent = c.label;
+      const v = document.createElement('span'); v.className = 'v';
+      p.append(k, v);
+      bar.appendChild(p);
+      pills[c.key] = { p, v, c };
+      bindPill(p, c);
+    }
+  } else {
+    const stale = container.querySelector('[data-pw="controls"]');
+    if (stale) stale.replaceChildren();
+  }
+
+  const fmt = (c, val) => val.toFixed(c.digits) + c.unit;
+  function syncPill(key) {
+    const it = pills[key]; if (!it) return;
+    const t = fmt(it.c, params[key]);
+    it.v.textContent = t;
+    it.p.setAttribute('aria-valuenow', params[key]);
+    it.p.setAttribute('aria-valuetext', t);
+  }
+  function clampParam(c, val) {
+    if (c.wrap) { const span = c.max - c.min; val = ((val - c.min) % span + span) % span + c.min; }
+    else val = Math.min(c.max, Math.max(c.min, val));
+    return val;
+  }
+  function setParam(key, val, quiet) {
+    const c = cfg.controls.find(o => o.key === key);
+    params[key] = c ? clampParam(c, val) : val;
+    syncPill(key);
+    if (key === 'rotate' || key === 'tilt') viewDirty = true;
+    if (!quiet) wake();
+  }
+  function bindPill(p, c) {
+    let startX = 0, startV = 0, id = null;
+    p.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      id = e.pointerId; startX = e.clientX; startV = params[c.key];
+      p.setPointerCapture(id); p.classList.add('on'); e.preventDefault(); p.focus({ preventScroll: true });
+    });
+    p.addEventListener('pointermove', e => {
+      if (e.pointerId !== id) return;
+      const raw = startV + (e.clientX - startX) * c.perPx;
+      setParam(c.key, Math.round(raw / c.step) * c.step);
+    });
+    const end = e => { if (e.pointerId !== id) return; id = null; p.classList.remove('on'); };
+    p.addEventListener('pointerup', end);
+    p.addEventListener('pointercancel', end);
+    p.addEventListener('keydown', e => {
+      const big = e.shiftKey ? 10 : 1;
+      let d = 0;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') d = c.step * big;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') d = -c.step * big;
+      else if (e.key === 'Home') { setParam(c.key, c.min); e.preventDefault(); return; }
+      else if (e.key === 'End') { setParam(c.key, c.max); e.preventDefault(); return; }
+      else return;
+      e.preventDefault();
+      setParam(c.key, +(params[c.key] + d).toFixed(4));
+    });
+  }
+
+  // ---------- physics: damped string with a pull back to rest, free ends ----------
+  const h = new Float64Array(N).fill(cfg.sheet.rest);
+  const v = new Float64Array(N);
+  const ys = new Float64Array(N);
+  let waveT = 0;
+  let grab = null;
+  // the drawn values chase the dialled ones, so a fast scrub reads as a camera move instead of a jump
+  const cur = { amplitude: params.amplitude, wavelength: params.wavelength, rotate: params.rotate, tilt: params.tilt };
+  function chase(dt) {
+    const a = reduced ? 1 : 1 - Math.exp(-dt / cfg.ease);
+    let moving = false;
+    for (const k in cur) {
+      let d = params[k] - cur[k];
+      if (k === 'rotate') d = ((d + 540) % 360) - 180;
+      if (Math.abs(d) < 1e-3) { if (cur[k] !== params[k]) { cur[k] = params[k]; if (k === 'rotate' || k === 'tilt') viewDirty = true; } continue; }
+      cur[k] += d * a;
+      if (k === 'rotate' || k === 'tilt') viewDirty = true;
+      moving = true;
+    }
+    return moving;
+  }
+  const wave = x => cur.amplitude * Math.sin(2 * Math.PI * x / cur.wavelength - 2 * Math.PI * waveT);
+
+  function stepPhysics(dt) {
+    const P = cfg.physics, rest = cfg.sheet.rest;
+    const c2 = P.c * P.c / (DX * DX), gamma = reduced ? P.reducedDamping : P.damping;
+    // one offset for the whole grabbed patch, so the travelling wave keeps running through the hand
+    const pin = grab ? grab.target - wave(grab.x) : 0;
+    if (reduced && !grab) {
+      const k = Math.min(1, dt / P.reducedRelax);
+      for (let i = 0; i < N; i++) { h[i] += (rest - h[i]) * k; v[i] = 0; }
+      return;
+    }
+    for (let i = 0; i < N; i++) {
+      const l = i === 0 ? h[1] : h[i - 1], r = i === N - 1 ? h[N - 2] : h[i + 1];
+      let a = c2 * (l + r - 2 * h[i]) - P.k * (h[i] - rest) - gamma * v[i];
+      if (grab) {
+        const q = (xs[i] - grab.x) / P.grabSigma;
+        const w = Math.exp(-q * q);
+        if (w > 1e-3) a += w * (P.grabK * (pin - h[i]) - P.grabD * v[i]);
+      }
+      v[i] += a * dt;
+    }
+    for (let i = 0; i < N; i++) h[i] += v[i] * dt;
+  }
+  function settled() {
+    if (grab) return false;
+    const rest = cfg.sheet.rest;
+    for (let i = 0; i < N; i++) if (Math.abs(v[i]) > 0.02 || Math.abs(h[i] - rest) > 0.05) return false;
+    return true;
+  }
+
+  // ---------- projection ----------
+  let cw = 1, ch = 1, s = 1, ox = 0, oy = 0;
+  let ct = 1, st = 0, cT = 1, sT = 0;
+  let viewDirty = true;
+  function layout() {
+    const r = container.getBoundingClientRect();
+    cw = Math.max(1, r.width); ch = Math.max(1, r.height);
+    const lay = cfg.layout;
+    const refW = cw < lay.narrowAt ? lay.narrowRefWidth : lay.refWidth;
+    s = Math.min(cw / refW, ch / lay.refHeight);
+    svg.setAttribute('viewBox', `0 0 ${cw} ${ch}`);
+    viewDirty = true;
+  }
+  function updateView() {
+    const th = cur.rotate * Math.PI / 180, T = cur.tilt * Math.PI / 180;
+    ct = Math.cos(th); st = Math.sin(th); cT = Math.cos(T); sT = Math.sin(T);
+    ox = cw / 2;
+    oy = ch / 2 + s * cT * cfg.layout.targetY;
+  }
+  const PX = (x, y, z) => ox + s * (x * ct - z * st);
+  const PY = (x, y, z) => oy - s * (sT * (x * st + z * ct) + cT * y);
+  const DEPTH = (x, y, z) => -(x * st + z * ct) * cT + y * sT;
+  const f1 = n => Math.round(n * 10) / 10;
+
+  function drawDots() {
+    const F = cfg.floor, span = F.fadeTo - F.fadeFrom;
+    for (const d of dots) {
+      const px = PX(d.x, 0, d.z), py = PY(d.x, 0, d.z);
+      const r = Math.hypot(px - ox, py - oy) / s;
+      const a = F.dotAlpha * Math.min(1, Math.max(0, (F.fadeTo - r) / span));
+      if (a <= 0.004) { d.n.setAttribute('display', 'none'); continue; }
+      d.n.removeAttribute('display');
+      d.n.setAttribute('cx', f1(px)); d.n.setAttribute('cy', f1(py)); d.n.setAttribute('fill-opacity', a.toFixed(3));
+    }
+  }
+
+  const mix = (a, b, t) => `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`;
+  const ax = new Float64Array(N), ay = new Float64Array(N), bx = new Float64Array(N), by = new Float64Array(N);
+  const fx = new Float64Array(N), fy = new Float64Array(N), gx = new Float64Array(N), gy = new Float64Array(N);
+  let order = strips.slice();
+
+  function render() {
+    if (viewDirty) { updateView(); drawDots(); viewDirty = false; }
+    const hw = W / 2, S = cfg.shade, SH = cfg.shadow;
+    for (let i = 0; i < N; i++) {
+      const y = ys[i] = h[i] + wave(xs[i]);
+      ax[i] = PX(xs[i], y, hw); ay[i] = PY(xs[i], y, hw);
+      bx[i] = PX(xs[i], y, -hw); by[i] = PY(xs[i], y, -hw);
+      fx[i] = PX(xs[i], 0, hw); fy[i] = PY(xs[i], 0, hw);
+      gx[i] = PX(xs[i], 0, -hw); gy[i] = PY(xs[i], 0, -hw);
+    }
+    const quad = (Ax, Ay, Bx, By, i) => `M${f1(Ax[i])} ${f1(Ay[i])}L${f1(Ax[i + 1])} ${f1(Ay[i + 1])}L${f1(Bx[i + 1])} ${f1(By[i + 1])}L${f1(Bx[i])} ${f1(By[i])}Z`;
+    for (let j = 0; j < M; j++) {
+      const ym = (ys[j] + ys[j + 1]) / 2;
+      const ga = SH.alpha * Math.exp(-Math.max(0, ym) / SH.falloff);
+      const g = Math.round(255 * (1 - ga));
+      const sp = shadowPaths[j];
+      sp.setAttribute('d', quad(fx, fy, gx, gy, j));
+      const col = `rgb(${g},${g},${g})`;
+      sp.setAttribute('fill', col); sp.setAttribute('stroke', col);
+
+      const slope = (ys[j + 1] - ys[j]) / DX;
+      const facing = (slope * st * cT + sT) / Math.sqrt(1 + slope * slope);
+      const fillCol = facing >= 0 ? mix(S.top, S.lit, Math.min(1, facing / S.litAt)) : mix(S.under, S.underDeep, Math.min(1, -facing / 0.5));
+      const st_ = strips[j];
+      st_.fill.setAttribute('d', quad(ax, ay, bx, by, j));
+      st_.fill.setAttribute('fill', fillCol); st_.fill.setAttribute('stroke', fillCol);
+      let e = `M${f1(ax[j])} ${f1(ay[j])}L${f1(ax[j + 1])} ${f1(ay[j + 1])}M${f1(bx[j])} ${f1(by[j])}L${f1(bx[j + 1])} ${f1(by[j + 1])}`;
+      if (j === 0) e += `M${f1(ax[0])} ${f1(ay[0])}L${f1(bx[0])} ${f1(by[0])}`;
+      if (j === M - 1) e += `M${f1(ax[N - 1])} ${f1(ay[N - 1])}L${f1(bx[N - 1])} ${f1(by[N - 1])}`;
+      st_.edge.setAttribute('d', e);
+      st_.depth = DEPTH((xs[j] + xs[j + 1]) / 2, ym, 0);
+    }
+    const sorted = strips.slice().sort((p, q) => p.depth - q.depth);
+    let changed = false;
+    for (let k = 0; k < M; k++) if (sorted[k] !== order[k]) { changed = true; break; }
+    if (changed) { for (const it of sorted) gSheet.appendChild(it.g); order = sorted; }
+    // a cross line sits on the boundary between two strips; it belongs to whichever of them is drawn last
+    crossIdx.forEach((i, k) => {
+      const p = crossPaths[k];
+      p.setAttribute('d', `M${f1(ax[i])} ${f1(ay[i])}L${f1(bx[i])} ${f1(by[i])}`);
+      const owner = strips[i].depth >= strips[i - 1].depth ? strips[i] : strips[i - 1];
+      if (p.parentNode !== owner.g) owner.g.insertBefore(p, owner.edge);
+    });
+    // guides darken as the sheet climbs, and the far edge's are fainter, so height and depth both read
+    const G = cfg.guides, aNear = DEPTH(0, 0, hw) >= DEPTH(0, 0, -hw);
+    hairIdx.forEach((i, k) => {
+      const a = Math.min(G.maxAlpha, Math.max(0, ys[i] * G.perUnit));
+      const [pa, pb] = hairs[k];
+      pa.setAttribute('d', `M${f1(ax[i])} ${f1(ay[i])}L${f1(fx[i])} ${f1(fy[i])}`);
+      pb.setAttribute('d', `M${f1(bx[i])} ${f1(by[i])}L${f1(gx[i])} ${f1(gy[i])}`);
+      pa.setAttribute('stroke-opacity', (aNear ? a : a * G.farFactor).toFixed(3));
+      pb.setAttribute('stroke-opacity', (aNear ? a * G.farFactor : a).toFixed(3));
+    });
+    const e0 = 0, e1 = N - 1;
+    const near = aNear ? [fx, fy] : [gx, gy], far = aNear ? [gx, gy] : [fx, fy];
+    floorNear.setAttribute('d', `M${f1(near[0][e0])} ${f1(near[1][e0])}L${f1(near[0][e1])} ${f1(near[1][e1])}M${f1(fx[e1])} ${f1(fy[e1])}L${f1(gx[e1])} ${f1(gy[e1])}M${f1(gx[e0])} ${f1(gy[e0])}L${f1(fx[e0])} ${f1(fy[e0])}`);
+    floorFar.setAttribute('d', `M${f1(far[0][e0])} ${f1(far[1][e0])}L${f1(far[0][e1])} ${f1(far[1][e1])}`);
+    floorNear.setAttribute('stroke-opacity', G.floorAlpha);
+    floorFar.setAttribute('stroke-opacity', (G.floorAlpha * G.farFactor).toFixed(3));
+    drawProbe();
+  }
+
+  // ---------- probe: hover, grab, lift ----------
+  let hover = null, pointer = null, probeMode = 'off';
+  const heightAt = x => {
+    const u = (x + L / 2) / DX, i = Math.max(0, Math.min(M - 1, Math.floor(u))), t = u - i;
+    return ys[i] + (ys[i + 1] - ys[i]) * t;
+  };
+  function pick(px, py) {
+    for (let k = order.length - 1; k >= 0; k--) {
+      const j = order[k].j;
+      const qx = [ax[j], ax[j + 1], bx[j + 1], bx[j]], qy = [ay[j], ay[j + 1], by[j + 1], by[j]];
+      let inside = false;
+      for (let a = 0, b = 3; a < 4; b = a++)
+        if ((qy[a] > py) !== (qy[b] > py) && px < (qx[b] - qx[a]) * (py - qy[a]) / (qy[b] - qy[a]) + qx[a]) inside = !inside;
+      if (!inside) continue;
+      // solve P = A_j + t·(A_j+1 − A_j) + w·(B_j − A_j) for t (along the strip) and w (across)
+      const ux = ax[j + 1] - ax[j], uy = ay[j + 1] - ay[j], wx = bx[j] - ax[j], wy = by[j] - ay[j];
+      const det = ux * wy - uy * wx;
+      if (Math.abs(det) < 1e-9) continue;
+      const rx = px - ax[j], ry = py - ay[j];
+      const t = Math.min(1, Math.max(0, (rx * wy - ry * wx) / det));
+      const w = Math.min(1, Math.max(0, (ux * ry - uy * rx) / det));
+      return { x: xs[j] + t * DX, z: W / 2 - w * W };
+    }
+    return null;
+  }
+  function drawProbe() {
+    const target = grab || hover;
+    if (!target) return;
+    const y = heightAt(target.x);
+    const hx = PX(target.x, y, target.z), hy = PY(target.x, y, target.z);
+    const fx_ = PX(target.x, 0, target.z), fy_ = PY(target.x, 0, target.z);
+    probeLine.setAttribute('d', `M${f1(hx)} ${f1(hy)}L${f1(fx_)} ${f1(fy_)}`);
+    probeDot.setAttribute('cx', f1(hx)); probeDot.setAttribute('cy', f1(hy));
+    probeFloor.setAttribute('cx', f1(fx_)); probeFloor.setAttribute('cy', f1(fy_));
+    probeText.setAttribute('x', f1(hx + cfg.probe.labelDx)); probeText.setAttribute('y', f1(hy + cfg.probe.labelDy));
+    probeVal.textContent = ' ' + Math.max(0, y).toFixed(1);
+  }
+  function setProbeMode(mode) {
+    if (mode === probeMode) return;
+    probeMode = mode;
+    const c = mode === 'drag' ? cfg.probe.drag : cfg.probe.hover;
+    probeDot.setAttribute('fill', c.dot); probeFloor.setAttribute('fill', c.dot);
+    probeLine.setAttribute('stroke', c.line); probeKey.setAttribute('fill', c.key); probeVal.setAttribute('fill', c.value);
+    gProbe.setAttribute('opacity', mode === 'off' ? 0 : 1);
+    svg.classList.toggle('can-grab', mode === 'hover');
+    svg.classList.toggle('grabbing', mode === 'drag');
+  }
+  const local = e => { const r = svg.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  function liftTarget(py) {
+    const floorY = PY(grab.x, 0, grab.z);
+    return Math.min(cfg.physics.maxHeight, Math.max(0, (floorY - py) / (s * cT)));
+  }
+  svg.addEventListener('pointermove', e => {
+    pointer = local(e);
+    if (grab) { grab.target = liftTarget(pointer[1]); wake(); return; }
+    const hit = pick(pointer[0], pointer[1]);
+    if (hit) { hover = hit; setProbeMode('hover'); drawProbe(); }
+    else if (hover) { hover = null; setProbeMode('off'); }
+  });
+  svg.addEventListener('pointerleave', () => { pointer = null; if (!grab && hover) { hover = null; setProbeMode('off'); } });
+  svg.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const [px, py] = local(e);
+    const hit = pick(px, py);
+    if (!hit) return;
+    e.preventDefault();
+    svg.setPointerCapture(e.pointerId);
+    grab = { x: hit.x, z: hit.z, target: heightAt(hit.x), id: e.pointerId };
+    hover = null;
+    setProbeMode('drag');
+    wake();
+  });
+  const release = e => {
+    if (!grab || e.pointerId !== grab.id) return;
+    const last = grab; grab = null;
+    hover = { x: last.x, z: last.z };
+    setProbeMode('hover');
+    const [px, py] = local(e);
+    const still = pick(px, py);
+    if (!still) { hover = null; setProbeMode('off'); }
+    wake();
+  };
+  svg.addEventListener('pointerup', release);
+  svg.addEventListener('pointercancel', release);
+
+  // ---------- loop ----------
+  let raf = 0, last = 0, acc = 0, playing = options.autoplay !== false, inView = true, destroyed = false;
+  function frame(now) {
+    raf = 0;
+    if (destroyed) return;
+    const dtReal = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+    last = now;
+    if (!reduced) waveT += dtReal * params.speed;
+    acc += dtReal;
+    const P = cfg.physics;
+    let n = 0;
+    while (acc >= P.dt && n < 12) { stepPhysics(P.dt); acc -= P.dt; n++; }
+    if (n === 12) acc = 0;
+    const chasing = chase(dtReal);
+    render();
+    const waveMoving = !reduced && cur.amplitude > 0 && params.speed > 0;
+    if (playing && inView && !document.hidden && (waveMoving || chasing || !settled())) raf = requestAnimationFrame(frame);
+    else last = 0;
+  }
+  function wake() {
+    if (destroyed) return;
+    if (!raf && inView && !document.hidden) { if (!playing) { render(); return; } raf = requestAnimationFrame(frame); }
+  }
+
+  const ro = new ResizeObserver(() => { layout(); render(); });
+  ro.observe(container);
+  const io = new IntersectionObserver(es => { inView = es[0].isIntersecting; if (inView) wake(); });
+  io.observe(container);
+  const onVis = () => { if (!document.hidden) wake(); };
+  document.addEventListener('visibilitychange', onVis);
+  const onMQ = () => { reduced = reduceMQ.matches; wake(); };
+  reduceMQ.addEventListener('change', onMQ);
+
+  layout();
+  for (const c of cfg.controls) syncPill(c.key);
+  render();
+  wake();
+
+  const api = {
+    play() { playing = true; wake(); },
+    pause() { playing = false; if (raf) cancelAnimationFrame(raf); raf = 0; last = 0; },
+    set(next, opts) {
+      for (const k in next) if (k in params) setParam(k, next[k], true);
+      if (opts && opts.instant) { for (const k in cur) cur[k] = params[k]; viewDirty = true; }
+      wake(); render();
+    },
+    get params() { return Object.assign({}, params); },
+    destroy() {
+      destroyed = true; if (raf) cancelAnimationFrame(raf);
+      ro.disconnect(); io.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+      reduceMQ.removeEventListener('change', onMQ);
+      for (const n of [svg, gFloor, gSheet, gGuides, gProbe, bar]) if (n) n.replaceChildren();
+      for (const n of created) n.remove();
+    },
+    _debug: {
+      h, v, ys, xs,
+      reset() { h.fill(cfg.sheet.rest); v.fill(0); acc = 0; grab = null; hover = null; setProbeMode('off'); },
+      setWaveTime(t) { waveT = t; },
+      step(seconds) { const P = cfg.physics; for (let k = Math.round(seconds / P.dt); k > 0; k--) stepPhysics(P.dt); },
+      grab(x, z, target) { grab = { x, z, target, id: -1 }; setProbeMode('drag'); },
+      lift(target) { if (grab) grab.target = target; },
+      release(keepProbe) { const g = grab; grab = null; if (keepProbe && g) { hover = { x: g.x, z: g.z }; setProbeMode('hover'); } else setProbeMode('off'); },
+      hoverAt(x, z) { hover = { x, z }; setProbeMode('hover'); },
+      render,
+      project: (x, y, z) => [PX(x, y, z), PY(x, y, z)],
+      get scale() { return s; },
+    },
+  };
+  return api;
+}
+
+function mergeDeep(a, b) {
+  for (const k in b) {
+    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') mergeDeep(a[k], b[k]);
+    else a[k] = b[k];
+  }
+  return a;
+}
+
+window.__paperwave = createPaperWave(document.getElementById('stage'));
+</script>
+</body>
+</html>
