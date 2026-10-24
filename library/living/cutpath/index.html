@@ -363,7 +363,9 @@ document.getElementById('thick').onchange=e=>{S.thick=+e.target.value;if(V3.plat
 document.getElementById('cmp').onchange=e=>{S.cmp=e.target.value;if(V3.plate){ref3d();frame3d();setView(S.view,true,1)}};
 /* ---------- export ---------- */
 function svgText(){const R=S.R;const mm=v=>(v/R.ppm).toFixed(3);const d=R.paths.map(p=>'M'+p.map(([a,b])=>mm(a)+' '+mm(b)).join('L')+'Z').join(' ');
-  const c=document.createElement('canvas');c.width=R.W;c.height=R.H;c.getContext('2d').drawImage(S.img,R.pad,R.pad,R.iw,R.ih);
+  // Contours are computed on a ≤560px copy; the exported art keeps the original's pixel density (capped at 8192px)
+  const nat=Math.max(S.img.naturalWidth||S.img.width,S.img.naturalHeight||S.img.height),f=Math.max(1,Math.min(nat/Math.max(R.iw,R.ih),8192/Math.max(R.W,R.H)));
+  const c=document.createElement('canvas');c.width=Math.round(R.W*f);c.height=Math.round(R.H*f);c.getContext('2d').drawImage(S.img,R.pad*f,R.pad*f,R.iw*f,R.ih*f);
   const W=mm(R.W),H=mm(R.H);const hole=R.hole?`<circle cx="${mm(R.hole.x)}" cy="${mm(R.hole.y)}" r="${mm(R.hole.r)}"/>`:'';
   return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}">\n<g id="White" fill="#000">${`<path fill-rule="evenodd" d="${d}${R.hole?` M${mm(R.hole.x+R.hole.r)} ${mm(R.hole.y)}a${mm(R.hole.r)} ${mm(R.hole.r)} 0 1 0 ${-mm(R.hole.r)*2} 0a${mm(R.hole.r)} ${mm(R.hole.r)} 0 1 0 ${mm(R.hole.r)*2} 0Z`:''}"/>`}</g>\n<g id="Art"><image width="${W}" height="${H}" xlink:href="${c.toDataURL()}"/></g>\n<g id="CutContour" fill="none" stroke="#E6007E" stroke-width="0.1"><path d="${d}"/>${hole}</g>\n</svg>`}
 document.getElementById('exp').onclick=async()=>{if(!S.R)return;const txt=svgText();const name=S.name.replace(/\.[^.]+$/,'')+'_cut.svg';
