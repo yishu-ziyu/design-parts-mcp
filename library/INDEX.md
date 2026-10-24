@@ -62,6 +62,7 @@
 | [traces/index.html](living/traces/index.html) | AI 干活时的轨迹列表：状态头跟着当前步骤换字，步骤一条条往下长，结果卡片开两张收一张，最后整段折成一行摘要「Ran 2 searches and read 3 sources」。自己写的书店晨报内容 | 让人看见 agent 在做什么，又不被过程淹没。复刻 @dimitroweb |
 | [genie/index.html](living/genie/index.html) | 作品集首页一列不带框的作品，点开一件，所有作品像 macOS 最小化一样斜着变薄、缩成一条，吸进顶部胶囊 Dock，页面换成暖灰作品页 | 作品集要在"列表"和"单个作品"之间有一个能看懂去向的过渡。0.68 s、右缘先动、过 38% 才淡出。复刻 @dmcgco（dmcg.co） |
 | [sketchbook/index.html](living/sketchbook/index.html) | 白底正中一本摊开的速写本，拖右页往左就翻，页面按圆柱弯起来，松手弹簧落下。下面一行地点日期，左边一列刻度跳页。页面全是代码画的铅笔水彩 | 作品集里放手绘本：翻页本身就是展示，不用再配轮播。复刻 @jeanxcrj |
+| [appliance/index.html](living/appliance/index.html) | 一台等轴手绘烤面包机，按钮放面包、压杆、计时烤、叮一声弹起。线稿套一层位移 + 纸纹 + 斑驳的 SVG 滤镜，滑杆调抖动，色点换机身色 | 想把一个日常物件做成能玩的说明图，既要手绘温度又要能交互。复刻 @Aprilzz423 的 Colorfigures |
 
 ## 零件
 
@@ -469,3 +470,13 @@
 | 白底查看器版式 / 书 + 橡皮筋 | [sketchbook](living/sketchbook/index.html#viewer) | 书宽 min(920, 48vw)，单页 1 : 1.01，外侧圆角 5%。淡大阴影，右边紫灰橡皮筋占书高 46% |
 | 竖排刻度导航 | [sketchbook](living/sketchbook/index.html#dial) | 13×2、间距 11px、`#d2cfda`，当前 19px 黑。点了一页一页连续翻过去 |
 | 书下说明行 | [sketchbook](living/sketchbook/index.html#caption) | 书下 48px，对齐书的左右边。地点 14px 大写字距 0.04em，日期灰，右边备注 15px |
+
+### 手绘等轴物件 / 可玩的说明图
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| SVG 手绘质感滤镜 / 线条抖动 + 纸纹 | [appliance](living/appliance/index.html#hand) | `feDisplacementMap` scale 0.94；`feTurbulence` 2.29、3 octave 压到 0.84 以上当纸纹；低频斑驳；两次 multiply 后 `in` 裁回线稿 |
+| 等轴画法 / 面内坐标贴到三个面 | [appliance](living/appliance/index.html#art) | 顶 `(c,.5,−c,.5)`、亮侧 `(c,−.5,0,1)`、暗侧 `(c,.5,0,1)`。三面色 = 提亮 22% / 原色 / 混墨 62%。线宽 0.27–0.86 |
+| 物件交互状态机 / 药丸按钮 | [appliance](living/appliance/index.html#actions) | 放入 → 压杆 → 计时 → 弹起带上抛 → 取出。切片立在槽平面里，clipPath 只露顶面以上 |
+| 抖动滑杆 / 换色点 / 假转台 | [appliance](living/appliance/index.html#controls) | 滑杆直写位移 scale 0–3；5 色点重算三面；Turntable = `scaleX(cos t)` |
+| 透视 / 标注 / 缩放画板 | [appliance](living/appliance/index.html#stage) | viewBox 229.5×172.2；See-through 三面 0.35；虚线引线标签放滤镜外；缩放 60–160% |
