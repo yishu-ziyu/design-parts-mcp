@@ -47,6 +47,7 @@
 | [cutpath/index.html](living/cutpath/index.html) | 透明 PNG 外面长出一圈等距洋红切割线，挂孔贴着图案顶。点 3D，亚克力立起来，旁边一枚 500 日元硬币 | 做实物下单的工具：先把交给印刷厂的文件做对（White / Art / CutContour 三层 SVG），再用一枚硬币回答多大、孔在哪。真 three.js 挤出走这里，可见相机仍走 flycam |
 | [beacon/index.html](living/beacon/index.html) | 三张海报是同一张字形表排的。灯塔从下往上长，2.5s 后光束扫过表格，字变成 0/1 格子。两张浪从左往右长，然后只剩状态灯在闪 | 一组封面要成套：先定字形表和 9 秒先长后停的节奏，每张只换一张密度图。只留一个一直在动的东西，让它演产品的动作。品牌 skerry 是虚构的 |
 | [reliefkit/index.html](living/reliefkit/index.html) | 左边手机主屏九个暖灰塑料小机器，悬停时光跟着偏。右边放大一个，在图上拖，影子、高光和印字一起跟着光源转 | 要一组像产品照的图标：一个机身配方套全家，光从原作截图拟合，不凭眼睛调。正视 3D 感用 SDF 高度场算，不建模，加图标只写数据。品牌 ORDO 是自拟的。手法来自鹿言 & Zhiyi Zhang《Rams System Icons》 |
+| [doodlecard/index.html](living/doodlecard/index.html) | 照片闪一下白光，弹出一张蜡笔涂鸦卡，连做五次。然后照片越切越快地叠上来，停在 App 画面，最后一把纸卡落在木地板上。19 秒、24 fps，帧号逐帧对着原片 | 「照片进去、结果出来」的产品宣传片或揭晓动画；照片变平涂蜡笔小画；日记卡布局。品牌 LOOP、文案和替身场景是自己的。要卡通抖仍走 doodle。复刻 @JaejinBong |
 
 ## 零件
 
@@ -304,3 +305,14 @@
 | 新增图标只写数据 | [reliefkit](living/reliefkit/index.html#schema) | 100×100u。part = 形状 + 操作 + 色板键 + 材质键。`under` 压在机身下，`repeat` + `each` 做阵列，push 到 `CONFIG.icons` |
 | 主屏图标网格 / 悬停偏光 / iOS 底板 | [reliefkit](living/reliefkit/index.html#screen) | 4 列 60px。悬停 ±7° 倾斜、光源偏 ±14°，按下 0.93。底板 n=5 超椭圆、物件 0.84、墙影 0.35 |
 | 拖图移光源 / 导出 1024 PNG | [reliefkit](living/reliefkit/index.html#inspector) | 离中心越远高度角越低（80° → 12°）。拖动只重画大图，松手重画全部。Blob 在 `window.lastExport` |
+
+### 涂鸦卡 / 闪白揭晓 / 宣传片节奏
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 照片变平涂蜡笔画 / 分色 + 蜡笔质感 | [doodlecard](living/doodlecard/index.html#doodle) | 先在 120px 整图找主体，再把主体框重读成 170px 做 k-means 7 色 + 3 遍多数滤波。输出 440px，噪声扭曲取样，颗粒 + 纸纹 + 笔触决定哪里露纸。卡上占 19% |
+| 闪白揭晓 / 结果卡弹出 | [doodlecard](living/doodlecard/index.html#flash) | 闪光帧白 100%，下一帧 50%，第三帧正常。卡 0.98 停 3 帧，第 5 帧 1.037，第 8 帧回到 1。约 1 s 一张 |
+| 越切越快的拼贴 / 缩放模糊转场 | [doodlecard](living/doodlecard/index.html#collage) | 切点间隔 11→9→6→7→5→4→3→1→1→1 帧，整体从 1 缩到 0.74。5 层逐层放大到 9% 叠出径向模糊 |
+| 手机弹入 / App 里换卡、翻牌 | [doodlecard](living/doodlecard/index.html#app) | 0.5 → 0.73 → 0.9 → 1 三帧弹入，带竖向拖影。卡每 2 帧换一张，再横向翻牌，推近到 1.9 倍 |
+| 卡片落到桌面 / 俯拍收尾 / 增量缓存 | [doodlecard](living/doodlecard/index.html#table) | 空中 4 张大卡模糊 9px 往下掉；俯拍 17 张从 2.35 倍用 5 帧落定。地板和已落地的卡画进一张缓存位图，一张只画一次 |
+| 粗糙字标 / 结尾徽章 / 缓慢缩小 | [doodlecard](living/doodlecard/index.html#end) | 字标按 3 倍画，模糊后加噪声再阈值。徽章 130×38。字标和工作室名每帧缩 0.09% |
