@@ -212,8 +212,9 @@ function compute(){
   if(S.merge){const bridge=6*ppm;const D2=distance(mask,W,H);const grow=new Uint8Array(W*H);for(let i=0;i<W*H;i++)grow[i]=D2[i]<=bridge?1:0;const inv=new Uint8Array(W*H);for(let i=0;i<W*H;i++)inv[i]=grow[i]?0:1;const D3=distance(inv,W,H);for(let i=0;i<W*H;i++)if(D3[i]>bridge)mask[i]=1}
   fillHoles(mask,W,H);
   let hole=null;
-  if(S.hole){const tx=Math.round(W/2+S.holeX/100*iw*.45);let top=-1;for(let y=0;y<H;y++)if(mask[y*W+tx]){top=y;break}
-    if(top<0){for(let y=0;y<H&&top<0;y++)for(let dx=-40;dx<=40;dx++)if(mask[y*W+tx+dx]){top=y;break}}
+  // When the chosen column misses the silhouette, move the hole to the nearest column that hits it, so the neck always joins the body
+  if(S.hole){let tx=Math.round(W/2+S.holeX/100*iw*.45),top=-1;const colTop=cx=>{if(cx<0||cx>=W)return -1;for(let y=0;y<H;y++)if(mask[y*W+cx])return y;return -1};
+    for(let dx=0;dx<W&&top<0;dx++)for(const sg of dx?[-1,1]:[1]){const t=colTop(tx+sg*dx);if(t>=0){tx+=sg*dx;top=t;break}}
     if(top>=0){const hy=top-ring*.7;hole={x:tx,y:hy,r:holeR};for(let y=Math.floor(hy-ring);y<=hy+ring+ring;y++)for(let xx=Math.floor(tx-ring);xx<=tx+ring;xx++){if(y<0||y>=H||xx<0||xx>=W)continue;const inRing=(xx-tx)**2+(y-hy)**2<=ring*ring;const neck=Math.abs(xx-tx)<=ring*.7&&y>=hy&&y<=hy+ring*1.6;if(inRing||neck)mask[y*W+xx]=1}}}
   const {lab,comps}=components(mask,W,H);
   const paths=comps.filter(c=>c.count>40).map(c=>trace(lab,c.id,c.start,W,H));
