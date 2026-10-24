@@ -51,6 +51,7 @@
 | [gamespace/index.html](living/gamespace/index.html) | 黑底上一个橙点 Stardew Valley，四个近邻带相似度小字逐字出来。拉远后 18.9 万个彩色点亮起，硬切坍成小球再炸开，镜头钻进去，退出来标出八个类型 | 讲 embedding / 相似度：先一个熟悉的点和近邻，再全景，再标区域。动画是时间 t 的纯函数，能按参考视频逐秒对。数据是合成的，`setData` 换真坐标。复刻 @re_skob |
 | [paperwave/index.html](living/paperwave/index.html) | 一张纸在点阵地面上起伏，纯 SVG 每帧把点投影到屏幕。按住纸往上拉，松手后鼓包沿纸跑到另一头再弹回。底部五个药丸左右拖改振幅、波长、速度、转角、俯角 | 不想引 3D 库又要有空间感：正交投影 + 细带按深度排序，辅助线和影子随高度变化来交代离地多高。真 3D 网格走 cutpath / flycam。复刻 @gabriell_lab |
 | [devicegallery/index.html](living/devicegallery/index.html) | 白底上一格格设备浮着，往哪拖都拖不到头。四条边像透镜一样弯，拖得越快弯得越狠、带色散。悬停时设备外面亮一圈慢慢转的彩虹光，点开从格子里飞到页中。开场是设备飞进来聚成一个球，镜头穿进网格 | 产品 / 硬件 / 作品图鉴要让人「逛」：内容只占中间，手感都在边缘那层光里，UI 退到四角。数据在页内 JSON，换真照片只改 `visual.src`。16 台设备是虚构的。复刻 @openmys |
+| [orbitshelf/index.html](living/orbitshelf/index.html) | 14 件抠图小物绕着衬线大标题慢慢转，前排大而清楚，后排小、淡、糊，边缘一圈磨砂雾 | 落地页首屏要一个安静的动态主视觉，不用 3D 也有景深。一个 cos θ 驱动缩放、透明度、层级、模糊。复刻 @Tanjim38 的 knowspace.si |
 
 ## 零件
 
@@ -354,3 +355,12 @@
 | 点卡片飞到页中的详情 / 相关推荐 | [devicegallery](living/devicegallery/index.html#focus) | 画布 380ms 淡白。FLIP 680ms `cubic-bezier(.2,.75,.15,1)`，信息晚 300ms 升 10px，每行再晚 45ms。相关度是标签 Jaccard，当前行 1px 彩虹线 |
 | 物件飞进来聚成球、镜头穿进网格的开场 | [devicegallery](living/devicegallery/index.html#intro) | n(t) = 2·e^(1.95(t−1)) 飞进实心球，缩放用视频三帧拟合。4.2 s 穿入，网格 0.45 倍长到 1。点按跳过 |
 | 页内 JSON 数据 / 换成真照片 | [devicegallery](living/devicegallery/index.html#config) | name / brand / category / line / price / tags / links / repos / visual。`visual.draw` 或 `visual.src`（`bounds` 不给就按透明通道自动裁） |
+
+### 物品转盘 / 景深 / 边缘雾
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 椭圆转盘 / 2D 假景深 | [orbitshelf](living/orbitshelf/index.html#ring) | 600×322 椭圆，83 s 一圈。`d = cos θ`：缩放 `.85+.23d`、透明 `.75+.25d`、层级 `50+50d`、后半圈模糊，旋转 = x/100 度 |
+| 边缘磨砂 / 中间挖空的模糊层 | [orbitshelf](living/orbitshelf/index.html#haze) | 一整层 `backdrop-filter: blur(14px)`，径向遮罩 64% 透明、80% 半遮、100% 全遮。字在雾上面 |
+| 抠图物品统一摆放 | [orbitshelf](living/orbitshelf/index.html#objects) | 168px 盒 × 各自长宽比，contain，统一 `drop-shadow(0 18px 24px rgba(30,28,22,.1))` |
+| 亮台面底色 + 衬线标题分段入场 | [orbitshelf](living/orbitshelf/index.html#hero) | `#f8f8f6` 上两层白色径向光。Newsreader 360 / 0.98 / −0.035em。品牌 0.85 s、标题组 1 s 上浮 10px |
