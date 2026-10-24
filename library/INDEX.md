@@ -60,6 +60,7 @@
 | [filmtype/index.html](living/filmtype/index.html) | 电影字体档案站：暗色开场轮播三部片，一滚主帧撑满再上推，进到浅色大列表。悬停片名两侧出「+」、第 4 列展开一帧；点开横向一帧一帧走，底部时间码尺跟着点亮。14 部虚构电影、每帧用免费字体画 | 做一个「按条目浏览图片资料」的档案站，要开场有仪式感、列表克制、单条能逐帧翻。复刻 fontsinmovies.com（@VibeEverything 推荐） |
 | [asciimmo/index.html](living/asciimmo/index.html) | 整个小世界用彩色等宽字画：草被风吹成一道道 `/`，塘里有倒影，队友跟着走，陌生玩家闲逛放技能，左上角黑底组队面板 | 想做「字符画游戏世界」时，地形、倒影、角色、法术和 HUD 怎么用同一套格子画出来。复刻 TikTok @Ansenjeo（经 @Ekimko 转帖） |
 | [traces/index.html](living/traces/index.html) | AI 干活时的轨迹列表：状态头跟着当前步骤换字，步骤一条条往下长，结果卡片开两张收一张，最后整段折成一行摘要「Ran 2 searches and read 3 sources」。自己写的书店晨报内容 | 让人看见 agent 在做什么，又不被过程淹没。复刻 @dimitroweb |
+| [genie/index.html](living/genie/index.html) | 作品集首页一列不带框的作品，点开一件，所有作品像 macOS 最小化一样斜着变薄、缩成一条，吸进顶部胶囊 Dock，页面换成暖灰作品页 | 作品集要在"列表"和"单个作品"之间有一个能看懂去向的过渡。0.68 s、右缘先动、过 38% 才淡出。复刻 @dmcgco（dmcg.co） |
 
 ## 零件
 
@@ -448,3 +449,12 @@
 | 展开收起不量高度 / 最多开两张 | [traces](living/traces/index.html#fold) | `grid-template-rows: 0fr ↔ 1fr` 0.5 s，内层 `overflow:hidden`。`keepOpen: 2` |
 | 浅灰底上的「几乎同色」卡片 | [traces](living/traces/index.html#card) | 页 `#EEEEEE`、卡 `#F6F6F6`，1px 4.5% 描边 + 2px/5px 投影 + 顶部 1px 白高光，圆角 12px |
 | 回答逐块淡入 + 引用胶囊 | [traces](living/traces/index.html#answer) | 110 ms 错开，5px 上移 + 2px 模糊。引用和轨迹里同一个胶囊组件 |
+
+### 神灯吸入 / Dock / 作品集切换
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| macOS 神灯最小化 / genie | [genie](living/genie/index.html#tray) | 中心点 + 左右 0.5% 近邻点三次求值，差分出 scaleX 和 skewY。右缘先动，左缘晚 38%；厚度 1 − 0.97n；过 38% 才淡出加 5 px 模糊 |
+| 顶部胶囊 Dock / 作品切换条 | [genie](living/genie/index.html#dock) | 高 52 px、顶 10 px、半透明白 + 14 px 背景模糊，关闭圆钮放在胶囊左外侧，每格 42 px |
+| 无框作品列 / 上下渐隐 | [genie](living/genie/index.html#stack) | 作品不带卡片，竖排居中，滚动容器上下 120 px mask 渐隐；动画期间去掉 mask，否则飞进 Dock 的作品被吃掉 |
+| 作品页 / 标题压图 | [genie](living/genie/index.html#case) | 底色 #F0EFEB，粗衬线标题横向放宽 1.12，主图上移 64 px 压住标题下半 |
