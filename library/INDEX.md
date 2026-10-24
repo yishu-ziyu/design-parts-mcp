@@ -56,6 +56,7 @@
 | [hoop/index.html](living/hoop/index.html) | 一块漂在白纸上的等距小球场，三个像素小人自己运球、传球、投篮。整块场景先画到 160 像素宽再整数倍放大，草边碎成散点 | 想要一个“小而完整的世界”当插图或空状态：一块地、一束光、几个会动的小人。复刻 @zzzzshawn |
 | [retroprint/index.html](living/retroprint/index.html) | 一张金属产品照变成粉纸上的蓝墨点，疏密跟着原来的明暗走，暗部带白色细纹。六个 pass 可以逐个点开看，能拖自己的图进来 | 要把照片做成复古单色印刷，不想开 Photoshop。每一步一个 pass，参数和 Photoshop 面板一一对应。复刻 @DesignSpot_Jap |
 | [diagrams/index.html](living/diagrams/index.html) | 左边逐字打出 Mermaid 风格文本，右边每打一个字整张 SVG 重画：流程图、桑基图、柱状图，暖白底配 8 个系列色 | 想让“文本即图”看起来干净、能换主题时用。数值全部取自 Pele 源码。复刻 @kepano |
+| [stitch/index.html](living/stitch/index.html) | 一个小木屋三维模型，拖着转，实时降采样成 115 格宽的十字绣图样；右栏是滑杆、线色表、DMC 色号、针数和 14ct 成品尺寸 | 把任何矢量或三维内容变成「能绣出来」的格子图，同时算出要买几束线、绣出来多大。复刻 @LottieCoxon |
 
 ## 零件
 
@@ -404,3 +405,13 @@
 | 边打字边出图 | [diagrams](living/diagrams/index.html#code) | 每 38 ms 一个字，换行停 260 ms，每次整张重画，半截行跳过；光标 2px `#da702c` |
 | 桑基图渐变连线 | [diagrams](living/diagrams/index.html#stage) | 条宽 10、间距 12+15、连线源→目标线性渐变、透明度 0.4、标签 14px 加 3px 背景色描边 |
 | 一套颜色变量管所有图 | [diagrams](living/diagrams/index.html#tabs) | Flexoki 暖白：`#fffcf0` 底、`#100f0f` 字、`#6f6e69` 灰，8 个系列色从红到品红 |
+
+### 十字绣 / 降采样成格子 / 工艺图样
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 三维模型实时变十字绣格子 / 拖动转角 | [stitch](living/stitch/index.html#stage) | 离屏按每格 6×6 子像素画面和轮廓，面只用 4 个色调。yaw 拖横向、pitch 拖纵向（-0.1 到 1.1），背面剔除 + 远到近排序 |
+| 细线降采样不断 / 线优先采样 | [stitch](living/stitch/index.html#sampling) | 每格深色覆盖 ≥ 15% 就整格绣深色，否则取多数色。115 格下 15% 深色格 1,777，60% 只剩 1,389、墙线消失 |
+| X 形针脚 + Aida 布面 | [stitch](living/stitch/index.html#pattern) | 底针左下到右上、加深 22%；面针左上到右下，线宽 0.36 格，内缩 0.16 格；格大于 5px 加高光。布面 2.8% 黑网格 + 格角小孔 |
+| 线色表 / 束数 / 成品尺寸 | [stitch](living/stitch/index.html#key) | hex + RGB 最近 DMC 号 + 针数 + 每束 1,600 针算束数。尺寸 = 格数 / 14 英寸，× 2.54 厘米。点色块换色 |
+| 底部工具浮条 | [stitch](living/stitch/index.html#dock) | 白底 6px 圆角、4px 内边距，按钮 11px 字，激活态深棕 `#2F2A22`。Spin 自转、Smoke 烟圈、Reset view |
