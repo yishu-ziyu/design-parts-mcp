@@ -1,0 +1,27 @@
+✓ make a die-cut vinyl sticker of only the character  →  die-cut-sticker, die-cut-sticker#edge, die-cut-sticker#shadow
+✓ die-cut sticker  →  die-cut-sticker, die-cut-sticker#edge, die-cut-sticker#shadow
+✓ sticker  →  die-cut-sticker, die-cut-sticker#edge, die-cut-sticker#shadow
+✓ 贴纸  →  die-cut-sticker, die-cut-sticker#edge, die-cut-sticker#shadow
+✓ 模切边  →  die-cut-sticker, die-cut-sticker
+✓ 暖色纸感  →  die-cut-sticker, flycam#rig, die-cut-sticker#grain
+✓ 融入画面  →  die-cut-sticker, die-cut-sticker, die-cut-sticker
+✓ make an image blend into a scene  →  die-cut-sticker
+✓ place this character image on a desk scene so it looks natural  →  die-cut-sticker, die-cut-sticker, flycam#panes
+✓ 一眼看出是后加的  →  die-cut-sticker, die-cut-sticker#grain, die-cut-sticker
+✓ 像粘进去的截图  →  die-cut-sticker, die-cut-sticker, die-cut-sticker
+✓ polaroid vs sticker  →  die-cut-sticker, die-cut-sticker#edge, die-cut-sticker#shadow
+✓ soft shadow slight tilt  →  die-cut-sticker, die-cut-sticker, die-cut-sticker#shadow
+✓ 抠图 白边  →  die-cut-sticker, die-cut-sticker#edge, die-cut-sticker
+✓ shadow  →  die-cut-sticker, die-cut-sticker#shadow, die-cut-sticker#shadow
+✓ 轻微倾斜  →  die-cut-sticker, die-cut-sticker#tilt, die-cut-sticker#tilt
+✓ 玻璃导航  →  liquid-glass
+✓ glass navigation refraction  →  liquid-glass, liquid-glass#stage, liquid-glass#fab
+✓ 推镜头  →  bento, flycam, rig
+✓ 点卡片翻开 再点合上  →  mosby, idols, mosby
+✓ 手绘标题  →  handword
+✓ hand-drawn svg icons  →  doodle
+✓ 批量上传 拖文件  →  minifolio#drop, mosby, minifolio#files
+✓ 文件夹  →  mosby, gsap, paper-echo
+✓ visible camera frustum flight path  →  flycam, flycam, rig
+
+top-3 25/25 = 100.0%

@@ -186,6 +186,25 @@ export function extractParams(text) {
   return [...new Set(found)];
 }
 
+/**
+ * 可选 README front matter（--- 包起的 key: value 行）。老笔记没有就返回 {}。
+ * 认得的键：aliases（逗号分隔，中英同义词）、when、avoid、params、anchors、title。
+ */
+export function parseFrontMatter(readme) {
+  if (!readme) return {};
+  const m = readme.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return {};
+  const meta = {};
+  for (const line of m[1].split(/\r?\n/)) {
+    const kv = line.match(/^([\w-]+)\s*:\s*(.*)$/);
+    if (kv) meta[kv[1]] = kv[2].trim();
+  }
+  if (meta.aliases) meta.aliases = meta.aliases.split(/\s*[,，]\s*/).filter(Boolean);
+  return meta;
+}
+
+const STOPWORDS = new Set(["a","an","the","to","into","in","on","of","for","and","or","with","make","how","do","i","my","is","it","this","that","an"]);
+
 function loadReadme(livingDir, note) {
   const p = path.join(livingDir, note, "README.md");
   if (!fs.existsSync(p)) return null;
@@ -206,61 +225,118 @@ export function loadLibrary(resolved, onWarn = () => {}) {
     .map((d) => d.name);
   const detachables = {};
   const readmes = {};
+  const metas = {};
+  const lib_params = {};
   for (const note of notes) {
     const html = fs.readFileSync(path.join(resolved.livingDir, note, "index.html"), "utf8");
     detachables[note] = parseDetachable(html);
+    const pj = html.match(/<script[^>]*type=["']application\/json["'][^>]*id=["']params["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (pj) { try { (lib_params[note] = JSON.parse(pj[1])); } catch { onWarn(`${note}/index.html 的 #params JSON 解析失败`); } }
     readmes[note] = loadReadme(resolved.livingDir, note);
+    metas[note] = parseFrontMatter(readmes[note]);
+    // index.html 的 <meta name="keywords"> 也算别名（没有 README 的老笔记靠它）
+    const kw = html.match(/<meta\s+name=["']keywords["']\s+content=["']([^"']*)["']/i);
+    if (kw) {
+      const extra = kw[1].split(/\s*[,，]\s*/).filter(Boolean);
+      metas[note] = { ...metas[note], aliases: [...new Set([...(metas[note].aliases ?? []), ...extra])] };
+    }
   }
-  const lib = { ...data, notes, detachables, readmes };
+  const lib = { ...data, notes, detachables, readmes, metas, paramsJson: lib_params };
   cache.set(key, lib);
   return lib;
 }
 
-/** search_parts：无 query 返回全量发明表；有 query 真解析匹配。 */
-export function search(resolved, query, onWarn = () => {}) {
-  const lib = loadLibrary(resolved, onWarn);
-  const q = (query ?? "").trim().toLowerCase();
-  if (!q) {
-    return { query: "", total: lib.inventions.length, results: lib.inventions };
-  }
-  const tokens = q.split(/\s+/);
-  const hits = (text) => tokens.every((t) => text.toLowerCase().includes(t));
+function metaText(meta) {
+  if (!meta) return "";
+  return [...(meta.aliases ?? []), meta.title ?? "", meta.when ?? "", meta.anchors ?? ""].join(" ");
+}
+
+function withMeta(entry, meta) {
+  if (!meta || !Object.keys(meta).length) return entry;
+  const extra = {};
+  for (const k of ["aliases", "when", "avoid", "params"]) if (meta[k] && !entry[k]) extra[k] = meta[k];
+  if (meta.when && entry.when !== undefined && entry.when !== meta.when) extra.whenToUse = meta.when;
+  return { ...entry, ...extra };
+}
+
+function collect(lib, hits) {
   const results = [];
   for (const inv of lib.inventions) {
-    if (hits([inv.note, inv.title, inv.description, inv.when].join(" "))) results.push(inv);
+    const meta = lib.metas?.[inv.note];
+    const text = [inv.note, inv.title, inv.description, inv.when, metaText(meta)].join(" ");
+    const s = hits(text);
+    if (s) results.push({ score: s, item: withMeta(inv, meta) });
   }
   for (const p of lib.parts) {
-    if (hits([p.note, p.section, p.task, p.description, p.anchor ?? ""].join(" "))) results.push(p);
+    const s = hits([p.note, p.section, p.task, p.description, p.anchor ?? ""].join(" "));
+    if (s) results.push({ score: s, item: p });
   }
   for (const [note, items] of Object.entries(lib.detachables)) {
     for (const it of items) {
-      if (hits([note, it.anchor, it.text].join(" "))) {
-        results.push({
+      const s = hits([note, it.anchor, it.text].join(" "));
+      if (s) {
+        results.push({ score: s, item: {
           type: "detachable",
           title: `${note}#${it.anchor}`,
           note,
           anchor: it.anchor,
           path: `living/${note}/index.html#${it.anchor}`,
           description: it.text,
-        });
+        } });
       }
     }
   }
   for (const [note, readme] of Object.entries(lib.readmes)) {
     if (!readme) continue;
-    const line = readme.split(/\r?\n/).find((l) => hits(l));
-    if (line) {
-      results.push({
+    let best = 0, bestLine = null;
+    for (const l of readme.split(/\r?\n/)) {
+      const s = hits(l);
+      if (s > best) { best = s; bestLine = l; }
+    }
+    if (bestLine) {
+      results.push({ score: best, item: {
         type: "readme",
         title: `${note} — README`,
         note,
         anchor: null,
         path: `living/${note}/README.md`,
-        description: line.trim().slice(0, 240),
-      });
+        description: bestLine.trim().slice(0, 240),
+      } });
     }
   }
-  return { query, total: results.length, results: results.slice(0, 60) };
+  return results;
+}
+
+/** search_parts：无 query 返回全量发明表；有 query 先全词命中（AND），零命中时退到部分命中（按命中词数排序，标 match:"partial"）。 */
+export function search(resolved, query, onWarn = () => {}) {
+  const lib = loadLibrary(resolved, onWarn);
+  const q = (query ?? "").trim().toLowerCase();
+  if (!q) {
+    return { query: "", total: lib.inventions.length, results: lib.inventions.map((i) => withMeta(i, lib.metas?.[i.note])) };
+  }
+  const tokens = q.split(/\s+/);
+  const all = (text) => (tokens.every((t) => text.toLowerCase().includes(t)) ? 1 : 0);
+  let scored = collect(lib, all);
+  let match = "all";
+  if (!scored.length) {
+    // 中文不分词：含 CJK 的词再拆成二字片段（模切边 → 模切/切边），英文去停用词
+    const sig = [];
+    for (const t of tokens) {
+      if (STOPWORDS.has(t) || t.length < 2) continue;
+      sig.push(t);
+      if (/[\u3400-\u9fff]/.test(t) && t.length > 2) for (let i = 0; i + 2 <= t.length; i++) sig.push(t.slice(i, i + 2));
+    }
+    if (sig.length) {
+      const any = (text) => {
+        const lt = text.toLowerCase();
+        return sig.filter((t) => lt.includes(t)).length;
+      };
+      scored = collect(lib, any).sort((a, b) => b.score - a.score);
+      match = "partial";
+    }
+  }
+  const results = scored.map(({ score, item }) => (match === "partial" ? { ...item, match, matchedTerms: score } : item));
+  return { query, total: results.length, match, results: results.slice(0, 60) };
 }
 
 /** get_part：入参 "bento#chart" / "spine#dot" / "bento"。 */
@@ -295,6 +371,8 @@ export function getPart(resolved, id, onWarn = () => {}) {
       anchor,
       description: entry ? entry.text : related.map((r) => r.description).join("；"),
       params: entry ? extractParams(entry.text) : extractParams(related.map((r) => r.description).join("；")),
+      ...(lib.paramsJson?.[note]?.[anchor] ? { paramsJson: lib.paramsJson[note][anchor] } : {}),
+      ...(lib.metas?.[note]?.avoid ? { avoid: lib.metas[note].avoid } : {}),
       relatedIndexEntries: related.map((r) => ({ task: r.task, section: r.section, detail: r.description })),
       indexHtmlPath,
       readme: lib.readmes[note],
@@ -305,6 +383,7 @@ export function getPart(resolved, id, onWarn = () => {}) {
     note,
     summary: invention ? invention.description : "",
     when: invention ? invention.when : "",
+    ...(lib.metas?.[note] && Object.keys(lib.metas[note]).length ? { meta: lib.metas[note] } : {}),
     detachables: detach.map((d) => ({ anchor: `#${d.anchor}`, text: d.text })),
     indexEntries: indexParts.map((p) => ({
       task: p.task,

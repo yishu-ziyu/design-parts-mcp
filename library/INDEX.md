@@ -41,6 +41,7 @@
 | [nightflight/index.html](living/nightflight/index.html) | 夜航：同一台可见相机飞过一张深夜观星工作台：观测手记卡（逐字打出一行天况）、月相卡（8 个月相、盈凸被琥珀圈住）、猎户座星图卡、30 分钟长曝星轨偏光片，末帧停在「今晚到此。」 | 机制同 flycam 的 **v1 系（CSS 3D）**，零件沿用 [#rig](nightflight/index.html#rig) / [#flight](nightflight/index.html#flight) / [#timeline](nightflight/index.html#timeline)，**不新增零件**；差异只在世界（深夜观测台）、色板（夜蓝/暖纸/黄铜）与星点闪烁。要用同一台相机换一种气质讲故事 |
 | [rig/index.html](living/rig/index.html) | 只剩相机的编辑视图——镜头摇动本身：黄色线框视锥沿虚线航线滑行、路径点挨个点火，底部时间轴横贯，没有右窗格 | 只要「看得见的相机」这一块：运镜本身就是表演。右窗格内容整个可换或不要 |
 | [trace/index.html](living/trace/index.html) | Agent 依次查五个来源：每步长出一行在扫光，结果卡开两张收一张，答案逐词流出，最后整串收成「Ran 2 searches and read 3 sources」 | Agent / AI 助手展示工具调用过程、思考轨迹、引用来源。`?t=` 能和原视频逐秒对帧 |
+| [die-cut-sticker/index.html](living/die-cut-sticker/index.html) | 同一张抠图左右对照：左边是本子上歪 −8° 的模切贴纸（等宽厚白边、纸感颗粒、软投影），右边是粘进来的矩形截图 | Die-cut sticker / 贴纸 / 抠图白边：让一张图融入画面（blend an image into the scene），不像后贴的截图。先问它在场景里是什么物件 |
 
 ## 零件
 
@@ -232,3 +233,14 @@
 | 要做 | 打开 | 看哪一块 |
 |------|------|----------|
 | 陌生网址或截图要做成活笔记 | [stranger](living/stranger/index.html) | 先问四句。第一屏先活 |
+
+### 图像融入 / 贴纸 / 白边 / 投影
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 贴纸白边 / die-cut outline / 抠图外描边 / white border | [die-cut-sticker](living/die-cut-sticker/index.html#edge) | `feMorphology dilate radius=7`（宽×0.03）+ blur 1.5 阈值圆角，暖白 #fffdf8 |
+| 贴纸投影 / sticker drop shadow / 阴影跟轮廓走 | [die-cut-sticker](living/die-cut-sticker/index.html#shadow) | `drop-shadow(0 4px 10px rgba(0,0,0,.15))` 写在 url(#diecut) 之后；不用 box-shadow |
+| 贴纸倾斜 / tilt / rotate 手贴感 | [die-cut-sticker](living/die-cut-sticker/index.html#tilt) | `rotate(-8deg)`，区间 −12…−4deg |
+| 贴纸尺寸 / sticker scale | [die-cut-sticker](living/die-cut-sticker/index.html#scale) | 宽 240px ≈ 场景 25–30%，白边随宽缩放 |
+| 纸感颗粒 / paper grain / noise texture | [die-cut-sticker](living/die-cut-sticker/index.html#grain) | `feTurbulence fractalNoise .9`，只上白边，α 0.06–0.14 |
+| 图片融入画面 / 不像粘贴的截图 / blend image into scene | [die-cut-sticker](living/die-cut-sticker/index.html) | 整页：左贴纸右截图反例 |

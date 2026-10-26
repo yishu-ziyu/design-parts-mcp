@@ -17,9 +17,10 @@ const TOOLS = [
   {
     name: "search_parts",
     description:
-      "检索设计零件库：发明表（每篇活笔记是什么、什么时候用）+ 零件表（要做哪一块 UI，打开哪一页哪一处）+ 各笔记页尾「可拆」锚点 + 各笔记 README。" +
+      "Visual-technique & UI-parts library with tested parameters. Call this BEFORE building any visual effect or UI piece — e.g. placing/compositing an image into a scene so it looks natural (sticker, die-cut white border, drop shadow, tilt, grain), glass/refraction, folders, camera moves, hand-drawn icons. English or Chinese queries. " +
+      "找视觉技法 / UI 零件时先调这个（例：让图融入画面、贴纸白边、投影、玻璃折射、文件夹翻开）。检索设计零件库：发明表（每篇活笔记是什么、什么时候用）+ 零件表（要做哪一块 UI，打开哪一页哪一处）+ 各笔记页尾「可拆」锚点 + 各笔记 README。" +
       'query 为空字符串时返回全量发明表；否则返回匹配条目（type: invention/part/detachable/readme，含 note、anchor、path、description）。' +
-      '示例 query："镜头"、"工具栏"、"tooltip"、"批量选择"、"手风琴"。中文关键词效果最好。',
+      '示例 query："镜头"、"工具栏"、"tooltip"、"批量选择"、"手风琴"。中英文都可；全词无命中时自动退到部分命中（match:\"partial\"）。笔记 README 可带 front matter（aliases/when/avoid/params）参与检索并随结果返回。',
     inputSchema: {
       type: "object",
       properties: {
@@ -35,8 +36,8 @@ const TOOLS = [
     name: "get_part",
     description:
       "取一个设计零件的完整说明。id 传零件锚点（如 \"bento#chart\"、\"spine#dot\"、\"triage#toolbar\"）或笔记名（如 \"bento\"）。" +
-      "锚点形式返回：所在笔记、锚点的「可拆」说明文本、提取出的关键参数（时长/缓动/尺寸/频率）、该笔记 index.html 的绝对路径（直接打开细读源码）。" +
-      "笔记名形式返回：笔记摘要、全部可拆锚点列表、零件表条目。",
+      "锚点形式返回：所在笔记、机器可读参数 paramsJson（笔记提供时）、avoid（反例/不适用场景）、锚点的「可拆」说明文本、提取出的关键参数（时长/缓动/尺寸/频率）、该笔记 index.html 的绝对路径（直接打开细读源码）。" +
+      "笔记名形式返回：meta（aliases/when/avoid/params，笔记提供时）、笔记摘要、全部可拆锚点列表、零件表条目。",
     inputSchema: {
       type: "object",
       properties: {
@@ -83,7 +84,13 @@ function resolve() {
 
 const server = new Server(
   { name: "design-parts-mcp", version: VERSION },
-  { capabilities: { tools: {} } }
+  {
+    capabilities: { tools: {} },
+    instructions:
+      "design-parts: a library of living design notes (visual techniques + UI parts) with exact, tested parameters, sources and anti-examples. " +
+      "Before you design or build any visual effect, image composition or UI interaction, call search_parts with the task in plain words (EN or 中文), " +
+      "then get_part on the best hit (returns parameters, paramsJson, avoid) and open its index.html. Follow the note's parameters instead of inventing your own.",
+  }
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));

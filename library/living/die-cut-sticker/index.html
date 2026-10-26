@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>die-cut-sticker — 模切贴纸：抠图 + 等宽白边 + 轻颗粒 + 投影 + 歪 -8°</title>
+<meta name="description" content="Die-cut sticker / 模切贴纸：把一张抠出来的角色图做成贴在画面上的实体贴纸，而不是粘进去的截图。">
+<meta name="keywords" content="die-cut, sticker, cutout, white border, outline, feMorphology, drop-shadow, tilt, grain, blend image into scene, 贴纸, 模切, 抠图, 白边, 描边, 投影, 阴影, 倾斜, 颗粒, 融入画面">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"PingFang SC","Noto Sans SC",system-ui,sans-serif;background:#efebe2;color:#2a2620}
+.stage{max-width:1040px;margin:0 auto;padding:48px 32px 24px}
+h1{font-size:22px;font-weight:650;letter-spacing:-.01em}
+.lede{margin-top:8px;font-size:14px;color:#6d665b;line-height:1.7}
+.pair{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.scene{position:relative;height:440px;border-radius:14px;overflow:hidden;
+  /* 场景：一张米色本子纸，横线 + 一点脏色，贴纸要坐在它上面 */
+  background:
+    repeating-linear-gradient(180deg,transparent 0 31px,rgba(70,110,160,.13) 31px 32px),
+    radial-gradient(120% 80% at 20% 10%,#fbf8f1,#f1ead9);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.scene .write{position:absolute;left:28px;top:40px;right:28px;font:15px/32px "Kaiti SC","STKaiti",serif;color:#4a4438}
+.tag{position:absolute;left:14px;bottom:12px;font-size:12px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.75)}
+.tag.good{color:#2f6b3a}.tag.bad{color:#9b2c2c}
+
+/* ===== 贴纸本体 ===== */
+#sticker{position:absolute;left:50%;top:52%;width:240px;              /* #scale */
+  transform:translate(-50%,-50%) rotate(-8deg);                        /* #tilt */
+  filter:url(#diecut) drop-shadow(0 4px 10px rgba(0,0,0,.15));        /* #edge → #grain → #shadow，顺序不能反 */
+}
+/* ===== 反例：粘进去的截图 ===== */
+#paste{position:absolute;left:50%;top:52%;width:240px;transform:translate(-50%,-50%);display:block}
+
+.controls{margin-top:18px;display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:#5a5448}
+.controls label{display:flex;align-items:center;gap:8px}
+.controls output{font-family:ui-monospace,Menlo,monospace;min-width:44px}
+
+#notes{max-width:1040px;margin:0 auto;padding:40px 32px 120px;color:#5a5448}
+#notes h3{font-size:14px;letter-spacing:.08em;color:#2a2620;font-weight:650;margin-bottom:14px}
+#notes dt{font-weight:600;margin-top:16px;color:#2a2620}
+#notes dd{margin-top:4px;font-size:13px;line-height:1.8}
+#notes code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:rgba(0,0,0,.05);padding:0 4px;border-radius:4px}
+#notes p{font-size:13px;line-height:1.8;margin-top:10px}
+@media (max-width:760px){.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- 模切滤镜：alpha 膨胀出等宽白边 → 圆角化 → 白边上叠一层轻颗粒 → 原图盖回去 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="diecut" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+    <!-- #edge：等宽白边 = 对 alpha 做 dilate，radius 就是白边宽度 -->
+    <feMorphology id="dilate" in="SourceAlpha" operator="dilate" radius="7" result="grown"/>
+    <!-- 方核膨胀会出尖角：blur 1.5 再阈值回硬边，转角变圆 -->
+    <feGaussianBlur in="grown" stdDeviation="1.5" result="soft"/>
+    <feComponentTransfer in="soft" result="ring">
+      <feFuncA type="linear" slope="6" intercept="-2.4"/>
+    </feComponentTransfer>
+    <feFlood flood-color="#fffdf8" result="paper"/>
+    <feComposite in="paper" in2="ring" operator="in" result="white"/>
+    <!-- #grain：只上在白边纸上，1.5–3% 可见度，像压纹不像噪点 -->
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="noise"/>
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.2 .7" result="specks"/>
+    <feComposite in="specks" in2="ring" operator="in" result="grainMask"/>
+    <feComponentTransfer in="grainMask" result="grain"><feFuncA id="grainAmt" type="linear" slope=".1"/></feComponentTransfer>
+    <feMerge><feMergeNode in="white"/><feMergeNode in="grain"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</svg>
+
+<div class="stage">
+  <h1>die-cut-sticker · 模切贴纸</h1>
+  <p class="lede">同一张抠图，同一个位置，同样的宽。左边是一张<b>贴上去的贴纸</b>：等宽白边、纸面颗粒、贴着纸的软投影、歪 −8°。右边是<b>粘进去的截图</b>：矩形底色、零边、零影、零角度——一眼看出是后加的。</p>
+
+  <div class="pair">
+    <div class="scene" id="good">
+      <div class="write">周一 晴<br>今天的咖啡不太像咖啡。<br>记一下。</div>
+      <img id="sticker" src="assets/cutout.png" alt="模切贴纸：拿咖啡杯的女孩，白边、投影、歪 -8 度">
+      <span class="tag good">✓ 贴纸：它是本子上的一个物件</span>
+    </div>
+    <div class="scene" id="bad">
+      <div class="write">周一 晴<br>今天的咖啡不太像咖啡。<br>记一下。</div>
+      <img id="paste" src="assets/screenshot.jpg" alt="反例：直接粘进来的矩形截图">
+      <span class="tag bad">✗ 截图：它是一块后加的矩形</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label>白边 radius <input type="range" id="r" min="0" max="14" step="1" value="7"><output id="ro">7px</output></label>
+    <label>倾斜 <input type="range" id="t" min="-15" max="15" step="1" value="-8"><output id="to">-8deg</output></label>
+    <label>颗粒 <input type="range" id="g" min="0" max="30" step="1" value="10"><output id="go">0.10</output></label>
+    <label><input type="checkbox" id="s" checked> 投影</label>
+  </div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#edge</code></dt>
+    <dd>等宽白边（die-cut outline）：SVG <code>feMorphology operator="dilate" radius="7"</code> 作用在 <code>SourceAlpha</code> 上，白边宽 = radius = 7px（贴纸宽 240px 的约 3%）；再 <code>feGaussianBlur stdDeviation="1.5"</code> + <code>feFuncA slope=6 intercept=-2.4</code> 把方核尖角磨圆；填色 <code>#fffdf8</code>（暖白，纯 #fff 在米色纸上发蓝）。filter 区域放到 130%，否则白边被裁。</dd>
+    <dt><code>#shadow</code></dt>
+    <dd>投影：<code>drop-shadow(0 4px 10px rgba(0,0,0,.15))</code>，写在 <code>url(#diecut)</code> 之后，阴影才跟着白边外轮廓走而不是跟着人物走。不要 <code>box-shadow</code>（矩形影 = 截图感）；不要大于 .2 的不透明度、大于 6px 的 y 偏移（会变成浮起的卡片）。</dd>
+    <dt><code>#tilt</code></dt>
+    <dd>倾斜：<code>rotate(-8deg)</code>。可用区间 −12deg…−4deg 或 4deg…12deg；0deg 像排版，大于 15deg 像掉了。一页多张贴纸时正负交替、每张差 3deg 以上。</dd>
+    <dt><code>#scale</code></dt>
+    <dd>尺寸：贴纸宽 240px ≈ 场景宽 25%–30%；白边 radius 随宽线性缩放（radius ≈ 宽 × 0.03，最小 4px）。贴纸比场景里的同类物件（字、手账元素）大一档即可，别占满。</dd>
+    <dt><code>#grain</code></dt>
+    <dd>轻颗粒：<code>feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"</code>，只 composite 进白边 ring，不碰人物；可见度 <code>feFuncA slope=".1"</code>（0.06–0.14 之间）。肉眼第一眼看不出、200% 才看出纸感为对。</dd>
+  </dl>
+  <p>机器可读参数见页内 <code>&lt;script type="application/json" id="params"&gt;</code>；来源、原理与专家检查见同目录 README.md。</p>
+</section>
+
+<script type="application/json" id="params">
+{
+  "edge":   {"method":"svg feMorphology dilate on SourceAlpha","radius_px":7,"radius_ratio_of_width":0.03,"round_blur_std":1.5,"color":"#fffdf8"},
+  "shadow": {"css":"drop-shadow(0 4px 10px rgba(0,0,0,.15))","order":"after url(#diecut)"},
+  "tilt":   {"deg":-8,"range_deg":[-12,-4]},
+  "scale":  {"width_px":240,"ratio_of_scene":[0.25,0.30]},
+  "grain":  {"type":"fractalNoise","baseFrequency":0.9,"numOctaves":2,"alpha":0.10,"range":[0.06,0.14],"apply_to":"ring only"}
+}
+</script>
+
+<script>
+(function(){
+  var st=document.getElementById('sticker'),d=document.getElementById('dilate'),ga=document.getElementById('grainAmt');
+  var r=document.getElementById('r'),t=document.getElementById('t'),g=document.getElementById('g'),s=document.getElementById('s');
+  function apply(){
+    d.setAttribute('radius',r.value);document.getElementById('ro').textContent=r.value+'px';
+    document.getElementById('to').textContent=t.value+'deg';
+    ga.setAttribute('slope',(g.value/100).toFixed(2));document.getElementById('go').textContent=(g.value/100).toFixed(2);
+    st.style.transform='translate(-50%,-50%) rotate('+t.value+'deg)';
+    st.style.filter='url(#diecut)'+(s.checked?' drop-shadow(0 4px 10px rgba(0,0,0,.15))':'');
+  }
+  [r,t,g,s].forEach(function(el){el.addEventListener('input',apply)});
+})();
+</script>
+</body>
+</html>
