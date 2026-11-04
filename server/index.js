@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // design-parts-mcp — 本地 stdio MCP server，把设计零件库暴露成三个工具。
 // 数据优先级：DESIGN_NOTES_PATH 指向本地真源；未设置时用仓库内置 library/ 快照。
+import fs from "node:fs";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -35,7 +36,7 @@ const TOOLS = [
     name: "get_part",
     description:
       "取一个设计零件的完整说明。id 传零件锚点（如 \"bento#chart\"、\"spine#dot\"、\"triage#toolbar\"）或笔记名（如 \"bento\"）。" +
-      "锚点形式返回：所在笔记、锚点的「可拆」说明文本、提取出的关键参数（时长/缓动/尺寸/频率）、该笔记 index.html 的绝对路径（直接打开细读源码）。" +
+      "锚点形式返回：所在笔记、机制说明、参数、该笔记 index.html 的绝对路径；已整理的零件还会返回可改的代码片段、适用和不适用的情况、需要替换的部分和关键帧图片。" +
       "笔记名形式返回：笔记摘要、全部可拆锚点列表、零件表条目。",
     inputSchema: {
       type: "object",
@@ -99,7 +100,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "get_part": {
         if (!args?.id) return errorResult("缺少参数 id，如 \"spine#dot\" 或 \"bento\"");
         const res = getPart(r.resolved, args.id, warn);
-        return res.error ? errorResult(res.error) : textResult(res);
+        if (res.error) return errorResult(res.error);
+        const { framePaths = [], ...fields } = res;
+        const result = textResult(fields);
+        for (const f of framePaths) {
+          result.content.push({ type: "image", data: fs.readFileSync(f).toString("base64"), mimeType: "image/jpeg" });
+        }
+        return result;
       }
       case "get_source": {
         if (!args?.name) return errorResult("缺少参数 name，如 \"bento\"");

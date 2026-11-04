@@ -48,8 +48,12 @@ MCP 客户端应使用 `command: "node"`，`args` 为上面的 `server/index.js`
 
 ## 接入现状 · 2026-11-05
 
-已接入 Claude Code 用户级配置，读本机活资料；配套使用规则在 `~/.claude/skills/design-parts/SKILL.md`。Codex 和 Cursor 未接入。回滚：`claude mcp remove design-parts -s user`，并删除该 skill 目录。
+已接入 Claude Code、Codex、Cursor 和 Pi 的全局配置，读本机活资料；配套规则在 `~/.agents/skills/design-parts/SKILL.md`，Claude Code 通过软链接使用。回滚：`claude mcp remove design-parts -s user`、`codex mcp remove design-parts`，删掉 `~/.cursor/mcp.json` 和 `~/.pi/agent/mcp.json` 里的 design-parts，再删除该 skill 和软链接。
+
+`living/<note>/part.json` 是按锚点写好的机制、参数、代码和关键帧；`get_part` 有它就返回新格式和图片，没有就走旧格式。目前只有 flood 有。
 
 `search_parts` 命中任一词即返回，按命中多少排序，多词查询最多 20 条；`matched` 是该条命中的词，`unmatched` 是整库都没命中的词。没有同义词扩展，库以中文为主，英文长句命中少。
 
 测试：`DESIGN_NOTES_PATH=<活资料根目录> npm test`，不传时第二条数据路径仍指向已不存在的 `~/Documents/design-notes`。
+
+复刻页只留在本机（用户决定，2026-11-05）。`npm run sync` 会把活资料写进 `library/` 快照，而这个仓库有 GitHub 远端，所以不要用它同步复刻页，也不要推送带复刻内容的快照。

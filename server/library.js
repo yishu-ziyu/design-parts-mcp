@@ -336,6 +336,12 @@ export function search(resolved, query, onWarn = () => {}) {
   };
 }
 
+/** 读笔记的 part.json：按锚点写好的机制、参数、代码和关键帧。没有这个文件的笔记走旧格式。 */
+function loadPartFile(livingDir, note) {
+  const p = path.join(livingDir, note, "part.json");
+  return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : null;
+}
+
 /** get_part：入参 "bento#chart" / "spine#dot" / "bento"。 */
 export function getPart(resolved, id, onWarn = () => {}) {
   const lib = loadLibrary(resolved, onWarn);
@@ -353,6 +359,19 @@ export function getPart(resolved, id, onWarn = () => {}) {
   const indexParts = lib.parts.filter((p) => p.note === note);
 
   if (anchor) {
+    const rich = loadPartFile(resolved.livingDir, note)?.[anchor];
+    if (rich) {
+      const { frames = [], how, params = {}, page, ...fields } = rich;
+      return {
+        note,
+        anchor,
+        description: how,
+        params: Object.entries(params).map(([k, v]) => `${k}：${v}`),
+        ...fields,
+        indexHtmlPath: page ? path.join(resolved.livingDir, note, page) : indexHtmlPath,
+        framePaths: frames.map((f) => path.join(resolved.livingDir, note, "assets", f)),
+      };
+    }
     const entry = detach.find((d) => d.anchor === anchor);
     const related = indexParts.filter((p) => p.anchor === anchor);
     if (!entry && related.length === 0) {
