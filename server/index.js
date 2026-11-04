@@ -18,14 +18,14 @@ const TOOLS = [
     name: "search_parts",
     description:
       "检索设计零件库：发明表（每篇活笔记是什么、什么时候用）+ 零件表（要做哪一块 UI，打开哪一页哪一处）+ 各笔记页尾「可拆」锚点 + 各笔记 README。" +
-      'query 为空字符串时返回全量发明表；否则返回匹配条目（type: invention/part/detachable/readme，含 note、anchor、path、description）。' +
+      'query 为空字符串时返回全量发明表；否则命中任一词即返回，命中越多排越前（type: invention/part/detachable/readme，含 note、anchor、path、description、matched）。unmatched 列出整库都没命中的词。' +
       '示例 query："镜头"、"工具栏"、"tooltip"、"批量选择"、"手风琴"。中文关键词效果最好。',
     inputSchema: {
       type: "object",
       properties: {
         query: {
           type: "string",
-          description: "检索词（中文/英文关键词，空格分隔多个词）；传空字符串返回全量发明表",
+          description: "检索词（关键词或一句话，中英文均可）；传空字符串返回全量发明表",
         },
       },
       required: ["query"],

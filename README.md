@@ -8,7 +8,7 @@
 
 | 工具 | 入参 | 返回 |
 |------|------|------|
-| `search_parts` | `query`（必填，空字符串 = 全量发明表） | 匹配条目：发明表（这页是什么、什么时候用）、零件表（要做哪一块打开哪一页哪一处）、页尾「可拆」锚点、README 命中行；每条含 `type` / `note` / `anchor` / `path` / `description` |
+| `search_parts` | `query`（必填，关键词或一句话；空字符串 = 全量发明表） | 命中任一词的条目，命中越多排越前：发明表（这页是什么、什么时候用）、零件表（要做哪一块打开哪一页哪一处）、页尾「可拆」锚点、README 命中行；每条含 `type` / `note` / `anchor` / `path` / `description` / `matched`；`unmatched` 列出整库都没命中的词 |
 | `get_part` | `id`（必填，如 `"bento#chart"`、`"spine#dot"` 或笔记名 `"bento"`） | 所在笔记、锚点的「可拆」说明、提取出的关键参数（时长/缓动/尺寸/频率）、该笔记 `index.html` 的绝对路径（直接打开细读源码）；笔记名形式返回全部可拆锚点列表 |
 | `get_source` | `name`（必填，如 `"bento"`） | 该笔记 README 全文（来源 URL、原版机制逐条记录、可学/不学/启示）+ 提取出的来源 URL 列表 |
 

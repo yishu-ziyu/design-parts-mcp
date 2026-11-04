@@ -7,7 +7,7 @@ import os from "node:os";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SOURCE_NOTES = path.join(os.homedir(), "Documents", "design-notes");
+const SOURCE_NOTES = process.env.DESIGN_NOTES_PATH || path.join(os.homedir(), "Documents", "design-notes");
 const TIMEOUT = 15000;
 
 class RpcClient {
@@ -144,6 +144,13 @@ async function runSuite(envLabel, env) {
     t.assert(!s.isError && s.text.includes("bento") && s.text.includes("镜头"), "search_parts(镜头) 命中 bento", s.text.slice(0, 120));
     const sj = c.json(s.text);
     t.assert(sj.results?.some((r) => r.note === "bento" && (r.type === "invention" || r.type === "part")), "search_parts(镜头) 结果含 bento 条目", JSON.stringify(sj.results?.slice(0, 2)));
+
+    // 回归：多词和长句曾因要求所有词同时命中而返回 0 条
+    const multi = c.json((await c.callTool("search_parts", { query: "镜头 xyzzy" })).text);
+    t.assert(multi.results?.some((r) => r.note === "bento") && multi.unmatched?.includes("xyzzy"), "search_parts(多词) 命中任一词并报告未命中的词", JSON.stringify(multi.unmatched));
+    const sentence = c.json((await c.callTool("search_parts", { query: "给首页做一个镜头巡游的动效，要有弹性" })).text);
+    t.assert(sentence.results?.[0]?.note === "bento", "search_parts(长句) 把 bento 排在第一", JSON.stringify(sentence.results?.slice(0, 2)));
+    t.assert(sentence.results.length <= 20, "search_parts(长句) 最多返回 20 条", sentence.results.length);
 
     // 4. search_parts("") 返回全量发明表
     const s0 = await c.callTool("search_parts", { query: "" });

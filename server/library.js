@@ -193,6 +193,8 @@ function loadReadme(livingDir, note) {
 }
 
 const cache = new Map();
+const SINGLE_TERM_LIMIT = 60;
+const MULTI_TERM_LIMIT = 20;
 
 /** 载入并缓存整库数据；warnings 通过回调给出（server 打到 stderr）。 */
 export function loadLibrary(resolved, onWarn = () => {}) {
@@ -216,51 +218,122 @@ export function loadLibrary(resolved, onWarn = () => {}) {
   return lib;
 }
 
-/** search_parts：无 query 返回全量发明表；有 query 真解析匹配。 */
+const EN_STOPWORDS = new Set(
+  "a an and are as at be by for from in into is it my of on or our that the this to with your".split(" ")
+);
+// 中文长句按二字片段拆开时，丢掉只起语法作用的片段（如「卡片做」里的「片做」）
+const ZH_FUNCTION_CHARS = /^[的了给做要有把让请吗呢吧很和与或在]|[的了给做要有把让请吗呢吧很和与或在]$/;
+const ZH_STOP_FRAGMENTS = new Set(["一个", "一种", "这个", "那个", "我要", "我想", "帮我", "需要"]);
+
+/** 把 query 拆成检索词：英文按单词，中文连续段整段 + 二字片段（长句没有空格也能命中）。 */
+function parseQuery(q) {
+  const raw = q.match(/\p{Script=Han}+|[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?/gu) ?? [];
+  const unique = [...new Set(raw)];
+  const content = unique.filter((t) => !EN_STOPWORDS.has(t));
+  return (content.length ? content : unique).map((text) => {
+    const fragments = [];
+    if (/^\p{Script=Han}{3,}$/u.test(text)) {
+      for (let i = 0; i + 2 <= text.length; i++) {
+        const f = text.slice(i, i + 2);
+        if (!ZH_FUNCTION_CHARS.test(f) && !ZH_STOP_FRAGMENTS.has(f)) fragments.push(f);
+      }
+    }
+    return { text, fragments };
+  });
+}
+
+/** 文本命中多少：整词命中优先于片段命中。返回 { score, matched, hitTerms }。 */
+function scoreText(text, terms) {
+  const lower = text.toLowerCase();
+  let score = 0;
+  const matched = [];
+  const hitTerms = [];
+  for (const term of terms) {
+    if (lower.includes(term.text)) {
+      score += Math.max(2, term.fragments.length + 1);
+      matched.push(term.text);
+      hitTerms.push(term.text);
+      continue;
+    }
+    const partial = term.fragments.filter((f) => lower.includes(f));
+    if (partial.length) {
+      score += partial.length;
+      matched.push(...partial);
+      hitTerms.push(term.text);
+    }
+  }
+  return { score, matched, hitTerms };
+}
+
+/** search_parts：无 query 返回全量发明表；有 query 命中任一词即返回，命中越多排越前。 */
 export function search(resolved, query, onWarn = () => {}) {
   const lib = loadLibrary(resolved, onWarn);
   const q = (query ?? "").trim().toLowerCase();
   if (!q) {
     return { query: "", total: lib.inventions.length, results: lib.inventions };
   }
-  const tokens = q.split(/\s+/);
-  const hits = (text) => tokens.every((t) => text.toLowerCase().includes(t));
-  const results = [];
+  const terms = parseQuery(q);
+  const scored = [];
+  const seenTerms = new Set();
+  const add = (entry, s) => {
+    if (!s.score) return;
+    s.hitTerms.forEach((t) => seenTerms.add(t));
+    scored.push({ entry: { ...entry, matched: s.matched }, score: s.score });
+  };
   for (const inv of lib.inventions) {
-    if (hits([inv.note, inv.title, inv.description, inv.when].join(" "))) results.push(inv);
+    add(inv, scoreText([inv.note, inv.title, inv.description, inv.when].join(" "), terms));
   }
   for (const p of lib.parts) {
-    if (hits([p.note, p.section, p.task, p.description, p.anchor ?? ""].join(" "))) results.push(p);
+    add(p, scoreText([p.note, p.section, p.task, p.description, p.anchor ?? ""].join(" "), terms));
   }
   for (const [note, items] of Object.entries(lib.detachables)) {
     for (const it of items) {
-      if (hits([note, it.anchor, it.text].join(" "))) {
-        results.push({
+      add(
+        {
           type: "detachable",
           title: `${note}#${it.anchor}`,
           note,
           anchor: it.anchor,
           path: `living/${note}/index.html#${it.anchor}`,
           description: it.text,
-        });
-      }
+        },
+        scoreText([note, it.anchor, it.text].join(" "), terms)
+      );
     }
   }
   for (const [note, readme] of Object.entries(lib.readmes)) {
     if (!readme) continue;
-    const line = readme.split(/\r?\n/).find((l) => hits(l));
-    if (line) {
-      results.push({
-        type: "readme",
-        title: `${note} — README`,
-        note,
-        anchor: null,
-        path: `living/${note}/README.md`,
-        description: line.trim().slice(0, 240),
-      });
+    let best = null;
+    let bestLine = "";
+    for (const line of readme.split(/\r?\n/)) {
+      const s = scoreText(line, terms);
+      if (s.score && (!best || s.score > best.score)) {
+        best = s;
+        bestLine = line;
+      }
+    }
+    if (best) {
+      add(
+        {
+          type: "readme",
+          title: `${note} — README`,
+          note,
+          anchor: null,
+          path: `living/${note}/README.md`,
+          description: bestLine.trim().slice(0, 240),
+        },
+        best
+      );
     }
   }
-  return { query, total: results.length, results: results.slice(0, 60) };
+  scored.sort((a, b) => b.score - a.score);
+  const limit = terms.length > 1 ? MULTI_TERM_LIMIT : SINGLE_TERM_LIMIT;
+  return {
+    query,
+    total: scored.length,
+    results: scored.slice(0, limit).map((x) => x.entry),
+    unmatched: terms.map((t) => t.text).filter((t) => !seenTerms.has(t)),
+  };
 }
 
 /** get_part：入参 "bento#chart" / "spine#dot" / "bento"。 */
