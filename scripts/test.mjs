@@ -179,6 +179,9 @@ async function runSuite(envLabel, env) {
     const bp = await c.callTool("get_part", { id: "bento" });
     const bpj = c.json(bp.text);
     t.assert(Array.isArray(bpj.detachables) && bpj.detachables.length === 4, "get_part(bento) 列出 4 个可拆锚点", bpj.detachables?.length);
+    // 用户报告：只写在 part.json 的锚点，按笔记名查不到（2026-11-05）
+    const fp = c.json((await c.callTool("get_part", { id: "flood" })).text);
+    t.assert(fp.anchors?.some((a) => a.anchor === "#card"), "get_part(flood) 列出 part.json 的锚点", fp.anchors?.length);
   } catch (e) {
     t.assert(false, `套件异常: ${e.message}`, c.stderr.join(""));
   } finally {

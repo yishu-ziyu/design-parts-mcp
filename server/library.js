@@ -376,10 +376,11 @@ export function getPart(resolved, id, onWarn = () => {}) {
     const related = indexParts.filter((p) => p.anchor === anchor);
     if (!entry && related.length === 0) {
       return {
-        error: `笔记 "${note}" 没有锚点 #${anchor}。可用锚点：${[
+        error: `笔记 "${note}" 没有锚点 #${anchor}。可用锚点：${[...new Set([
           ...detach.map((d) => `#${d.anchor}`),
+          ...Object.keys(loadPartFile(resolved.livingDir, note) ?? {}).map((a) => `#${a}`),
           ...indexParts.filter((p) => p.anchor).map((p) => `#${p.anchor}`),
-        ].join(", ") || "（无）"}`,
+        ])].join(", ") || "（无）"}`,
       };
     }
     return {
@@ -398,6 +399,12 @@ export function getPart(resolved, id, onWarn = () => {}) {
     summary: invention ? invention.description : "",
     when: invention ? invention.when : "",
     detachables: detach.map((d) => ({ anchor: `#${d.anchor}`, text: d.text })),
+    // part.json 里写好的锚点，用 get_part("笔记#锚点") 取代码、参数和关键帧
+    anchors: Object.entries(loadPartFile(resolved.livingDir, note) ?? {}).map(([a, p]) => ({
+      anchor: `#${a}`,
+      description: p.how,
+      fit: p.fit,
+    })),
     indexEntries: indexParts.map((p) => ({
       task: p.task,
       section: p.section,
