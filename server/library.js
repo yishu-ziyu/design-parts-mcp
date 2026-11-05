@@ -193,8 +193,8 @@ function loadReadme(livingDir, note) {
 }
 
 const cache = new Map();
-const SINGLE_TERM_LIMIT = 60;
-const MULTI_TERM_LIMIT = 20;
+const RESULT_LIMIT = 20;
+const RELEVANCE_FLOOR = 0.25;
 
 /** 载入并缓存整库数据；warnings 通过回调给出（server 打到 stderr）。 */
 export function loadLibrary(resolved, onWarn = () => {}) {
@@ -309,7 +309,7 @@ function scoreText(text, terms) {
       score += partial.length;
       matched.push(...partial);
       hitTerms.push(term.text);
-      for (const f of partial) weights[f] = 0.5;
+      for (const f of partial) weights[f] = 0.7;
     }
   }
   return { score, matched, hitTerms, weights };
@@ -411,6 +411,9 @@ export function search(resolved, query, onWarn = () => {}) {
     x.score = sum(x.weights) * (x.entry.type === "readme" ? 0.5 : 1) + sum(scoreText(x.entry.note ?? "", terms).weights) * 1.5;
   }
   scored.sort((a, b) => b.score - a.score);
+  // 分数远低于最好结果的条目只是顺带沾到（「底部抽屉」里只含「底部」的条目）
+  const floor = (scored[0]?.score ?? 0) * RELEVANCE_FLOOR;
+  while (scored.length && scored.at(-1).score < floor) scored.pop();
   // 同一篇最多连占两条，给其他笔记留位置
   const perNote = new Map();
   const diverse = [];
@@ -421,11 +424,10 @@ export function search(resolved, query, onWarn = () => {}) {
     (n <= 2 ? diverse : overflow).push(x);
   }
   const ranked = [...diverse, ...overflow];
-  const limit = terms.length > 1 ? MULTI_TERM_LIMIT : SINGLE_TERM_LIMIT;
   return {
     query,
     total: scored.length,
-    results: ranked.slice(0, limit).map((x) => x.entry),
+    results: ranked.slice(0, RESULT_LIMIT).map((x) => x.entry),
     unmatched: terms.map((t) => t.text).filter((t) => !seenTerms.has(t)),
   };
 }

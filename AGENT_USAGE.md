@@ -52,7 +52,7 @@ MCP 客户端应使用 `command: "node"`，`args` 为上面的 `server/index.js`
 
 `living/<note>/part.json` 是按锚点写好的机制、参数、代码和关键帧；`get_part` 有它就返回新格式和图片，没有就走旧格式。目前只有 flood 有。
 
-`search_parts` 命中任一词即返回，多词查询最多 20 条；少见的词和笔记名命中排得更前，同一篇最多连占两条。`matched` 是该条命中的词，`unmatched` 是整库都没命中的词。常用界面词有中英文同义词表（`SYNONYMS`），表外的英文词仍然命中少。
+`search_parts` 命中任一词即返回，最多 20 条，分数低于最好结果 25% 的不返回；少见的词和笔记名命中排得更前，同一篇最多连占两条。`matched` 是该条命中的词，`unmatched` 是整库都没命中的词。常用界面词有中英文同义词表（`SYNONYMS`），表外的英文词仍然命中少。
 
 搜索质量：`DESIGN_NOTES_PATH=<活资料根目录> npm run eval` 用 `scripts/search-eval.json` 的固定任务词检查前 3 条，低于 `search-eval-floor.json` 就失败。改排序或同义词后跑它；`holdout` 那组不要拿来调参。
 

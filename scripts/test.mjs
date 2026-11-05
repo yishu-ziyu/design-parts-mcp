@@ -194,6 +194,13 @@ async function runSuite(envLabel, env) {
         "搜索调用写进调用记录，带客户端名和结果",
         logged.length
       );
+      // 用户报告：只沾片段的条目占满结果，「底部抽屉」返回 60 条（2026-11-05）
+      const dr = c.json((await c.callTool("search_parts", { query: "底部抽屉" })).text);
+      t.assert(
+        dr.results.length <= 20 && !dr.results.some((r) => r.matched.length === 1 && r.matched[0] === "底部"),
+        "只沾「底部」的条目不进结果",
+        dr.results.length
+      );
       const fp = c.json((await c.callTool("get_part", { id: "flood" })).text);
       t.assert(fp.anchors?.some((a) => a.anchor === "#card"), "get_part(flood) 列出 part.json 的锚点", fp.anchors?.length);
     }
