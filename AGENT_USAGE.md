@@ -56,4 +56,4 @@ MCP 客户端应使用 `command: "node"`，`args` 为上面的 `server/index.js`
 
 测试：`DESIGN_NOTES_PATH=<活资料根目录> npm test`，不传时第二条数据路径仍指向已不存在的 `~/Documents/design-notes`。
 
-复刻页只留在本机（用户决定，2026-11-05）。`npm run sync` 会把活资料写进 `library/` 快照，而这个仓库有 GitHub 远端，所以不要用它同步复刻页，也不要推送带复刻内容的快照。
+复刻页只留在本机（用户决定，2026-11-05）。复刻页可能带原帖截图当素材（`source-assets/`）。这个仓库有 GitHub 远端，所以 `npm run sync` 只拷 `scripts/public-notes.json` 名单里的笔记，并跳过 `replica.html`、`part.json`、`source-assets/` 和 `replica-` 开头的关键帧；不要把复刻笔记加进名单。

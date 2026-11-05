@@ -13,6 +13,12 @@ const DST = path.join(REPO_ROOT, "library");
 
 const REQUIRED_NOTES = ["bento", "triage", "spine"];
 
+// 复刻页带别人的素材，只留本机（用户决定，2026-11-05）。
+// 只有这份名单里的笔记进快照，新笔记默认不公开；名单内笔记的复刻产物也不拷。
+const PUBLIC_NOTES = new Set(
+  JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "scripts", "public-notes.json"), "utf8"))
+);
+
 // 清洗模式字符串拆写，避免本仓库源码自身命中个人信息 grep（self-scrub）。
 const HOME_PREFIX = "/" + "Users" + "/";
 const OWNER_NAME = "mahao" + "xuan";
@@ -59,14 +65,14 @@ function main() {
   const srcLiving = source.livingDir;
   const notes = fs
     .readdirSync(srcLiving, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && fs.existsSync(path.join(srcLiving, d.name, "index.html")))
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(srcLiving, d.name, "index.html")) && PUBLIC_NOTES.has(d.name))
     .map((d) => d.name)
     .sort();
 
   // 重建 living/
   fs.rmSync(path.join(DST, "living"), { recursive: true, force: true });
   // 笔记目录里可分离的私有/过程文件：不入快照
-  const SKIP = new Set(["CONTRACT.md", "lessons.md", "_source"]);
+  const SKIP = new Set(["CONTRACT.md", "lessons.md", "_source", "replica.html", "part.json", "source-assets"]);
   let copied = 0;
   let readmes = 0;
   let assets = 0;
@@ -80,7 +86,8 @@ function main() {
       const dst = path.join(dstNote, entry.name);
       if (entry.isDirectory()) {
         // 资源目录（vendor/、fonts/ 等）整体拷入，保证 file:// 直开零网络
-        fs.cpSync(src, dst, { recursive: true });
+        // 复刻页的关键帧以 replica- 开头，只留本机
+        fs.cpSync(src, dst, { recursive: true, filter: (f) => !path.basename(f).startsWith("replica-") });
         assets++;
         continue;
       }
@@ -110,13 +117,19 @@ function main() {
   const parsed = parseIndex(source);
   for (const w of parsed.warnings) console.error(`[sync] warning: ${w}`);
 
+  // 索引也只收公开笔记的公开页面，复刻条目不进快照
+  const isPublic = (p) => {
+    const [note, page] = p.replace(/^living\//, "").split("#")[0].split("/");
+    return PUBLIC_NOTES.has(note) && page !== "replica.html";
+  };
   const rows = [];
-  for (const inv of parsed.inventions) {
+  for (const inv of parsed.inventions.filter((i) => isPublic(i.path))) {
     const href = `living/${inv.path.replace(/^living\//, "")}`;
     rows.push(`| [${inv.title}](${href}) | ${sanitize(inv.description)} | ${sanitize(inv.when)} |`);
   }
   const partsBySection = new Map();
-  for (const p of parsed.parts) {
+  const publicParts = parsed.parts.filter((p) => isPublic(p.path));
+  for (const p of publicParts) {
     const key = p.section || "其他";
     if (!partsBySection.has(key)) partsBySection.set(key, []);
     const href = `living/${p.path.replace(/^living\//, "")}`;
@@ -148,7 +161,7 @@ ${rows.join("\n")}
 
   fs.writeFileSync(path.join(DST, "INDEX.md"), out);
   console.error(
-    `[sync] library/INDEX.md 重建完成: ${rows.length} 条发明、${parsed.parts.length} 条零件（剔除 ${parsed.warnings.length} 条死链/库外链接）`
+    `[sync] library/INDEX.md 重建完成: ${rows.length} 条发明、${publicParts.length} 条零件（剔除 ${parsed.warnings.length} 条死链/库外链接）`
   );
 
   const missing = REQUIRED_NOTES.filter((n) => !fs.existsSync(path.join(DST, "living", n, "index.html")));
