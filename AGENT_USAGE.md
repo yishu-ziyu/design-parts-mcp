@@ -52,7 +52,11 @@ MCP 客户端应使用 `command: "node"`，`args` 为上面的 `server/index.js`
 
 `living/<note>/part.json` 是按锚点写好的机制、参数、代码和关键帧；`get_part` 有它就返回新格式和图片，没有就走旧格式。目前只有 flood 有。
 
-`search_parts` 命中任一词即返回，按命中多少排序，多词查询最多 20 条；`matched` 是该条命中的词，`unmatched` 是整库都没命中的词。没有同义词扩展，库以中文为主，英文长句命中少。
+`search_parts` 命中任一词即返回，多词查询最多 20 条；少见的词和笔记名命中排得更前，同一篇最多连占两条。`matched` 是该条命中的词，`unmatched` 是整库都没命中的词。常用界面词有中英文同义词表（`SYNONYMS`），表外的英文词仍然命中少。
+
+搜索质量：`DESIGN_NOTES_PATH=<活资料根目录> npm run eval` 用 `scripts/search-eval.json` 的固定任务词检查前 3 条，低于 `search-eval-floor.json` 就失败。改排序或同义词后跑它；`holdout` 那组不要拿来调参。
+
+调用记录：每次工具调用写一行到本机 `~/.local/state/design-parts/calls.jsonl`，含查询词、结果摘要、客户端和项目目录名。`npm run usage` 看汇总。`DESIGN_PARTS_LOG` 可改路径，设为 `off` 关闭。不进仓库。
 
 测试：`DESIGN_NOTES_PATH=<活资料根目录> npm test`，不传时第二条数据路径仍指向已不存在的 `~/Documents/design-notes`。
 

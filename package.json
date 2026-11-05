@@ -15,7 +15,9 @@
   "scripts": {
     "start": "node server/index.js",
     "sync": "node scripts/sync.js",
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs",
+    "eval": "node scripts/eval-search.mjs",
+    "usage": "node scripts/usage.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0"

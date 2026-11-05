@@ -225,6 +225,51 @@ const EN_STOPWORDS = new Set(
 const ZH_FUNCTION_CHARS = /^[的了给做要有把让请吗呢吧很和与或在]|[的了给做要有把让请吗呢吧很和与或在]$/;
 const ZH_STOP_FRAGMENTS = new Set(["一个", "一种", "这个", "那个", "我要", "我想", "帮我", "需要"]);
 
+// 同一个界面概念的中英文说法。库以中文为主，英文查询靠这张表找到内容。
+const SYNONYMS = [
+  ["modal", "dialog", "弹窗", "对话框"],
+  ["table", "表格"],
+  ["command palette", "cmd", "命令面板"],
+  ["login", "signin", "登录"],
+  ["pricing", "定价", "价格"],
+  ["empty", "空状态"],
+  ["skeleton", "骨架屏"],
+  ["counter", "ticker", "计数", "数字滚动"],
+  ["hover", "悬停"],
+  ["press", "按下"],
+  ["drag", "拖动", "拖拽"],
+  ["reorder", "排序"],
+  ["transition", "转场", "过渡"],
+  ["scroll", "滚动"],
+  ["flip", "翻转", "翻页"],
+  ["fold", "折叠"],
+  ["blur", "模糊"],
+  ["font", "字体", "字重"],
+  ["onboarding", "引导", "新手"],
+  ["spinner", "loading", "加载"],
+  ["dashboard", "仪表盘"],
+  ["sheet", "drawer", "抽屉"],
+  ["sticker", "贴纸"],
+  ["timeline", "时间轴"],
+  ["map", "地图"],
+  ["peek", "preview", "预览"],
+  ["tooltip", "气泡"],
+  ["toast", "通知", "提示条"],
+  ["sidebar", "侧栏", "侧边栏"],
+  ["navigation", "导航"],
+  ["gallery", "carousel", "画廊", "轮播"],
+  ["typing", "打字", "逐字"],
+  ["upload", "上传"],
+  ["progress", "进度"],
+  ["toolbar", "工具栏"],
+  ["card", "卡片"],
+  ["button", "按钮"],
+  ["icon", "图标"],
+  ["slider", "滑块"],
+  ["lightbox", "灯箱"],
+];
+const SYNONYM_OF = new Map(SYNONYMS.flatMap((g) => g.map((w) => [w, g])));
+
 /** 把 query 拆成检索词：英文按单词，中文连续段整段 + 二字片段（长句没有空格也能命中）。 */
 function parseQuery(q) {
   const raw = q.match(/\p{Script=Han}+|[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?/gu) ?? [];
@@ -238,7 +283,8 @@ function parseQuery(q) {
         if (!ZH_FUNCTION_CHARS.test(f) && !ZH_STOP_FRAGMENTS.has(f)) fragments.push(f);
       }
     }
-    return { text, fragments };
+    const variants = (SYNONYM_OF.get(text) ?? []).filter((w) => w !== text);
+    return { text, fragments, variants };
   });
 }
 
@@ -248,11 +294,14 @@ function scoreText(text, terms) {
   let score = 0;
   const matched = [];
   const hitTerms = [];
+  const weights = {};
   for (const term of terms) {
-    if (lower.includes(term.text)) {
+    const whole = [term.text, ...term.variants].find((w) => hasWord(lower, w));
+    if (whole) {
       score += Math.max(2, term.fragments.length + 1);
-      matched.push(term.text);
+      matched.push(whole);
       hitTerms.push(term.text);
+      weights[term.text] = 1;
       continue;
     }
     const partial = term.fragments.filter((f) => lower.includes(f));
@@ -260,9 +309,18 @@ function scoreText(text, terms) {
       score += partial.length;
       matched.push(...partial);
       hitTerms.push(term.text);
+      for (const f of partial) weights[f] = 0.5;
     }
   }
-  return { score, matched, hitTerms };
+  return { score, matched, hitTerms, weights };
+}
+
+/** 中文直接包含；拉丁词要从词首开始，否则 flow 会命中 pageflow。 */
+function hasWord(lower, word) {
+  const i = lower.indexOf(word);
+  if (i < 0) return false;
+  if (!/^[a-z0-9]/.test(word)) return true;
+  return new RegExp(`(^|[^a-z0-9])${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(lower);
 }
 
 /** search_parts：无 query 返回全量发明表；有 query 命中任一词即返回，命中越多排越前。 */
@@ -278,7 +336,7 @@ export function search(resolved, query, onWarn = () => {}) {
   const add = (entry, s) => {
     if (!s.score) return;
     s.hitTerms.forEach((t) => seenTerms.add(t));
-    scored.push({ entry: { ...entry, matched: s.matched }, score: s.score });
+    scored.push({ entry: { ...entry, matched: s.matched }, weights: s.weights });
   };
   for (const inv of lib.inventions) {
     add(inv, scoreText([inv.note, inv.title, inv.description, inv.when].join(" "), terms));
@@ -301,6 +359,21 @@ export function search(resolved, query, onWarn = () => {}) {
           description: it.text,
         },
         scoreText([note, it.anchor, it.text].join(" "), terms)
+      );
+    }
+  }
+  for (const note of indexed) {
+    for (const [anchor, p] of Object.entries(loadPartFile(resolved.livingDir, note) ?? {})) {
+      add(
+        {
+          type: "part-detail",
+          title: `${note}#${anchor}`,
+          note,
+          anchor,
+          path: `living/${note}/${p.page ?? "index.html"}#${anchor}`,
+          description: p.how,
+        },
+        scoreText([note, anchor, p.how, p.fit].join(" "), terms)
       );
     }
   }
@@ -329,12 +402,30 @@ export function search(resolved, query, onWarn = () => {}) {
       );
     }
   }
+  // 越少见的词越能说明这条相关；笔记名命中说明整篇就是讲这个；README 只是顺带提到
+  const docFreq = {};
+  for (const x of scored) for (const t of Object.keys(x.weights)) docFreq[t] = (docFreq[t] ?? 0) + 1;
+  for (const x of scored) {
+    const idf = (t) => Math.log(1 + scored.length / docFreq[t]);
+    const sum = (w) => Object.entries(w).reduce((n, [t, v]) => n + v * idf(t), 0);
+    x.score = sum(x.weights) * (x.entry.type === "readme" ? 0.5 : 1) + sum(scoreText(x.entry.note ?? "", terms).weights) * 1.5;
+  }
   scored.sort((a, b) => b.score - a.score);
+  // 同一篇最多连占两条，给其他笔记留位置
+  const perNote = new Map();
+  const diverse = [];
+  const overflow = [];
+  for (const x of scored) {
+    const n = (perNote.get(x.entry.note) ?? 0) + 1;
+    perNote.set(x.entry.note, n);
+    (n <= 2 ? diverse : overflow).push(x);
+  }
+  const ranked = [...diverse, ...overflow];
   const limit = terms.length > 1 ? MULTI_TERM_LIMIT : SINGLE_TERM_LIMIT;
   return {
     query,
     total: scored.length,
-    results: scored.slice(0, limit).map((x) => x.entry),
+    results: ranked.slice(0, limit).map((x) => x.entry),
     unmatched: terms.map((t) => t.text).filter((t) => !seenTerms.has(t)),
   };
 }

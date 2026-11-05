@@ -2,6 +2,7 @@
 // 两种数据路径各跑一遍：默认快照（library/）+ DESIGN_NOTES_PATH 指向本地真源。
 // 输出断言计数（N/N passed），任何失败以非零码退出。
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
@@ -10,11 +11,14 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const SOURCE_NOTES = process.env.DESIGN_NOTES_PATH || path.join(os.homedir(), "Documents", "design-notes");
 const TIMEOUT = 15000;
 
+const TEST_LOG = path.join(os.tmpdir(), `design-parts-test-${process.pid}.jsonl`);
+
 class RpcClient {
   constructor(env) {
     const childEnv = { ...process.env };
     if (env.DESIGN_NOTES_PATH) childEnv.DESIGN_NOTES_PATH = env.DESIGN_NOTES_PATH;
     else delete childEnv.DESIGN_NOTES_PATH;
+    childEnv.DESIGN_PARTS_LOG = TEST_LOG; // 测试不能写进真实调用记录
     this.child = spawn(process.execPath, ["server/index.js"], { cwd: REPO_ROOT, env: childEnv });
     this.buf = "";
     this.pending = new Map();
@@ -184,6 +188,12 @@ async function runSuite(envLabel, env) {
       // 用户决定不进库的页面不能被搜到（2026-11-05）
       const hid = c.json((await c.callTool("search_parts", { query: "全息 等高线" })).text);
       t.assert(!hid.results.some((r) => r.note === "holographic-instrument"), "未登记的页面不进搜索结果", hid.results.length);
+      const logged = fs.readFileSync(TEST_LOG, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+      t.assert(
+        logged.some((r) => r.tool === "search_parts" && r.client === "design-parts-mcp-test" && Array.isArray(r.top)),
+        "搜索调用写进调用记录，带客户端名和结果",
+        logged.length
+      );
       const fp = c.json((await c.callTool("get_part", { id: "flood" })).text);
       t.assert(fp.anchors?.some((a) => a.anchor === "#card"), "get_part(flood) 列出 part.json 的锚点", fp.anchors?.length);
     }

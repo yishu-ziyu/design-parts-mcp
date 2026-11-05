@@ -2,6 +2,9 @@
 // design-parts-mcp — 本地 stdio MCP server，把设计零件库暴露成三个工具。
 // 数据优先级：DESIGN_NOTES_PATH 指向本地真源；未设置时用仓库内置 library/ 快照。
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -18,8 +21,8 @@ const TOOLS = [
   {
     name: "search_parts",
     description:
-      "检索设计零件库：发明表（每篇活笔记是什么、什么时候用）+ 零件表（要做哪一块 UI，打开哪一页哪一处）+ 各笔记页尾「可拆」锚点 + 各笔记 README。" +
-      'query 为空字符串时返回全量发明表；否则命中任一词即返回，命中越多排越前（type: invention/part/detachable/readme，含 note、anchor、path、description、matched）。unmatched 列出整库都没命中的词。' +
+      "检索设计零件库：发明表（每篇活笔记是什么、什么时候用）+ 零件表（要做哪一块 UI，打开哪一页哪一处）+ 各笔记页尾「可拆」锚点 + 已整理零件的机制和适用场景 + 各笔记 README。" +
+      'query 为空字符串时返回全量发明表；否则命中任一词即返回，少见的词和笔记名命中排得更前，同一篇最多连占两条（type: invention/part/part-detail/detachable/readme，含 note、anchor、path、description、matched）。unmatched 列出整库都没命中的词。' +
       '示例 query："镜头"、"工具栏"、"tooltip"、"批量选择"、"手风琴"。中文关键词效果最好。',
     inputSchema: {
       type: "object",
@@ -82,6 +85,34 @@ function resolve() {
   }
 }
 
+// 调用记录只写本机，用来判断 Agent 是否真的在用、用了什么（npm run usage）。
+// DESIGN_PARTS_LOG 可改路径，设为 off 关闭。写失败不影响工具调用。
+const LOG_PATH =
+  process.env.DESIGN_PARTS_LOG ?? path.join(os.homedir(), ".local", "state", "design-parts", "calls.jsonl");
+const SESSION = randomUUID();
+
+function logCall(tool, args, ms, result) {
+  if (LOG_PATH === "off") return;
+  try {
+    fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+    fs.appendFileSync(
+      LOG_PATH,
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        session: SESSION,
+        client: server.getClientVersion()?.name ?? "unknown",
+        project: path.basename(process.cwd()),
+        tool,
+        args,
+        ms: Math.round(ms),
+        ...result,
+      }) + "\n"
+    );
+  } catch (e) {
+    warn(`调用记录写入失败: ${e.message}`);
+  }
+}
+
 const server = new Server(
   { name: "design-parts-mcp", version: VERSION },
   { capabilities: { tools: {} } }
@@ -93,24 +124,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   const r = resolve();
   if (!r.ok) return errorResult(r.message);
+  const t0 = performance.now();
   try {
     switch (name) {
-      case "search_parts":
-        return textResult(search(r.resolved, args?.query ?? "", warn));
+      case "search_parts": {
+        const res = search(r.resolved, args?.query ?? "", warn);
+        logCall(name, args, performance.now() - t0, {
+          total: res.total,
+          unmatched: res.unmatched,
+          top: res.results.slice(0, 5).map((e) => (e.anchor ? `${e.note}#${e.anchor}` : e.note)),
+        });
+        return textResult(res);
+      }
       case "get_part": {
         if (!args?.id) return errorResult("缺少参数 id，如 \"spine#dot\" 或 \"bento\"");
         const res = getPart(r.resolved, args.id, warn);
-        if (res.error) return errorResult(res.error);
+        if (res.error) {
+          logCall(name, args, performance.now() - t0, { error: true });
+          return errorResult(res.error);
+        }
         const { framePaths = [], ...fields } = res;
         const result = textResult(fields);
         for (const f of framePaths) {
           result.content.push({ type: "image", data: fs.readFileSync(f).toString("base64"), mimeType: "image/jpeg" });
         }
+        logCall(name, args, performance.now() - t0, { frames: framePaths.length, hasCode: Boolean(fields.code) });
         return result;
       }
       case "get_source": {
         if (!args?.name) return errorResult("缺少参数 name，如 \"bento\"");
         const res = getSource(r.resolved, args.name, warn);
+        logCall(name, args, performance.now() - t0, { error: Boolean(res.error) });
         return res.error ? errorResult(res.error) : textResult(res);
       }
       default:
