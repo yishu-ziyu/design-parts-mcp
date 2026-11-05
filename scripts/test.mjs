@@ -181,6 +181,9 @@ async function runSuite(envLabel, env) {
     t.assert(Array.isArray(bpj.detachables) && bpj.detachables.length === 4, "get_part(bento) 列出 4 个可拆锚点", bpj.detachables?.length);
     // 用户报告：只写在 part.json 的锚点，按笔记名查不到（2026-11-05）
     if (env.DESIGN_NOTES_PATH) {
+      // 用户决定不进库的页面不能被搜到（2026-11-05）
+      const hid = c.json((await c.callTool("search_parts", { query: "全息 等高线" })).text);
+      t.assert(!hid.results.some((r) => r.note === "holographic-instrument"), "未登记的页面不进搜索结果", hid.results.length);
       const fp = c.json((await c.callTool("get_part", { id: "flood" })).text);
       t.assert(fp.anchors?.some((a) => a.anchor === "#card"), "get_part(flood) 列出 part.json 的锚点", fp.anchors?.length);
     }

@@ -286,7 +286,10 @@ export function search(resolved, query, onWarn = () => {}) {
   for (const p of lib.parts) {
     add(p, scoreText([p.note, p.section, p.task, p.description, p.anchor ?? ""].join(" "), terms));
   }
+  // 没登记进 INDEX 的笔记（失败或待定的复刻页）不进搜索结果
+  const indexed = new Set([...lib.inventions, ...lib.parts].map((e) => e.note));
   for (const [note, items] of Object.entries(lib.detachables)) {
+    if (!indexed.has(note)) continue;
     for (const it of items) {
       add(
         {
