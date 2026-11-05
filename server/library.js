@@ -305,7 +305,7 @@ export function search(resolved, query, onWarn = () => {}) {
     }
   }
   for (const [note, readme] of Object.entries(lib.readmes)) {
-    if (!readme) continue;
+    if (!readme || !indexed.has(note)) continue;
     let best = null;
     let bestLine = "";
     for (const line of readme.split(/\r?\n/)) {
