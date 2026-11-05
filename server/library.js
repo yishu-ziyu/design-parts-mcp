@@ -411,6 +411,16 @@ export function search(resolved, query, onWarn = () => {}) {
     x.score = sum(x.weights) * (x.entry.type === "readme" ? 0.5 : 1) + sum(scoreText(x.entry.note ?? "", terms).weights) * 1.5;
   }
   scored.sort((a, b) => b.score - a.score);
+  // 同一篇的同一个锚点可能同时来自零件表、页面清单和 part.json，只留分数最高的一条
+  const seen = new Set();
+  const unique = scored.filter((x) => {
+    const key = `${x.entry.note}#${x.entry.anchor ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  scored.length = 0;
+  scored.push(...unique);
   // 分数远低于最好结果的条目只是顺带沾到（「底部抽屉」里只含「底部」的条目）
   const floor = (scored[0]?.score ?? 0) * RELEVANCE_FLOOR;
   while (scored.length && scored.at(-1).score < floor) scored.pop();

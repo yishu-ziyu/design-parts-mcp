@@ -201,6 +201,9 @@ async function runSuite(envLabel, env) {
         "只沾「底部」的条目不进结果",
         dr.results.length
       );
+      // 用户报告：同一个锚点在结果里出现两次（2026-11-05）
+      const keys = dr.results.map((r) => `${r.note}#${r.anchor ?? ""}`);
+      t.assert(new Set(keys).size === keys.length, "搜索结果里同一个锚点只出现一次", keys.length);
       const fp = c.json((await c.callTool("get_part", { id: "flood" })).text);
       t.assert(fp.anchors?.some((a) => a.anchor === "#card"), "get_part(flood) 列出 part.json 的锚点", fp.anchors?.length);
     }
