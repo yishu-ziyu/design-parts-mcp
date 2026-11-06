@@ -4,6 +4,17 @@
 
 默认内置一份可分享快照（`library/`）；如果你本地有自己的 design-notes 库，用 `DESIGN_NOTES_PATH` 指过去即可，server 会直接读真源。
 
+## 本地源码分发预览
+
+另有经过筛选的源码分发目录，目前包含跟手阅读面板和轻按反馈按钮。网站、Registry 和 Agent Skill 使用同一份构建结果，不需要先配置 MCP 才能获取这两件零件。
+
+```sh
+npm run build:distribution
+npm run preview:distribution
+```
+
+预览默认运行在本机 `http://127.0.0.1:4179`，尚未公开部署。构建可以使用仓库内的分发快照，不依赖原设计资料目录。新增零件、来源审核、安装保护与验收步骤见 [AGENT_USAGE.md](AGENT_USAGE.md)；正式选择清单在 `.devin/distribution.json`，不通过 `sync` 批量导出研究资料。
+
 ## 三个工具
 
 | 工具 | 入参 | 返回 |

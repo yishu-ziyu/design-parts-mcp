@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Design parts</title>
+  <link rel="stylesheet" href="./site.css">
+  <script type="module" src="./site.js"></script>
+</head>
+<body>
+  <a class="skip" href="#component">Skip to component</a>
+  <header class="masthead">
+    <div class="header-actions"><span class="local" data-copy="local">Local preview · Not published</span><button id="language" type="button" aria-label="Switch to Chinese">中文</button></div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="wordmark" href="./"><span class="brand-mark" aria-hidden="true">dp</span>Design parts</a>
+      <div class="search-field"><label class="search-label" for="search" data-copy="find">Find a part</label><input id="search" type="search" placeholder="Panel, spring…" autocomplete="off"></div>
+      <p class="nav-label" data-copy="components">Components</p>
+      <nav aria-label="Components" id="parts"></nav>
+      <p id="empty" hidden data-copy="empty">No matching part.</p>
+      <nav class="page-nav" aria-label="On this page"><p class="nav-label" data-copy="onPage">On this page</p><a href="#installation" data-copy="installTitle">Installation</a><a href="#source-section" data-copy="sourceTitle">Source files</a><a href="#skill-install" data-copy="skillNav">Agent Skill</a></nav>
+      <a class="catalog-link" href="./catalog.json" data-copy="machine">JSON catalog ↗</a>
+    </aside>
+    <main id="component">
+      <div id="error" role="alert" hidden></div>
+      <p id="loading" role="status"></p>
+      <div id="part-content" hidden>
+      <p class="breadcrumb"><span data-copy="components">Components</span><span aria-hidden="true">/</span><span data-copy="category">Interaction</span></p>
+      <div class="part-heading"><h1 id="title">Drag panel</h1><button id="agent" class="primary" type="button" data-copy="agent">Copy to agent</button></div>
+      <p class="lede" id="description"></p>
+      <div class="identity-meta"><span id="technology"></span><span data-copy="zero">No dependencies</span><a id="license">MIT</a><span id="version"></span></div>
+      <div class="demo-layout">
+        <section class="demo-section" aria-labelledby="preview-title">
+          <div class="section-label"><h2 id="preview-title" data-copy="preview">Preview</h2><span class="preview-label" data-copy="live">Interactive</span></div>
+          <div class="demo-frame"><iframe id="demo" title="Drag panel working example"></iframe></div>
+          <div class="demo-toolbar"><p class="caption" id="demo-hint"></p><div><button id="reset-demo" type="button"><span aria-hidden="true">↻</span> <span data-copy="reset">Reset</span></button><a id="standalone" target="_blank" rel="noreferrer" data-copy="standalone">Open preview ↗</a></div></div>
+        </section>
+      </div>
+      <section class="install" id="installation" aria-labelledby="install-title">
+        <h2 id="install-title" data-copy="installTitle">Installation</h2>
+        <p data-copy="installHelp">Preview the file changes, then install. No MCP setup and no runtime package required.</p>
+        <div class="command-row"><span class="command-label" data-copy="inspect">1. Inspect</span><code id="dry-command"></code><button type="button" data-copy-target="dry-command" data-copy="copy">Copy</button></div>
+        <div class="command-row"><span class="command-label" data-copy="install">2. Install</span><code id="install-command"></code><button type="button" data-copy-target="install-command" data-copy="copy">Copy</button></div>
+        <p class="fine" id="protection"></p>
+        <details id="skill-install"><summary data-copy="skillTitle">Add the reusable Agent Skill</summary><p data-copy="skillHelp">Installs into this project's .devin/skills directory. The same skill files can be imported by other compatible hosts.</p><div class="command-row"><code id="skill-command"></code><button type="button" data-copy-target="skill-command" data-copy="copy">Copy</button></div><a href="./skills/design-parts-distribution/SKILL.md" data-copy="readSkill">Read the skill instructions ↗</a></details>
+      </section>
+      <details class="facts"><summary data-copy="limitsTitle">Usage & limitations</summary><div class="facts-grid">
+        <section><h3 data-copy="fitTitle">Where it fits</h3><p id="fit"></p></section>
+        <section><h3 data-copy="avoidTitle">Limitations</h3><p id="avoid"></p></section>
+      </div></details>
+      <details class="mechanism">
+        <summary data-copy="mechanismTitle">Interaction details</summary>
+        <div aria-labelledby="mechanism-title">
+        <h2 id="mechanism-title" data-copy="mechanismTitle">A spring you can interrupt.</h2>
+        <p id="mechanism-body"></p>
+        <dl class="parameters" id="parameters"></dl>
+        <p class="fine" id="accessibility"></p>
+        </div>
+      </details>
+      <section class="source-section" id="source-section">
+        <div class="section-heading"><h2 data-copy="sourceTitle">Files & integration</h2><a id="metadata" data-copy="metadata">Version & checksums ↗</a></div>
+        <p id="integration"></p>
+        <div id="files"></div>
+        <details id="source-details"><summary id="source-summary">View source</summary><pre id="source-code"></pre></details>
+        <p id="provenance" class="fine"></p>
+      </section>
+      <footer><span>Design parts</span><span data-copy="footer">Reference specimens stay in the original library. This release contains only the selected source files.</span></footer>
+      </div>
+    </main>
+  </div>
+  <div id="notice" role="status" aria-live="polite"></div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+{
+  "name": "press-feedback",
+  "version": "0.1.0",
+  "title": {
+    "en": "Press feedback button",
+    "zh": "轻按反馈按钮"
+  },
+  "description": {
+    "en": "A native button that gently compresses on press. CSS only, with instant keyboard activation.",
+    "zh": "按下时轻微缩小，松开后复位。只需 CSS，键盘触发不播放缩放。"
+  },
+  "keywords": [
+    "按钮",
+    "按压",
+    "反馈",
+    "轻按",
+    "原生",
+    "CSS",
+    "button",
+    "press",
+    "feedback",
+    "native"
+  ],
+  "framework": "vanilla",
+  "technology": "CSS",
+  "license": "MIT",
+  "status": "local-preview",
+  "files": [
+    "press-feedback.css",
+    "example.html",
+    "LICENSE"
+  ],
+  "entry": "press-feedback.css",
+  "example": "example.html",
+  "source": {
+    "reference": "skill-samples/base.css::.btn; skill-samples/review.html#good",
+    "attribution": "Extracted from the locally authored skill-samples buttons, 2026-09-08. Keeps the 0.97 pressed scale and 100ms duration; uses the reviewed strong ease-out curve.",
+    "materials": "No third-party images, fonts, artwork or network assets.",
+    "summary": {
+      "en": "From the locally authored skill-samples buttons: scale 0.97 and 100ms. The easing curve comes from the reviewed menu example. No third-party media.",
+      "zh": "来自本地制作的 skill-samples 按钮：按下缩放 0.97、过渡 100ms；缓动曲线来自同组菜单评审样本。不包含第三方素材。"
+    }
+  },
+  "mechanism": {
+    "summary": {
+      "en": "A transform transition follows the native active state. Repeated presses retarget from the current scale; releasing outside does not activate the button.",
+      "zh": "transform 过渡跟随原生按下状态。连续按压从当前缩放继续变化；移出按钮后松手不触发操作。"
+    },
+    "pressedScale": 0.97,
+    "durationMs": 100,
+    "runtimeListeners": 0,
+    "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+    "parameters": [
+      {
+        "key": "pressedScale",
+        "label": {
+          "en": "Pressed scale",
+          "zh": "按下缩放"
+        }
+      },
+      {
+        "key": "durationMs",
+        "label": {
+          "en": "Transition",
+          "zh": "过渡时间"
+        },
+        "unit": "ms"
+      },
+      {
+        "key": "runtimeListeners",
+        "label": {
+          "en": "JS listeners",
+          "zh": "JS 监听器"
+        }
+      }
+    ]
+  },
+  "fit": {
+    "en": "Native action buttons that need subtle pointer or touch feedback while keeping the project's own click behavior.",
+    "zh": "需要轻微按压反馈的原生操作按钮，保留项目已有的点击行为。"
+  },
+  "avoid": {
+    "en": "Not a loading or async-state controller, link replacement or complete button design system. Use real button elements and native disabled. Real phones have not been checked.",
+    "zh": "不提供加载或异步状态管理，不替代链接，也不是完整按钮设计系统。使用真实 button 和原生 disabled；未做真实手机检查。"
+  },
+  "previewHint": {
+    "en": "Press and hold, or focus with Tab and use Space.",
+    "zh": "按住按钮试试，或用 Tab 聚焦后按空格。"
+  },
+  "integration": {
+    "en": "Load press-feedback.css and add class=\"press-feedback\" to a native button. Keep your click handler; change CSS variables for colors and spacing. No mount function or cleanup is needed.",
+    "zh": "引入 press-feedback.css，给原生 button 添加 press-feedback 类。保留自己的点击处理，用 CSS 变量调整配色和间距。无需初始化或销毁函数。"
+  },
+  "accessibility": {
+    "en": "Native Enter and Space activation. Focus-visible keyboard use and reduced motion skip scaling. Disabled buttons stay disabled; hover styling only applies to a fine pointer.",
+    "zh": "保留原生回车和空格激活。键盘焦点和减少动态效果模式不缩放。禁用按钮不响应；悬停样式仅作用于精细指针。"
+  },
+  "usage": {
+    "element": "<button type=\"button\" class=\"press-feedback\">Save</button>",
+    "css": [
+      "--pf-background",
+      "--pf-hover",
+      "--pf-color",
+      "--pf-border",
+      "--pf-radius",
+      "--pf-padding",
+      "--pf-scale",
+      "--pf-duration"
+    ],
+    "reducedMotion": "System preference is automatic. Add the boolean data-reduced-motion attribute to disable scaling for an individual button.",
+    "requirements": "A native button in a browser supporting :focus-visible and prefers-reduced-motion. Behavior and state are owned by the consuming project.",
+    "acceptance": [
+      "Pointer hold and release",
+      "Rapid reversal",
+      "Release outside without activation",
+      "Enter and Space without scaling",
+      "Native disabled",
+      "System and per-button reduced motion",
+      "Multiple buttons without shared state"
+    ]
+  },
+  "revision": "980917bb03ee406c77044213a495231dd6ce34e2e99b2154490268131b3308e1",
+  "integrity": {
+    "press-feedback.css": "4278d3875d323ea7b2b69486cd2931144cb1a35f453cdfb407d87cd34f3464a4",
+    "example.html": "fbf029112cf3c2773449dab768e605b4dba7898df0c46f8b9d8b17340503185e",
+    "LICENSE": "890d2f23ea4ded24fc42aa1e2b92c7083a6649f4a5d39035225d6c7287e0a594"
+  }
+}

@@ -10,7 +10,7 @@
     { "q": "骨架屏加载", "gap": true },
     { "q": "数字滚动 计数", "gap": true },
     { "q": "悬停反馈", "any": ["spine", "grade", "cite", "triage"] },
-    { "q": "按钮按下手感", "any": ["product-timeline", "icon-toggles", "triage"] },
+    { "q": "按钮按下手感", "any": ["product-timeline", "icon-toggles", "triage", "press-feedback"] },
     { "q": "列表拖拽排序", "gap": true },
     { "q": "页面转场", "any": ["paper-echo", "chapter-one", "album-spine-coverflow", "manga-flip", "flip-browser"] },
     { "q": "滚动触发动画", "any": ["exposure", "orbit", "creed"] },

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "status": "local-preview",
+  "skillVersion": "0.1.0",
+  "parts": [
+    {
+      "name": "drag-panel",
+      "version": "0.1.0",
+      "license": "MIT",
+      "files": ["drag-panel.js", "drag-panel.css", "example.html", "LICENSE"],
+      "sourceReview": "Original local skill-samples reading panel. No third-party media. Local distribution candidate only."
+    },
+    {
+      "name": "press-feedback",
+      "version": "0.1.0",
+      "license": "MIT",
+      "files": ["press-feedback.css", "example.html", "LICENSE"],
+      "sourceReview": "Extracted from the locally authored skill-samples/base.css button feedback. No third-party media. Local distribution candidate only."
+    }
+  ]
+}

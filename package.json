@@ -14,6 +14,8 @@
   },
   "scripts": {
     "start": "node server/index.js",
+    "build:distribution": "node scripts/build-distribution.mjs",
+    "preview:distribution": "node scripts/preview-distribution.mjs",
     "sync": "node scripts/sync.js",
     "test": "node scripts/test.mjs",
     "eval": "node scripts/eval-search.mjs",

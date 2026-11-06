@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Drag panel · Working example</title>
+  <link rel="stylesheet" href="./drag-panel.css">
+  <style>
+    body{margin:0;padding:28px 24px 12px;background:#f7f7f8;color:#27272a;font:13px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;-webkit-font-smoothing:antialiased}
+    .dp-root{height:332px;max-width:380px;margin:auto;border:1px solid #dedee2;border-radius:16px;background:#efeff1;--dp-height:248px;--dp-radius:14px;--dp-ink:#27272a;--dp-accent:#27272a}
+    .reading{padding:24px}.eyebrow{font-size:10px;letter-spacing:.06em;color:#85858e;text-transform:uppercase}.reading h1{font-size:22px;font-weight:550;letter-spacing:-.025em;line-height:1.25;margin:14px 0}.reading p{max-width:27em;color:#71717a;font-size:12px;margin:0 0 16px}
+    .button{min-height:36px;border:1px solid transparent;border-radius:7px;padding:6px 12px;background:#27272a;color:white;cursor:pointer;font-size:12px}.secondary{background:#f4f4f5;color:#52525b;border-color:#e4e4e7}.actions{display:flex;flex-wrap:wrap;gap:8px}.meta{font-size:10px;color:#85858e}#feedback{min-height:20px;color:#52525b;margin:8px 0;font-size:11px}
+    .dp-root [data-dp-panel]{left:10px;right:10px;border:1px solid #dedee2;box-shadow:none}.dp-root [data-dp-handle]::after{background:#c4c4ca}.dp-root [data-dp-title]{font-size:16px;padding:0;margin:2px 18px 16px}.dp-root [data-dp-content]{padding:0 18px 18px;font-size:12px}
+    .bottom{display:flex;gap:12px;align-items:center;max-width:380px;margin:auto;min-height:44px;font-size:10px;color:#71717a}.bottom label{display:flex;align-items:center;gap:6px;min-height:40px}.bottom output{margin-left:auto}.bottom input{accent-color:#27272a;width:12px;height:12px}
+    button{touch-action:manipulation}button:focus-visible{outline:2px solid #52525b;outline-offset:3px}
+    @media(max-width:380px){body{padding:20px 12px 12px}.reading{padding:22px 18px}.reading h1{font-size:21px}.dp-root [data-dp-content]{font-size:12px}}
+  </style>
+</head>
+<body>
+  <section class="dp-root" id="reader" aria-label="Reading panel example">
+    <div class="reading">
+      <span class="eyebrow" data-copy="eyebrow">Reading / interaction sample</span>
+      <h1 data-copy="heading">A little room<br>for reading.</h1>
+      <p data-copy="hint">Drag the handle up. Let go, then catch the panel while it settles.</p>
+      <button class="button" data-dp-open data-copy="open">Open panel</button>
+    </div>
+    <section data-dp-panel aria-labelledby="reading-title">
+      <button type="button" data-dp-handle aria-label="Toggle reading panel. Up to open, down to close."></button>
+      <h2 data-dp-title id="reading-title" data-copy="title">Light on the desk</h2>
+      <div data-dp-content>
+        <span class="meta" data-copy="sample">Sample text · Replace with your content</span>
+        <p data-copy="body">The afternoon light moves from the page to the table. The room has not changed. What we notice has.</p>
+        <div class="actions">
+          <button class="button" id="save" type="button" aria-pressed="false" data-copy="save">Save for later</button>
+          <button class="button secondary" data-dp-close type="button" data-copy="close">Close panel</button>
+        </div>
+        <p id="feedback" role="status"></p>
+      </div>
+    </section>
+  </section>
+  <div class="bottom">
+    <label><input id="reduce" type="checkbox"><span data-copy="reduce">Reduce motion</span></label>
+    <output id="state" aria-live="polite"></output>
+  </div>
+  <script type="module">
+    import { mountDragPanel } from "./drag-panel.js";
+    const zh = new URL(location.href).searchParams.get("lang") === "zh";
+    const copy = zh ? {eyebrow:"阅读 / 交互样本",heading:"留一点阅读空间",hint:"向上拖横条。松手后，可以在回弹途中重新抓住面板。",open:"展开面板",title:"光落在桌面的方式",sample:"示例短文 · 使用时替换内容",body:"午后的光缓慢挪过桌面。杯子的影子从书页退到木纹里，房间没有变，我们注意到的东西却变了。",save:"加入稍后阅读",close:"收起面板",reduce:"减少动态效果",expanded:"已展开",collapsed:"已收起",dragging:"拖动中",settling:"回弹中",saved:"已加入本页的阅读列表",removed:"已从本页移除",remove:"移出稍后阅读"} : {expanded:"Open",collapsed:"Closed",dragging:"Dragging",settling:"Settling",saved:"Saved in this example",removed:"Removed from this example",save:"Save for later",remove:"Remove from saved"};
+    if (zh) {
+      document.documentElement.lang = "zh-CN";
+      document.querySelectorAll("[data-copy]").forEach(el => { el.textContent = copy[el.dataset.copy]; });
+      document.querySelector("[data-dp-handle]").setAttribute("aria-label","切换阅读面板；上箭头展开，下箭头收起");
+      document.getElementById("reader").setAttribute("aria-label","阅读面板示例");
+    }
+    const reduce = document.getElementById("reduce");
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    reduce.checked = media.matches;
+    const controller = mountDragPanel(document.getElementById("reader"), {
+      onStateChange: ({state}) => { document.getElementById("state").textContent = copy[state]; },
+    });
+    reduce.addEventListener("change", () => controller.update({reducedMotion:reduce.checked}));
+    let saved = false;
+    document.getElementById("save").addEventListener("click", event => {
+      saved = !saved;
+      event.currentTarget.textContent = saved ? copy.remove : copy.save;
+      event.currentTarget.setAttribute("aria-pressed", String(saved));
+      document.getElementById("feedback").textContent = saved ? copy.saved : copy.removed;
+    });
+    window.addEventListener("pagehide", () => controller.destroy(), {once:true});
+  </script>
+</body>
+</html>
