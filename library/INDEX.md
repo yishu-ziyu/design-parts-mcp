@@ -13,6 +13,7 @@
 | [skill-samples/index.html](living/skill-samples/index.html) | 四个技能样本：可拖动阅读面板、三种阅读列表、Kami 一页排版、菜单动效对照 | 复用交互与排版前先看实际效果。Apple 面板已经过确认 |
 | [drag-panel/index.html](living/drag-panel/index.html) | 从阅读标本提炼的原生拖动面板：独立源码、两段停靠、键盘操作与销毁接口 | 需要可安装、可改用的嵌入式面板时。HTTP 运行；本地分发预览，不是完整模态弹层 |
 | [press-feedback/index.html](living/press-feedback/index.html) | 从技能样本提炼的原生按钮按压反馈：缩放 0.97、100ms，纯 CSS | 需要保留原生按钮行为的轻微按压反馈时。键盘和减少动态效果模式不缩放；本地分发预览 |
+| [quiet-blocks/index.html](living/quiet-blocks/index.html) | 十个页面组块一次只显示一块。三种字号、组内外间距、三层明度，强调色只给主按钮。两个开关能把规则关掉对照 | 做一页营销或说明，想先把结构拆开看，而不是整页一起堆的时候 |
 | [chapter-one/index.html](living/chapter-one/index.html) | 斜体长句中，图片占据一个词的位置 | 宣言页、关于页、需要把物体嵌进句子时 |
 | [shelf/index.html](living/shelf/index.html) | 奶油色首页。一排 PNG 书脊按负边距叠放，并沿横坐标倾斜循环 | 落地页作品集书架。不是 WebGL 三维 |
 | [creed/index.html](living/creed/index.html) | 风景插画中嵌入正在工作的产品窗口，进场动画可重播 | 产品落地页、功能切片。不要使用通用模板 |
@@ -160,6 +161,16 @@
 | 一页说明 / Kami 纸色衬线排版 | [skill-samples](living/skill-samples/kami.html) | 原模板字阶、数字摘要、段落和页脚；保留此样张的配色，不提升为全局色板 |
 | 菜单出现太慢 / 缩放起点 / 动效评审 | [skill-samples](living/skill-samples/review.html) | 点击左右菜单，比较 700ms 与 180ms 的效果，再读修改理由 |
 | 暖米色纸底 + 圆润白卡 + 3D 图标底座 | [someday](living/someday/index.html#stage) | 纸底 `#F1EADD`、白卡 `#FFFEFA`（32pt 圆角）、58pt 纯白圆底托 46pt Fluent Emoji 3D 图标、底部三态胶囊 `#nav` |
+
+### 页面组块 / 字号 / 间距 / 明度
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 一次只看一块 / 页面组块 / 顶栏到收束 | [quiet-blocks](living/quiet-blocks/index.html#isolate) | 左侧十个名字。点一个，其余 hidden |
+| 三种字号 / 14 16 20 / 一种字体 | [quiet-blocks](living/quiet-blocks/index.html#type) | 正文 1rem，次要 0.875rem，标题 1.25rem |
+| 组内紧组外松 / 按钮间距等于左右留白 | [quiet-blocks](living/quiet-blocks/index.html#space) | 组内 0.5rem，组间 2rem。取消勾选看挤在一起 |
+| 明度分层 / 0% 5% 10% | [quiet-blocks](living/quiet-blocks/index.html#layers) | 页面、卡片、可点表面。越亮越靠前 |
+| 强调色只给主按钮 | [quiet-blocks](living/quiet-blocks/index.html#accent) | hsl(211 90% 56%)。取消勾选看用多了的样子 |
 
 ### 文件 / 上传
 
