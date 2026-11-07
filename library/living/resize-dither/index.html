@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>网点钉在 CSS 像素上</title>
+<style>
+:root { --ink:#2f2a22; --quiet:#5a5247; --paper:#f3f4f6; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.wrap { width:min(720px,calc(100% - 32px)); margin:32px auto; }
+#stage { width:100%; aspect-ratio:16/10; border-radius:20px; overflow:hidden; background:#1a1814; resize:horizontal; min-width:240px; max-width:100%; }
+#stage canvas { width:100%; height:100%; display:block; }
+.row { display:flex; gap:8px; margin-top:12px; }
+button { min-height:36px; border:0; border-radius:999px; background:#e8eaee; padding:0 12px; }
+button[aria-pressed="true"] { background:#fff; box-shadow:inset 0 0 0 1px rgba(32,38,46,.16); }
+.doc { color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="stage"><canvas id="canvas"></canvas></div>
+  <div class="row" role="group" aria-label="滤镜">
+    <button type="button" data-filter="plain">原画</button>
+    <button type="button" data-filter="dither" aria-pressed="true">抖动</button>
+    <button type="button" data-filter="coarse">粗粒</button>
+  </div>
+  <section class="doc"><h3>可拆</h3><dl>
+  <dt><code>#canvas</code></dt><dd>Bayer 4×4。格子大小按 CSS 像素钉死：细 4px，粗 8px。改窗口时重算整幅，点不跟着亚像素游走。</dd>
+  </dl>
+  <p>和 <a href="../halftone/index.html">halftone</a> 不是同一块：那边是标题雾，这边是整幅画面的有序抖动。原实现在 <code>origin/dither.ts</code>。</p>
+  </section>
+</div>
+<script>
+const BAYER = [[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+const canvas = document.getElementById("canvas");
+const stage = document.getElementById("stage");
+let filter = "dither";
+function scene(w, h) {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  const sky = g.createLinearGradient(0,0,0,h);
+  sky.addColorStop(0,"#9eb0a4"); sky.addColorStop(.45,"#d5cbb8"); sky.addColorStop(1,"#6d7a62");
+  g.fillStyle = sky; g.fillRect(0,0,w,h);
+  g.fillStyle = "#314038";
+  g.beginPath(); g.moveTo(0,h*.62); g.lineTo(w*.28,h*.38); g.lineTo(w*.46,h*.7); g.lineTo(0,h); g.fill();
+  g.fillStyle = "#1d2822";
+  g.beginPath(); g.moveTo(w*.4,h*.72); g.lineTo(w*.72,h*.3); g.lineTo(w,h*.66); g.lineTo(w,h); g.lineTo(w*.4,h); g.fill();
+  return c;
+}
+function paint() {
+  const rect = stage.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 1.5);
+  const w = Math.max(2, Math.round(rect.width * dpr));
+  const h = Math.max(2, Math.round(rect.height * dpr));
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  const src = scene(w, h);
+  ctx.drawImage(src, 0, 0);
+  if (filter === "plain") return;
+  const cell = Math.round((filter === "coarse" ? 8 : 4) * dpr);
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let y = 0; y < h; y += cell) {
+    for (let x = 0; x < w; x += cell) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let yy = 0; yy < cell && y + yy < h; yy++) {
+        for (let xx = 0; xx < cell && x + xx < w; xx++) {
+          const i = ((y + yy) * w + (x + xx)) * 4;
+          r += d[i]; g += d[i+1]; b += d[i+2]; n++;
+        }
+      }
+      r /= n; g /= n; b /= n;
+      const t = (BAYER[Math.floor(y / cell) % 4][Math.floor(x / cell) % 4] + 0.5) / 16;
+      const level = (v) => (v / 255 + t > 0.5 ? 210 : 28);
+      ctx.fillStyle = `rgb(${level(r)},${level(g)},${level(b)})`;
+      ctx.fillRect(x, y, cell, cell);
+    }
+  }
+}
+new ResizeObserver(paint).observe(stage);
+document.querySelector(".row").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-filter]");
+  if (!btn) return;
+  filter = btn.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach((n) => n.setAttribute("aria-pressed", n === btn ? "true" : "false"));
+  paint();
+});
+</script>
+</body>
+</html>

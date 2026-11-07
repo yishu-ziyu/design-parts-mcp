@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>靠近的图标更大</title>
+<style>
+:root { --ink:#2f2a22; --paper:#f3f4f6; --quiet:#5a5247; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.lead { width:min(640px,calc(100% - 32px)); margin:36px auto 16px; }
+#stage { width:min(640px,calc(100% - 32px)); margin:0 auto; height:220px; border-radius:20px; background:linear-gradient(#9aab9c,#24312c); position:relative; }
+#dock { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); display:flex; align-items:end; gap:10px; height:72px; }
+.icon { width:44px; height:44px; border-radius:12px; background:#f6f5f2; transform-origin:center bottom; display:grid; place-items:center; font-size:13px; }
+.doc { width:min(640px,calc(100% - 32px)); margin:20px auto 64px; color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<p class="lead">指针移过底部这一排。</p>
+<div id="stage">
+  <div id="dock">
+    <div class="icon">峭</div><div class="icon">江</div><div class="icon">雨</div><div class="icon">海</div><div class="icon">晨</div><div class="icon">夜</div>
+  </div>
+</div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#dock</code></dt><dd>每个图标按指针的水平距离缩放。最近 1.45，超过 120px 回到 1。缩放原点在底边，所以是被托起来，不是从中心胀开。减少动态效果时保持 1。</dd>
+</dl>
+<p>原实现在 <code>origin/new-tab.tsx</code> 的停靠栏一段。</p>
+</section>
+<script>
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const dock = document.getElementById("dock");
+const icons = [...dock.children];
+dock.addEventListener("pointermove", (e) => {
+  if (reduce) return;
+  icons.forEach((icon) => {
+    const box = icon.getBoundingClientRect();
+    const dx = Math.abs(e.clientX - (box.left + box.width / 2));
+    const t = Math.max(0, 1 - dx / 120);
+    icon.style.transform = `scale(${1 + t * 0.45})`;
+  });
+});
+dock.addEventListener("pointerleave", () => icons.forEach((icon) => { icon.style.transform = "scale(1)"; }));
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>同一列贴两次</title>
+<style>
+:root { --ink:#2f2a22; --quiet:#5a5247; --paper:#f3f4f6; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.lead { width:min(640px,calc(100% - 32px)); margin:40px auto 20px; }
+#band { overflow:hidden; border-block:1px solid rgba(32,38,46,.1); background:#eef2ea; }
+#track { display:flex; width:max-content; animation:slide 36s linear infinite; }
+#band:hover #track { animation-play-state:paused; }
+ul { display:flex; gap:12px; margin:0; padding:16px; list-style:none; }
+li { width:240px; background:#fff; border-radius:16px; padding:14px; }
+blockquote { margin:0; }
+cite { display:block; margin-top:8px; color:var(--quiet); font-style:normal; font-size:13px; }
+@keyframes slide { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+.doc { width:min(640px,calc(100% - 32px)); margin:24px auto 64px; color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+@media (prefers-reduced-motion:reduce) { #track { animation:none; } }
+</style>
+</head>
+<body>
+<p class="lead">停在上面会停下。接缝在两份相同列表之间。</p>
+<section id="band" aria-label="短句">
+  <div id="track">
+    <ul id="one"></ul>
+    <ul id="two"></ul>
+  </div>
+</section>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#track</code></dt><dd>同一列贴两次。轨道宽是两份之和，动画从 0 走到 -50%，36s 线性。悬停暂停。减少动态效果时不走。</dd>
+</dl>
+<p>原实现在 <code>origin/review-marquee.tsx</code>。句子是样本，换掉。</p>
+</section>
+<script>
+const quotes = [["检索留在这台机器上。","甲"],["换模型不必离开这一栏。","乙"],["想安静时，只留下输入。","丙"],["网点放大了也不游走。","丁"]];
+const html = quotes.map(([q,n]) => `<li><blockquote>${q}</blockquote><cite>${n}</cite></li>`).join("");
+document.getElementById("one").innerHTML = html;
+document.getElementById("two").innerHTML = html;
+</script>
+</body>
+</html>

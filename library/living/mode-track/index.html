@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>分段滑块按实测宽度走</title>
+<style>
+:root { --ink:#2f2a22; --quiet:#5a5247; --paper:#f3f4f6; --line:rgba(32,38,46,.12); }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.wrap { width:min(520px,calc(100% - 32px)); margin:40px auto; }
+#bar { background:#fff; border-radius:20px; box-shadow:inset 0 0 0 1px var(--line), 0 14px 32px -20px rgba(32,38,46,.3); padding:14px; }
+#track { position:relative; display:flex; gap:4px; width:max-content; padding:4px; border-radius:999px; background:#e8eaee; }
+#track button { position:relative; z-index:1; border:0; background:transparent; border-radius:999px; min-height:32px; padding:0 12px; color:var(--quiet); }
+#track button[aria-pressed="true"] { color:var(--ink); }
+#indicator { position:absolute; top:4px; left:0; height:32px; border-radius:999px; background:#fff; box-shadow:0 1px 2px rgba(32,38,46,.08); transition:transform 220ms cubic-bezier(.2,0,0,1), width 220ms cubic-bezier(.2,0,0,1); }
+#field { display:flex; align-items:center; gap:8px; margin-top:12px; min-height:44px; }
+#chip { border-radius:999px; background:#eef2ea; color:#3f5144; padding:4px 8px; font-size:13px; }
+input { flex:1; border:0; background:transparent; font:inherit; color:inherit; min-width:0; }
+input:focus { outline:none; }
+.hit { padding:8px 4px; border-radius:8px; }
+.hit.on { background:#f3f1ec; }
+.doc { width:min(520px,calc(100% - 32px)); margin:8px auto 64px; color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+@media (prefers-reduced-motion:reduce) { #indicator { transition:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="bar">
+    <div id="track" role="tablist">
+      <i id="indicator"></i>
+      <button type="button" role="tab" aria-pressed="true">全部</button>
+      <button type="button" role="tab">只看这个站</button>
+      <button type="button" role="tab">换模型</button>
+    </div>
+    <div id="field">
+      <span id="chip" hidden>山海 · 锁定</span>
+      <input id="q" placeholder="打两个字，或点一个站" aria-label="检索">
+    </div>
+    <div id="sites">
+      <button type="button" class="hit" data-site="山海">山海</button>
+      <button type="button" class="hit" data-site="潮汐">潮汐</button>
+    </div>
+  </div>
+</div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#indicator</code></dt><dd>滑块的宽和位移取自当前按钮的 offsetWidth 与 offsetLeft，过渡 220ms。不写死三段等宽。</dd>
+<dt><code>#chip</code></dt><dd>点一个站，栏上多一枚锁，检索只留这个站。再点一次松开。</dd>
+</dl>
+<p>同目录 <code>origin/command-bar.tsx</code> 是研究页里的原实现，含键盘上下和首字母。</p>
+</section>
+<script>
+const track = document.getElementById("track");
+const indicator = document.getElementById("indicator");
+const buttons = [...track.querySelectorAll("button")];
+const chip = document.getElementById("chip");
+function move(btn) {
+  buttons.forEach((b) => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+  indicator.style.width = btn.offsetWidth + "px";
+  indicator.style.transform = `translateX(${btn.offsetLeft}px)`;
+}
+buttons.forEach((b) => b.addEventListener("click", () => move(b)));
+move(buttons[0]);
+addEventListener("resize", () => move(buttons.find((b) => b.getAttribute("aria-pressed") === "true")));
+document.getElementById("sites").addEventListener("click", (e) => {
+  const hit = e.target.closest("[data-site]");
+  if (!hit) return;
+  const on = chip.hidden || chip.dataset.site !== hit.dataset.site;
+  chip.hidden = !on;
+  chip.dataset.site = hit.dataset.site;
+  chip.textContent = hit.dataset.site + " · 锁定";
+  document.querySelectorAll(".hit").forEach((n) => n.classList.toggle("on", n === hit && on));
+});
+</script>
+</body>
+</html>

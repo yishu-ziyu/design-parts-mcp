@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一张 1px 缝的开关表</title>
+<style>
+:root { --ink:#2f2a22; --quiet:#5a5247; --paper:#f3f4f6; --line:rgba(32,38,46,.12); }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.lead { width:min(720px,calc(100% - 32px)); margin:36px auto 16px; }
+#sheet { width:min(720px,calc(100% - 32px)); margin:0 auto; display:grid; grid-template-columns:1fr; gap:1px; padding:1px; border-radius:28px; overflow:hidden; background:var(--line); }
+@media (min-width:700px) { #sheet { grid-template-columns:1fr 1fr; } }
+article { background:#fff; padding:16px 18px; display:grid; grid-template-columns:1fr auto; gap:8px 12px; }
+article p { margin:4px 0 0; color:var(--quiet); font-size:13px; grid-column:1; }
+.switch { width:44px; height:28px; border:0; border-radius:999px; background:#e4e4e7; position:relative; }
+.switch i { position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:transform 180ms cubic-bezier(.2,0,0,1); }
+.switch[aria-checked="true"] { background:#6d7f63; }
+.switch[aria-checked="true"] i { transform:translateX(16px); }
+.doc { width:min(720px,calc(100% - 32px)); margin:20px auto 64px; color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<p class="lead">缝是背景色，不是每张卡自己的边。</p>
+<div id="sheet">
+  <article><div><strong>裁一块出来</strong><p>把当前页收成一张小窗。</p></div><button class="switch" type="button" role="switch" aria-checked="false"><i></i></button></article>
+  <article><div><strong>换一种说法</strong><p>同一条结果换语言。</p></div><button class="switch" type="button" role="switch" aria-checked="true"><i></i></button></article>
+  <article><div><strong>记住这次</strong><p>下次打开还停在这里。</p></div><button class="switch" type="button" role="switch" aria-checked="false"><i></i></button></article>
+  <article><div><strong>只在这台机器</strong><p>不把记录送出去。</p></div><button class="switch" type="button" role="switch" aria-checked="true"><i></i></button></article>
+</div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#sheet</code></dt><dd>整张表 gap 1px，底色是发丝线。格子自己没有边框。开关滑块移动 16px，过渡 180ms。</dd>
+</dl>
+<p>原实现在 <code>origin/utility-sheet.tsx</code>。文案是样本。</p>
+</section>
+<script>
+document.getElementById("sheet").addEventListener("click", (e) => {
+  const sw = e.target.closest("[role=switch]");
+  if (!sw) return;
+  sw.setAttribute("aria-checked", sw.getAttribute("aria-checked") === "true" ? "false" : "true");
+});
+</script>
+</body>
+</html>
