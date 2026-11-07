@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>问题画布复刻</title>
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:"Source Serif";src:url(fonts/source-serif.woff2) format("woff2");font-weight:200 900}
+:root{--canvas:#fffdf0;--rail:#f6f6ee;--ink:#2c2a26;--mute:#7c7a72;--line:#e9e6d9;--blue:#6db3f2;--blue-bg:#dceefb;--dark:#2e1f1c}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#fff;overflow:hidden}
+body{font-family:Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#fit{position:absolute;left:0;top:0;width:1134px;height:637px;transform-origin:0 0}
+#desk{position:absolute;inset:0;background:url(source-assets/wallpaper.jpg) 0 0/1134px 637px;border-radius:0}
+#win{position:absolute;left:40px;top:61px;width:1052px;height:555px;background:var(--rail);border-radius:9px;box-shadow:0 18px 44px rgba(40,60,70,.32),0 0 0 1px rgba(255,255,255,.5);overflow:hidden}
+#side{position:absolute;left:0;top:0;bottom:0;width:44px;transition:width .28s cubic-bezier(.3,.8,.2,1);overflow:hidden}
+#win.open #side{width:178px}
+#main{position:absolute;left:44px;top:5px;right:0;bottom:4px;background:var(--canvas);border-radius:7px 0 0 7px;box-shadow:inset 0 0 0 1px #f1eee0;overflow:hidden;transition:left .28s cubic-bezier(.3,.8,.2,1);cursor:grab;background-image:radial-gradient(#e8e5d6 0.8px,transparent .95px);background-size:var(--g,18px) var(--g,18px);background-position:var(--gx,0) var(--gy,0)}
+#main.grabbing{cursor:grabbing}
+#win.open #main{left:178px}
+.sb-t{position:absolute;left:15px;top:24px;width:12px;height:11px;border:0;background:none;padding:0;cursor:pointer;color:#55534c}
+#win.open .sb-t{left:147px}
+.sb-t svg{display:block;width:12px;height:11px;fill:none;stroke:currentColor;stroke-width:1}
+.brand{position:absolute;left:12px;top:19px;font-size:15px;opacity:0;white-space:nowrap;letter-spacing:-.01em;color:#3a3833;transition:opacity .2s}
+#win.open .brand{opacity:1}
+.nav{position:absolute;left:0;top:76px}
+.nav a{display:flex;align-items:center;gap:9px;height:31px;padding-left:15px;font-size:12px;color:#44423c;white-space:nowrap}
+.nav svg{flex:none;width:13.5px;height:13.5px;fill:none;stroke:#3a3833;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.nav span{opacity:0;transition:opacity .2s}#win.open .nav span{opacity:1}
+.cv{position:absolute;left:0;right:0;top:218px;opacity:0;pointer-events:none;transition:opacity .2s;width:178px}
+#win.open .cv{opacity:1;pointer-events:auto}
+.cv h6{margin:0 0 5px;padding:0 14px;display:flex;justify-content:space-between;font-weight:400;font-size:10.5px;color:#7c7a72}
+.cv button{display:flex;justify-content:space-between;align-items:center;width:calc(100% - 16px);margin:0 8px;height:24px;padding:0 6px;border:0;background:none;border-radius:5px;font:inherit;font-size:9.6px;color:#44423c;cursor:pointer;text-align:left;white-space:nowrap}
+.cv button.on{background:#ecebe2}.cv button i{font-style:normal;color:#8d8b82;letter-spacing:.5px}
+.stats{position:absolute;left:7px;bottom:47px;width:30px;border-radius:5px;background:#f9e4c8;color:#e6a772;font-size:7.5px;text-align:center;padding:5px 0;line-height:1.9;transition:width .28s}
+.stats b{display:block;font-weight:500}
+#win.open .stats{width:162px;display:flex;justify-content:space-between;padding:3px 10px}
+.me{position:absolute;left:10px;bottom:12px;display:flex;align-items:center;gap:8px;font-size:11px;white-space:nowrap}
+.me i{width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:#c8e6e2;color:#2c5550;font-style:normal;font-weight:600;font-size:9.5px}
+.me span{opacity:0}#win.open .me span{opacity:1}
+#hello{position:absolute;left:0;right:0;top:252px;text-align:center;pointer-events:none;transition:opacity .25s}
+#hello h2{margin:0;font:400 16px/20px "Source Serif",Georgia,serif;letter-spacing:.01em;color:#2c2a26}
+#hello p{margin:7px 0 0;font-size:10.5px;line-height:13px;color:#6f6d65}
+#world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
+#world.anim{transition:transform .62s cubic-bezier(.3,.8,.2,1)}
+#wires{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+#wires path{fill:none;stroke:#b9b7ac;stroke-width:1.2}
+.node{position:absolute;width:400px;cursor:default}
+.node>h5{position:absolute;left:4px;right:22px;top:-19px;margin:0;font-size:9px;line-height:13px;font-weight:600;color:#2c2a26;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node>.docic{position:absolute;right:4px;top:-18px;width:10px;height:11px;fill:none;stroke:#8a887f;stroke-width:1}
+.card{position:relative;height:100%;background:#fff;border-radius:11px;box-shadow:0 0 0 1px #f2efe2,0 6px 16px rgba(80,70,40,.05);display:flex;flex-direction:column;overflow:hidden}
+.node.sel .card{box-shadow:0 0 0 1.5px #3a3833,0 8px 18px rgba(80,70,40,.08)}
+.scroll{flex:1;min-height:0;overflow:hidden;padding:13px 16px 0;position:relative}
+.scroll::after{content:"";position:absolute;right:3px;top:12px;width:3px;height:42%;border-radius:2px;background:#e8e6dc}
+.bub{display:flex;justify-content:flex-end;margin-bottom:12px}
+.bub b{background:var(--dark);color:#f7f1e8;border-radius:13px;padding:6px 13px;font-size:8.8px;font-weight:500}
+.creating{font-style:italic;font-size:9.6px;margin:0 0 7px;color:#44423c}
+.tx{font-size:8.75px;line-height:14px;color:#34322d;margin:0 0 9px}
+.tx mark{background:#dfe0f7;color:inherit}
+.tx b{font-weight:650}
+.fig{background:#fffdf1;border:1px solid #f2efe0;border-radius:10px;padding:13px 16px;margin:0 0 10px;text-align:center}
+.fig h4{margin:0 0 12px;font-size:9.8px;font-weight:700;color:#23211d}
+.pill{display:inline-block;padding:9px 24px;border-radius:18px;background:#3e2f29;color:#f7f1e8;font-weight:600;font-size:9.4px}
+.arr{font-size:9px;color:#3a3833;margin:6px 0;line-height:1}
+.boxes{display:flex;gap:6px;justify-content:center}
+.bx{border:1.2px solid #3a3833;border-radius:4px;padding:7px 11px;font-size:8.6px;font-weight:500;background:#fff}
+.bx.olive{background:#a8ad52}.bx.red{background:#ec9180}.bx.blue{background:#8fc1ef}.bx.teal{background:#7fbfac}.bx.gold{background:#e2b94a}
+.col{display:grid;grid-template-columns:1fr 1fr;gap:7px 22px;margin-bottom:8px}
+.col .bx{text-align:center;padding:4px;border-radius:3px;font-size:7.8px}
+.gold-b{background:#e2b94a;border:1.2px solid #3a3833;border-radius:3px;padding:6px;font-size:8px;font-weight:700;text-align:center}
+.who{display:flex;align-items:center;gap:6px;height:24px;margin-bottom:4px;padding:0 10px;border:1.2px solid #3a3833;border-radius:3px;font-size:8.2px}
+.who i{width:6px;height:6px;border-radius:50%;border:1px solid #3a3833}
+.who b{font-weight:700}
+.who.c1{background:#fdeee0}.who.c1 i{background:#d8614e}.who.c2{background:#fff0dc}.who.c2 i{background:#e29a2e}.who.c3{background:#eef4f2}.who.c3 i{background:#6da5d0}.who.c4{background:#eef2df}.who.c4 i{background:#7f9b4a}
+.sublab{font-size:6.8px;letter-spacing:.06em;color:#6f6d65;margin:9px 0 6px;text-align:left;font-weight:500}
+.foot{flex:none;display:flex;align-items:center;gap:6px;margin:6px 10px 8px;height:21px}
+.foot input{flex:1;height:21px;border:1px solid #f0efe7;border-radius:4px;padding:0 8px;font:inherit;font-size:7.8px;background:#fff;outline:none;color:#333}
+.foot input::placeholder{color:#a5a39a}
+.send{width:17px;height:17px;border:0;border-radius:4px;background:var(--blue-bg);color:#6da0cc;display:grid;place-items:center;cursor:pointer;padding:0}
+.send svg{width:9px;height:9px;fill:none;stroke:currentColor;stroke-width:1.4}
+.h{position:absolute;width:13px;height:13px;border-radius:50%;background:#d8ebfb;border:0;color:#5a93c7;font-size:10px;line-height:12px;padding:0;display:none;cursor:pointer}
+.node.sel .h{display:block}.h.t{left:50%;top:-20px;margin-left:-6px}.h.b{left:50%;bottom:-20px;margin-left:-6px}.h.l{left:-20px;top:50%;margin-top:-6px}.h.r{right:-20px;top:50%;margin-top:-6px}
+.img{display:block;margin:0 auto 8px}
+#ask{position:absolute;left:311px;top:452px;width:469px;height:81px;background:rgba(255,255,255,.82);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border-radius:12px;box-shadow:0 0 0 1px #ecebe2,0 6px 18px rgba(70,60,30,.05);transition:left .28s cubic-bezier(.3,.8,.2,1)}
+#win.open #ask{left:449px}
+#ask textarea{position:absolute;left:12px;top:6px;width:440px;height:22px;border:0;background:none;resize:none;outline:none;font:inherit;font-size:11.5px;line-height:18px;color:#2c2a26;caret-color:#333}
+#ask textarea::placeholder{color:#8b897f}
+.opts{position:absolute;left:14px;bottom:17px;display:flex;align-items:center;gap:13px;font-size:8.7px;font-weight:500;color:#55534c}
+.opts span{display:flex;align-items:center;gap:3px}.opts svg{width:10px;height:10px;fill:none;stroke:#55534c;stroke-width:1}
+#go{position:absolute;right:9px;bottom:9px;width:27px;height:27px;border:0;border-radius:7px;background:var(--blue-bg);color:#8db6d8;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .15s,color .15s}
+#go svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.5}
+#go.live{background:#5aa8ee;color:#123}
+.notes{position:absolute;left:-9999px;top:0;width:600px}
+@media (prefers-reduced-motion:reduce){#world.anim,#side,#main,#ask{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="fit">
+<div id="desk"></div>
+<div id="win">
+ <aside id="side">
+  <div class="brand">Placeholder</div>
+  <button class="sb-t" id="toggle" aria-label="展开或收起侧栏"><svg viewBox="0 0 15 13"><rect x=".5" y=".5" width="14" height="12" rx="2.4"/><path d="M5.2 .8v11.4"/></svg></button>
+  <nav class="nav">
+   <a><svg viewBox="0 0 16 16"><path d="M2.5 7 8 2.6 13.5 7v6.2a.8.8 0 0 1-.8.8H3.3a.8.8 0 0 1-.8-.8Z"/><path d="M6.4 14v-3.6h3.2V14"/></svg><span>Home</span></a>
+   <a><svg viewBox="0 0 16 16"><path d="M6.4 3.5 8 8l4.5 1.6L8 11.2 6.4 15.7 4.8 11.2.3 9.6 4.8 8ZM12.4 1l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z" transform="translate(.6 -.3) scale(.94)"/></svg><span>Create</span></a>
+   <a><svg viewBox="0 0 16 16"><path d="M2.6 2.6v11M5.6 2.6v11M8.6 3l3.2 10.6M13.6 13.6h0"/></svg><span>Library</span></a>
+   <a><svg viewBox="0 0 16 16"><circle cx="8" cy="5" r="2.8"/><path d="M2.6 14.2c.5-3 2.6-4.4 5.4-4.4s4.9 1.4 5.4 4.4"/></svg><span>Profile</span></a>
+  </nav>
+  <div class="cv" id="list"><h6><span>Canvas ⌄</span><span>+</span></h6>
+   <button data-s="world">what are world models?<i>···</i></button>
+   <button data-s="empty">what is control theory<i>···</i></button>
+   <button data-s="empty">how do people usually d...<i>···</i></button>
+   <button data-s="chairs">iconic danish chairs<i>···</i></button>
+   <button data-s="empty">what is bracket drift<i>···</i></button>
+  </div>
+  <div class="stats"><b>🔥 30</b><b>★ 10</b></div>
+  <div class="me"><i>A</i><span>Placeholder ⌄</span></div>
+ </aside>
+ <main id="main">
+  <div id="hello"><h2>Canvas</h2><p>A visual way to understand things in parallel</p></div>
+  <div id="world"><svg id="wires"></svg></div>
+ </main>
+ <form id="ask" autocomplete="off">
+  <textarea id="q" rows="1" placeholder="What do you want to understand?" aria-label="提问"></textarea>
+  <div class="opts"><span><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="5"/><path d="M2.4 2.4 9.6 9.6M1 6h3M8 6h3"/></svg>Web search on</span><span>Fast ⌄</span></div>
+  <button id="go" aria-label="发送"><svg viewBox="0 0 12 12"><path d="M6 10.5v-9M2.2 5.2 6 1.4l3.8 3.8"/></svg></button>
+ </form>
+</div>
+</div>
+<div class="notes"><h3>可拆</h3><dl>
+<dt><code>#world</code></dt><dd>节点放在一层上，拖动平移，滚轮以指针为中心缩放，点节点飞过去。</dd>
+<dt><code>#wires</code></dt><dd>节点间的灰色曲线，随节点生成。</dd>
+<dt><code>#ask</code></dt><dd>贴底提问框，磨砂半透明，内容从下面透过来。</dd>
+<dt><code>#side</code></dt><dd>图标栏展开成带文字的侧栏，画布和提问框一起让位。</dd>
+</dl></div>
+<script>
+(function(){
+const fit=document.getElementById('fit');
+function rescale(){const s=Math.min(innerWidth/1134,innerHeight/637);fit.style.transform=`translate(${(innerWidth-1134*s)/2}px,${(innerHeight-637*s)/2}px) scale(${s})`}
+addEventListener('resize',rescale);rescale();
+const $=s=>document.querySelector(s),world=$('#world'),wires=$('#wires'),main=$('#main'),hello=$('#hello'),q=$('#q'),go=$('#go'),win=$('#win');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let cam={x:0,y:0,z:1},nodes=[],uid=0;
+function apply(anim){world.classList.toggle('anim',!!anim&&!reduce);world.style.transform=`translate(${cam.x}px,${cam.y}px) scale(${cam.z})`;
+ const g=Math.max(9,18*cam.z%36||18);main.style.setProperty('--g',(cam.z>=.8?18*cam.z:18*cam.z*2)+'px');main.style.setProperty('--gx',cam.x+'px');main.style.setProperty('--gy',cam.y+'px')}
+const DOC='<svg class="docic" viewBox="0 0 10 11"><path d="M1 1h5.5L9 3.5V10H1Z"/><path d="M6.4 1v2.6H9"/></svg>';
+const SEND='<svg viewBox="0 0 12 12"><path d="M6 10.5v-9M2.2 5.2 6 1.4l3.8 3.8"/></svg>';
+function add(n){const d=document.createElement('section');d.className='node';d.id='n'+(++uid);d.style.cssText=`left:${n.x}px;top:${n.y}px;height:${n.h}px;width:${n.w||400}px`;
+ d.innerHTML=`<h5>${n.title}</h5>${DOC}<div class="card"><div class="scroll">${n.body}</div><div class="foot"><input placeholder="Ask a follow-up..." aria-label="追问"><button class="send">${SEND}</button></div></div>
+ <button class="h t" data-d="t">+</button><button class="h b" data-d="b">+</button><button class="h l" data-d="l">+</button><button class="h r" data-d="r">+</button>`;
+ world.append(d);const o={...n,el:d};nodes.push(o);d.addEventListener('pointerdown',e=>{e.stopPropagation();sel(o)});d.addEventListener('dblclick',()=>focus(o));
+ d.querySelectorAll('.h').forEach(b=>b.onclick=e=>{e.stopPropagation();follow(o,b.dataset.d)});
+ d.querySelector('.send').onclick=()=>{const v=d.querySelector('input').value.trim();if(v)follow(o,'r',v)};
+ d.querySelector('input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value.trim();if(v)follow(o,'r',v)}});
+ return o}
+function sel(o){nodes.forEach(n=>n.el.classList.toggle('sel',n===o))}
+function wire(a,b,side){const p=document.createElementNS('http://www.w3.org/2000/svg','path');let s,e;const aw=a.w||400,bw=b.w||400;
+ if(side==='b'||side==='t'){s=[a.x+aw/2,side==='b'?a.y+a.h:a.y];e=[b.x+bw/2,side==='b'?b.y:b.y+b.h];const m=(s[1]+e[1])/2;p.setAttribute('d',`M${s}C${s[0]} ${m},${e[0]} ${m},${e}`)}
+ else{s=[side==='r'?a.x+aw:a.x,a.y+a.h/2];e=[side==='r'?b.x:b.x+bw,b.y+b.h/2];const m=(s[0]+e[0])/2;p.setAttribute('d',`M${s}C${m} ${s[1]},${m} ${e[1]},${e}`)}
+ wires.append(p);return p}
+function focus(o,z){const r=main.getBoundingClientRect(),S=r.width/main.offsetWidth;const zz=z||1.14;cam.z=zz;cam.x=main.offsetWidth/2-(o.x+(o.w||400)/2)*zz;cam.y=Math.max(40-o.y*zz,(main.offsetHeight-100)/2-(o.y+o.h/2)*zz);apply(true);sel(o)}
+function follow(p,d,text){text=text||'New thread';const gap=95,w=400,h=300;const pos={r:[p.x+(p.w||400)+gap,p.y],l:[p.x-w-gap,p.y],b:[p.x,p.y+p.h+gap],t:[p.x,p.y-h-gap]}[d];
+ const n=add({x:pos[0],y:pos[1],h,w,title:text,body:`<div class="bub"><b>${text}</b></div><p class="tx" data-s></p>`});wire(p,n,d);focus(n,.95);if(text!=='New thread')stream(n.el.querySelector('[data-s]'),ANSWER);}
+const ANSWER='World models are internal representations of an environment that an agent — whether biological or artificial — uses to simulate, predict, and understand how the world works. Instead of reacting purely on instinct or raw sensory data, a system with a world model can mentally "play out" scenarios, anticipate the consequences of actions, and plan long-term strategies without needing to test everything in physical reality.';
+function stream(el,txt,done){if(reduce){el.textContent=txt;done&&done();return}let i=0;const t=setInterval(()=>{i+=3;el.textContent=txt.slice(0,i);if(i>=txt.length){clearInterval(t);done&&done()}},16)}
+const COMP=`<div class="fig"><h4>Components of a World Model</h4><span class="pill">World Model</span><div class="arr">↓</div><div class="boxes"><span class="bx olive">Perception</span><span class="bx olive">Dynamics Predictor</span></div><div class="arr">↓</div><div class="boxes"><span class="bx red">Reward Predictor</span><span class="bx red">Action Policy</span></div></div>`;
+const W={
+ n1:{x:0,y:0,h:300,title:'what are world models?',body:`<img class="img" src="source-assets/wm-figure.jpg" width="220" alt="世界模型示意图（原视频截图）"><p class="tx" style="text-align:center;color:#6f6d65;font-size:7.6px;line-height:11px;margin:0 50px 10px">A world model maintains an internal mental or neural representation of physical rules, predicting future states before taking action.</p><p class="tx">World models are internal representations of an environment that an agent — whether biological or artificial — uses to simulate, predict, and understand how the world works. Instead of reacting purely on instinct or <mark>raw sensory data</mark>, a system with a world model can</p>`},
+ n2:{x:495,y:0,h:300,title:'raw sensory data',body:`<div class="fig" style="margin-top:-10px;padding:0 16px 10px"><span class="bx blue" style="display:inline-block;padding:4px 18px">Representation</span><div class="arr" style="font-size:7px">predicts ↓</div><span class="bx blue" style="display:inline-block;padding:11px 22px">Predictive Dynamics</span><div class="arr" style="font-size:7px">informs ↓</div><span class="bx teal" style="display:inline-block;padding:8px 22px;border-radius:14px">Decision / Action</span><div style="height:12px"></div></div><p class="tx">Instead of reacting blindly, a world model maps these raw inputs into a compressed latent space to test counterfactual scenarios internally. This capability shifts artificial intelligence and cognitive systems from reactive pattern-matching toward genuine anticipatory reasoning and planning.</p>`},
+ n3:{x:0,y:390,h:270,title:'difference with LLMs?',body:`<div class="bub"><b>difference with LLMs?</b></div><div class="fig" style="padding:10px 18px"><h4>World Models vs LLMs</h4><div class="col"><span class="bx blue">World Model</span><span class="bx olive">Large Language Model</span><span class="bx">Physics and dynamics</span><span class="bx">Linguistic patterns</span><span class="bx">Simulated future states</span><span class="bx">Next token probabilities</span><span class="bx">Spatio-temporal pixels</span><span class="bx">Text and code corpora</span><span class="bx">Action-consequence loops</span><span class="bx">Stateless prompt response</span></div><div class="gold-b">Both have</div></div>`},
+ n4:{x:973,y:0,h:509,title:'who are the key players in world models?',body:`<div class="fig" style="margin-top:-7px;padding:0 16px 10px;text-align:left"><div class="who c1"><i></i><b>AMI Labs</b> JEPA and VL-JEPA</div><div class="who c2"><i></i><b>NVIDIA</b> Nvidia Cosmos</div><div class="sublab">APPROACH</div><div class="who c3"><i></i><b>Google DeepMind</b> Generative video &amp; environments</div><div class="who c4"><i></i><b>World Labs</b> Perceiving &amp; reasoning in 3D</div><div class="who c1"><i></i><b>AMI Labs</b> Representation-space prediction</div><div class="who c2"><i></i><b>NVIDIA</b> Physics-grounded engines</div><div class="gold-b" style="margin-top:9px;font-weight:500;padding:7px;line-height:13px"><b>All have</b><br>Moving beyond text-based LLMs · Focus on physics and causality</div></div><p class="tx">The world model landscape is divided between major tech labs scaling infrastructure and specialized startups pioneering new architectures for spatial and physical reasoning.</p><p class="tx" style="padding-left:9px"><b>The Visionaries &amp; Research Labs:</b> Pioneering figures like Fei-Fei Li (World Labs) focus on spatial intelligence to give AI a 3D understanding of the world, while Yann LeCun (AMI Labs) champions the JEPA architecture, which learns physical dynamics without generating raw pixels.</p><p class="tx" style="padding-left:9px"><b>The Scale Players:</b> Google DeepMind develops interactive, generative world simulators like the Genie series, and NVIDIA builds foundational physics and simulation engines (such as Cosmos) to train robotics and autonomous vehicles.</p>`},
+ n5:{x:1455,y:0,h:285,title:"what's the world model frontier?",body:`<p class="tx" style="margin-top:-7px">The world model frontier represents a paradigm shift in AI: moving beyond systems that merely pattern-match text or pixels to systems that explicitly learn <b>physics, rules, and causal dynamics</b> of their environment. Instead of just reacting reflexively, a world model has a compressed mental simulator to forecast how future states will unfold given specific actions.</p><p class="tx">Key capabilities defining this frontier include:</p><p class="tx"><b>Latent Space Simulation:</b> Compressing massive sensory data into compact internal states before long-horizon future prediction.</p><p class="tx"><b>Model-Based Reinforcement Learning:</b> Allowing agents and robotic hands to "dream" thousands of trial trajectories before real-world trial and error.</p>`}
+};
+const C={
+ c1:{x:0,y:213,h:467,w:434,title:'Wishbone Chair',body:`<img class="img" src="source-assets/chair-wishbone.jpg" width="190" alt="椅子（原视频截图）"><p class="tx">The Wishbone Chair (CH24), designed by Hans Wegner in 1949, remains a masterpiece of organic minimalism and meticulous craftsmanship. Its steam-bent solid wood backrest and distinctive Y-shaped support combine structural strength with exceptional seating comfort.</p><div class="fig" style="padding:9px"><h4 style="margin-bottom:8px">Anatomy of the Wishbone Chair</h4><div class="col" style="gap:7px"><span class="bx blue" style="text-align:left;font-size:9.6px;padding:5px"><b>1949</b><br><span style="font-size:6.5px">Year Designed</span></span><span class="bx olive" style="background:#e4e0b8;text-align:left;font-size:9.6px;padding:5px"><b>120m</b><br><span style="font-size:6.5px">Cords Required</span></span></div></div>`},
+ c2:{x:570,y:0,h:297,w:430,title:'iconic danish chairs',body:`<div class="bub" style="margin-bottom:5px"><b>iconic danish chairs</b></div><div class="fig" style="padding:8px 12px"><h4 style="margin-bottom:7px">Pillars of Danish Modern Seating</h4><div class="col" style="grid-template-columns:1fr 1fr 1fr;gap:5px 14px"><span class="bx blue">Wishbone Chair</span><span class="bx olive">The Egg Chair</span><span class="bx red">Chieftain Chair</span><span class="bx">Hans J. Wegner</span><span class="bx">Arne Jacobsen</span><span class="bx">Finn Juhl</span><span class="bx">1949</span><span class="bx">1958</span><span class="bx">1949</span><span class="bx">Solid wood &amp; paper cord</span><span class="bx">Molded foam &amp; upholstery</span><span class="bx">Exotic wood &amp; leather</span></div><div class="gold-b" style="font-weight:500">All have · Powered the Mid-Century Modern movement</div></div>`},
+ c3:{x:1080,y:0,h:526,w:335,title:'The Egg Chair',body:`<img class="img" src="source-assets/chair-egg.jpg" width="290" alt="蛋椅（原视频截图）"><p class="tx">Designed by Arne Jacobsen in 1958 for the SAS Royal Hotel in Copenhagen, The Egg Chair revolutionized lounge seating by using an innovative interior molded foam shell beneath its upholstery rather than traditional heavy wooden framing.</p><div class="fig" style="padding:8px"><h4 style="margin-bottom:7px">Design Innovation vs. Traditional Seating</h4><div class="col"><span class="bx blue">Traditional Chair</span><span class="bx olive">The Egg Chair</span><span class="bx">Rigid wooden frame</span><span class="bx">Organic continuous curves</span><span class="bx">Rectangular and angular</span><span class="bx">Creates a secluded nook</span></div><div class="gold-b">Both have</div></div>`},
+ c4:{x:640,y:383,h:560,w:330,title:'Finn Juhl',body:`<img class="img" src="source-assets/chair-finn.jpg" width="240" alt="椅子插画（原视频截图）"><p class="tx" style="text-align:center;color:#8a887f;font-size:7px">Finn Juhl's Chieftain Chair</p><p class="tx">Finn Juhl revolutionized Danish design by treating furniture as free-form modern art rather than strict functional craftsmanship. Unlike his contemporaries who focused on mass production and structural rationalism, Juhl introduced sculptural, organic shapes inspired by modern abstract art.</p>`}
+};
+function clear(){nodes.forEach(n=>n.el.remove());nodes=[];wires.innerHTML=''}
+function scene(name,noAnim){clear();hello.style.opacity=name==='empty'?1:0;
+ if(name==='empty'){cam={x:0,y:0,z:1};apply();return}
+ if(name==='world'){const o={};for(const k in W)o[k]=add(W[k]);wire(o.n1,o.n2,'r');wire(o.n1,o.n3,'b');overview(114,64,.55,noAnim);sel(o.n3)}
+ if(name==='chairs'){const o={};for(const k in C)o[k]=add(C[k]);wire(o.c2,o.c1,'l');wire(o.c2,o.c3,'r');wire(o.c2,o.c4,'b');overview(30,18,.525,noAnim)}
+}
+function overview(x,y,z,noAnim){cam={x,y,z};apply(!noAnim)}
+function ask(text){const seed=!nodes.length;hello.style.opacity=0;
+ const anchor=nodes[nodes.length-1];
+ const pos=seed?{x:0,y:0}:{x:anchor.x+(anchor.w||400)+95,y:anchor.y};
+ const n=add({x:pos.x,y:pos.y,h:282,title:text,body:`<div class="bub"><b>${text}</b></div><p class="creating">Creating a visual...</p><p class="tx" data-s></p><div data-f style="opacity:0;transition:opacity .4s">${COMP}</div>`});
+ if(!seed)wire(anchor,n,'r');focus(n,1.14);cam.y=120-n.y*1.14;apply(true);const el=n.el;stream(el.querySelector('[data-s]'),ANSWER,()=>{el.querySelector('[data-f]').style.opacity=1})}
+const form=$('#ask');form.addEventListener('submit',e=>{e.preventDefault();const v=q.value.trim();if(!v)return;q.value='';go.classList.remove('live');ask(v)});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
+q.addEventListener('input',()=>go.classList.toggle('live',!!q.value.trim()));
+$('#toggle').onclick=()=>win.classList.toggle('open');
+$('#list').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('#list').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));scene(b.dataset.s)});
+let drag=null;main.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;sel(null);drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y};main.classList.add('grabbing');main.setPointerCapture(e.pointerId)});
+main.addEventListener('pointermove',e=>{if(!drag)return;const s=fit.getBoundingClientRect().width/1134;cam.x=drag.cx+(e.clientX-drag.x)/s;cam.y=drag.cy+(e.clientY-drag.y)/s;apply()});
+main.addEventListener('pointerup',()=>{drag=null;main.classList.remove('grabbing')});
+main.addEventListener('wheel',e=>{e.preventDefault();const r=main.getBoundingClientRect(),s=r.width/main.offsetWidth,mx=(e.clientX-r.left)/s,my=(e.clientY-r.top)/s;const z=Math.max(.3,Math.min(1.6,cam.z*Math.exp(-e.deltaY*.0015)));cam.x=mx-(mx-cam.x)*z/cam.z;cam.y=my-(my-cam.y)*z/cam.z;cam.z=z;apply()},{passive:false});
+const p=new URLSearchParams(location.search);
+scene('empty',true);
+const S=p.get('s');if(S==='world'){scene('world',true)}
+if(S==='focus'){scene('world',true);const n=nodes[3];cam={x:249-973*1.245,y:104,z:1.245};nodes[3].el.querySelector('.scroll').style.paddingTop='7px';apply();n.el.querySelector('.scroll').scrollTop=0;q.value="what's the world model fronit";go.classList.add('live')}
+if(S==='chairs'){win.classList.add('open');scene('chairs',true);$('#list').querySelectorAll('button')[3].classList.add('on')}
+window.__ask=ask;
+})();
+</script>
+</body>
+</html>

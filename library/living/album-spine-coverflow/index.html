@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>立体书脊墙</title><link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#E9E7E2;color:#111;font:400 14px/1.3 -apple-system,Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;align-items:center}
+#frame{position:relative;width:1425px;height:1074px;background:#F0EEE9;overflow:hidden;flex:none;user-select:none}
+#top,#bot{position:absolute;left:0;width:1425px;display:block;z-index:30;pointer-events:none}
+#top{top:0;height:93px}#bot{top:972px;height:102px}
+/* 书墙：相机到封面的距离等于封面边长，所有封面几乎垂直于屏幕，向同一个灭点收 */
+#wall{position:absolute;inset:0;perspective:864px;perspective-origin:712.5px 537px;touch-action:none;cursor:grab;overflow:hidden}
+#wall.grab{cursor:grabbing}
+#rail{position:absolute;left:0;top:105px;width:0;height:864px;transform-style:preserve-3d}
+.bk{position:absolute;left:0;top:0;height:864px;transform-style:preserve-3d;cursor:pointer;will-change:transform}
+.sp{position:absolute;inset:0;background-size:100% 100%;backface-visibility:hidden}
+.cv{position:absolute;top:0;width:864px;height:864px;background-size:100% 100%;backface-visibility:hidden}
+.cv.r{left:100%;transform-origin:0 50%;transform:rotateY(88.2deg)}
+.cv.l{right:100%;transform-origin:100% 50%;transform:rotateY(-88.2deg)}
+.edge{position:absolute;z-index:20;top:96px;bottom:96px;width:58px;pointer-events:none;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+#el{left:0;mask-image:linear-gradient(90deg,#000 45%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 45%,transparent)}
+#er{right:0;mask-image:linear-gradient(270deg,#000 45%,transparent);-webkit-mask-image:linear-gradient(270deg,#000 45%,transparent)}
+#mt{position:absolute;z-index:31;left:602px;top:999px;width:226px;height:18px;overflow:hidden;white-space:nowrap;font:400 14.2px/18px -apple-system,Inter,sans-serif;color:#7d7c78;pointer-events:none}
+#mt div{display:inline-block;animation:mq 14s linear infinite;padding-right:40px}
+@keyframes mq{to{transform:translateX(-100%)}}
+.layer{position:absolute;inset:0;visibility:hidden;z-index:35;background-size:100% 100%}
+.layer.on{visibility:visible}
+#teal{background-image:url(source-assets/teal.jpg);cursor:e-resize}
+#blue{background-image:url(source-assets/blue.jpg)}
+#load{z-index:37;border-radius:18px 0 0 18px;background-color:#000;overflow:hidden}
+#fly{position:absolute;z-index:36;left:0;top:0;width:497px;height:497px;background:url(source-assets/cover-flat.jpg) 0 0/100% 100%;transform-origin:0 50%;display:none;box-shadow:0 30px 50px -18px rgba(0,0,0,.28)}
+#strip{position:absolute;left:0;top:0;width:1425px;height:1074px;perspective:1500px;perspective-origin:712px 530px;touch-action:none;cursor:grab;clip-path:inset(90px 0 100px 500px)}
+.pg{position:absolute;top:125px;height:804px;width:350px;transform-origin:100% 50%;background-size:100% 100%;will-change:transform}
+.pg .t{position:absolute;background-size:100% 100%}
+.hit{position:absolute;left:3px;top:32px;width:50px;height:50px;background:none;border:0;padding:0;cursor:pointer;z-index:40;display:none}
+#tail{width:100%;max-width:1425px;padding:24px 16px 60px;font:400 13px/1.6 -apple-system,Inter,sans-serif;color:#333}#tail h3{font:600 15px -apple-system,Inter,sans-serif;margin:0 0 8px}#tail dt{margin-top:8px}#tail dd{margin:0}#tail code{font:500 12.5px ui-monospace,monospace}
+@media(prefers-reduced-motion:reduce){#mt div{animation:none}}
+</style></head><body>
+<div id="frame">
+ <img id="top" src="source-assets/top.png" alt=""><img id="bot" src="source-assets/bot.png" alt="">
+ <div id="mt"><div>Heart Sutra (Cho Ver.) [Long Mix] &nbsp;&nbsp;&nbsp;&nbsp; Heart Sutra (Cho Ver.) [Long Mix]</div></div>
+ <div id="wall"><div id="rail"></div><div class="edge" id="el"></div><div class="edge" id="er"></div></div>
+ <div id="fly"></div>
+ <div id="teal" class="layer"></div>
+ <div id="blue" class="layer"><div id="strip"></div></div>
+ <div id="load" class="layer"></div>
+ <button id="back" class="hit" aria-label="Back"></button>
+</div>
+<section id="tail"><h3>可拆</h3><dl>
+ <dt><code>#wall</code></dt><dd>真 3D 书墙：相机到封面的距离等于封面边长，封面转 88.2 度、几乎垂直于屏幕，所以外侧只露一小段，靠中间能看到整张。过了中线封面换到书脊另一侧。</dd>
+ <dt><code>#fly</code></dt><dd>点书脊：封面从垂直转成正面放大，背景同时换成封面主色，到达后接专辑页。</dd>
+ <dt><code>#load</code></dt><dd>专辑页点一下：黑底页从右侧滑入，灰色占位逐步换成颜色和图片，最后整页变蓝。</dd>
+ <dt><code>#strip</code></dt><dd>翻页条：左边滑出去的那一块以右缘为铰链向后折，下一块接上。</dd>
+</dl></section>
+<script>
+const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const BOOKS=[{"cover": "cover-00.jpg", "spine": "spine-00.jpg"}, {"cover": "cover-01.jpg", "spine": "spine-01.jpg"}, {"cover": "cover-02.jpg", "spine": "spine-02.jpg"}, {"cover": "cover-03.jpg", "spine": "spine-03.jpg"}, {"cover": "cover-04.jpg", "spine": "spine-04.jpg"}, {"cover": "cover-05.jpg", "spine": "spine-05.jpg"}, {"cover": "cover-06.jpg", "spine": "spine-06.jpg"}, {"cover": "cover-07.jpg", "spine": "spine-07.jpg"}, {"cover": "cover-08.jpg", "spine": "spine-08.jpg"}, {"cover": "cover-09.jpg", "spine": "spine-09.jpg"}, {"cover": "cover-10.jpg", "spine": "spine-10.jpg"}, {"cover": "cover-11.jpg", "spine": "spine-11.jpg"}, {"cover": "cover-12.jpg", "spine": "spine-12.jpg"}, {"cover": "cover-13.jpg", "spine": "spine-13.jpg"}, {"cover": "cover-14.jpg", "spine": "spine-14.jpg"}, {"cover": "cover-15.jpg", "spine": "spine-15.jpg"}, {"cover": "cover-16.jpg", "spine": "spine-16.jpg"}, {"cover": "cover-17.jpg", "spine": "spine-17.jpg"}, {"cover": "cover-18.jpg", "spine": "spine-18.jpg"}, {"cover": "cover-19.jpg", "spine": "spine-19.jpg"}, {"cover": "cover-20.jpg", "spine": "spine-20.jpg"}, {"cover": "cover-21.jpg", "spine": "spine-21.jpg"}, {"cover": "cover-22.jpg", "spine": "spine-22.jpg"}, {"cover": "cover-23.jpg", "spine": "spine-23.jpg"}, {"cover": "cover-24.jpg", "spine": "spine-24.jpg"}, {"cover": "cover-25.jpg", "spine": "spine-25.jpg"}, {"cover": "cover-26.jpg", "spine": "spine-26.jpg"}, {"cover": "cover-27.jpg", "spine": "spine-27.jpg"}, {"cover": "cover-28.jpg", "spine": "spine-28.jpg"}, {"cover": "cover-29.jpg", "spine": "spine-29.jpg"}, {"cover": "cover-30.jpg", "spine": "spine-30.jpg"}, {"cover": "cover-31.jpg", "spine": "spine-31.jpg"}, {"cover": "cover-32.jpg", "spine": "spine-32.jpg"}, {"cover": "cover-33.jpg", "spine": "spine-33.jpg"}, {"cover": "cover-34.jpg", "spine": "spine-34.jpg"}, {"cover": "cover-35.jpg", "spine": "spine-35.jpg"}, {"cover": "cover-36.jpg", "spine": "spine-36.jpg"}, {"cover": "cover-37.jpg", "spine": "spine-37.jpg"}, {"cover": "cover-38.jpg", "spine": "spine-38.jpg"}, {"cover": "cover-39.jpg", "spine": "spine-39.jpg"}, {"cover": "cover-40.jpg", "spine": "spine-40.jpg"}, {"cover": "cover-41.jpg", "spine": "spine-41.jpg"}];
+const MISSION=2;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const q=new URLSearchParams(location.search);
+const GAP=133.4,PIVOT=688,REST=-112.4;
+const rail=$('#rail'),wall=$('#wall'),NB=BOOKS.length;
+const els=BOOKS.map((b,i)=>{const e=document.createElement('div');e.className='bk';e.dataset.i=i;
+ const t=`url(source-assets/${b.cover})`;
+ e.innerHTML=`<div class="cv r" style="background-image:${t}"></div><div class="cv l" style="background-image:${t}"></div><div class="sp" style="background-image:url(source-assets/${b.spine})"></div>`;
+ return e});
+let X=+(q.get('x')||REST),V=0,F=PIVOT,drag=null,raf=0;
+const inDom=new Set();
+function place(){const L=GAP*NB;els.forEach((e,i)=>{let c=i*GAP+X;c=((c+L/2-PIVOT)%L+L)%L-L/2+PIVOT;
+ const on=c>-60&&c<1500;
+ if(on&&!inDom.has(i)){rail.append(e);inDom.add(i)}else if(!on&&inDom.has(i)){e.remove();inDom.delete(i)}
+ if(!on)return;
+ const w=Math.max(12,22-.0105*Math.abs(c-688));
+ e.style.width=w+'px';e.style.transform=`translateX(${(c-w/2).toFixed(2)}px)`;e._c=c;e._w=w;
+ const left=c<=F+1;e.children[0].style.visibility=left?'visible':'hidden';e.children[1].style.visibility=left?'hidden':'visible'})}
+function inertia(){X+=V;V*=.955;F+=(PIVOT+clamp(V*8,-120,120)-F)*.12;place();if(Math.abs(V)>.08||Math.abs(F-PIVOT)>.5)raf=requestAnimationFrame(inertia);else{F=PIVOT;place()}}
+wall.addEventListener('pointerdown',e=>{cancelAnimationFrame(raf);drag={lx:e.clientX,moved:0,tgt:e.target.closest('.bk')};wall.setPointerCapture(e.pointerId);wall.classList.add('grab')});
+wall.addEventListener('pointermove',e=>{if(!drag)return;const d=e.clientX-drag.lx;drag.lx=e.clientX;drag.moved+=Math.abs(d);X+=d;V=d;F+=(PIVOT+clamp(d*8,-120,120)-F)*.2;place()});
+wall.addEventListener('pointerup',e=>{if(!drag)return;wall.classList.remove('grab');const d=drag;drag=null;if(d.moved<6){const pos=e.clientX-$('#frame').getBoundingClientRect().left;open(pos);return}if(!reduce)inertia();else{F=PIVOT;place()}});
+wall.addEventListener('wheel',e=>{e.preventDefault();cancelAnimationFrame(raf);X-=(e.deltaX||e.deltaY);V=-(e.deltaX||e.deltaY)*.3;if(!reduce)inertia();else place()},{passive:false});
+/* 翻页条 */
+const PN=[{img:'p1.jpg',w:350,th:{img:'t1.jpg',l:-19,t:20,w:195,h:194}},{img:'p2.jpg',w:349},{img:'p3.jpg',w:350,th:{img:'t3.jpg',l:129,t:-9,w:194,h:195}},{img:'p4.jpg',w:349,th:{img:'t4.jpg',l:171,t:583,w:195,h:196}}];
+const strip=$('#strip'),STOPS=[0,-690];let SX=0,sd=null,sr=0;
+const pgs=PN.map(p=>{const e=document.createElement('div');e.className='pg';e.style.width=p.w+'px';e.style.backgroundImage=`url(source-assets/${p.img})`;
+ if(p.th)e.innerHTML=`<div class="t" style="left:${p.th.l}px;top:${p.th.t}px;width:${p.th.w}px;height:${p.th.h}px;background-image:url(source-assets/${p.th.img})"></div>`;strip.append(e);return e});
+function placeStrip(){let x=554+SX;pgs.forEach((e,i)=>{const w=PN[i].w;const over=clamp((554-x)/w,0,1);e.style.left=x+'px';e.style.zIndex=10-i;e.style.transform=over>0?`rotateY(${(-Math.acos(1-over)*180/Math.PI*.85).toFixed(1)}deg)`:'none';e.style.visibility=over>=.94?'hidden':'';x+=w});}
+const snap=()=>{const to=STOPS.reduce((a,b)=>Math.abs(b-SX)<Math.abs(a-SX)?b:a);if(reduce){SX=to;placeStrip();return}const from=SX,t0=performance.now();(function st(t){const u=clamp((t-t0)/420,0,1),k=1-Math.pow(1-u,3);SX=from+(to-from)*k;placeStrip();if(u<1)sr=requestAnimationFrame(st)})(t0)};
+strip.addEventListener('pointerdown',e=>{sd=e.clientX;strip.setPointerCapture(e.pointerId);cancelAnimationFrame(sr)});
+strip.addEventListener('pointermove',e=>{if(sd===null)return;SX=clamp(SX+e.clientX-sd,-690,0);sd=e.clientX;placeStrip()});
+strip.addEventListener('pointerup',()=>{sd=null;snap()});
+strip.addEventListener('wheel',e=>{e.preventDefault();SX=clamp(SX-(e.deltaX||e.deltaY),-690,0);placeStrip();clearTimeout(strip._t);strip._t=setTimeout(snap,160)},{passive:false});
+/* 状态 */
+const showBack=on=>{$('#back').style.display=on?'block':'none'};
+function setWall(on){wall.style.visibility=on?'visible':'hidden';$('#top').style.visibility=$('#bot').style.visibility=$('#mt').style.visibility=on?'visible':'hidden'}
+function showTeal(){$('#teal').classList.add('on');setWall(false);showBack(true);state='teal'}
+function showBlue(){$('#blue').classList.add('on');$('#teal').classList.remove('on');setWall(false);showBack(true);SX=0;placeStrip();state='blue'}
+let state='wall';
+function open(pos){const fly=$('#fly');const b=els.filter(e=>inDom.has(+e.dataset.i)).reduce((a,e)=>Math.abs(e._c-pos)<Math.abs(a._c-pos)?e:a);
+ if(reduce){showTeal();return}
+ const hx=b._c+b._w/2;$('#frame').style.background='#5CADAD';
+ fly.style.display='block';const a0=`translate(${hx}px,105px) perspective(864px) rotateY(88deg) scale(${864/497})`,a1='translate(101px,131px) perspective(864px) rotateY(0deg) scale(1)';
+ setWall(false);$('#teal').style.backgroundImage='none';$('#teal').style.background='#5CADAD';
+ $('#teal').classList.add('on');$('#teal').style.zIndex=34;
+ const an=fly.animate([{transform:a0},{transform:a1}],{duration:560,easing:'cubic-bezier(.22,.9,.28,1)',fill:'forwards'});
+ an.onfinish=()=>{$('#teal').style.background='';$('#teal').style.backgroundImage='';$('#teal').style.zIndex='';fly.style.display='none';an.cancel();showTeal()}}
+const LOAD=[0,1,2,3,4,5,6].map(i=>`source-assets/load${i}.jpg`);LOAD.forEach(s=>{const i=new Image();i.src=s});
+function advance(){const l=$('#load');if(reduce){showBlue();return}
+ l.style.backgroundImage=`url(${LOAD[0]})`;l.classList.add('on');
+ $('#teal').animate([{transform:'none'},{transform:'translateX(-220px)'}],{duration:320,easing:'cubic-bezier(.3,.8,.3,1)',fill:'none'});
+ l.animate([{transform:'translateX(100%)'},{transform:'none'}],{duration:320,easing:'cubic-bezier(.3,.8,.3,1)'}).onfinish=()=>{showBlue();$('#blue').style.visibility='hidden';let i=1;const T=[220,240,380,200,200,200];
+  (function nx(){if(i>=LOAD.length){l.classList.remove('on');$('#blue').style.visibility='';return}l.style.borderRadius=0;l.style.backgroundImage=`url(${LOAD[i]})`;setTimeout(nx,T[i-1]);i++})()}}
+$('#teal').addEventListener('click',advance);
+$('#back').onclick=()=>{if(state==='blue'){$('#blue').classList.remove('on');showTeal();$('#load').style.borderRadius=''}else{$('#teal').classList.remove('on');$('#frame').style.background='';setWall(true);showBack(false);state='wall'}};
+const fit=()=>{const k=Math.min(1,(innerWidth)/1425);$('#frame').style.zoom=k};addEventListener('resize',fit);fit();
+place();placeStrip();
+const dm=q.get('demo');if(dm==='teal')showTeal();else if(dm==='album')showBlue();else if(dm==='turn'){showBlue();SX=+(q.get('sx')||-250);placeStrip()}else if(dm==='turn2'){showBlue();SX=-690;placeStrip()}else if(dm==='load'){l=$('#load');l.style.borderRadius=0;l.style.backgroundImage=`url(${LOAD[+(q.get('i')||1)]})`;l.classList.add('on');showBack(true);setWall(false)}
+</script></body></html>

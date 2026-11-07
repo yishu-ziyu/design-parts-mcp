@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>GPS 仪器复刻</title>
+<style>
+@font-face{font-family:DepartureMono;src:url(fonts/departure-mono.woff2) format("woff2");font-weight:400}
+:root{--paper:#101012;--ink:#e8e6df;--ink-faint:#e8e6df47;--ink-ghost:#e8e6df26;--accent:#ff6a3d;--info:#6faee6;--panel:rgba(19,19,21,.85)}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:DepartureMono,ui-monospace,Menlo,monospace;overflow:hidden;font-synthesis:none}
+#globe{position:fixed;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;user-select:none}
+#globe text{font-family:inherit}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.panel{position:fixed;background:var(--panel);border:1px solid var(--ink-faint)}
+.tick{position:absolute;pointer-events:none}
+#telemetry{left:12px;top:12px;width:267px;padding:8px;font-size:10px;line-height:16px;color:#d9d7d0}
+#telemetry .tick.v{width:1px;height:12px;top:-13px;border-left:1px solid var(--ink-faint)}
+#telemetry .tick.vb{width:1px;height:0}
+#telemetry .tick.h{height:1px;width:12px;left:-13px;border-top:1px solid var(--ink-faint)}
+.tt{margin:0 -8px 4px;padding:0 8px 8px;border-bottom:1px solid var(--ink-faint);letter-spacing:.5px}
+.sec{display:flex;align-items:center;width:calc(100% + 16px);margin:0 -8px;padding:4px 8px;border-bottom:1px solid var(--ink-faint);letter-spacing:.5px;text-align:left}
+.sec i{display:block;width:12px;opacity:.6}
+.sec svg{display:block;width:7px;height:7px;fill:currentColor;transition:transform .12s}
+.sec.open svg{transform:rotate(90deg)}
+.body{display:none;padding:4px 0 4px 16px;white-space:pre}
+.body.open{display:block}
+.body.tb{line-height:16px}
+#lesson{left:50%;bottom:12px;width:min(602px,calc(100vw - 24px));transform:translateX(-50%);padding:8px;font-size:11px;line-height:20px}
+#lesson .tick{width:1px;height:12px;bottom:-13px;border-left:1px solid var(--ink-faint)}
+.lh{display:flex;justify-content:space-between;margin:0 -8px 4px;padding:0 8px 8px;border-bottom:1px solid var(--ink-faint);letter-spacing:.55px}
+.lh span:last-child{opacity:.6}
+#copy{height:140px;color:#cfcdc7}
+.ac{color:var(--accent)}
+.lk{color:#88a8d6;text-decoration:underline dotted;text-underline-offset:3px;cursor:help;display:inline}
+.lk sup{font-size:7px;line-height:0;margin-left:7px;width:7px;vertical-align:4px;text-decoration:none;display:inline-block}
+.act{display:flex;gap:4px;margin:8px -8px 0;padding:8px 8px 0;border-top:1px solid var(--ink-faint);min-height:35px;align-items:center;font-size:11px;letter-spacing:.55px}
+.act .prompt{color:var(--accent);padding:0 1px}
+.act .prompt button{text-decoration:underline;text-underline-offset:2px;margin-left:8px}.act .prompt span+span{margin-left:8px}
+.b{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 6px;border:1px solid var(--ink);transition:background .15s,color .15s}
+.b svg{width:7px;height:7px;fill:currentColor}
+.b:hover{background:var(--ink);color:var(--paper)}
+.b.go{border-color:var(--accent);color:var(--accent)}.b.go:hover{background:var(--accent);color:var(--paper)}
+.b:disabled{border-color:var(--ink-faint);color:var(--ink-faint);pointer-events:none}
+.b.rs{margin-left:auto}
+.fin{display:flex;justify-content:space-between;margin:8px -8px 0;padding:8px 8px 0;border-top:1px solid var(--ink-faint);font-size:10px;opacity:.62}
+.fin u{text-underline-offset:2px}
+#tip{position:fixed;display:none;left:50%;width:min(602px,calc(100vw - 24px));transform:translateX(-50%);background:rgba(19,19,21,.95);border:1px solid var(--ink-faint);padding:8px;font-size:10px;line-height:16px;z-index:5}
+#scale{position:fixed;right:12px;bottom:12px;font-size:10px;line-height:16px;opacity:.6;pointer-events:none}
+.can{position:absolute;left:-9999px;width:500px}
+@keyframes fi{from{opacity:0}to{opacity:1}}@keyframes si{from{transform:scale(.97)}to{transform:scale(1)}}@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.intro-planet{animation:fi .7s cubic-bezier(.165,.84,.44,1) both;transform-origin:center}
+.intro-sat{animation:fi .4s cubic-bezier(.215,.61,.355,1) both}
+.intro-orbit{animation:fi .7s cubic-bezier(.215,.61,.355,1) both}
+@media (prefers-reduced-motion:reduce){.intro-planet,.intro-sat,.intro-orbit{animation:none}}
+@media (max-width:760px){#telemetry{display:none}}
+</style>
+</head>
+<body>
+<svg id="globe" role="img" aria-label="正射投影的地球、GPS 信号和卫星星座技术图"></svg>
+<div class="panel" id="telemetry">
+ <i class="tick v" style="left:0"></i><i class="tick v" style="right:0"></i><i class="tick h" style="top:0"></i><i class="tick h" style="bottom:0"></i>
+ <div class="tt">GPS-00 · TELEMETRY</div>
+ <button class="sec" data-b="b1"><i><svg viewBox="0 0 7 7"><path d="M1.5 .5 5.5 3.5 1.5 6.5Z"/></svg></i>CONSTELLATION · 24 SAT · 6 PL</button><div class="body tb" id="b1"></div>
+ <button class="sec open" data-b="b2"><i><svg viewBox="0 0 7 7"><path d="M1.5 .5 5.5 3.5 1.5 6.5Z"/></svg></i>RECEIVER</button><div class="body open" id="b2"></div>
+ <button class="sec" data-b="b3"><i><svg viewBox="0 0 7 7"><path d="M1.5 .5 5.5 3.5 1.5 6.5Z"/></svg></i>RAW SIGNALS · GPS L1</button><div class="body tb" id="b3"></div>
+ <button class="sec open" data-b="b4"><i><svg viewBox="0 0 7 7"><path d="M1.5 .5 5.5 3.5 1.5 6.5Z"/></svg></i>SOLVER OUTPUT</button><div class="body open" id="b4"></div>
+</div>
+<div id="tip" role="tooltip"></div>
+<section class="panel" id="lesson">
+ <i class="tick" style="left:0"></i><i class="tick" style="right:0"></i>
+ <div class="lh"><span id="ttl"></span><span id="num"></span></div>
+ <div id="copy"></div>
+ <div class="act" id="act"></div>
+ <div class="fin"><span>GPS-00</span><span>BUILT BY <u>PLACEHOLDER</u> · DM TO REPORT AN ISSUE</span></div>
+</section>
+<div id="scale"></div>
+<div class="can"><h3>可拆</h3><dl>
+<dt><code>#globe</code></dt><dd>整张 SVG：逐帧重算投影，点击反投影放接收机，镜头飞到接收机并缩放。</dd>
+<dt><code>#telemetry</code></dt><dd>左上遥测面板：等宽字、折叠分组、实时数表。</dd>
+<dt><code>#lesson</code></dt><dd>底部五步讲解卡：说明文字随步骤切换，数字随真实解算结果变化。</dd>
+<dt><code>#tip</code></dt><dd>说明词的提示，出现在讲解卡正上方，不挡图。</dd>
+</dl></div>
+<script src="data/coast.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s),svg=$('#globe'),NS='http://www.w3.org/2000/svg';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const RE=6378.137,AK=26560,C=299792.458,D2R=Math.PI/180,INC=55*D2R,SAT_W=4*D2R,EARTH_W=2*D2R;
+const HUES=[0,60,120,180,240,300],col=k=>`oklch(72% 0.17 ${HUES[k]})`;
+const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).append(e);return e};
+const planes=HUES.map((_,k)=>{const a=(k-1)*60*D2R;const n=[Math.sin(INC)*Math.cos(a),Math.sin(INC)*Math.sin(a),Math.cos(INC)];let u=[-n[1],n[0],0];const l=Math.hypot(u[0],u[1]);u=[u[0]/l,u[1]/l,0];const v=[n[1]*u[2]-n[2]*u[1],n[2]*u[0]-n[0]*u[2],n[0]*u[1]-n[1]*u[0]];return{n,u,v,th:(-17.4+15*k)*D2R}});
+const sats=[];planes.forEach((p,k)=>'ABCD'.split('').forEach((c,j)=>sats.push({id:(k+1)+c,k,j})));
+const satPos=(s,t,dth=0)=>{const p=planes[s.k],th=p.th+s.j*Math.PI/2+SAT_W*t+dth,c=Math.cos(th)*AK,d=Math.sin(th)*AK;return[p.u[0]*c+p.v[0]*d,p.u[1]*c+p.v[1]*d,p.u[2]*c+p.v[2]*d]};
+const G0=75*D2R,gmst=t=>G0+EARTH_W*t;
+const eciOf=(lon,lat,g,r=RE)=>{const a=lon*D2R+g,cl=Math.cos(lat*D2R);return[r*cl*Math.cos(a),r*cl*Math.sin(a),r*Math.sin(lat*D2R)]};
+/* state */
+let W=innerWidth,H=innerHeight,cx=W/2,cy=H/2;const RF=()=>H/984;
+const ZOOM={1:99.134,2:188,3:106,4:705,5:1387.9};
+let step=1,simT=6.3,lastMs=0,rx=null,bias=0,lock=null,tl3=0,biasK=1,biasGo=0;
+const cam={a:0,phi:25*D2R,R:ZOOM[1],from:null,start:0,dur:0};
+function retarget(){cam.from={a:cam.a,phi:cam.phi,R:cam.R};cam.start=performance.now();cam.dur=reduce?0:1100}
+function camTarget(){if(step===1||!rx)return{a:0,phi:25*D2R,R:ZOOM[1]*RF()};return{a:(rx.lon*D2R+gmst(simT)),phi:rx.lat*D2R,R:ZOOM[step]*RF()}}
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+function updateCam(now){const T=camTarget();if(!cam.from){cam.a=T.a;cam.phi=T.phi;cam.R=T.R;return}
+ const u=cam.dur?Math.min(1,(now-cam.start)/cam.dur):1,e=ease(u);let da=((T.a-cam.from.a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+ cam.a=cam.from.a+da*e;cam.phi=cam.from.phi+(T.phi-cam.from.phi)*e;cam.R=Math.exp(Math.log(cam.from.R)+(Math.log(T.R)-Math.log(cam.from.R))*e);if(u>=1)cam.from=null}
+function view(p){const ca=Math.cos(cam.a),sa=Math.sin(cam.a),x1=p[0]*ca+p[1]*sa,y1=-p[0]*sa+p[1]*ca,z1=p[2],sp=Math.sin(cam.phi),cp=Math.cos(cam.phi),k=cam.R/RE;return{x:cx+k*y1,y:cy-k*(-x1*sp+z1*cp),z:k*(x1*cp+z1*sp)}}
+function unview(x,y){const k=cam.R,X=(x-cx)/k,Y=-(y-cy)/k,r2=X*X+Y*Y;if(r2>1)return null;const Z=Math.sqrt(1-r2),sp=Math.sin(cam.phi),cp=Math.cos(cam.phi);const x1=Z*cp-Y*sp,z1=Y*cp+Z*sp,y1=X;const lat=Math.asin(z1);let lon=Math.atan2(y1,x1)+cam.a-gmst(simT);lon=((lon+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;return{lat:lat/D2R,lon:lon/D2R}}
+/* static scene */
+const gOrb=el('path',{fill:'none',stroke:'var(--ink-ghost)','stroke-width':1,'stroke-dasharray':'1 2.5',class:'intro-orbit'});gOrb.style.animationDelay='.3s';
+const gBack=el('g',{});
+const pGrat=el('path',{fill:'none',stroke:'var(--ink-ghost)','stroke-width':1,class:'intro-planet'});
+const pCoast=el('path',{fill:'none',stroke:'var(--ink)','stroke-width':1,class:'intro-planet'});
+const cDisc=el('circle',{fill:'none',stroke:'var(--ink)','stroke-width':1,class:'intro-planet'});
+const gLines=el('g',{}),gRings=el('g',{}),gSats=el('g',{}),gTop=el('g',{});
+const gPole=el('g',{},gTop);el('path',{d:window.N_GLYPH,fill:'var(--ink)','shape-rendering':'crispEdges',transform:'translate(-2.5 -2.5)'},gPole);const tPole=el('text',{fill:'var(--ink)','font-size':9,x:5,y:-5},gPole);tPole.textContent='N';
+sats.forEach((s,i)=>{const g=el('g',{class:'intro-sat'},gSats);g.style.animationDelay=(1100+i*30)+'ms';s.path=el('path',{d:'M0 -5L5 0L0 5L-5 0Z',fill:'var(--paper)',stroke:col(s.k),'stroke-width':1},g);s.text=el('text',{fill:col(s.k),'font-size':9,x:8,y:3},g);s.text.textContent=s.id;s.g=g;
+ s.line=el('path',{fill:'none',stroke:col(s.k),'stroke-width':1,'stroke-dasharray':'1 2.5'},gLines)});
+const ringEls=[0,1,2,3].map(()=>{const g=el('g',{fill:'none'},gRings);return{g,fill:el('path',{stroke:'none','fill-opacity':.09},g),sph:el('circle',{'stroke-width':1},g),w1:el('ellipse',{'stroke-width':1,opacity:.15},g),w2:el('ellipse',{'stroke-width':1,opacity:.15},g),ground:el('path',{'stroke-width':1},g),link:el('path',{'stroke-width':1,'stroke-dasharray':'1 2.5',opacity:.7},g),ghost:el('path',{d:'M0 -2.5L2.5 0L0 2.5L-2.5 0Z',fill:'var(--paper)','stroke-width':1},g),glink:el('path',{'stroke-width':1,'stroke-dasharray':'1 2.5',opacity:.55},g)}});
+const gRx=el('g',{display:'none'},gTop);const rxRing=el('path',{d:window.RX_GLYPH,fill:'var(--accent)','shape-rendering':'crispEdges',transform:'translate(-7 -7)'},gRx);const rxDot=el('rect',{x:-2.5,y:-2.5,width:5,height:5,fill:'var(--accent)','shape-rendering':'crispEdges'},gRx);const tRx=el('text',{fill:'var(--accent)','font-size':9,x:10,y:-5},gRx);tRx.textContent='RX';const tF4=el('text',{fill:'var(--accent)','font-size':9,x:10,y:13},gRx);tF4.textContent='FIX/4';
+const gFx=el('g',{display:'none'},gTop);el('path',{d:'M-4 -4L4 4M4 -4L-4 4',stroke:'var(--accent)','stroke-width':1},gFx);const tFx=el('text',{fill:'var(--accent)','font-size':9,x:8,y:12},gFx);
+/* graticule points */
+const GR=[];for(let la=-75;la<=75;la+=15){const r=[];for(let lo=-180;lo<=180;lo+=3)r.push([lo,la]);GR.push(r)}for(let lo=-180;lo<180;lo+=15){const r=[];for(let la=-75;la<=75;la+=3)r.push([lo,la]);GR.push(r)}
+function lonlatPath(L,g){let d='',pen=false;const s=[];for(const[lo,la]of L){const v=view(eciOf(lo,la,g));if(v.z<0||v.x<-300||v.y<-300||v.x>W+300||v.y>H+300){pen=false;continue}s.push((pen?'L':'M')+v.x.toFixed(1)+' '+v.y.toFixed(1));pen=true}return s.join('')}
+function orbitPaths(){let d='';planes.forEach((p,k)=>{for(let i=0;i<=120;i++){const th=i/120*2*Math.PI;const q=[0,1,2].map(n=>AK*(p.u[n]*Math.cos(th)+p.v[n]*Math.sin(th)));const v=view(q);d+=(i?'L':'M')+v.x.toFixed(1)+' '+v.y.toFixed(1)}});gOrb.setAttribute('d',d)}
+/* maths */
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],norm=a=>Math.hypot(...a);
+function elev(rxv,sv){const d=sub(sv,rxv);return Math.asin(dot(d,rxv)/(norm(d)*norm(rxv)))/D2R}
+function inv4(A){const n=4,M=A.map((r,i)=>[...r,...[0,1,2,3].map(j=>i===j?1:0)]);for(let i=0;i<n;i++){let m=i;for(let j=i+1;j<n;j++)if(Math.abs(M[j][i])>Math.abs(M[m][i]))m=j;if(Math.abs(M[m][i])<1e-9)return null;[M[i],M[m]]=[M[m],M[i]];const p=M[i][i];for(let k=0;k<8;k++)M[i][k]/=p;for(let j=0;j<n;j++)if(j!==i){const f=M[j][i];for(let k=0;k<8;k++)M[j][k]-=f*M[i][k]}}return M.map(r=>r.slice(4))}
+function dop(rxv,list){if(list.length<4)return null;const Gm=list.map(s=>{const d=sub(s,rxv),l=norm(d);return[d[0]/l,d[1]/l,d[2]/l,1]});const T=[0,1,2,3].map(i=>[0,1,2,3].map(j=>Gm.reduce((a,r)=>a+r[i]*r[j],0)));const I=inv4(T);if(!I)return null;return{g:Math.sqrt(I[0][0]+I[1][1]+I[2][2]+I[3][3]),p:Math.sqrt(I[0][0]+I[1][1]+I[2][2])}}
+function fix3(list,rho,start){let x=[...start];for(let it=0;it<8;it++){const J=[],f=[];for(let i=0;i<3;i++){const d=sub(x,list[i]),l=norm(d);J.push([d[0]/l,d[1]/l,d[2]/l]);f.push(l-rho[i])}const[a,b,c]=J,det=a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]);if(Math.abs(det)<1e-9)break;const sv=(k)=>{const m=J.map(r=>[...r]);for(let i=0;i<3;i++)m[i][k]=f[i];return(m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]))/det};x=[x[0]-sv(0),x[1]-sv(1),x[2]-sv(2)]}return x}
+const fmtPos=(la,lo)=>Math.abs(la).toFixed(2)+'°'+(la>=0?'N':'S')+' '+Math.abs(lo).toFixed(2)+'°'+(lo>=0?'E':'W');
+/* step copy */
+const L=(t,k)=>`<button class="lk" data-tip="${k}">${t}<sup>i</sup></button>`;
+const TIPS={a:'GPS is designed around 24 main slots in six orbital planes. More satellites are usually active, but these 24 are enough to show the basic worldwide pattern.',b:'Relativity would make a GPS satellite clock gain about 38 µs per day overall. GPS compensates for this, so the timestamp shown here is treated as already corrected.',c:'The message includes orbit data that lets a receiver work out where the satellite was when it transmitted. Here that position is treated as exact after signal travel time and Earth rotation are included.',d:'A real orbit takes about 11 hours 58 minutes. Here it takes 90 seconds, and Earth is sped up by the same factor, so their relative motion stays consistent. Earth is drawn as a sphere and the orbits as circles.',e:'Signals below 5° are left out of the fix. Near the horizon they travel through more atmosphere and are easier for buildings or terrain to block.',f:'During the roughly 60–100 ms trip, a GPS satellite moves about 230–390 m. The calculation works backward to its position when the signal left and also includes Earth\'s rotation during the trip.',g:'The ghost is the satellite\'s calculated transmission position. Its real projected displacement is multiplied by 6,000 so it can be seen, while direction and relative distance are preserved. The solver always uses the unmagnified position.',h:'Real measurements also contain delays from the atmosphere, reflected signals, and small orbit or clock errors. Those are left out here so every sphere shows the same receiver-clock offset that the fourth satellite can solve.',i:'The receiver offset is deliberately chosen between 0.15 and 0.45 ms so the wrong fix is visible at globe scale. The sphere error is still calculated directly as light speed × that offset; it is not an arbitrary drawing distance.',j:'One per satellite. Each reads: straight-line distance from satellite i to you (the ‖ ‖ bars mean “length of”), plus the shared offset c·b, equals that satellite’s measured ρᵢ.'};
+const A=s=>`<span class="ac">${s}</span>`;
+const STEPS={
+1:{t:'THE SETUP',c:()=>`${L('Twenty-four satellites','a')} orbit ${A('20,200 km')} above Earth, each carrying an ${L('atomic clock','b')} accurate to nanoseconds. Each one endlessly broadcasts a radio message: “${L('here is where I am','c')}, and the exact time I sent this”. The message travels at the speed of light: ${A('c = 299,792,458 m/s')}. Click or tap anywhere on the ${L('globe','d')} to place a receiver. That’s you, holding a phone.`},
+2:{t:'YOUR CLOCK IS WRONG',c:()=>`Your receiver hears every satellite ${L('high enough above its horizon','e')} — right now, ${A('<span id="u">0</span> usable of <span id="v">0</span> visible')}. It measures distance by timing signals: ${A('distance = c × (time received − time sent)')}. The catch: “time sent” is stamped by an atomic clock, but “time received” comes from your phone’s cheap quartz clock — off from true time by some unknown amount. At light speed, being just ${A('1 µs')} off makes every distance wrong by ${A('300 m')}.`},
+3:{t:'RANGING',c:()=>`Each signal expands from its satellite as a ${L('sphere','f')} growing at ${A('c')} (slowed here ~60×; the real trip from orbit takes ${A('~70 ms')}), drawn in its satellite’s color. When a wave reaches you, its ground ring — where the sphere slices through Earth — passes exactly through your position: the signal has arrived. Each locked satellite’s small ${L('TX ghost','g')} marks where it was when the message left.`},
+4:{t:'THE 3-SATELLITE TRAP',c:()=>`The rings now show the demo’s ${L('pseudorange','h')}: ${A('ρ = true distance + c·b')}. The shared term is the unknown ${L('clock error','i')}, so they no longer meet at your position. Insist the clock is fine, and the best three-sphere answer lands at the ✕ — ${A(lock?lock.off.toFixed(0)+' km':'—')} away. The dashed fourth ring was measured too — just not used yet.`},
+5:{t:'THE 4TH SATELLITE',c:()=>`A fourth satellite flips the problem. Four unknowns — ${A('x, y, z')} and your clock bias ${A('b')} — and ${L('four equations','j')}: ${A('‖satᵢ − you‖ + c·b = ρᵢ')}. The solver finds the single value of ${A('b')} that makes all four spheres pass through one point (here: ${A((bias*1e6).toFixed(1)+' µs')}). You get your position and an estimate of your receiver clock offset against GPS time. Real receivers use more than four satellites when available, but four is the minimum that makes the position-and-clock problem solvable.`}
+};
+const ARL='<svg viewBox="0 0 7 7"><path d="M5.5 .5 1.5 3.5 5.5 6.5Z"/></svg>',ARR='<svg viewBox="0 0 7 7"><path d="M1.5 .5 5.5 3.5 1.5 6.5Z"/></svg>';
+function renderStep(){const S=STEPS[step];$('#ttl').textContent=S.t;$('#num').textContent=step+'/5';$('#copy').innerHTML=S.c();
+ if(step===1){$('#act').innerHTML=`<span class="prompt"><span>PLACE THE RECEIVER ON THE GLOBE</span><span>OR</span><button id="geo">USE YOUR LOCATION</button></span>`;$('#geo').onclick=()=>{if(!navigator.geolocation)return place(40.71,-74.0);navigator.geolocation.getCurrentPosition(p=>place(p.coords.latitude,p.coords.longitude),()=>place(40.71,-74.0),{timeout:4000})}}
+ else{$('#act').innerHTML=`<button class="b" id="pv">${ARL}PREV</button><button class="b go" id="nx" ${step===5?'disabled':''}>NEXT${ARR}</button><button class="b rs" id="rs">RESET</button>`;$('#pv').onclick=()=>go(step-1);$('#nx').onclick=()=>go(step+1);$('#rs').onclick=reset}
+ const tp=$('#tip');tp.style.display='none';
+ $('#copy').querySelectorAll('[data-tip]').forEach(b=>{const show=()=>{tp.textContent=TIPS[b.dataset.tip];tp.style.display='block';tp.style.bottom=(innerHeight-$('#lesson').getBoundingClientRect().top+0)+'px'},hide=()=>tp.style.display='none';b.onmouseenter=show;b.onmouseleave=hide;b.onfocus=show;b.onblur=hide})}
+function place(lat,lon){const seed=Math.abs(Math.sin(lat*12.9+lon*78.2)*43758.5)%1;rx={lat,lon};bias=(150+seed*300)*1e-6;step=2;retarget();renderStep();lock=null}
+function pick(){const g=gmst(simT),rv=eciOf(rx.lon,rx.lat,g);const us=sats.map(s=>({s,p:satPos(s,simT)})).filter(o=>elev(rv,o.p)>=5);let best=null;for(let a=0;a<us.length;a++)for(let b=a+1;b<us.length;b++)for(let c=b+1;c<us.length;c++)for(let d=c+1;d<us.length;d++){const set=[us[a],us[b],us[c],us[d]],D=dop(rv,set.map(o=>o.p));if(D&&(!best||D.g<best.D.g))best={set,D}}
+ if(!best)return null;const set=best.set.sort((x,y)=>norm(sub(x.p,rv))-norm(sub(y.p,rv)));const ds=set.map(o=>norm(sub(o.p,rv)));const cb=C*bias;const fx=fix3(set.map(o=>o.p),ds.map(d=>d+cb),rv);const off=norm(sub(fx,rv));const u=[fx[0]/norm(fx),fx[1]/norm(fx),fx[2]/norm(fx)];const a=Math.atan2(u[1],u[0])-g;let lo=(a/D2R+540)%360-180;return{set,ds,D:best.D,cb,fx,off,fl:{lat:Math.asin(u[2])/D2R,lon:lo},t:simT,rv}}
+function go(n){if(n<1)return;if(n===1){reset();return}if(n>=3&&!lock){lock=pick();tl3=performance.now();if(!lock){lock=null;return}}if(n<3)lock=null;step=n;if(n===3)tl3=performance.now();retarget();renderStep();biasGo=performance.now()}
+function reset(){step=1;rx=null;lock=null;retarget();renderStep()}
+svg.addEventListener('click',e=>{if(step!==1)return;const q=unview(e.clientX,e.clientY);if(q)place(q.lat,q.lon)});
+document.querySelectorAll('.sec').forEach(b=>b.onclick=()=>{b.classList.toggle('open');$('#'+b.dataset.b).classList.toggle('open');table()});
+/* cap ring on Earth */
+function ringPts(sp,rho){const s=norm(sp),ca=(s*s+RE*RE-rho*rho)/(2*s*RE);if(ca>=1||ca<=-1)return null;const A_=Math.acos(ca),ax=sp.map(v=>v/s);const h=Math.abs(ax[2])<.9?[0,0,1]:[1,0,0];let e1=[ax[1]*h[2]-ax[2]*h[1],ax[2]*h[0]-ax[0]*h[2],ax[0]*h[1]-ax[1]*h[0]];const l=norm(e1);e1=e1.map(v=>v/l);const e2=[ax[1]*e1[2]-ax[2]*e1[1],ax[2]*e1[0]-ax[0]*e1[2],ax[0]*e1[1]-ax[1]*e1[0]];const pts=[];for(let i=0;i<=240;i++){const t=i/240*2*Math.PI;pts.push([0,1,2].map(n=>RE*(Math.cos(A_)*ax[n]+Math.sin(A_)*(Math.cos(t)*e1[n]+Math.sin(t)*e2[n]))))}return pts}
+function drawRing(r,pts,dashed,showFill){let stroke='',fill='',pen=false;for(const p of pts){const v=view(p);const xy=v.x.toFixed(1)+' '+v.y.toFixed(1);if(v.z>=0){stroke+=(pen?'L':'M')+xy;pen=true;fill+=(fill?'L':'M')+xy}else{pen=false;const dx=v.x-cx,dy=v.y-cy,l=Math.hypot(dx,dy)||1;fill+=(fill?'L':'M')+(cx+dx/l*cam.R).toFixed(1)+' '+(cy+dy/l*cam.R).toFixed(1)}}
+ r.ground.setAttribute('d',stroke);r.ground.setAttribute('stroke-dasharray',dashed?'3 3':'');r.fill.setAttribute('d',showFill?fill+'Z':'')}
+function table(){let a='ID    X·KM    Y·KM    Z·KM   EL\n';const g=gmst(simT),rv=rx?eciOf(rx.lon,rx.lat,g):null;const f=(v)=>(v>=0?'+':'-')+String(Math.abs(Math.round(v))).padStart(5,'0');
+ const b=$('#b1');if(b.classList.contains('open')){b.innerHTML='<span style="opacity:.6">ID    X·KM    Y·KM    Z·KM   EL</span>\n'+sats.map(s=>{const p=satPos(s,simT);const c=Math.cos(g),n=Math.sin(g);const e=[p[0]*c+p[1]*n,-p[0]*n+p[1]*c,p[2]];const E=rv?Math.round(elev(rv,p)):null;return`<span style="color:${col(s.k)}">${s.id}  ${f(e[0])}  ${f(e[1])}  ${f(e[2])}  ${E===null?'   —':String(E).padStart(4)}</span>`}).join('\n')}
+ const r3=$('#b3');if(r3.classList.contains('open')){let rows='<span style="opacity:.6">ID EL  TOF·MS MOVE·M SAG·M</span>';if(rv)sats.forEach(s=>{const p=satPos(s,simT),E=elev(rv,p);if(E<0)return;const d=norm(sub(p,rv)),tof=d/C*1e3,mv=3874*tof/1e3,sag=465*Math.cos(rx.lat*D2R)*tof/1e3;rows+=`\n<span style="color:${col(s.k)}">${s.id} ${String(Math.round(E)).padStart(2,'0')}   ${tof.toFixed(1).padStart(5)} ${mv.toFixed(0).padStart(6)} ${sag.toFixed(0).padStart(5)}</span>`});r3.innerHTML=rows}}
+let tickRow=0;
+let settled=0,sized=innerWidth+'x'+innerHeight,lastStep=0;
+function frame(now){
+ /* once time is frozen and the camera has landed nothing moves: stop rewriting huge paths */
+ const sz=innerWidth+'x'+innerHeight;const still=lock&&!cam.from&&lastStep===step&&sz===sized&&(step!==3||(now-tl3)/1000*2000>30000);if(still&&settled++>2){requestAnimationFrame(frame);return}if(!still)settled=0;sized=sz;lastStep=step;
+ if(!lastMs)lastMs=now;const dt=Math.min(.1,(now-lastMs)/1000);lastMs=now;
+ if(!reduce&&!lock)simT+=dt;
+ W=innerWidth;H=innerHeight;cx=W/2;cy=H/2;updateCam(now);
+ const g=lock?gmst(lock.t):gmst(simT);const t=lock?lock.t:simT;
+ pGrat.setAttribute('d',GR.map(r=>lonlatPath(r,g)).join(''));
+ pCoast.setAttribute('d',window.COAST.map(r=>lonlatPath(r,g)).join(''));
+ cDisc.setAttribute('cx',cx);cDisc.setAttribute('cy',cy);cDisc.setAttribute('r',cam.R);orbitPaths();
+ gOrb.style.opacity=step<=2?1:.75;
+ const v=view([0,0,RE]);gPole.setAttribute('transform',`translate(${v.x.toFixed(2)} ${v.y.toFixed(2)})`);gPole.setAttribute('display',v.z<0?'none':'');
+ const rv=rx?eciOf(rx.lon,rx.lat,g):null,rs=rv?view(rv):null;let u=0,vis=0,usable=[];
+ const lockIds=lock?lock.set.map(o=>o.s.id):[];
+ sats.forEach(s=>{const p=satPos(s,t),q=view(p);const occ=q.z<0&&Math.hypot(q.x-cx,q.y-cy)<cam.R;s.g.setAttribute('transform',`translate(${q.x.toFixed(2)} ${q.y.toFixed(2)})`);
+  if(occ){s.path.setAttribute('fill','none');s.path.setAttribute('stroke-dasharray','2 2');s.text.setAttribute('opacity',.55);s.path.setAttribute('stroke-opacity',.55)}else{s.path.setAttribute('fill','var(--paper)');s.path.removeAttribute('stroke-dasharray');s.text.setAttribute('opacity',1);s.path.setAttribute('stroke-opacity',1)}
+  const li=lockIds.indexOf(s.id);s.text.textContent=li>=0&&step>=3?s.id+'·'+(li+1):s.id;
+  let line='',op=0;if(rv){const E=elev(rv,p);if(E>=0){vis++;if(E>=5){u++;usable.push(p)}if(step===2){line=`M${rs.x.toFixed(1)} ${rs.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`;op=E>=5?.7:.4}}}
+  s.line.setAttribute('d',line);s.line.setAttribute('opacity',op)});
+ gRx.setAttribute('display',rx?'':'none');if(rx){gRx.setAttribute('transform',`translate(${rs.x.toFixed(2)} ${rs.y.toFixed(2)})`);tF4.setAttribute('display',step>=5?'':'none');rxRing.setAttribute('display',step>=4?'':'none');rxDot.setAttribute('display',step>=4?'none':'')}
+ if(step===2){const a=$('#u'),b=$('#v');if(a){a.textContent=u;b.textContent=vis}}
+ /* rings */
+ const K=cam.R/RE;
+ ringEls.forEach((r,i)=>{if(!lock||step<3){r.g.setAttribute('display','none');return}r.g.setAttribute('display','');const o=lock.set[i],c=col(o.s.k);r.g.setAttribute('stroke',c);r.fill.setAttribute('fill',c);const sp=o.p,q=view(sp),d=lock.ds[i];
+  let rho=d;if(step===3){const ela=(now-tl3)/1000;rho=reduce?d:Math.max(0,Math.min(d,ela*2000))}
+  else if(step===4)rho=d+lock.cb;
+  const showSph=step===3;for(const e of[r.sph,r.w1,r.w2])e.setAttribute('display',showSph?'':'none');
+  if(showSph){const px=rho*K;r.sph.setAttribute('cx',q.x);r.sph.setAttribute('cy',q.y);r.sph.setAttribute('r',px);r.w1.setAttribute('cx',q.x);r.w1.setAttribute('cy',q.y);r.w1.setAttribute('rx',px);r.w1.setAttribute('ry',px*.34);r.w2.setAttribute('cx',q.x);r.w2.setAttribute('cy',q.y);r.w2.setAttribute('rx',px*.34);r.w2.setAttribute('ry',px)}
+  const pts=ringPts(sp,rho);if(pts)drawRing(r,pts,step===4&&i===3,step>=4&&!(step===4&&i===3));else{r.ground.setAttribute('d','');r.fill.setAttribute('d','')}
+  r.link.setAttribute('d',`M${rs.x.toFixed(1)} ${rs.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`);r.link.setAttribute('display',step>=4?'':'none');
+  const gh=view(satPos(o.s,t,-2.6*D2R));r.ghost.setAttribute('transform',`translate(${gh.x.toFixed(1)} ${gh.y.toFixed(1)})`);r.glink.setAttribute('d',`M${gh.x.toFixed(1)} ${gh.y.toFixed(1)}L${q.x.toFixed(1)} ${q.y.toFixed(1)}`);const arrived=rho>=d;r.ghost.setAttribute('display',arrived?'':'none');r.glink.setAttribute('display',arrived?'':'none')});
+ gFx.setAttribute('display',lock&&step===4?'':'none');if(lock&&step===4){const fs=view(eciOf(lock.fl.lon,lock.fl.lat,g));gFx.setAttribute('transform',`translate(${fs.x.toFixed(1)} ${fs.y.toFixed(1)})`);tFx.textContent='FIX/3 · OFF '+lock.off.toFixed(0)+' KM'}
+ /* telemetry */
+ if((tickRow++)%6===0){const P=rx?fmtPos(rx.lat,rx.lon):'—';$('#b2').textContent=`POSITION    ${P}\nSIM OFFSET  ${rx?'+'+(bias*1e6).toFixed(1)+' µS':'—'}\nTRACKING    ${u}/${vis} ≥5°/HORIZON`;
+  const D=rx?(lock&&step>=3?lock.D:dop(rv,usable)):null,n=lock&&step>=3?4:usable.length;const fx3=lock&&step>=4?fmtPos(lock.fl.lat,lock.fl.lon):'—',fx4=lock&&step>=5?P+' · 0.0 M':'—',ck=lock&&step>=5?'+'+(bias*1e6).toFixed(1)+' µS · +'+(lock.cb).toFixed(1)+' KM':'—';
+  $('#b4').textContent=`FIX/3    ${fx3}\nFIX/4    ${fx4}\nCLOCK/4  ${ck}\nGEOMETRY/${rx?n:'—'} ${D?'GDOP '+D.g.toFixed(1)+' · PDOP '+D.p.toFixed(1):'—'}`;table();
+  $('#scale').textContent='1 PX = '+Math.round(RE/cam.R)+' KM'}
+ requestAnimationFrame(frame)}
+renderStep();cam.R=ZOOM[1]*RF();requestAnimationFrame(frame);
+window.__gps={place,go,reset,freeze:(t)=>{simT=t}};
+})();
+</script>
+</body>
+</html>

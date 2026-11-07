@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Progressive blur</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Inter";src:url(fonts/InterVariable-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fafbfd;color:#16151a;font:400 15px/20px "Inter",-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.stage{display:grid;place-items:center;padding:56px 16px 72px;min-height:100vh}
+/* 手机外壳：屏幕 440x956（iPhone 17 Pro Max 点数） */
+.phone{position:relative;width:468px;height:984px;border-radius:76px;padding:14px;background:#0d0d0d;box-shadow:inset 0 0 0 1.5px #808084,inset 0 0 0 6px #333336,0 0 90px 18px #20243078,0 18px 40px #00000033;flex:none}
+.phone>i{position:absolute;width:5px;background:linear-gradient(90deg,#3c3c3e,#1f1f21);border-radius:2px}
+.phone>.k1{left:-5px;top:176px;height:34px}.phone>.k2{left:-5px;top:246px;height:66px}.phone>.k3{left:-5px;top:330px;height:66px}.phone>.k4{right:-5px;top:290px;height:102px}
+#screen{position:relative;width:440px;height:956px;border-radius:62px;overflow:hidden;background:#eae8e9;isolation:isolate}
+#list{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:118px 0 190px;touch-action:pan-y;cursor:grab;background:linear-gradient(#eae8e9 0,#eae8e9 72%,#eae8e9 100%)}
+#list::-webkit-scrollbar{display:none}
+/* 渐进模糊：每层半径翻倍，遮罩相邻错开；越靠屏幕边缘叠得越重 */
+.pb{position:absolute;left:0;right:0;pointer-events:none;z-index:2}
+.pb i{position:absolute;inset:0;display:block}
+#pbTop{top:0;height:160px}
+#pbBot{bottom:0;height:112px}
+#pbTop i:nth-child(1){backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);mask:linear-gradient(to top,#0000 0%,#000 14%,#000 100%)}
+#pbTop i:nth-child(2){backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);mask:linear-gradient(to top,#0000 12%,#000 24%,#000 100%)}
+#pbTop i:nth-child(3){backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);mask:linear-gradient(to top,#0000 22%,#000 34%,#000 100%)}
+#pbTop i:nth-child(4){backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);mask:linear-gradient(to top,#0000 32%,#000 44%,#000 100%)}
+#pbTop i:nth-child(5){backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);mask:linear-gradient(to top,#0000 42%,#000 56%,#000 100%)}
+#pbTop i:nth-child(6){backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);mask:linear-gradient(to top,#0000 54%,#000 70%,#000 100%)}
+#pbBot i:nth-child(1){backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);mask:linear-gradient(to bottom,#0000 0%,#000 16%,#000 100%)}
+#pbBot i:nth-child(2){backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);mask:linear-gradient(to bottom,#0000 14%,#000 30%,#000 100%)}
+#pbBot i:nth-child(3){backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);mask:linear-gradient(to bottom,#0000 28%,#000 44%,#000 100%)}
+#pbBot i:nth-child(4){backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);mask:linear-gradient(to bottom,#0000 42%,#000 58%,#000 100%)}
+#pbBot i:nth-child(5){backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);mask:linear-gradient(to bottom,#0000 56%,#000 74%,#000 100%)}
+#tintTop{position:absolute;top:0;left:0;right:0;height:150px;z-index:3;pointer-events:none;background:linear-gradient(#eae8e9f2 0,#eae8e9cc 40%,#eae8e966 66%,#eae8e900 92%)}
+#tintBot{position:absolute;bottom:0;left:0;right:0;height:190px;z-index:3;pointer-events:none;background:linear-gradient(#f1f0f200 0,#f1f0f255 40%,#f4f3f5c8 74%,#f6f5f7f5 100%)}
+/* 状态栏和页头 */
+.island{position:absolute;left:157px;top:14px;width:125px;height:36px;border-radius:20px;background:#000;z-index:6}
+.status{position:absolute;left:0;right:0;top:0;height:60px;z-index:5;pointer-events:none}
+.time{position:absolute;left:62px;top:21px;font:600 17px/22px "Inter";letter-spacing:-.2px}
+.sig{position:absolute;left:311px;top:30px;display:flex;gap:2px}.sig b{width:4px;height:4px;border-radius:50%;background:#16151a44}
+.wifi{position:absolute;left:339px;top:24px}.bat{position:absolute;left:366px;top:25px}
+.head{position:absolute;left:0;right:0;top:73px;height:40px;z-index:5;display:flex;align-items:center;padding:0 20px}
+.me{width:33px;height:33px;border-radius:50%;flex:none;background:radial-gradient(ellipse 34% 30% at 45% 62%,#c3724a 0 70%,#0000 100%),radial-gradient(ellipse 60% 26% at 50% 70%,#ead7c4 0 60%,#0000 100%),radial-gradient(ellipse 52% 22% at 50% 25%,#26201f 0 90%,#0000 100%),#4a3227;background:url(source-assets/me.jpg) center/cover no-repeat}
+.hl{margin-left:10.500px;font:500 16px/22px "Inter";letter-spacing:-.2px;color:#1a191d;flex:1}
+.rb{width:40px;height:40px;border-radius:50%;background:#fbfafb;display:grid;place-items:center;margin-left:10px;box-shadow:0 1px 2px #0000000a;border:0;padding:0;color:#111}
+/* 内容 */
+.stories{display:flex;gap:18px;padding:0 20px;margin-bottom:26px}
+.st{width:64px;flex:none;text-align:center;font:500 11.500px/15px "Inter";color:#6a6a70}
+.st b{display:block;width:62px;height:62px;border-radius:50%;margin:0 auto 6px;padding:3px;background:var(--r,#bbb)}
+.st b s{display:block;width:100%;height:100%;border-radius:50%;background:var(--f,#888);box-shadow:0 0 0 2px #eae8e9}
+.ev{padding:0 20px;margin-bottom:42px;position:relative}
+.ev h2{margin:0 0 7px;font:700 22px/28px "Inter";letter-spacing:-.55px;color:#17161b}
+.ev .more{position:absolute;right:30px;top:5px;width:4px;height:18px;background:radial-gradient(circle,#2b2a30 1.9px,#0000 2.2px) 0 0/4px 6px repeat-y}
+.ev p{margin:0 0 5px;font:400 14px/20px "Inter";letter-spacing:-.26px;color:#6f6e74;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:flex;align-items:center;height:26px;font:400 12.800px/18px "Inter";letter-spacing:-.05px;color:#8f8e94;gap:7px;margin-bottom:10px}
+.meta u{width:3px;height:3px;border-radius:50%;background:#8f8e94;text-decoration:none}
+.chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 9px;background:#f3f1f6;border-radius:12px;color:#17161b;font:600 12.500px/16px "Inter";letter-spacing:-.1px}
+.tiles{display:flex;height:118px;margin:0 0 17px 3px;align-items:center}
+.t{width:85px;height:115px;border-radius:17px;flex:none;box-shadow:0 0 0 2px #f2f0f1,0 5px 12px #00000030;margin-right:-4px;overflow:hidden;position:relative;background:#999}
+.t img{display:block;width:100%;height:100%;object-fit:cover}.t:not(:last-child){width:92px;margin-right:-11px}
+.t:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,#0000 45%,#0000002e 100%)}
+.t{position:relative}.t:nth-child(1){rotate:-5deg}.t:nth-child(2){rotate:3deg}.t:nth-child(3){rotate:-2.200deg}.t:nth-child(4){rotate:3.500deg}
+.plus{width:70px;height:88px;margin-left:0;border:2px dashed #c7477f;border-radius:14px;background:#f7e6ef;display:grid;place-items:center;rotate:-5deg;color:#c7477f}
+.tiles.dash{height:92px;margin-top:6px;margin-bottom:12px}
+.stats{display:flex;align-items:center;gap:20px;font:400 13.200px/20px "Inter";color:#74737a}
+.stats span{display:flex;align-items:center;gap:6px}.stats svg{flex:none;scale:.88}
+/* 悬浮按钮：玻璃药丸 */
+#fab{position:absolute;z-index:5;left:50%;bottom:51px;translate:-50% 0;width:193px;height:50px;border:0;border-radius:26px;display:flex;align-items:center;justify-content:center;gap:9px;background:#55555aa6;color:#fff;font:500 14.500px/20px "Inter";letter-spacing:-.05px;backdrop-filter:blur(6px) saturate(1.2);-webkit-backdrop-filter:blur(6px) saturate(1.2);box-shadow:inset 0 0 0 .5px #ffffff30,0 6px 18px #0000001c;transition:scale .18s}
+#fab:active{scale:.96}
+/* 模拟器的触点圆 */
+#touch{position:absolute;z-index:7;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;border:2.500px solid #8a8a8c;background:#ffffff1c;opacity:0;pointer-events:none;transition:opacity .12s}
+#touch.on{opacity:.85}
+.doc{max-width:560px;margin:0 auto;padding:0 16px 72px;font:400 14px/21px "Inter",-apple-system,sans-serif;color:#44434a}
+.doc h3{font:600 15px/22px "Inter";color:#17161b;margin:0 0 8px}.doc dt{margin-top:10px}.doc dd{margin:2px 0 0}.doc code{font:500 12.500px ui-monospace,monospace}
+@media(max-width:500px){.phone{zoom:.76}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="bub" viewBox="0 0 20 20"><path d="M10 1.800c-4.700 0-8.300 3.400-8.300 7.700 0 2.100.9 4 2.300 5.300l-.5 3.200c0 .3.3.5.5.4l3.300-1.300c.8.2 1.700.3 2.700.3 4.700 0 8.300-3.400 8.300-7.900S14.700 1.800 10 1.800Z" fill="currentColor"/></symbol>
+<symbol id="ppl" viewBox="0 0 22 20"><circle cx="7.500" cy="6.500" r="3.500" fill="currentColor"/><circle cx="15.500" cy="7" r="3" fill="currentColor"/><path d="M1 16.500c0-3 2.900-5 6.500-5s6.500 2 6.500 5v.5H1Z" fill="currentColor"/><path d="M15.500 11.300c3.100 0 5.500 1.700 5.500 4.300v1.400h-5.300v-.5c0-1.900-.7-3.500-2-4.600.5-.4 1.100-.6 1.800-.6Z" fill="currentColor"/></symbol>
+<symbol id="shr" viewBox="0 0 18 20"><path d="M9 12.500V2M5.700 5 9 1.700 12.300 5M5.500 8H3.500A1.500 1.500 0 0 0 2 9.500v7.500a1.500 1.500 0 0 0 1.500 1.500h11a1.500 1.500 0 0 0 1.500-1.500V9.500A1.500 1.500 0 0 0 14.500 8h-2" fill="none" stroke="currentColor" stroke-width="1.400" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="pin" viewBox="0 0 12 16"><path d="M6 0a5.700 5.700 0 0 0-5.700 5.700C.3 9.800 6 16 6 16s5.700-6.200 5.700-10.300A5.700 5.700 0 0 0 6 0Zm0 7.800A2.100 2.100 0 1 1 6 3.600a2.100 2.100 0 0 1 0 4.200Z" fill="#7c4ddf"/></symbol>
+<filter id="soft2"><feGaussianBlur stdDeviation="4"/></filter>
+</defs></svg>
+<div class="stage"><div class="phone" id="phone"><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i>
+<div id="screen">
+ <div id="list"></div>
+ <div class="pb" id="pbTop"><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="tintTop"></div>
+ <div class="pb" id="pbBot"><i></i><i></i><i></i><i></i><i></i></div><div id="tintBot"></div>
+ <div class="island"></div>
+ <div class="status"><div class="time">8:17</div><div class="sig"><b></b><b></b><b></b><b></b></div>
+  <svg class="wifi" width="20" height="15" viewBox="0 0 20 15"><path d="M10 14.500 7 11.200a4.300 4.300 0 0 1 6 0L10 14.500ZM5.300 9.400 3.400 7.300a9.500 9.500 0 0 1 13.200 0l-1.900 2.100a6.800 6.800 0 0 0-9.400 0ZM1.700 5.500 0 3.600a14.300 14.300 0 0 1 20 0l-1.700 1.900a11.800 11.800 0 0 0-16.600 0Z" fill="#111"/></svg>
+  <svg class="bat" width="31" height="14" viewBox="0 0 31 14"><rect x=".6" y=".6" width="27" height="12.800" rx="4" fill="none" stroke="#11111166" stroke-width="1.200"/><rect x="2.300" y="2.300" width="23.600" height="9.400" rx="2.600" fill="#111"/><path d="M29.300 4.800c.8.300 1.400 1.200 1.400 2.200s-.6 1.900-1.400 2.200Z" fill="#11111166"/></svg></div>
+ <div class="head"><div class="me" aria-hidden="true"></div><div class="hl">What’s your next event?</div>
+  <button class="rb" aria-label="Search"><svg width="18" height="18" viewBox="0 0 18 18"><circle cx="7.500" cy="7.500" r="5.600" fill="none" stroke="currentColor" stroke-width="1.900"/><path d="m12 12 4.300 4.300" stroke="currentColor" stroke-width="1.900" stroke-linecap="round"/></svg></button>
+  <button class="rb" aria-label="Notifications"><svg width="16" height="17" viewBox="0 0 18 19"><path d="M9 .8c-3 0-5.300 2.300-5.300 5.400 0 3.700-1.500 5-2.300 6-.5.600-.2 1.500.7 1.500h13.800c.9 0 1.200-.9.700-1.500-.8-1-2.300-2.300-2.300-6C14.300 3.100 12 .8 9 .8ZM6.400 15.200a2.700 2.700 0 0 0 5.200 0Z" fill="currentColor"/></svg></button></div>
+ <button id="fab"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1.500v13M1.500 8h13" stroke="#fff" stroke-width="1.300" stroke-linecap="round"/></svg>Create New Event</button>
+ <div id="touch"></div>
+</div></div></div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#pbTop</code></dt><dd>顶部的渐进模糊：六层 backdrop-filter，半径 1 到 32 逐层翻倍，遮罩错开。</dd>
+<dt><code>#pbBot</code></dt><dd>底部的渐进模糊，配一层变白的色带。</dd>
+<dt><code>#fab</code></dt><dd>压在模糊带上的玻璃药丸按钮。</dd></dl></section>
+<script>
+// 照片是自绘的色块场景，不是原帖照片
+const stat=(a,b)=>`<div class="stats"><span><svg width="19" height="19"><use href="#bub"/></svg>${a}</span><span><svg width="20" height="18"><use href="#ppl"/></svg>${b}</span><span><svg width="16" height="18"><use href="#shr"/></svg>Share Invite</span></div>`;
+const meta=(a,b,c)=>`<div class="meta">${a}<u></u>${b}${c?`<u></u><span class="chip"><svg width="10" height="14"><use href="#pin"/></svg>${c}</span>`:''}</div>`;
+const tiles=a=>`<div class="tiles">${a.map((k,i)=>`<div class="t"><img src="source-assets/${k}.jpg" alt=""></div>`).join('')}</div>`;
+const S=[['Your story','#d8d8dc','url(source-assets/s0.jpg) center/118% no-repeat'],['Bryan','#e4596e','url(source-assets/s1.jpg) center/118% no-repeat'],['Beach','#59b3c9','url(source-assets/s2.jpg) center/118% no-repeat'],['Aesthetics','#d19ab4','url(source-assets/s3.jpg) center/118% no-repeat'],['Food','#e4596e','url(source-assets/s4.jpg) center/118% no-repeat']];
+document.getElementById('list').innerHTML=`<div class="stories">${S.map(([n,r,f])=>`<div class="st"><b style="--r:${r};--f:${f}"><s></s></b>${n}</div>`).join('')}</div>
+<article class="ev" id="beach"><h2>Beach Party</h2><i class="more"></i><p>Weekend with family and friends</p>${meta('In 2 Days','Aug 28','Takwa Bay Beach')}<div class="tiles dash"><div class="plus"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.400"/></svg></div></div>${stat(34,6)}</article>
+<article class="ev" id="life"><h2>Life Lately</h2><i class="more"></i><p>A collection of little moments, memories, and everything in between</p>${meta('Today','26/08/2025')}${tiles(['brick','field','car','wave'])}${stat(20,14)}</article>
+<article class="ev" id="jazz"><h2>Rooftop Jazz Night</h2><i class="more"></i><p>Sunset sets, cold drinks and good company</p>${meta('Next Fri','Sep 05','Eko Hotel Rooftop')}${tiles(['neon','amber','violet'])}${stat(58,22)}</article>
+<article class="ev" id="friends"><h2>Friendsgiving</h2><i class="more"></i><p>Bring a dish, bring a friend, bring your appetite</p>${meta('In 3 Weeks','Sep 19','Tolu’s Place')}${tiles(['cafe','teal','warm','feast'])}${stat(12,9)}</article>
+<article class="ev"><h2>Ada &amp; Kene</h2><i class="more"></i><p>Two families, one very long weekend</p>${meta('Next Month','Oct 04')}${tiles(['neon','amber','car'])}${stat(41,18)}</article>`;
+const list=document.getElementById('list'),touch=document.getElementById('touch'),screenEl=document.getElementById('screen');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 鼠标拖动滚动，同时显示模拟器的触点圆
+let drag=null,auto=null;
+function place(e){const r=screenEl.getBoundingClientRect(),z=r.width/440;touch.style.left=(e.clientX-r.left)/z+'px';touch.style.top=(e.clientY-r.top)/z+'px'}
+list.addEventListener('pointerdown',e=>{stopAuto();drag={y:e.clientY,s:list.scrollTop};list.setPointerCapture(e.pointerId);place(e);touch.classList.add('on')});
+list.addEventListener('pointermove',e=>{if(!drag)return;list.scrollTop=drag.s-(e.clientY-drag.y);place(e)});
+['pointerup','pointercancel'].forEach(t=>list.addEventListener(t,()=>{drag=null;touch.classList.remove('on')}));
+list.addEventListener('wheel',stopAuto,{passive:true});
+function stopAuto(){if(auto){cancelAnimationFrame(auto);auto=null}}
+const q=new URLSearchParams(location.search);
+if(q.has('y')){list.scrollTop=+q.get('y');if(q.has('touch')){const[a,b]=q.get('touch').split(',');touch.style.left=a+'px';touch.style.top=b+'px';touch.classList.add('on')}}
+else if(!reduce&&!q.has('still')){let t0=null,dir=1,pos=0;const max=()=>list.scrollHeight-list.clientHeight;const step=t=>{if(t0==null)t0=t;const dt=Math.min(t-t0,40);t0=t;pos+=dir*dt*.09;if(pos>=max()){pos=max();dir=-1}if(pos<=0){pos=0;dir=1}list.scrollTop=pos;auto=requestAnimationFrame(step)};auto=requestAnimationFrame(step)}
+</script></body></html>

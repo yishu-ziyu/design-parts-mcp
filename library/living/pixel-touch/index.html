@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel Touch</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Inter Tight";src:url(fonts/inter-tight.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/jetbrains-mono.woff2) format("woff2");font-weight:100 800}
+:root{--ink:#111;--bg:#fdfdfd;--sub:#6f6f6f;--line:#d7d7d7}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter Tight",system-ui,sans-serif}
+#board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#ececec}
+.stage{position:relative;background:var(--bg);overflow:hidden;touch-action:none}
+.inner{position:absolute;left:0;top:0;transform-origin:0 0}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#globe{cursor:grab}#globe.drag{cursor:grabbing}
+#city{cursor:crosshair}#house,#coin{cursor:pointer}
+.hero{position:absolute;left:0;right:0;top:512px;text-align:center;pointer-events:none}
+.hero h2{margin:0;font-size:113px;line-height:113px;font-weight:500;letter-spacing:-.052em}
+.hero p{margin:37px 0 0;font:400 16.5px/24px "JetBrains Mono",monospace;letter-spacing:.06em;color:#7c7c7c}
+.hero p b{font-weight:400;color:#111}
+.cta{margin-top:61px;display:flex;justify-content:center;gap:19px;pointer-events:auto}
+.cta a{display:inline-flex;align-items:center;gap:15px;height:68px;padding:0 38px;border-radius:34px;font-size:21.5px;font-weight:500;letter-spacing:-.008em;color:#111;text-decoration:none;box-shadow:inset 0 0 0 1.5px var(--line);transition:transform .18s}
+.cta a.p{background:#111;color:#fff;box-shadow:none}
+.cta a:active{transform:scale(.97)}
+.cta svg{width:19px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5}
+.notes{max-width:880px;margin:64px auto;padding:0 16px;font-size:14px;line-height:22px;color:var(--sub)}
+.notes h3{font-size:14px;margin:0 0 10px;color:#111}.notes dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 18px}.notes dd{margin:0}.notes code{font:12.5px "JetBrains Mono",monospace;color:#111}
+body.one #board{display:block}body.one .stage{display:none}body.one .stage.on{display:block}body.one .notes{display:none}
+@media (max-width:760px){#board{grid-template-columns:1fr}.notes dl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="board">
+  <section class="stage" id="globe" data-k="globe" aria-label="可拖动的像素地球"><div class="inner"><canvas></canvas></div></section>
+  <section class="stage" id="house" data-k="house" aria-label="像素小屋"><div class="inner"><canvas></canvas></div></section>
+  <section class="stage" id="city" data-k="city" aria-label="可拖动手机的像素城区"><div class="inner"><canvas></canvas></div></section>
+  <section class="stage" id="coin" data-k="coin" aria-label="会被碰散的像素环"><div class="inner"><canvas></canvas>
+    <div class="hero"><h2>Know where<br>Know when</h2><p>SEALED AT <b id="sealed">14:21:27</b> · NOW <b id="now">14:21:27</b> · CALCUTTA</p>
+    <div class="cta"><a class="p" href="#coin">Start building <svg viewBox="0 0 19 14"><path d="M1 7h16M11.5 1.5 17 7l-5.5 5.5"/></svg></a><a href="#coin">Run a station</a></div></div>
+  </div></section>
+</div>
+<section class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#globe</code></dt><dd>贴图投到球面后按格取样，拖动换经度，点击放一个带连线的标记。</dd>
+<dt><code>#house</code></dt><dd>点小站：气泡环按格错峰亮起，金额上飘，计数加一。</dd>
+<dt><code>#city</code></dt><dd>拖手机：弧线和延迟数字跟着距离变。</dd>
+<dt><code>#coin</code></dt><dd>按住或靠近：圆环分块弹开，再被弹簧拉回。</dd>
+</dl>
+</section>
+<script src="source-assets/grids.js"></script>
+<script src="pixel-touch.js"></script>
+</body>
+</html>

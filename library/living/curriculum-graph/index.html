@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Curriculum Graph</title>
+<style>
+@font-face{font-family:"EB Garamond";src:url(fonts/EBGaramond-latin-var.woff2) format("woff2");font-weight:400 800;font-display:block}
+@font-face{font-family:"Figtree";src:url(fonts/figtree-latin-var.woff2) format("woff2");font-weight:300 900;font-display:block}
+:root{--u:1px;--bg:#060810;--ink:#fff;--dim:#a9abb9;--line:rgba(255,255,255,.075);--panel:rgba(12,14,26,.86)}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#hero{position:relative;height:100vh;min-height:calc(var(--u)*520);overflow:hidden;user-select:none;cursor:grab;touch-action:none}
+#hero.drag{cursor:grabbing}#hero.over{cursor:pointer}
+#graph{position:absolute;inset:0;width:100%;height:100%;display:block}
+.logo{position:absolute;left:calc(var(--u)*23);top:calc(var(--u)*17);font:900 calc(var(--u)*30)/1 Figtree;letter-spacing:-.045em;pointer-events:none}
+.copy{position:absolute;left:calc(var(--u)*24);top:calc(var(--u)*244);pointer-events:none}
+.eyebrow{display:flex;align-items:center;gap:calc(var(--u)*6);font-size:calc(var(--u)*8.6);font-weight:600;letter-spacing:.2em;color:#b4b6c4;height:calc(var(--u)*11)}
+.eyebrow i{width:calc(var(--u)*5);height:calc(var(--u)*5);border-radius:50%;background:#e8483f}
+h1{font:500 calc(var(--u)*85.5)/calc(var(--u)*86) "EB Garamond",serif;letter-spacing:-.008em;margin-top:calc(var(--u)*9)}
+.lede{margin-top:calc(var(--u)*15);font-size:calc(var(--u)*10.5);line-height:calc(var(--u)*17.6);color:#c7c8d3;font-weight:400}
+.lede b{color:#fff;font-weight:700}
+#legend{position:absolute;left:calc(var(--u)*24);bottom:calc(var(--u)*20);width:calc(var(--u)*215);height:calc(var(--u)*146);border:1px solid var(--line);border-radius:calc(var(--u)*14);background:var(--panel);padding:calc(var(--u)*11) calc(var(--u)*17) 0 calc(var(--u)*15);cursor:default}
+#legend h2{font-size:calc(var(--u)*7.6);font-weight:600;letter-spacing:.19em;color:#6d6f80;margin-bottom:calc(var(--u)*9)}
+#legend button{all:unset;display:flex;width:100%;align-items:center;height:calc(var(--u)*21.4);font-size:calc(var(--u)*10);font-weight:700;color:#e6e7ee;cursor:pointer;transition:opacity .2s}
+#legend button i{width:calc(var(--u)*9);height:calc(var(--u)*9);border-radius:50%;margin-right:calc(var(--u)*8)}
+#legend button span{margin-left:auto;font-weight:400;color:#8c8e9e}
+#legend button[aria-pressed=false]{opacity:.32}
+#legend button:focus-visible{outline:1px solid #fff;outline-offset:2px;border-radius:4px}
+.hint{position:absolute;right:calc(var(--u)*21);bottom:calc(var(--u)*25);font-size:calc(var(--u)*8.4);color:#6d6f80;pointer-events:none}.hint b{color:#b9bbc8;font-weight:700}
+.pill{position:absolute;left:50%;bottom:calc(var(--u)*12);width:calc(var(--u)*34);height:calc(var(--u)*7);margin-left:calc(var(--u)*-17);border:1px solid rgba(255,255,255,.42);border-radius:calc(var(--u)*4);pointer-events:none}
+#card{position:absolute;right:calc(var(--u)*21);top:calc(var(--u)*21);width:calc(var(--u)*243);min-height:calc(var(--u)*160);padding:calc(var(--u)*15) calc(var(--u)*16) calc(var(--u)*14);border:1px solid var(--line);border-radius:calc(var(--u)*16);background:var(--panel);cursor:default;opacity:0;transform:translateY(calc(var(--u)*-6));pointer-events:none;transition:opacity .22s,transform .3s cubic-bezier(.2,.8,.2,1)}
+#card.on{opacity:1;transform:none;pointer-events:auto}
+.tag{display:flex;align-items:center;gap:calc(var(--u)*6);font-size:calc(var(--u)*8.2);font-weight:600;letter-spacing:.16em;color:#a9abb9;text-transform:uppercase}
+.tag i{width:calc(var(--u)*8);height:calc(var(--u)*8);border-radius:50%;flex:none}
+#card h3{font-size:calc(var(--u)*13);line-height:calc(var(--u)*16.8);font-weight:700;margin-top:calc(var(--u)*7)}
+.n{display:flex;align-items:baseline;gap:calc(var(--u)*7);margin-top:calc(var(--u)*7)}
+.n b{font-size:calc(var(--u)*31);line-height:calc(var(--u)*38);font-weight:600}
+.n span{font-size:calc(var(--u)*9.4);color:#8c8e9e;font-weight:600}
+#card p{font-size:calc(var(--u)*9.3);line-height:calc(var(--u)*15);color:#b2b4c1;font-weight:500}
+#close{all:unset;position:absolute;right:calc(var(--u)*10);top:calc(var(--u)*11);width:calc(var(--u)*21);height:calc(var(--u)*21);border:1px solid var(--line);border-radius:calc(var(--u)*6);display:grid;place-items:center;font-size:calc(var(--u)*10);color:#c7c8d3;cursor:pointer}
+#tip{position:absolute;left:0;top:0;width:calc(var(--u)*241);padding:calc(var(--u)*11) calc(var(--u)*12) calc(var(--u)*11);border:1px solid var(--line);border-radius:calc(var(--u)*10);background:rgba(11,13,25,.9);pointer-events:none;opacity:0;transition:opacity .14s}
+#tip.on{opacity:1}
+#tip h4{font-size:calc(var(--u)*11.3);line-height:calc(var(--u)*15.2);font-weight:700;margin-top:calc(var(--u)*7)}
+#tip p{font:400 calc(var(--u)*11.9)/calc(var(--u)*17.3) "EB Garamond",serif;color:#d8d9e0;margin-top:calc(var(--u)*7)}
+#foot{max-width:760px;margin:0 auto;padding:64px 24px 80px;font-size:14px;line-height:1.6;color:#b2b4c1}
+#foot h3{color:#fff;font-size:15px;margin-bottom:12px}#foot dt{margin-top:12px}#foot code{color:#fff}#foot dd{margin:2px 0 0}
+</style></head><body>
+<section id="hero">
+  <canvas id="graph" aria-label="Three-dimensional graph of curriculum concepts and their prerequisites"></canvas>
+  <div class="logo" aria-label="Logo placeholder">LOGO</div>
+  <div class="copy">
+    <div class="eyebrow"><i></i>US CURRICULUM · AGES 4–15</div>
+    <h1>Everything a<br>child learns.</h1>
+    <p class="lede"><b>1144</b> concepts and <b>1948</b> prerequisite links, from first words to algebra.<br><b>Tap any dot</b> to see everything a learner must master before it.</p>
+  </div>
+  <aside id="legend"><h2>SUBJECTS · CLICK TO TOGGLE</h2><div id="rows"></div></aside>
+  <div class="hint"><b>Drag</b> to spin · <b>Scroll</b> to zoom · <b>Tap</b> a dot</div>
+  <div class="pill"></div>
+  <aside id="card" aria-live="polite">
+    <button id="close" aria-label="Close">✕</button>
+    <div class="tag"><i id="cDot"></i><span id="cTag"></span></div>
+    <h3 id="cTitle"></h3>
+    <div class="n"><b id="cN"></b><span>prerequisites</span></div>
+    <p>Every concept a learner must master before this one, traced back to the start.</p>
+  </aside>
+  <div id="tip"><div class="tag"><i id="tDot"></i><span id="tTag"></span></div><h4 id="tTitle"></h4><p id="tBody"></p></div>
+</section>
+<section id="foot">
+<h3>可拆</h3>
+<dl>
+<dt><code>#graph</code></dt><dd>三片竖直扇面组成的三维点云，透视投影，拖动旋转、滚轮缩放，空闲时自转。</dd>
+<dt><code>#card</code></dt><dd>点一个点：沿前置关系反向走完整条链，其余全部压暗，右上角钉住计数卡。</dd>
+<dt><code>#tip</code></dt><dd>悬停提示跟随投影位置，钉住时仍能看别的点。</dd>
+<dt><code>#legend</code></dt><dd>按学科开关点和边。</dd>
+</dl>
+</section>
+<script>
+(()=>{
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const qs=new URLSearchParams(location.search);
+let seed=20260707;const R=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const SUBJ=[{k:'Mathematics',n:323,c:'#6b78f5'},{k:'Science',n:427,c:'#6fe0a0'},{k:'English',n:216,c:'#e8548f'},{k:'History',n:90,c:'#efb062'},{k:'Personal & Social Development',n:88,c:'#a06ff0'}];
+// 同一学科内不同主题的点色（从视频帧取色）
+const TINT=[['#6b78f5','#5a4bff','#ffffff','#7fd3e8','#7f8cff'],['#6fe0a0','#7fd3e8','#45d6c5','#9ff0bd','#ffffff'],['#e8548f','#e8483f','#f07a9c','#ef6d6d'],['#efb062','#e8483f','#f5c98d','#e8814f'],['#a06ff0','#8a5cff','#b98cff','#7fd3e8']];
+const TOPIC={0:['Fractions','Probability','Number','Geometry'],1:['Heredity & Evolution','Dinosaurs & Paleontology','Electricity','Forces'],2:['Spelling & Word Study','Reading','Grammar'],3:['Ancient Egypt','Ancient Rome'],4:['Friendship & Cooperation','Feelings']};
+// 文字转录自原帖视频里出现的提示框；视频里只出现在计数卡、没有正文的概念留空
+const COPY=[
+ {s:2,topic:'Spelling & Word Study',age:7,h:.28,fin:0,title:'Prefixes (age 7+)',body:'If your child sees a word starting with "dis-", "mis-" or "pre-", can they work out what the word means and spell it correctly by thinking about the prefix?'},
+ {s:0,topic:'Probability',age:10,h:.56,fin:1,title:'Understanding fractions',body:'If there are 3 red and 7 blue balls in a bag, can your child work out the probability of picking a red one and express it as a fraction in its simplest form?'},
+ {s:0,topic:'Fractions',age:9,h:.46,fin:1,title:'Adding and subtracting mixed numbers',body:''},
+ {s:3,topic:'Ancient Egypt',age:9,h:.46,fin:2,title:'Ancient Egypt had a thriving economy based',body:'If your child reads that the Egyptians traded gold for cedarwood from Lebanon, can they explain why Egypt needed to trade with other countries and how having surplus food made this possible?'},
+ {s:1,topic:'Dinosaurs & Paleontology',age:11,h:.62,fin:1,title:'Radiometric dating works — radioactive isotopes decay',body:'If your child was told a dinosaur bone was dated using uranium-lead radiometric dating, could they explain what the rate of decay means and roughly why scientists trust the result?'},
+ {s:3,topic:'Ancient Egypt',age:12,h:.8,fin:2,title:'Analyse who built the pyramids and why',body:'If your child saw a documentary claiming aliens built the pyramids, could they explain why archaeologists reject this idea and describe the actual evidence for who built them — and what their working conditions were like'},
+ {s:4,topic:'Friendship & Cooperation',age:12,h:.78,fin:2,title:'To have honest, direct conversations that address',body:'When your child falls out seriously with a friend, can they describe what makes an apology actually repair a relationship — and what the difference is between a genuine apology and just saying sorry to end the awkwardnes'},
+ {s:1,topic:'Electricity',age:12,h:.8,fin:0,title:"Ohm's Law: voltage, current, resistance",body:'If your child doubles the resistance in a circuit while keeping the battery the same, can they predict what happens to the current and explain using the V = IR formula?'},
+ {s:1,topic:'Heredity & Evolution',age:8,h:.36,fin:0,title:'How animals adapt to environments',body:''}
+];
+const FIN=[Math.PI/2,Math.PI/2+2.094,Math.PI/2+4.189];
+const nodes=[];
+// 高度分布：低龄稠密，高龄稀疏
+function mk(s,o){
+ const h=o&&o.h!=null?o.h:Math.pow(R(),1.28);
+ const fin=o&&o.fin!=null?o.fin:(R()*3|0);
+ const rad=(25+200*Math.pow(h,.7))*(.14+.92*Math.pow(R(),.62));
+ const th=FIN[fin]+(R()-.5)*.028;
+ const t=TINT[s];const color=o?SUBJ[s].c:t[Math.pow(R(),1.75)*t.length|0];
+ const big=Math.pow(R(),3.4);
+ return{s,h,fin,x:Math.cos(th)*rad,z:Math.sin(th)*rad,y:(h-.5)*585+(R()-.5)*7,r:1.3+h*.7+big*3.7,color,pre:[],after:[],copy:o||null,age:o?o.age:Math.round(4+h*11),topic:o?o.topic:TOPIC[s][R()*TOPIC[s].length|0]};
+}
+COPY.forEach(o=>nodes.push(mk(o.s,o)));
+SUBJ.forEach((su,s)=>{let have=nodes.filter(n=>n.s===s).length;for(;have<su.n;have++)nodes.push(mk(s))});
+// 少量离群的顶部节点
+for(let i=0;i<7;i++){const n=nodes[40+i*130];n.h=.97+R()*.07;n.y=(n.h-.5)*585+R()*46;const a=FIN[n.fin],rr=120+R()*190;n.x=Math.cos(a)*rr;n.z=Math.sin(a)*rr;n.r=3+R()*3.5}
+const order=nodes.map((n,i)=>i).sort((a,b)=>nodes[a].h-nodes[b].h);
+const edges=[];let target=1948;
+// 每个点从更低处选前置：主要在同一主题簇内找，簇横跨三片扇面，所以链会在点云里拉出长线；少量跨簇
+nodes.forEach(n=>{const sub=n.s===3&&R()<.55?2:(R()<.12?(R()*5|0):n.s);n.cl=sub*8+(R()*8|0)});
+nodes.forEach(n=>{if(n.copy&&n.copy.title.startsWith('Analyse'))n.cl=16;if(n.copy&&n.copy.title.startsWith('Ancient'))n.cl=13});
+const near=(p)=>p[Math.floor(p.length*(1-Math.pow(R(),2.4)))%p.length];
+for(let oi=1;oi<order.length&&edges.length<target;oi++){const i=order[oi],n=nodes[i];const want=1+(R()<.5?1:0)+(R()<.22?1:0);
+ const same=order.slice(0,oi).filter(j=>nodes[j].cl===n.cl);
+ for(let w=0;w<want;w++){const pool=(same.length&&R()<.9)?same:order.slice(Math.max(0,oi-220),oi);let best=-1,bd=1e9;for(let t=0;t<3;t++){const j=near(pool),m=nodes[j];const d=Math.hypot(m.x-n.x,m.y-n.y,m.z-n.z);if(d<bd){bd=d;best=j}}
+  if(best>=0&&!n.pre.includes(best)){n.pre.push(best);edges.push([best,i])}}}
+const cv=document.getElementById('graph'),ctx=cv.getContext('2d'),hero=document.getElementById('hero');
+let W,H,U,dpr;let yaw=parseFloat(qs.get('yaw')||'1.72'),zoom=1,tZoom=1,spin=reduce?0:.3,vel=0;
+const off=SUBJ.map(()=>false);
+// 点云的中轴是一条弯曲的线，不和自转轴重合：转动时会摆头，正对时才变直
+const bend=h=>78*h-165*Math.sin(Math.PI*Math.min(1,h))*Math.pow(1-Math.min(1,h),3);
+nodes.forEach(n=>n.bend=bend(n.h));
+const P=new Float32Array(nodes.length*3);
+function size(){W=hero.clientWidth;H=hero.clientHeight;U=Math.min(W/1443,H/830);document.documentElement.style.setProperty('--u',U+'px');dpr=Math.min(devicePixelRatio||1,2);cv.width=W*dpr;cv.height=H*dpr}
+addEventListener('resize',size);
+function project(){const c=Math.cos(yaw),s=Math.sin(yaw),D=2000,cx=W*.525,cy=H*.52,S=U*zoom;
+ for(let i=0;i<nodes.length;i++){const n=nodes[i],zl=n.z+(n.bend),x=n.x*c-zl*s,z=n.x*s+zl*c,k=D/(D+z);P[i*3]=cx+x*k*S;P[i*3+1]=cy-n.y*k*S*1.0;P[i*3+2]=k}}
+let pin=-1,hover=-1,chain=new Set(),chainEdges=[],dimA=0,grow=1;
+function trace(i){const seen=new Map([[i,0]]),q=[i],es=[];while(q.length){const a=q.shift();for(const b of nodes[a].pre){es.push([b,a,seen.get(a)+1]);if(!seen.has(b)){seen.set(b,seen.get(a)+1);q.push(b)}}}return{seen,es}}
+function setPin(i){pin=i;const card=document.getElementById('card');if(i<0){chain=new Set();chainEdges=[];card.classList.remove('on');return}
+ const t=trace(i);chain=t.seen;chainEdges=t.es;grow=reduce?1:0;fillTag('c',nodes[i]);document.getElementById('cTitle').textContent=title(nodes[i]);document.getElementById('cN').textContent=t.seen.size-1;card.classList.add('on')}
+function title(n){return n.copy?n.copy.title:COPY.filter(c=>c.s===n.s)[0].title}
+function body(n){return n.copy?n.copy.body:COPY.filter(c=>c.s===n.s)[0].body}
+function fillTag(p,n){document.getElementById(p+'Dot').style.background=n.color;document.getElementById(p+'Tag').textContent=n.topic+' · Age '+n.age}
+const tip=document.getElementById('tip');
+function placeTip(){if(hover<0){tip.classList.remove('on');return}const x=P[hover*3],y=P[hover*3+1],tw=241*U,th=tip.offsetHeight;let l=x+20*U,t=y+14*U;if(l+tw>W-12)l=x-tw-20*U;if(t+th>H-12)t=H-12-th;tip.style.transform=`translate(${l}px,${t}px)`;tip.classList.add('on')}
+function setHover(i){if(i===hover)return;hover=i;hero.classList.toggle('over',i>=0);if(i>=0){const n=nodes[i];fillTag('t',n);document.getElementById('tTitle').textContent=title(n);const bd=document.getElementById('tBody');bd.textContent=body(n);bd.style.display=body(n)?'':'none'}}
+function pick(mx,my){let b=-1,bd=(13*U)**2;for(let i=0;i<nodes.length;i++){if(off[nodes[i].s])continue;const dx=P[i*3]-mx,dy=P[i*3+1]-my,d=dx*dx+dy*dy;if(d<bd){bd=d;b=i}}return b}
+// 地面的淡光和同心弧
+function floor(){const g=ctx.createRadialGradient(W*.5,H*1.02,0,W*.5,H*1.02,W*.62);g.addColorStop(0,'rgba(24,25,52,.62)');g.addColorStop(.5,'rgba(15,16,36,.42)');g.addColorStop(1,'rgba(6,8,16,0)');ctx.save();ctx.translate(0,0);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.lineWidth=1;for(let i=1;i<7;i++){ctx.strokeStyle='rgba(120,125,190,'+(.028-.003*i)+')';ctx.beginPath();ctx.ellipse(W*.5,H*1.04,W*.09*i,H*.055*i,0,Math.PI,2*Math.PI);ctx.stroke()}ctx.restore()}
+let last=performance.now();
+const idx=nodes.map((_,i)=>i);
+function draw(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+ if(!dragging){if(pin<0&&hover<0)yaw+=spin*dt;yaw+=vel*dt;vel*=Math.pow(.05,dt)}
+ zoom+=(tZoom-zoom)*Math.min(1,dt*9);
+ dimA+=((pin>=0?1:0)-dimA)*Math.min(1,dt*(reduce?60:7));grow=Math.min(1,grow+dt/.55);
+ project();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#060810';ctx.fillRect(0,0,W,H);floor();
+ const base=1-dimA*.32;
+ // 背景边
+ ctx.lineWidth=.6*U;ctx.strokeStyle='rgba(165,170,215,'+(.165*base)+')';ctx.beginPath();
+ for(const[e,f]of edges){if(off[nodes[e].s]||off[nodes[f].s])continue;ctx.moveTo(P[e*3],P[e*3+1]);ctx.lineTo(P[f*3],P[f*3+1])}ctx.stroke();
+ // 点按深度排序
+ idx.sort((a,b)=>P[a*3+2]-P[b*3+2]);
+ for(const i of idx){const n=nodes[i];if(off[n.s])continue;const k=P[i*3+2],r=n.r*k*U*Math.sqrt(zoom);
+  if(dimA>.01&&chain.has(i))continue;
+  ctx.globalAlpha=1-dimA*.83;ctx.fillStyle=dimA>.5?mix(n.color):n.color;ctx.beginPath();ctx.arc(P[i*3],P[i*3+1],r*(1+dimA*.25),0,6.283);ctx.fill()}
+ ctx.globalAlpha=1;
+ // 前置链
+ if(pin>=0){const maxD=Math.max(1,...chainEdges.map(e=>e[2]));const front=grow*(maxD+1);
+  ctx.lineWidth=1*U;for(const[a,b,d]of chainEdges){if(d>front+.001)continue;if(off[nodes[a].s])continue;const local=Math.min(1,front-d+1);ctx.strokeStyle=SUBJ[nodes[a].s].c;ctx.globalAlpha=.72;ctx.beginPath();ctx.moveTo(P[b*3],P[b*3+1]);ctx.lineTo(P[b*3]+(P[a*3]-P[b*3])*local,P[b*3+1]+(P[a*3+1]-P[b*3+1])*local);ctx.stroke()}
+  ctx.globalAlpha=1;
+  for(const[i,d]of chain){if(i===pin||d>front||off[nodes[i].s])continue;const n=nodes[i];ctx.fillStyle=SUBJ[n.s].c;ctx.beginPath();ctx.arc(P[i*3],P[i*3+1],(1.7+n.r*.42)*U,0,6.283);ctx.fill()}
+  const n=nodes[pin];ring(pin,n.color,12)}
+ if(hover>=0&&hover!==pin)ring(hover,nodes[hover].color,6.2,true);
+ placeTip();requestAnimationFrame(draw)}
+function ring(i,c,rr,light){const x=P[i*3],y=P[i*3+1];ctx.fillStyle=light?'rgba(255,255,255,.85)':c;ctx.beginPath();ctx.arc(x,y,rr*.8*U,0,6.283);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.1*U;ctx.beginPath();ctx.arc(x,y,rr*U,0,6.283);ctx.stroke()}
+const mixCache={};function mix(c){if(mixCache[c])return mixCache[c];const v=parseInt(c.slice(1),16),r=v>>16&255,g=v>>8&255,b=v&255,l=(r+g+b)/3,f=.62;return mixCache[c]=`rgb(${(r*(1-f)+l*f)|0},${(g*(1-f)+l*f)|0},${(b*(1-f)+l*f)|0})`}
+// 交互
+let dragging=false,moved=0,px=0,lastT=0;
+hero.addEventListener('pointerdown',e=>{if(e.target.closest('#legend,#card'))return;dragging=true;moved=0;px=e.clientX;lastT=performance.now();hero.setPointerCapture(e.pointerId);hero.classList.add('drag')});
+hero.addEventListener('pointermove',e=>{const r=hero.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(dragging){const dx=e.clientX-px;px=e.clientX;moved+=Math.abs(dx);yaw+=dx*.0065;const t=performance.now();vel=dx*.0065/Math.max(.008,(t-lastT)/1000);lastT=t;setHover(-1);return}
+ setHover(e.target.closest&&e.target.closest('#legend,#card')?-1:pick(x,y))});
+hero.addEventListener('pointerup',e=>{if(!dragging)return;dragging=false;hero.classList.remove('drag');if(reduce)vel=0;if(moved<4){vel=0;const r=hero.getBoundingClientRect();const i=pick(e.clientX-r.left,e.clientY-r.top);setPin(i)}});
+hero.addEventListener('pointerleave',()=>setHover(-1));
+hero.addEventListener('wheel',e=>{const nz=Math.min(2.6,Math.max(.72,tZoom*Math.exp(-e.deltaY*.0011)));if(nz===tZoom&&e.deltaY>0)return;e.preventDefault();tZoom=nz},{passive:false});
+document.getElementById('close').addEventListener('click',()=>setPin(-1));
+const rows=document.getElementById('rows');SUBJ.forEach((s,i)=>{const b=document.createElement('button');b.setAttribute('aria-pressed','true');b.innerHTML=`<i style="background:${s.c}"></i>${s.k}<span>${s.n}</span>`;b.onclick=()=>{off[i]=!off[i];b.setAttribute('aria-pressed',String(!off[i]))};rows.append(b)});
+addEventListener('keydown',e=>{if(e.key==='Escape')setPin(-1)});
+size();project();
+window.__g={nodes,edges,P,setPin,setHover,project,freeze(){spin=0},setYaw(y){yaw=y}};
+const demo=qs.get('demo');
+if(demo){spin=0;const m=COPY.findIndex(c=>c.title.toLowerCase().includes(demo));if(m>=0){setPin(m);dimA=1;grow=1}const h=qs.get('hover');if(h){const j=COPY.findIndex(c=>c.title.toLowerCase().includes(h));setHover(j)}else if(m>=0)setHover(m)}
+if(qs.get('still'))spin=0;
+requestAnimationFrame(draw);
+})();
+</script>
+</body></html>

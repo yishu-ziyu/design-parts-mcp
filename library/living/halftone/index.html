@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>怎么给游戏印一层会动的网点</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --ink: #1c1914;
+    --muted: #5c564c;
+    --rule: #1c1914;
+    --green: #2f6b4f;
+    --auto-blue: #0d9ff4;
+    --card: #fffdf7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .running {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 18px 20px 0;
+  }
+  header.mast {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 18px 28px 10px;
+    text-align: center;
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.15;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  header.mast .sub {
+    font-size: 18px;
+    font-style: italic;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  header.mast .by {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .stage {
+    position: relative;
+    height: min(56vh, 520px);
+    min-height: 320px;
+    margin: 18px 0 8px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    overflow: hidden;
+    background: #fcfcfb;
+  }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .stage .title-over {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    text-align: center;
+    padding: 24px;
+  }
+  .stage .kicker {
+    font-family: ui-monospace, "Space Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .stage h2 {
+    margin: 0;
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 40px);
+    letter-spacing: -0.03em;
+  }
+  .stage .hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .controls {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 10px 28px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+    align-items: center;
+    font-size: 13px;
+  }
+  .controls label { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+  .controls input[type="range"] { width: 120px; }
+  .swatch {
+    width: 14px; height: 14px; border: 1px solid var(--ink); display: inline-block; vertical-align: middle;
+  }
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 28px 80px;
+  }
+  .prose { max-width: 38rem; }
+  .wide { max-width: 52rem; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 8px 0 22px;
+  }
+  .pair.flip { grid-template-columns: 0.9fr 1.1fr; }
+  @media (max-width: 760px) {
+    .pair, .pair.flip { grid-template-columns: 1fr; }
+    header.mast, .controls, .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 {
+    color: var(--green);
+    font-weight: 500;
+    font-size: 20px;
+    margin: 22px 0 10px;
+  }
+  p { margin: 0 0 12px; }
+  .drop::first-letter {
+    font-size: 2.35em;
+    float: left;
+    line-height: .85;
+    padding: 6px 8px 0 0;
+    font-weight: 400;
+  }
+  figure {
+    margin: 0 0 16px;
+    background: transparent;
+  }
+  figure img, figure video {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--ink);
+    background: var(--card);
+  }
+  figcaption {
+    font-size: 12.5px;
+    line-height: 1.4;
+    padding: 7px 2px 2px;
+    color: var(--ink);
+  }
+  figcaption strong { font-weight: 600; }
+  .trio {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0 18px;
+  }
+  .trio figure { margin: 0; }
+  @media (max-width: 640px) { .trio { grid-template-columns: 1fr; } }
+  aside.tip {
+    border: 1px solid var(--ink);
+    padding: 10px 12px;
+    margin: 14px 0 18px;
+    background: #efe8d6;
+    font-size: 14.5px;
+    max-width: 38rem;
+  }
+  aside.tip b { color: var(--green); }
+  pre, code, .mono { font-family: ui-monospace, "Space Mono", Menlo, monospace; }
+  pre {
+    background: #1c1914;
+    color: #f4efe4;
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+    border: 1px solid var(--ink);
+  }
+  .recipe {
+    border-top: 1px solid var(--ink);
+    padding-top: 22px;
+    margin-top: 28px;
+    max-width: 52rem;
+  }
+  ol.how {
+    margin: 0 0 12px 1.15em;
+    padding: 0;
+  }
+  ol.how li { margin: 0 0 8px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+    border-top: 1px solid #d9d1c2;
+  }
+  a { color: var(--ink); }
+  .fn { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="running">奕枢 · 设计笔记 · 打开这页场就在转</div>
+<header class="mast">
+  <h1>怎么给游戏印一层会动的网点</h1>
+  <p class="sub">一份不用 Three.js 的印刷术。样本来自 auto.sh。</p>
+  <p class="by">2026-08-17 · 对着要做标题屏的人写，不是对着要写综述的人写</p>
+</header>
+
+<div class="stage" id="stage">
+  <canvas id="field"></canvas>
+  <div class="title-over">
+    <div class="kicker">title screen · live</div>
+    <h2>世界用网点印，字不进网</h2>
+    <div class="hint">鼠标在这层上挪一下。点会让开。</div>
+  </div>
+</div>
+
+<div class="controls">
+  <label>格子 <input id="cellCount" type="range" min="80" max="360" value="240"> <span id="cellCountOut">240</span></label>
+  <label>疏密 <input id="intensity" type="range" min="15" max="80" value="48"> <span id="intensityOut">0.48</span></label>
+  <label><span class="swatch" style="background:#0d9ff4"></span> 样本蓝 <input type="radio" name="accent" value="blue" checked></label>
+  <label><span class="swatch" style="background:#e35342"></span> 试一试红 <input type="radio" name="accent" value="red"></label>
+  <label>只有墨 <input type="radio" name="accent" value="ink"></label>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3 style="margin-top:0">你看见的就是这个</h3>
+      <p class="drop">打开 auto.sh，标题后面那层慢慢挪动的灰点，不是 3D 场景，也不是给照片套了滤镜。它是报纸的老办法：纸上只有「有墨」和「没墨」，灰色靠点的疏密骗眼睛。上面这块就是同一台小机器，嵌在这页里。你调格子和疏密，看见的变化就是以后游戏标题屏上的变化。</p>
+      <p>图 1 和头顶那层活场是亲戚，不是同一个车间。活场要跟时间走，所以每帧现算。车灯、作战室、街道要像一张被印坏的照片，所以先离线打成双色，再压成 MP4。网页上没有再套 <code>filter</code>。<sup class="fn">1</sup></p>
+    </div>
+    <figure>
+      <img src="assets/cards-source.jpg" alt="auto.sh 三张团队卡：Accelerator、War Room、Slopbusters" />
+      <figcaption><strong>图 1.</strong> auto.sh 中段那三张卡。蓝白网点已经烤进像素。浏览器只负责循环播放一段 7 秒的无声视频。</figcaption>
+    </figure>
+  </div>
+
+  <div class="pair flip">
+    <figure>
+      <img src="assets/accelerator-frame.png" alt="accelerator.mp4 抽帧：车身已是蓝底白点" />
+      <figcaption><strong>图 2.</strong> 从 accelerator.mp4 抽出的一帧。1024×576，24 帧，大约 700KB。颜色几乎只剩品牌蓝和纸白。</figcaption>
+    </figure>
+    <div>
+      <h3 style="margin-top:0">报纸为什么只能印点</h3>
+      <p>印刷机没有「浅灰」这个墨盒。它有纸，有黑墨。要一片天空，工人用很多小黑点；要一片夜，点挤在一起。离远一点，眼睛自己合成灰色。游戏里用同一招：每个格子要么亮，要么灭。没有半透明雾，没有粒子。</p>
+    </div>
+  </div>
+
+  <figure class="wide">
+    <img src="assets/ramp-compare.png" alt="连续灰阶与 Bayer 抖动后的对比" />
+    <figcaption><strong>图 3.</strong> 上面是连续灰阶，报纸印不出来。下面盖上 4×4 印章之后，还是那条从白到黑的坡，但只剩点和纸。</figcaption>
+  </figure>
+
+  <div class="pair">
+    <div>
+      <p>印章叫 Bayer 矩阵。别被名字吓到。它就是一块 4 格乘 4 格的图章，每格写着「亮到什么程度才许打点」。数字小的格子先亮，数字大的格子要很亮才亮。整张图用同一块图章反复盖，网点就整齐，不会变成沙子。</p>
+      <aside class="tip">
+        <b>文明进步贴士：</b>格子要够粗。先把画面切成大块，再盖印章。auto.sh 的标题场大约竖着切 260 格。切太细，看起来像电视雪花；切太粗，像马赛克浴室砖。
+      </aside>
+    </div>
+    <figure>
+      <img src="assets/bayer-stamp.png" alt="4x4 Bayer 矩阵，格子灰度表示阈值" />
+      <figcaption><strong>图 4.</strong> 4×4 Bayer 印章。数字越大，这个格子越难被点亮。auto.sh 用的就是这一块，没有换成 8×8。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>两种车间，别混用</h3>
+    <p>第一种车间做雾。一张全屏大三角形，上面跑一段着色器：噪声慢慢往左漂，再拿图 4 的印章盖下去。鼠标靠近时局部挤一下。这就是头顶那层。</p>
+    <p>第二种车间做地点。把实拍或三维素材收成亮度，盖同一块印章，把「有点」涂成一个颜色，「没点」留纸色。输出一张图，或一段不超过 8 秒的循环视频。图 1 那三张走的是这条线。</p>
+  </div>
+  <div class="trio">
+    <figure>
+      <img src="assets/accelerator.png" alt="Accelerator 海报" />
+      <figcaption><strong>图 5.</strong> Accelerator</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/war-room.png" alt="War Room 海报" />
+      <figcaption><strong>图 6.</strong> War Room</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/slopbusters.png" alt="Slopbusters 海报" />
+      <figcaption><strong>图 7.</strong> Slopbusters</figcaption>
+    </figure>
+  </div>
+  <div class="prose">
+    <p>为什么不把视频也丢进着色器里实时打点？因为车要像车。照片一旦进入「我认得出这是什么」的程度，就该离线烤。雾认不出物体，才值得每帧算。</p>
+
+    <h3>明天做标题屏时</h3>
+    <p>活场铺满窗口。游戏名、按钮、血条放在实色层上，不要让字也被打成点。关卡选单放图 5 那种烤好的地点图。角色头像用小图，CSS 写 <code>image-rendering: pixelated</code>，禁止平滑放大。</p>
+    <p>颜色只留三样：纸、墨、一个信号色。信号色跟这局游戏走，不要从奕枢落地页抄蜡笔红。这页默认用图 1 里那支蓝，只是因为样本是它。</p>
+    <p>不要把它印在奕枢拼贴落地页上，不要印在暖纸阅读器上，不要印在要读数字的工具台上。那些地方的字需要干净。胶片颗粒和网点选一种脏法，不要叠。</p>
+    <aside class="tip">
+      <b>别发明 Three.js。</b>这层雾用 WebGL 1 的三个顶点就够。上三维引擎是在用蒸汽机给信封盖邮戳。
+    </aside>
+  </div>
+
+  <div class="recipe">
+    <h3>配方：一台最小的印刷机</h3>
+    <ol class="how">
+      <li>一个盖满容器的 <code>canvas</code>，<code>getContext("webgl", { antialias: false })</code>。</li>
+      <li>顶点只准备三个：<code>[-1,-1, 3,-1, -1,3]</code>。这是一块盖住屏幕的大三角形。</li>
+      <li>片元着色器里：按 <code>cellCount</code> 切格子 → 噪声往左漂 → 用图 4 的印章做 <code>step</code> → 灭的格子涂纸色，亮的涂墨或信号色。</li>
+      <li>离开视口、切后台、系统开了「减少动态效果」，就停掉动画。留下最后一帧。</li>
+      <li>同一屏只开一块活场。图 5 那种卡不要再叠第二块。</li>
+    </ol>
+    <p>标题场可从这些数起：<code>cellCount = 240</code>，<code>intensity = 0.48</code>，<code>accentBoost = 1.1</code>（auto.sh 用到 1.9，偏吵，游戏里收一点）。内嵌小卡把 intensity 降到 0.3，并关掉鼠标。</p>
+    <script id="vert-src" type="x-shader/x-vertex">
+attribute vec2 a_position;
+void main() { gl_Position = vec4(a_position, 0.0, 1.0); }
+</script>
+<script id="frag-src" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 u_resolution;
+uniform float u_time, u_intensity, u_cellCount, u_accentBoost;
+uniform vec2 u_mouse;
+uniform vec3 u_accent, u_background, u_ink;
+
+float bayer4(vec2 p) {
+  int x = int(mod(p.x, 4.0));
+  int y = int(mod(p.y, 4.0));
+  int i = x + y * 4;
+  float m = 0.0;
+  if (i==0)m=0.0; else if(i==1)m=8.0; else if(i==2)m=2.0; else if(i==3)m=10.0;
+  else if(i==4)m=12.0; else if(i==5)m=4.0; else if(i==6)m=14.0; else if(i==7)m=6.0;
+  else if(i==8)m=3.0; else if(i==9)m=11.0; else if(i==10)m=1.0; else if(i==11)m=9.0;
+  else if(i==12)m=15.0; else if(i==13)m=7.0; else if(i==14)m=13.0; else m=5.0;
+  return (m + 0.5) / 16.0;
+}
+vec2 hash2(vec2 p) {
+  p = vec2(dot(p, vec2(127.1,311.7)), dot(p, vec2(269.5,183.3)));
+  return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+}
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p), u = f*f*(3.0-2.0*f);
+  return mix(
+    mix(dot(hash2(i), f), dot(hash2(i+vec2(1,0)), f-vec2(1,0)), u.x),
+    mix(dot(hash2(i+vec2(0,1)), f-vec2(0,1)), dot(hash2(i+vec2(1,1)), f-vec2(1,1)), u.x), u.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+void main() {
+  float cellSize = max(2.0, floor(u_resolution.y / u_cellCount));
+  vec2 cell = floor(gl_FragCoord.xy / cellSize);
+  vec2 uv = (cell * cellSize + cellSize * 0.5) / u_resolution;
+  float aspect = u_resolution.x / u_resolution.y;
+  vec2 p = vec2(uv.x * aspect, uv.y);
+  vec2 mouse = vec2(u_mouse.x * aspect, u_mouse.y);
+  float bend = exp(-length(p - mouse) * 3.2);
+  vec2 flow = p * vec2(1.3, 2.1);
+  flow.x -= u_time * 0.08;
+  flow += bend * 0.28 * vec2(cos(u_time * 0.7), sin(u_time * 0.9));
+  float v = fbm(flow + fbm(flow * 1.4 + u_time * 0.025) * 1.1) * 0.5 + 0.5;
+  float shade = smoothstep(0.22, 0.74, v);
+  shade = shade * (0.35 + shade * 0.65);
+  float laneY = floor(uv.y * 9.0);
+  float lane = fract(uv.y * 9.0);
+  float laneCenter = smoothstep(0.25, 0.5, lane) * smoothstep(0.75, 0.5, lane);
+  float pulses = laneCenter * smoothstep(0.62, 0.95, noise(vec2(uv.x * 2.2 - u_time * 0.38, laneY * 13.7)));
+  shade = max(shade, pulses * 0.85) + bend * 0.1;
+  shade *= u_intensity;
+  float on = step(bayer4(cell), shade);
+  float accentMix = (pulses * 1.8 + bend * 0.45 + smoothstep(0.45, 0.85, shade) * 0.85) * u_accentBoost;
+  vec3 dotc = mix(u_ink, u_accent, clamp(accentMix, 0.0, 1.0));
+  gl_FragColor = vec4(mix(u_background, dotc, on), 1.0);
+}
+</script>
+<pre>const VERT = `
+attribute vec2 a_position;
+void main() { gl_Position = vec4(a_position, 0.0, 1.0); }
+`;
+
+const FRAG = `
+precision highp float;
+uniform vec2 u_resolution;
+uniform float u_time, u_intensity, u_cellCount, u_accentBoost;
+uniform vec2 u_mouse;
+uniform vec3 u_accent, u_background, u_ink;
+
+float bayer4(vec2 p) {
+  int x = int(mod(p.x, 4.0));
+  int y = int(mod(p.y, 4.0));
+  int i = x + y * 4;
+  float m = 0.0;
+  if (i==0)m=0.0; else if(i==1)m=8.0; else if(i==2)m=2.0; else if(i==3)m=10.0;
+  else if(i==4)m=12.0; else if(i==5)m=4.0; else if(i==6)m=14.0; else if(i==7)m=6.0;
+  else if(i==8)m=3.0; else if(i==9)m=11.0; else if(i==10)m=1.0; else if(i==11)m=9.0;
+  else if(i==12)m=15.0; else if(i==13)m=7.0; else if(i==14)m=13.0; else m=5.0;
+  return (m + 0.5) / 16.0;
+}
+vec2 hash2(vec2 p) {
+  p = vec2(dot(p, vec2(127.1,311.7)), dot(p, vec2(269.5,183.3)));
+  return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+}
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p), u = f*f*(3.0-2.0*f);
+  return mix(
+    mix(dot(hash2(i), f), dot(hash2(i+vec2(1,0)), f-vec2(1,0)), u.x),
+    mix(dot(hash2(i+vec2(0,1)), f-vec2(0,1)), dot(hash2(i+vec2(1,1)), f-vec2(1,1)), u.x), u.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+void main() {
+  float cellSize = max(2.0, floor(u_resolution.y / u_cellCount));
+  vec2 cell = floor(gl_FragCoord.xy / cellSize);
+  vec2 uv = (cell * cellSize + cellSize * 0.5) / u_resolution;
+  float aspect = u_resolution.x / u_resolution.y;
+  vec2 p = vec2(uv.x * aspect, uv.y);
+  vec2 mouse = vec2(u_mouse.x * aspect, u_mouse.y);
+  float bend = exp(-length(p - mouse) * 3.2);
+  vec2 flow = p * vec2(1.3, 2.1);
+  flow.x -= u_time * 0.08;
+  flow += bend * 0.28 * vec2(cos(u_time * 0.7), sin(u_time * 0.9));
+  float v = fbm(flow + fbm(flow * 1.4 + u_time * 0.025) * 1.1) * 0.5 + 0.5;
+  float shade = smoothstep(0.22, 0.74, v);
+  shade = shade * (0.35 + shade * 0.65);
+  float laneY = floor(uv.y * 9.0);
+  float lane = fract(uv.y * 9.0);
+  float laneCenter = smoothstep(0.25, 0.5, lane) * smoothstep(0.75, 0.5, lane);
+  float pulses = laneCenter * smoothstep(0.62, 0.95, noise(vec2(uv.x * 2.2 - u_time * 0.38, laneY * 13.7)));
+  shade = max(shade, pulses * 0.85) + bend * 0.1;
+  shade *= u_intensity;
+  float on = step(bayer4(cell), shade);
+  float accentMix = (pulses * 1.8 + bend * 0.45 + smoothstep(0.45, 0.85, shade) * 0.85) * u_accentBoost;
+  vec3 dotc = mix(u_ink, u_accent, clamp(accentMix, 0.0, 1.0));
+  gl_FragColor = vec4(mix(u_background, dotc, on), 1.0);
+}
+`;</pre>
+    <p class="fn">1. 2026-08-17 对着 https://www.auto.sh/ 拆过活着色器和资源。组件名 DitherField。Hero：intensity 0.48，cellCount 260，accentBoost 1.9。三张卡是 /teams/backdrops/*.mp4，不是 canvas。</p>
+  </div>
+</div>
+
+<footer class="colophon">
+  <p>样本：auto.sh。讲法参考《万物发明指南》——先让你看见，再让你造。版式参考 Jensen《Robert Bunsen’s Sweet Tooth》——图有编号，图说是一句完整的话。</p>
+  <p>入口：DESIGN.md §26 只负责把人带到这页。要改场，改这页，不要再写一份没有图的摘要。</p>
+</footer>
+
+<script>
+(function () {
+  const canvas = document.getElementById('field');
+  const gl = canvas.getContext('webgl', { antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false });
+  if (!gl) return;
+
+  const VERT = document.getElementById('vert-src').textContent;
+  const FRAG = document.getElementById('frag-src').textContent;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+  const vs = compile(gl.VERTEX_SHADER, VERT);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  const U = {
+    resolution: gl.getUniformLocation(prog, 'u_resolution'),
+    time: gl.getUniformLocation(prog, 'u_time'),
+    mouse: gl.getUniformLocation(prog, 'u_mouse'),
+    accent: gl.getUniformLocation(prog, 'u_accent'),
+    background: gl.getUniformLocation(prog, 'u_background'),
+    ink: gl.getUniformLocation(prog, 'u_ink'),
+    intensity: gl.getUniformLocation(prog, 'u_intensity'),
+    cellCount: gl.getUniformLocation(prog, 'u_cellCount'),
+    accentBoost: gl.getUniformLocation(prog, 'u_accentBoost'),
+  };
+
+  const palettes = {
+    blue: [13 / 255, 159 / 255, 244 / 255],
+    red: [227 / 255, 83 / 255, 66 / 255],
+    ink: [38 / 255, 34 / 255, 30 / 255],
+  };
+  let accent = palettes.blue.slice();
+  let intensity = 0.48;
+  let cellCount = 240;
+  const mouse = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 };
+  const t0 = performance.now();
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function hexTo(arr) { gl.uniform3fv(U.accent, arr); }
+  hexTo(accent);
+  gl.uniform3fv(U.background, [252 / 255, 252 / 255, 251 / 255]);
+  gl.uniform3fv(U.ink, [38 / 255, 34 / 255, 30 / 255]);
+  gl.uniform1f(U.accentBoost, 1.15);
+
+  const cellEl = document.getElementById('cellCount');
+  const intEl = document.getElementById('intensity');
+  cellEl.addEventListener('input', () => {
+    cellCount = Number(cellEl.value);
+    document.getElementById('cellCountOut').textContent = String(cellCount);
+  });
+  intEl.addEventListener('input', () => {
+    intensity = Number(intEl.value) / 100;
+    document.getElementById('intensityOut').textContent = intensity.toFixed(2);
+  });
+  document.querySelectorAll('input[name="accent"]').forEach((r) => {
+    r.addEventListener('change', () => { accent = palettes[r.value].slice(); hexTo(accent); });
+  });
+  canvas.parentElement.addEventListener('pointermove', (e) => {
+    const b = canvas.parentElement.getBoundingClientRect();
+    mouse.tx = (e.clientX - b.left) / b.width;
+    mouse.ty = (e.clientY - b.top) / b.height;
+  });
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+  function frame(now) {
+    resize();
+    mouse.x += (mouse.tx - mouse.x) * 0.08;
+    mouse.y += (mouse.ty - mouse.y) * 0.08;
+    gl.uniform2f(U.resolution, canvas.width, canvas.height);
+    gl.uniform1f(U.time, reduce ? 0 : (now - t0) / 1000);
+    gl.uniform2f(U.mouse, mouse.x, 1 - mouse.y);
+    gl.uniform1f(U.intensity, intensity);
+    gl.uniform1f(U.cellCount, cellCount);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

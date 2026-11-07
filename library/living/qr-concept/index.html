@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>取餐二维码：忠实复刻</title>
+<style>
+@font-face{font-family:"Inter";src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#111;--mute:#7d7d7f;--green:#7DA371;--mint:#E3F6DC}
+*{box-sizing:border-box}html,body{margin:0;background:#EBECF1;color:var(--ink);font:400 15px/1.25 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;align-items:center}
+#frame{position:relative;width:553px;height:984px;background:linear-gradient(180deg,#EBECF1,#E9EAEF);overflow:hidden;flex:none}
+#phone{position:absolute;left:83px;top:37px;width:387px;height:843px;border-radius:56px;overflow:hidden;background:#EDE8DC;box-shadow:0 26px 60px rgba(40,44,66,.16),0 4px 14px rgba(40,44,66,.06);isolation:isolate;user-select:none;touch-action:none}
+#world{position:absolute;inset:0;transform-origin:193.5px 250px;will-change:transform}
+#scene{position:absolute;left:0;top:0;width:387px;height:843px;display:block}
+#qrwrap{position:absolute;left:41px;top:177px;width:304px;height:304px;will-change:transform,opacity;transform-origin:50% 50%}
+#qrbg{position:absolute;inset:0;background:#F5F5F5;opacity:0}
+#qr{display:block;width:100%;height:100%;shape-rendering:crispEdges}
+.st{position:absolute;z-index:6;left:50px;top:21px;font:600 17px/18px Inter;letter-spacing:-.2px}
+#island{position:absolute;z-index:6;left:133px;top:13px;width:121px;height:35px;border-radius:18px;background:#000}
+#sticons{position:absolute;z-index:6;right:31px;top:23px;display:flex;gap:5px;align-items:center}
+.glass{position:absolute;z-index:6;top:60px;width:42px;height:42px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;color:#111;background:rgba(235,236,238,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:scale .12s}
+.glass:active{scale:.94}#b1{left:15px}#b2{right:15px}.glass svg{position:absolute}
+#navt{position:absolute;z-index:6;left:0;right:0;top:71px;text-align:center;font:600 16.5px/20px Inter;opacity:0;pointer-events:none}
+.sheet{position:absolute;z-index:5;left:7px;right:7px;border-radius:32px;will-change:transform}
+#d1{top:532px;height:306px;padding:22px 16px 0;background:linear-gradient(180deg,rgba(226,226,224,.78) 0,rgba(240,239,233,.9) 42%,rgba(246,244,237,.97) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 -1px 0 rgba(255,255,255,.5),0 0 0 1px rgba(255,255,255,.3);cursor:grab}
+.grab{position:absolute;left:50%;top:6px;width:56px;height:3.5px;margin-left:-28px;border-radius:3px;background:#b9b9b9}
+.ord{font:500 13px/16px Inter;color:#6f6f6f;letter-spacing:.1px}
+#ttl{position:relative;height:40px;margin-top:2px}
+#ttl span{position:absolute;left:0;top:0;white-space:nowrap;font:700 32.5px/40px Inter;letter-spacing:-.75px;transition:opacity .4s,filter .4s}
+#ttl span.off{opacity:0;filter:blur(6px)}
+.eta{display:flex;align-items:center;gap:5px;font:400 14.5px/18px Inter;color:#6e6e70;height:20px;margin-top:1px}.eta b{font-weight:600;color:#222}
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:17px}.bar{height:6px;border-radius:4px;background:#dcdcd8;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--green);border-radius:4px;transition:width .6s cubic-bezier(.3,.7,.3,1)}
+.lbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px;font:400 13.5px/18px Inter;color:#777;text-align:center}.lbs span:first-child{text-align:left}.lbs .on{font-weight:600;color:#111}
+.card{margin-top:17px;background:rgba(255,255,255,.86);border-radius:21px;padding:0 16px}
+.row{display:flex;align-items:center;height:61.500px;gap:12px}.row+.row{border-top:1px solid #d8d8d6}
+.ic{width:36px;height:36px;border-radius:50%;background:var(--mint);display:grid;place-items:center;flex:none;color:#2f6a40}
+.tx{flex:1;min-width:0}.tx b{display:block;font:400 16px/20px Inter;letter-spacing:-.15px;color:#111}.tx small{display:block;font:400 14.5px/19px Inter;color:#78787a}
+.pr{font:400 17px Inter;color:#6f6f70}
+#d2{top:578px;height:265px;left:7px;right:7px;padding:24px 16px 0;background:#FDFCF9;box-shadow:0 -6px 30px rgba(0,0,0,.05)}
+.a42{display:flex;justify-content:space-between;align-items:flex-start}.a42 b{font:700 44px/44px Inter;letter-spacing:-.5px}
+.ok{display:flex;align-items:center;gap:4px;height:27px;padding:0 11px 0 9px;border-radius:14px;background:#E6F8DD;color:#3e6b45;font:600 13px Inter;margin-top:2px}
+.pc{font:500 13px/16px Inter;color:#7c7c7e;margin-top:2px}
+.show{font:700 20px/24px Inter;letter-spacing:-.4px;margin-top:17px}.blond{font:400 14.5px/19px Inter;color:#7a7a7c;margin-top:3px}
+.bright{display:flex;align-items:center;gap:6px;font:400 13px/18px Inter;color:#7d7d7f;margin-top:11px}
+.wal{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:48px;margin-top:12px;border:0;border-radius:24px;background:#000;color:#fff;font:600 16px Inter;cursor:pointer;transition:scale .12s}.wal:active{scale:.98}
+#home{position:absolute;z-index:7;left:129px;width:129px;height:4.500px;bottom:7px;border-radius:3px;background:#111}
+#tail{max-width:553px;width:100%;padding:24px 16px 60px;font:400 13px/1.6 Inter;color:#444}#tail h3{font:600 15px Inter;margin:0 0 8px}#tail dt{margin-top:8px}#tail dd{margin:0}#tail code{font:500 12.5px ui-monospace,monospace}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<div id="frame"><div id="phone">
+ <div id="qrbg"></div>
+ <div id="qrwrap"><svg id="qr" viewBox="0 0 45 45" aria-label="占位二维码，不可扫描"></svg></div>
+ <div id="world"><svg id="scene" viewBox="0 0 387 843" aria-hidden="true"></svg></div>
+ <div class="st">9:41</div><div id="island"></div>
+ <div id="sticons" aria-hidden="true"><svg width="19" height="12" viewBox="0 0 19 12"><rect x="0" y="8" width="3" height="4" rx=".8"/><rect x="5" y="5.500" width="3" height="6.500" rx=".8"/><rect x="10" y="3" width="3" height="9" rx=".8"/><rect x="15" y="0" width="3" height="12" rx=".8"/></svg><svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.500 2.400c2.400 0 4.600 1 6.200 2.600l1.200-1.300A10.400 10.400 0 0 0 8.500.6 10.400 10.400 0 0 0 1.100 3.700L2.300 5a8.700 8.700 0 0 1 6.200-2.600Zm0 3.700c1.400 0 2.700.6 3.600 1.500l1.200-1.300a6.800 6.800 0 0 0-9.600 0l1.200 1.300a5 5 0 0 1 3.600-1.500Zm0 3.700-2-.1 2 2.300 2-2.300Z"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.600" fill="none" stroke="#111" stroke-opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.400"/><path d="M25 4.500v4a2.200 2.200 0 0 0 0-4Z" opacity=".5"/></svg></div>
+ <button class="glass" id="b1" aria-label="Back"><svg id="iBack" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3 5 9l6 6"/></svg><svg id="iX" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" style="opacity:0"><path d="m3 3 12 12M15 3 3 15"/></svg></button>
+ <button class="glass" id="b2" aria-label="More"><svg id="iMore" width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><circle cx="3.500" cy="9" r="1.700"/><circle cx="9" cy="9" r="1.700"/><circle cx="14.500" cy="9" r="1.700"/></svg><svg id="iShare" width="18" height="20" viewBox="0 0 18 20" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linecap="round" stroke-linejoin="round" style="opacity:0"><path d="M9 12V1.500M5.500 4.800 9 1.300l3.500 3.500M5 8H3.500A1.500 1.500 0 0 0 2 9.500v7A1.500 1.500 0 0 0 3.500 18h11a1.500 1.500 0 0 0 1.500-1.500v-7A1.500 1.500 0 0 0 14.500 8H13"/></svg></button>
+ <div id="navt">Pickup</div>
+ <div class="sheet" id="d1"><div class="grab"></div>
+  <div class="ord">Order A42</div>
+  <div id="ttl"><span id="t1">Being made</span><span id="t2" class="off">Ready</span></div>
+  <div class="eta" id="eta"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#6e6e70" stroke-width="1.200" stroke-linecap="round"><circle cx="7.500" cy="7.500" r="6.400"/><path d="M7.500 4v3.600l-2.200 1.300"/></svg><span id="etx">Ready in about <b>1</b> min</span></div>
+  <div class="bars"><div class="bar"><i style="width:100%"></i></div><div class="bar"><i id="m" style="width:84%"></i></div><div class="bar"><i id="r"></i></div></div>
+  <div class="lbs"><span>Ordered</span><span id="l2" class="on">Making</span><span id="l3">Ready</span></div>
+  <div class="card">
+   <div class="row"><div class="ic"><svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M3.500 6.500h11l-.3 2H3.800Zm1 3.200h9L12.700 16a1 1 0 0 1-1 .8H6.300a1 1 0 0 1-1-.8ZM9.200 1.200l3.100.6-.3 1.200-2-.4-.5 3H8.300Z"/></svg></div><div class="tx"><b>Oat Matcha</b><small>Regular, iced, oat milk</small></div><div class="pr">£4.45</div></div>
+   <div class="row"><div class="ic"><svg width="19" height="18" viewBox="0 0 19 18" fill="currentColor"><path d="M2 2.500h15l1 4.200a2.400 2.400 0 0 1-4.400 1.100 2.800 2.800 0 0 1-4.100.1 2.800 2.800 0 0 1-4.100-.1A2.400 2.400 0 0 1 1 6.700ZM2.500 10.200a4 4 0 0 0 3-.5 4.300 4.300 0 0 0 4 .1 4.300 4.300 0 0 0 4-.1 4 4 0 0 0 3 .5V16H2.500Z"/><path d="M7 12h5v1.500H7z" fill="#E3F6DC"/></svg></div><div class="tx"><b>42 Gordon Street</b><small>Collect from the pickup counter</small></div><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="#aaa" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><path d="m1.500 1.500 6 6-6 6"/></svg></div>
+  </div>
+ </div>
+ <div class="sheet" id="d2"><div class="grab" style="background:#d5d5d3"></div>
+  <div class="a42"><b>A42</b><div class="ok"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linecap="round" stroke-linejoin="round"><path d="m1.500 6 2.800 3 5.200-7"/></svg>Ready</div></div>
+  <div class="pc">Pickup code</div><div class="show">Show this to your barista</div><div class="blond">Oat Matcha, Regular · 42 Gordon Street</div>
+  <div class="bright"><svg width="16" height="16" viewBox="0 0 16 16" fill="#666" stroke="#666" stroke-width="1.200" stroke-linecap="round"><circle cx="8" cy="8" r="3" stroke="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.400 1.400M11.600 11.600 13 13M13 3l-1.400 1.400M4.400 11.600 3 13"/></svg>Brightness is turned up while this is open</div>
+  <button class="wal"><svg width="20" height="16" viewBox="0 0 20 16"><rect width="20" height="16" rx="3.500" fill="#fff"/><rect y="4" width="20" height="3" fill="#000"/><rect x="3" y="10" width="5" height="2" rx="1" fill="#000"/></svg>Add to Wallet</button>
+ </div>
+ <div id="home"></div>
+</div></div>
+<section id="tail"><h3>可拆</h3><dl>
+ <dt><code>#d1</code></dt><dd>订单抽屉：标题模糊交叉切换、三段进度条、毛玻璃底。</dd>
+ <dt><code>#world</code></dt><dd>从店面到二维码的连续镜头：立面后仰退远，地面放大成二维码，再一路缩到取餐尺寸。</dd>
+ <dt><code>#qrwrap</code></dt><dd>二维码从 16 倍缩到 1 倍，模块全程保持硬边。</dd>
+</dl></section>
+<script>
+const $=s=>document.querySelector(s);
+/* ---------- 店面：自绘，不用原帖插画 ---------- */
+(function(){
+ const W=387;let s='';
+ const facade='#DCCBA8',pil='#D3C19B',ledge='#E7DBC1',shade='#BEAE8B',glass='#6F8297',fr='#EFE7D6',g='#7DA371',gd='#577C57';
+ s+=`<defs><pattern id="b" width="26" height="12" patternUnits="userSpaceOnUse"><rect width="26" height="12" fill="${facade}"/><path d="M0 11.500h26M13 0v5.700M0 6h26M0 5.700v0" stroke="#c9b892" stroke-width=".6" opacity=".55"/></pattern></defs>`;
+ s+=`<rect width="${W}" height="340" fill="url(#b)"/>`;
+ [114,257].forEach(x=>s+=`<rect x="${x}" y="-2" width="16" height="316" fill="${pil}"/><rect x="${x+14}" y="-2" width="2" height="316" fill="${shade}" opacity=".5"/>`);
+ const rows=[[-40,31],[71,92],[200,101]];
+ const cols=[22,165,307];
+ rows.forEach(([y,h],ri)=>cols.forEach(x=>{const w=58;
+  s+=`<rect x="${x-5}" y="${y-5}" width="${w+10}" height="${h+10}" fill="${fr}"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${glass}"/>`;
+  s+=`<path d="M${x+w/2} ${y}v${h}M${x} ${y+h/2}h${w}" stroke="${fr}" stroke-width="3"/>`;
+  s+=`<rect x="${x-14}" y="${y+h+5}" width="${w+28}" height="6" fill="${ledge}"/><rect x="${x-14}" y="${y+h+11}" width="${w+28}" height="2" fill="${shade}"/>`;
+  s+=`<rect x="${x-10}" y="${y-11}" width="${w+20}" height="5" fill="${ledge}"/>`;
+ }));
+ s+=`<rect y="308" width="${W}" height="12" fill="${ledge}"/><rect y="320" width="${W}" height="2" fill="${shade}"/><rect y="322" width="${W}" height="178" fill="${facade}"/>`;
+ s+=`<rect x="18" y="340" width="351" height="28" fill="${g}"/><rect x="18" y="368" width="351" height="2" fill="${gd}"/>`;
+ s+=`<text x="193.500" y="358.500" text-anchor="middle" font-family="Inter" font-weight="600" font-size="12" letter-spacing="1.600" fill="#F2F0E4">CORNER ▪ STREET</text>`;
+ s+=`<rect x="28" y="372" width="331" height="126" fill="${g}"/>`;
+ const win=(x,w)=>{s+=`<rect x="${x}" y="376" width="${w}" height="16" fill="#F4EFE2"/><rect x="${x}" y="396" width="${w}" height="102" fill="#F1ECDF"/><rect x="${x}" y="413" width="${w}" height="2.500" fill="#b9a58a"/>`;};
+ win(32,110);win(198,157);
+ for(let i=0;i<3;i++){s+=`<rect x="${42+i*36}" y="402" width="10" height="9" rx="1" fill="${g}"/><rect x="${212+i*36}" y="402" width="10" height="9" rx="1" fill="${g}"/>`}
+ [65,110,241].forEach(x=>s+=`<path d="M${x} 376v48" stroke="#555" stroke-width=".8"/><path d="M${x-9} 430a9 7 0 0 1 18 0Z" fill="#333"/>`);
+ s+=`<rect x="58" y="444" width="66" height="2.500" fill="#7c6f5a"/><path d="M72 444a19 11 0 0 1 38 0Z" fill="#E7B59B"/>`;
+ s+=`<rect x="143" y="396" width="55" height="102" fill="#2F4A35"/><rect x="186" y="440" width="2.200" height="18" fill="#D6CFB8"/><rect x="143" y="396" width="3" height="102" fill="${gd}"/><rect x="195" y="396" width="3" height="102" fill="${gd}"/>`;
+ s+=`<rect x="284" y="400" width="66" height="14" fill="#333"/><path d="M290 404h40M290 409h52" stroke="#eee" stroke-width="1.300"/><rect x="225" y="442" width="24" height="12" rx="2" fill="#fff"/><rect x="258" y="440" width="7" height="16" rx="1" fill="#333"/>`;
+ s+=`<rect x="28" y="474" width="331" height="24" fill="${gd}" opacity=".35"/>`;
+ [[66,0],[262,0],[347,0]].forEach(([x])=>{s+=`<rect x="${x-21}" y="473" width="42" height="2.500" fill="#222"/><path d="M${x} 475v25M${x-9} 501h18" stroke="#222" stroke-width="2"/>`;});
+ [[32],[92],[228],[300],[330]].forEach(([x])=>{s+=`<path d="M${x} 473h10l2 26M${x+1} 484h10M${x+1} 484l-1 15" fill="none" stroke="#3a4f40" stroke-width="2"/>`;});
+ [[-2],[368]].forEach(([x])=>{s+=`<circle cx="${x+10}" cy="465" r="16" fill="#7EA36A"/><circle cx="${x+6}" cy="459" r="8" fill="#92B57D"/><rect x="${x}" y="478" width="20" height="22" fill="#B7A98A"/>`;});
+ s+=`<rect y="498" width="${W}" height="20" fill="#E9E5D9"/><rect y="516" width="${W}" height="2" fill="#c7c1b1"/>`;
+ s+=`<g id="ground"><rect y="518" width="${W}" height="100" fill="#EDE8DC"/><rect id="road" y="518" width="${W}" height="100" fill="#ADADAB"/><rect y="618" width="${W}" height="225" fill="#EDE8DC"/></g>`;
+ $('#scene').innerHTML=s;
+})();
+/* ---------- 占位二维码：45 模块，v7 的定位结构，数据随机，不可扫描 ---------- */
+(function(){
+ const N=45,m=Array.from({length:N},()=>Array(N).fill(null));let seed=4242;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+ const put=(x,y,v)=>{if(x>=0&&y>=0&&x<N&&y<N)m[y][x]=v};
+ const finder=(cx,cy)=>{for(let y=-4;y<=4;y++)for(let x=-4;x<=4;x++){const d=Math.max(Math.abs(x),Math.abs(y));put(cx+x,cy+y,d===2||d===4?0:1)}};
+ finder(3,3);finder(41,3);finder(3,41);
+ const align=(cx,cy)=>{for(let y=-2;y<=2;y++)for(let x=-2;x<=2;x++){const d=Math.max(Math.abs(x),Math.abs(y));put(cx+x,cy+y,d===1?0:1)}};
+ [[22,6],[6,22],[22,22],[38,22],[22,38],[38,38]].forEach(([x,y])=>align(x,y));
+ for(let i=8;i<N-8;i++){if(m[6][i]===null)m[6][i]=i%2?0:1;if(m[i][6]===null)m[i][6]=i%2?0:1}
+ let d='';for(let y=0;y<N;y++)for(let x=0;x<N;x++){if(m[y][x]===null)m[y][x]=rnd()<.5?1:0;if(m[y][x])d+=`M${x} ${y}h1v1h-1z`}
+ $('#qr').innerHTML=`<path d="${d}" fill="#1B1A1C"/>`;
+})();
+/* ---------- 进度 p：0 店面，1 取餐。全部画面由 p 算出，所以能拖、能倒放 ---------- */
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));const seg=(p,a,b)=>clamp((p-a)/(b-a));
+const io=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;const out=t=>1-Math.pow(1-t,3);const inn=t=>t*t*t;
+const backOut=t=>{const c=1.15;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+let P=0;
+function render(p){P=p;
+ const drop=inn(seg(p,0,.2));$('#d1').style.transform=`translateY(${drop*320}px)`;
+ const ic=seg(p,.02,.1);$('#iBack').style.opacity=1-ic;$('#iX').style.opacity=ic;$('#iMore').style.opacity=1-ic;$('#iShare').style.opacity=ic;
+ /* 立面：相机升高，往后仰，整个世界缩到二维码中心 */
+ const tilt=io(seg(p,.14,.5));
+ const q=seg(p,.52,.9);const qs=Math.exp(Math.log(16)*(1-out(q)));
+ const mix=io(seg(p,.46,.56));const sc=(1-.1*tilt)*(1-mix)+(.56*qs/16)*mix;
+ $('#world').style.transform=`perspective(620px) translateY(${(30*tilt*(1-mix)+79*mix).toFixed(1)}px) rotateX(${(-24*tilt).toFixed(2)}deg) scale(${sc.toFixed(3)})`;
+ $('#world').style.opacity=1-seg(p,.6,.68);
+ $('#ground').style.opacity=1-seg(p,.5,.56);$('#road').style.opacity=1-seg(p,.16,.3);
+ /* 二维码从 16 倍缩到 1 倍，中心的校正图形正好包住店面 */
+ $('#qrwrap').style.transform=`scale(${qs.toFixed(3)})`;$('#qrwrap').style.opacity=seg(p,.5,.56);
+ $('#qrbg').style.opacity=seg(p,.62,.76);
+ const u=out(seg(p,.84,1));const k=p>=.84?backOut(seg(p,.84,1)):0;$('#d2').style.transform=`translateY(${(1-k)*280}px)`;
+ $('#d2').style.visibility=p<.84?'hidden':'visible';$('#navt').style.opacity=seg(p,.86,1);
+ const a=seg(p,.8,.95);document.querySelectorAll('.glass').forEach(b=>b.style.background=`rgba(${235+a*7},${236+a*6},${238+a*4},${.62+a*.3})`);
+ $('#phone').style.background=p>.8?'#F5F5F5':'#EDE8DC';
+}
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;let raf=0;
+function animate(to,dur=2300){cancelAnimationFrame(raf);if(reduce){render(to);return}const from=P,t0=performance.now(),D=dur*Math.abs(to-from);(function step(t){const u=clamp((t-t0)/(D||1));render(from+(to-from)*u);if(u<1)raf=requestAnimationFrame(step)})(t0)}
+/* 状态切换 */
+function ready(on){$('#t1').classList.toggle('off',on);$('#t2').classList.toggle('off',!on);$('#m').style.width=on?'100%':'84%';$('#r').style.width=on?'100%':'0';$('#l2').classList.toggle('on',!on);$('#l3').classList.toggle('on',on);
+ $('#etx').innerHTML=on?'Show your code to the barista':'Ready in about <b>1</b> min'}
+/* 拖抽屉：下拉距离映射到前 20% 的 p，松手过半就走完 */
+const d1=$('#d1');let sy=null;
+d1.addEventListener('pointerdown',e=>{sy=e.clientY;d1.setPointerCapture(e.pointerId)});
+d1.addEventListener('pointermove',e=>{if(sy===null)return;render(clamp((e.clientY-sy)/600,0,.2))});
+d1.addEventListener('pointerup',e=>{if(sy===null)return;const moved=Math.abs(e.clientY-sy);sy=null;if(moved<6||P>.06)animate(1);else animate(0,500)});
+$('#b1').onclick=()=>{if(P>.5)animate(0)};
+const q=new URLSearchParams(location.search);render(+(q.get('p')||0));
+if(q.get('demo')==='ready')ready(true);
+else if(!q.has('p')&&!q.get('demo')){setTimeout(()=>ready(true),1800)}
+</script></body></html>

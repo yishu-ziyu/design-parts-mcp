@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Two Horizons</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"JetBrains Mono";src:url(fonts/jetbrains-mono.woff2) format("woff2");font-weight:100 800}
+@font-face{font-family:Italiana;src:url(fonts/italiana.woff2) format("woff2")}
+@font-face{font-family:Cormorant;src:url(fonts/cormorant-garamond.woff2) format("woff2")}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:#efe6d6;font-family:"JetBrains Mono",monospace;overflow-x:hidden}
+#view{position:relative;width:100vw;aspect-ratio:1500/844;max-height:100vh;margin:auto;overflow:hidden;background:#000;cursor:grab;touch-action:none}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+#veil{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .55s ease}
+#hud{position:absolute;left:0;top:0;width:1500px;height:844px;transform-origin:0 0;transition:opacity .3s;pointer-events:none;font-size:10.6px;line-height:13px;color:rgba(239,230,214,.72)}
+#hud.off{opacity:0}
+.c{position:absolute;width:18px;height:18px;border:1px solid rgba(239,230,214,.3)}
+.c.tl{left:26px;top:26px;border-right:0;border-bottom:0}.c.tr{right:26px;top:26px;border-left:0;border-bottom:0}.c.bl{left:26px;bottom:26px;border-right:0;border-top:0}.c.br{right:26px;bottom:26px;border-left:0;border-top:0}
+.kick{position:absolute;left:47px;top:46px;letter-spacing:.42em;font-size:9.6px}
+#title{position:absolute;left:46px;top:58px;font:400 36px/42px Italiana,Cormorant,serif;color:#f8f1e3;letter-spacing:.012em;transition:opacity .4s}
+#desc{position:absolute;left:47px;top:103px;width:216px;font-size:11px;line-height:12.6px;color:rgba(239,230,214,.72);transition:opacity .4s}
+.ic{position:absolute;top:47px;width:20px;height:20px;padding:0;border:0;background:none;color:rgba(239,230,214,.75);cursor:pointer;pointer-events:auto;display:grid;place-items:center;transition:color .2s}
+.ic:hover{color:#fff}
+.ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.1}
+#readout{position:absolute;left:47px;top:764px;font-size:10.4px;line-height:20px;white-space:pre;color:rgba(239,230,214,.62)}
+#readout b{font-weight:500;color:#f4ecdc}
+#tabs{position:absolute;left:0;right:0;top:773px;display:flex;justify-content:center;align-items:center;pointer-events:auto;gap:0}
+#tabs button{background:none;border:0;color:rgba(239,230,214,.22);padding:4px 0 8px;cursor:pointer;font:400 21px/26px Italiana,Cormorant,serif;letter-spacing:.05em;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid transparent;transition:color .4s,border-color .4s;min-width:96px;justify-content:center}
+#tabs button i{font:500 9px/1 "JetBrains Mono",monospace}
+#tabs button.on{color:#f8f1e3;border-bottom-color:rgba(239,230,214,.42)}
+#tabs span{display:block;width:30px;height:1px;background:rgba(239,230,214,.22);margin:0 16px 8px}
+#ruler{position:absolute;right:46px;top:256px;height:332px;width:60px;font-size:9.6px;color:rgba(239,230,214,.32);text-align:right}
+#ruler::before{content:"";position:absolute;right:0;top:0;bottom:0;width:1px;background:rgba(239,230,214,.24)}
+#ruler .t{position:absolute;right:0;width:4px;height:1px;background:rgba(239,230,214,.32)}
+#ruler .n{position:absolute;right:13px;transform:translateY(-6px)}
+#focal{position:absolute;right:-5px;display:flex;align-items:center;gap:8px;color:#f0e7d6;transform:translateY(-6px);font-size:10.5px;white-space:nowrap}
+#focal i{display:block;width:11px;height:11px;border:1px solid rgba(239,230,214,.8);border-radius:50%;position:relative}
+.notes{max-width:880px;margin:64px auto;padding:0 16px;font:14px/22px system-ui,sans-serif;color:#b6ad9e}
+.notes h3{font-size:14px;margin:0 0 10px;color:#efe6d6}.notes dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 18px}.notes dd{margin:0}.notes code{font:12.5px "JetBrains Mono",monospace;color:#efe6d6}
+@media (max-width:760px){.notes dl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main id="view" aria-label="两个黑洞场景">
+  <canvas id="gl"></canvas><div id="veil"></div>
+  <div id="hud">
+    <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+    <div class="kick">TWO HORIZONS</div>
+    <div id="title">Aurum</div>
+    <div id="desc">The last farm before the event horizon</div>
+    <button class="ic" style="left:1321px" aria-label="回到初始焦距" id="b-home"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></svg></button>
+    <button class="ic" style="left:1358px" aria-label="暂停" id="b-pause"><svg viewBox="0 0 16 16"><path d="M6 4v8M10 4v8"/></svg></button>
+    <button class="ic" style="left:1395px" aria-label="全屏" id="b-full"><svg viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.500H10M6 13.500H2.500V10"/></svg></button>
+    <button class="ic" style="left:1432px" aria-label="隐藏界面" id="b-eye"><svg viewBox="0 0 16 16"><path d="M1.500 8S4 3.800 8 3.800 14.500 8 14.500 8 12 12.200 8 12.200 1.500 8 1.500 8Z"/><circle cx="8" cy="8" r="2"/></svg></button>
+    <div id="ruler"></div>
+    <div id="readout"></div>
+    <div id="tabs"><button data-s="0" class="on"><i>I</i>Aurum</button><span></span><button data-s="1"><i>II</i>Viola</button></div>
+  </div>
+</main>
+<section class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#gl</code></dt><dd>黑洞吸积盘用真实光线弯曲画出来：每个像素沿引力弯曲的路径走，穿过盘面时取一次亮度。视界下沿那道奶白光带另外补了一层。</dd>
+<dt><code>#view</code></dt><dd>拖动画面换机位：远处的黑洞移得少，近处的房子和卡车移得多，所以有视差；盘面倾角也跟着变。</dd>
+<dt><code>#ruler</code></dt><dd>滚轮或拖右侧刻度改焦距。每个焦距的取景位置都量自原片，广角时相机升高后退，所以房子落到地平线下方。</dd>
+<dt><code>#tabs</code></dt><dd>切换场景先压黑再换，文字和读数同时变。</dd>
+<dt><code>#readout</code></dt><dd>角落的仪表文字：高度、视界、时间，让画面像取景器。</dd>
+</dl>
+</section>
+<script src="source-assets/plates.js"></script>
+<script src="source-assets/plates2.js"></script>
+<script src="event-horizon.js"></script>
+</body>
+</html>

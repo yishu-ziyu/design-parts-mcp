@@ -1,0 +1,50 @@
+/* ONE decision, and the rest is arithmetic. GROW is the knob.
+   ROOM is the space the swell physically takes on every side â
+   half the extra width, exactly â so the neighbours are never
+   merely NEAR clear of it. AURA is the part that is not
+   arithmetic: the push beyond what the geometry demands, which
+   is the difference between a cluster making room and a
+   cluster being repelled. */
+const grow = 1.16 + 0.22 * pull;
+const room = CHIP * (grow - 1) / 2;
+const aura = 3 + 9 * pull;
+
+/* And the shove is a VECTOR, which is the whole reason these
+   are a cluster and not a row. In a line the direction reduces
+   to a sign and every chip is pushed along the same axis
+   whatever its actual relationship to the one you pressed;
+   here each one goes the way it lies. The aura decays with
+   real distance â exp() rather than 1/d, because an inverse
+   law is violent at the first neighbour and flat everywhere
+   after. */
+const dx = p.x - sel.x, dy = p.y - sel.y;
+const gap = Math.hypot(dx, dy), far = gap / PITCH;
+const fall = Math.exp(-(far - 1) / 1.8);
+const push = room + aura * fall;
+
+/* The selected chip goes WIDE BEFORE IT GOES TALL: two springs
+   at different stiffnesses rather than one scale, so the
+   transient is anisotropic and the rest state is not. That is
+   the whole of the jelly, and it is four numbers rather than a
+   keyframe track â which matters, because a keyframed squash
+   is the same squash at every bounce setting and this one is
+   not there at all when the spring is critically damped. The
+   far chips are 22ms late per step, which is what makes it a
+   force travelling outward rather than a layout changing all
+   at once. */
+animate={{ x: (dx / gap) * push, y: (dy / gap) * push,
+           scaleX: s, scaleY: s, rotate: (dx / gap) * tilt * fall }}
+transition={{
+  x:      { ...swing(k),        delay: far * 0.022 },
+  scaleX: { ...swing(k * 1.24), delay: far * 0.022 },
+  scaleY: { ...swing(k * 0.86), delay: far * 0.022 },
+}}
+
+/* The hover is NOT any of this. It lives on an inner element
+   with a CSS transform, because CSS scale and transform are
+   applied in sequence rather than folded together and a rule
+   here would fight the spring above every frame. Two elements,
+   two transforms â and it buys the hover its own curve, which
+   it needs: the field springs, a hover must not. Same 1.045
+   and the same 260ms as the search block, small enough to be
+   felt rather than seen. */

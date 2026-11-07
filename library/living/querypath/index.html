@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Querypath — 跟一个人走过机房</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --void: #0b0c0d;
+    --line: #3a3d3a;
+    --pri: #1b4f6e;
+    --pri-lit: #2a7aa8;
+    --gold: #e2c44a;
+    --gold-ink: #1a1608;
+    --chip-c: #2f6f9a;
+    --chip-o: #c9a227;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --mono: ui-monospace, Menlo, "IBM Plex Mono", monospace;
+    --sans: Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+
+  header.mast { max-width: 760px; margin: 0 auto; padding: 48px 24px 10px; text-align: center; }
+  header.mast .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  header.mast h1 { font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; margin: 8px 0; }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1180px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bar-row h2 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--sans); padding: 8px 12px;
+    border: 1px solid var(--note-ink); background: var(--note-ink); color: var(--cream); cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] { background: transparent; color: var(--muted); }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage { background: var(--void); color: #d8d6cf; border: 1px solid var(--note-ink); padding: 28px 20px 24px; overflow: hidden; }
+  .iso-wrap { height: 420px; position: relative; }
+  .world {
+    position: absolute; left: 50%; top: 54%;
+    width: 720px; height: 520px;
+    margin: -260px 0 0 -360px;
+    transform: rotateX(58deg) rotateZ(-44deg);
+    transform-style: preserve-3d;
+    transform-origin: 50% 50%;
+  }
+  .pad {
+    position: absolute;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.03);
+    transform-style: preserve-3d;
+    transition: opacity 280ms, filter 280ms;
+  }
+  .pad .lab {
+    position: absolute; left: 8px; bottom: -22px;
+    font: 600 11px var(--sans); letter-spacing: .14em; color: #8d8b84;
+    transform: rotateZ(44deg) rotateX(-58deg);
+    white-space: nowrap;
+  }
+  .box {
+    position: absolute; transform-style: preserve-3d;
+    font: 700 10px var(--sans); letter-spacing: .12em; color: #e8ecee;
+  }
+  .box span {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    backface-visibility: hidden;
+    border: 1px solid #5a6a72;
+  }
+  .box .f { background: var(--pri); transform: translateZ(14px); }
+  .box .t { background: #16384e; transform: rotateX(90deg) translateZ(14px); }
+  .box .r { background: #0f2a3a; transform: rotateY(90deg) translateZ(var(--rw, 40px)); }
+  .box.is-rep .f { background: #1a1d1f; color: #c9c6bd; border-color: #6a6d68; }
+  .box.is-rep .t { background: #141618; }
+  .box.is-rep .r { background: #0e1011; }
+  .box.is-side { font-size: 8px; }
+  .box.is-side .f { background: #22262a; color: #b7b4ab; }
+  .box.is-gold .f, .box.is-gold .t, .box.is-gold .r { background: var(--gold); color: var(--gold-ink); border-color: #c7ad3e; }
+  .box.is-dim { opacity: .28; }
+
+  #app { left: 430px; top: -40px; width: 160px; height: 70px; }
+  #router { left: 250px; top: 30px; width: 280px; height: 110px; }
+  #admin { left: 20px; top: 340px; width: 110px; height: 48px; }
+  .shard { width: 210px; height: 150px; }
+  #s1 { left: 10px; top: 40px; }
+  #s2 { left: 80px; top: 160px; }
+  #s3 { left: 260px; top: 230px; }
+  #s4 { left: 450px; top: 200px; }
+
+  .packet {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--gold); box-shadow: 0 0 10px var(--gold);
+    opacity: 0; pointer-events: none; z-index: 5;
+  }
+
+  .follow-view { margin-top: 18px; display: none; }
+  .follow-view.is-on { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 16px; }
+  @media (max-width: 800px) { .follow-view.is-on { grid-template-columns: 1fr; } .iso-wrap { height: 340px; } }
+  .tbl, .shards {
+    border: 1px solid #2c2f2c; padding: 10px 12px; font-family: var(--mono); font-size: 12px;
+  }
+  .tbl h3, .shards h3 { margin: 0 0 8px; font: 600 11px var(--sans); letter-spacing: .14em; color: #8d8b84; text-transform: uppercase; }
+  .row { display: grid; grid-template-columns: 36px 1fr 1fr; gap: 6px; padding: 4px 0; color: #6f6d66; }
+  .row.head { color: var(--gold); }
+  .row.is-on { color: #f2ecd0; }
+  .row.is-off { opacity: .28; }
+  .shard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .scard { border: 1px solid #2c2f2c; padding: 8px; min-height: 92px; }
+  .scard b { display: block; font: 600 11px var(--sans); letter-spacing: .1em; margin-bottom: 6px; color: #9a9890; }
+  .chip {
+    display: inline-block; margin: 0 4px 4px 0; padding: 3px 7px;
+    font-size: 11px; border: 1px solid;
+  }
+  .chip.c { background: #163246; border-color: #3d7aa0; color: #cfe4f2; }
+  .chip.o { background: #3a300c; border-color: #c9a227; color: #f3e4a4; }
+  .chip.is-off { opacity: .2; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #000; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  aside.tip { border: 1px solid var(--note-ink); padding: 10px 12px; margin: 18px 0; background: #efe8d6; font-size: 14.5px; }
+  aside.tip b { color: var(--green); }
+  .nums { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  .nums th, .nums td { text-align: left; border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent); padding: 6px 8px 6px 0; }
+  .nums td:first-child { font-family: var(--mono); font-size: 12px; }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: var(--mono); font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; font-size: 12.5px; color: var(--muted); }
+  a { color: inherit; }
+  code { font-family: var(--mono); font-size: .92em; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · planetscale.com / @BenjDicken</div>
+  <h1>跟一个人走过机房</h1>
+  <p class="sub">整张地图一直在。当前步骤发亮，其余压暗。跟住 Maja，才看见她的订单不在同一个 shard 上。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-follow" aria-pressed="false">Follow Maja</button>
+      <button type="button" id="t-replay">Replay</button>
+    </div>
+  </div>
+  <div id="stage">
+    <div class="iso-wrap" id="iso">
+      <div class="world">
+        <div class="pad" id="app"><div class="lab">APPLICATION</div></div>
+        <div class="pad" id="router"><div class="lab">ROUTER</div></div>
+        <div class="pad" id="admin"><div class="lab">ADMIN</div></div>
+        <div class="pad shard" id="s1"><div class="lab">SHARD 1</div></div>
+        <div class="pad shard" id="s2"><div class="lab">SHARD 2</div></div>
+        <div class="pad shard" id="s3"><div class="lab">SHARD 3</div></div>
+        <div class="pad shard" id="s4"><div class="lab">SHARD 4</div></div>
+      </div>
+      <div class="packet" id="packet"></div>
+    </div>
+    <div class="follow-view" id="tables">
+      <div class="tbl">
+        <h3>customers · shard key id</h3>
+        <div class="row head"><span>id</span><span>name</span><span></span></div>
+        <div class="row" data-who="alex"><span>2</span><span>Alex</span></div>
+        <div class="row" data-who="jeff"><span>6</span><span>Jeff</span></div>
+        <div class="row" data-who="maja"><span>32</span><span>Maja</span></div>
+        <div class="row" data-who="leah"><span>1</span><span>Leah</span></div>
+      </div>
+      <div class="shards">
+        <h3>orders 按 id 散列 · 同一顾客不共置</h3>
+        <div class="shard-grid" id="scards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原片第一屏</h3>
+      <p>黑底等轴机房。Application 在上，Router 拆成 Parser / Planner / Executor，四个 shard 各有 Primary、Replica、Sidecar。当前步骤发黄，其余只留线。光点沿虚线走。</p>
+      <p>发明是一张不换的图：跟住一个具体的人，时间可以倒放。Follow Maja 之后，她的订单散落在多个 shard 上。join 为什么难，跟住她之后直接看见。</p>
+    </div>
+    <figure>
+      <img src="assets/source-iso.jpg" alt="等轴机房，Parser 发黄" />
+      <figcaption><strong>图 1.</strong> 查询正经过 Parser。其余块压暗。</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <img src="assets/source-follow.jpg" alt="Follow Maja 时订单散落在各 shard" />
+    <figcaption><strong>图 2.</strong> Follow Maja。顾客在 Shard 3，订单在 1、2、3。Replay 在右下角。</figcaption>
+  </figure>
+  <aside class="tip"><b>原则：</b>要突出当前路径，先把其余路径变淡。不要加第三种高亮。跟一个人，不要跟流量。</aside>
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>世界转角</td><td>rotateX 58° / rotateZ −44°</td></tr>
+      <tr><td>当前色</td><td>Parser / 光点 / 订单条 #e2c44a</td></tr>
+      <tr><td>Primary</td><td>#1b4f6e，描边 1px</td></tr>
+      <tr><td>Replay</td><td>Application → Parser（黄）→ Planner → Executor → 四 shard，约 2.8s</td></tr>
+      <tr><td>Maja</td><td>customers.id 32 在 shard 3。订单 customer_id=32 落在 shard 1 与 2</td></tr>
+    </tbody>
+  </table>
+</div>
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#iso</code></dt>
+    <dd>等轴机房地图。Application、Router、四个 shard。当前步骤 <code>.is-gold</code>，其余 <code>.is-dim</code>。世界 <code>rotateX(58deg) rotateZ(-44deg)</code>。</dd>
+    <dt><code>#follow</code></dt>
+    <dd>Follow Maja。只点亮 id 32 和 customer_id 32 的行。其余行 opacity .2。用来看见「顾客和订单不共置」。</dd>
+    <dt><code>#replay</code></dt>
+    <dd>黄点沿 Application → Parser → Planner → Executor → shards 走 2.8s。所到之块发金，走过即暗。</dd>
+  </dl>
+</section>
+<footer class="colophon">
+  <p>来源：<a href="https://planetscale.com/blog/the-lifecycle-of-a-sharded-postgres-query">planetscale.com/blog/the-lifecycle-of-a-sharded-postgres-query</a> · <a href="https://x.com/BenjDicken/status/2098235061267259756">@BenjDicken</a> · <a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  function box(w, h, d, label, kind) {
+    const el = document.createElement('div')
+    el.className = 'box' + (kind ? ' ' + kind : '')
+    el.style.width = w + 'px'
+    el.style.height = h + 'px'
+    el.style.setProperty('--rw', (w / 2) + 'px')
+    el.innerHTML = '<span class="f">' + label + '</span><span class="t"></span><span class="r"></span>'
+    el.querySelector('.t').style.width = w + 'px'
+    el.querySelector('.t').style.height = (d * 2) + 'px'
+    el.querySelector('.r').style.width = (d * 2) + 'px'
+    el.querySelector('.r').style.height = h + 'px'
+    return el
+  }
+  function place(el, x, y, z) {
+    el.style.left = x + 'px'
+    el.style.top = y + 'px'
+    el.style.transform = 'translateZ(' + (z || 0) + 'px)'
+  }
+
+  const router = document.getElementById('router')
+  const parser = box(88, 36, 14, 'PARSER')
+  const planner = box(88, 36, 14, 'PLANNER', 'is-rep')
+  const executor = box(88, 36, 14, 'EXECUTOR', 'is-rep')
+  place(parser, 12, 16, 20); place(planner, 102, 40, 20); place(executor, 192, 64, 20)
+  router.appendChild(parser); router.appendChild(planner); router.appendChild(executor)
+  parser.id = 'parser'; planner.id = 'planner'; executor.id = 'executor'
+
+  const appBox = box(140, 48, 12, '', 'is-rep')
+  place(appBox, 10, 10, 16)
+  document.getElementById('app').appendChild(appBox)
+
+  function furnish(id, shift) {
+    const pad = document.getElementById(id)
+    const p = box(150, 28, 12, 'PRIMARY')
+    const r1 = box(92, 24, 10, 'REPLICA', 'is-rep')
+    const r2 = box(92, 24, 10, 'REPLICA', 'is-rep')
+    const c1 = box(52, 16, 8, 'SIDECAR', 'is-side is-rep')
+    const c2 = box(52, 16, 8, 'SIDECAR', 'is-side is-rep')
+    place(p, 28, 18, 18)
+    place(c1, 118, 8, 18)
+    place(r1, 18, 62, 18)
+    place(c2, 78, 52, 18)
+    place(r2, 70, 96, 18)
+    ;[p, r1, r2, c1, c2].forEach((n) => pad.appendChild(n))
+  }
+  ;['s1','s2','s3','s4'].forEach(furnish)
+
+  const SHARDS = [
+    { id: 1, customer: { who: 'alex', id: 2, name: 'Alex' }, orders: [{ id: 3207, cid: 32, total: 30 }, { id: 3209, cid: 32, total: 20 }] },
+    { id: 2, customer: { who: 'jeff', id: 6, name: 'Jeff' }, orders: [{ id: 3203, cid: 32, total: 70 }, { id: 3208, cid: 2, total: 15 }] },
+    { id: 3, customer: { who: 'maja', id: 32, name: 'Maja' }, orders: [{ id: 3202, cid: 2, total: 25 }, { id: 32, cid: 1, total: 45 }] },
+    { id: 4, customer: { who: 'leah', id: 1, name: 'Leah' }, orders: [{ id: 1, cid: 6, total: 60 }] }
+  ]
+  const scards = document.getElementById('scards')
+  SHARDS.forEach((s) => {
+    const el = document.createElement('div')
+    el.className = 'scard'
+    el.dataset.shard = s.id
+    const orders = s.orders.map((o) => '<span class="chip o" data-cid="' + o.cid + '">' + o.id + ' · $' + o.total + '</span>').join('')
+    el.innerHTML = '<b>Shard ' + s.id + '</b><span class="chip c" data-who="' + s.customer.who + '">' + s.customer.id + ' ' + s.customer.name + '</span><div>' + orders + '</div>'
+    scards.appendChild(el)
+  })
+
+  const tables = document.getElementById('tables')
+  const followBtn = document.getElementById('t-follow')
+  let following = false
+  function setFollow(on) {
+    following = on
+    followBtn.setAttribute('aria-pressed', on ? 'true' : 'false')
+    tables.classList.toggle('is-on', on)
+    document.querySelectorAll('[data-who]').forEach((n) => {
+      const hit = n.dataset.who === 'maja'
+      n.classList.toggle('is-on', on && hit)
+      n.classList.toggle('is-off', on && !hit)
+    })
+    document.querySelectorAll('[data-cid]').forEach((n) => {
+      const hit = n.dataset.cid === '32'
+      n.classList.toggle('is-off', on && !hit)
+    })
+    document.getElementById('s3').style.filter = on ? 'none' : ''
+    ;['s1','s2','s4'].forEach((id) => {
+      document.getElementById(id).style.opacity = on ? '.45' : '1'
+    })
+  }
+  followBtn.addEventListener('click', () => setFollow(!following))
+
+  const steps = [
+    { el: appBox, x: 62, y: 48 },
+    { el: parser, x: 48, y: 38 },
+    { el: planner, x: 48, y: 38 },
+    { el: executor, x: 48, y: 38 },
+    { el: document.querySelector('#s1 .box'), x: 80, y: 30 },
+    { el: document.querySelector('#s2 .box'), x: 80, y: 30 },
+    { el: document.querySelector('#s3 .box'), x: 80, y: 30 },
+    { el: document.querySelector('#s4 .box'), x: 80, y: 30 }
+  ]
+  const packet = document.getElementById('packet')
+  function gold(el, on) { el.classList.toggle('is-gold', on) }
+  function replay() {
+    const boxes = [...document.querySelectorAll('.box')]
+    boxes.forEach((b) => b.classList.remove('is-gold'))
+    packet.style.opacity = '1'
+    let i = 0
+    function tick() {
+      boxes.forEach((b) => b.classList.remove('is-gold'))
+      if (i >= steps.length) { packet.style.opacity = '0'; return }
+      const s = steps[i]
+      gold(s.el, true)
+      const r = s.el.getBoundingClientRect()
+      const host = document.getElementById('iso').getBoundingClientRect()
+      packet.style.left = (r.left - host.left + r.width * 0.35) + 'px'
+      packet.style.top = (r.top - host.top + r.height * 0.35) + 'px'
+      i += 1
+      setTimeout(tick, 340)
+    }
+    tick()
+  }
+  document.getElementById('t-replay').addEventListener('click', replay)
+  setTimeout(replay, 400)
+})()
+</script>
+</body>
+</html>

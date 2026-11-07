@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVG Launch Film</title>
+<style>
+@font-face{font-family:IV;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#1a191c;--paper:#f5f4f1;--lav:#a6a8f4;--blue:#5a78dd}
+*{box-sizing:border-box}html,body{margin:0;background:#000;color:#ddd;font:14px/1.6 IV,system-ui,sans-serif}
+#stage{display:block;width:100vw;max-width:calc(100vh*16/9);aspect-ratio:16/9;margin:0 auto;background:var(--ink);cursor:pointer;overflow:hidden}
+#stage text{font-family:IV,system-ui,sans-serif}
+section.notes{max-width:760px;margin:0 auto;padding:40px 20px 80px;background:#000}
+h3{font-weight:600;margin:0 0 12px}dt code{color:var(--lav)}dd{margin:0 0 12px;color:#aaa}
+</style></head><body>
+<svg id="stage" viewBox="0 0 1280 720" role="img" aria-label="每一帧都用 JavaScript 绘制的 SVG 短片">
+<defs id="defs"></defs>
+<rect id="bg" width="1280" height="720" fill="#1a191c"/>
+<g id="disc"></g>
+<g id="particles" fill="none" stroke-linecap="round"></g>
+<g id="type"></g>
+<g id="adapters"></g>
+<g id="logo"></g>
+</svg>
+<section class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#particles</code></dt><dd>一组组点从尘团凝聚成球、透视卡片、文字和立方体，再散开。</dd>
+<dt><code>#type</code></dt><dd>标题逐字从裁切线下升起，离场逐字落回裁切线下。</dd>
+<dt><code>#adapters</code></dt><dd>四个小球带图标和标签错峰入场。</dd>
+<dt><code>#logo</code></dt><dd>圆盘放大盖满变亮底，线框立方体收成标识和安装命令。</dd>
+</dl>
+</section>
+<script>
+(async()=>{
+const NS='http://www.w3.org/2000/svg',$=id=>document.getElementById(id);
+const DUR=35,N=1500,TAU=Math.PI*2;
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const prog=(t,a,b)=>clamp((t-a)/(b-a));
+const eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eo=x=>1-Math.pow(1-x,3);
+const eoq=x=>1-Math.pow(1-x,5);
+const lerp=(a,b,x)=>a+(b-a)*x;
+const hash=(i,s=1)=>{const v=Math.sin(i*127.1+s*311.7)*43758.5453;return v-Math.floor(v)};
+try{await document.fonts.load('600 80px IV');await document.fonts.load('470 80px IV');await document.fonts.load('500 20px IV');}catch(e){}
+
+/* ---------- shapes: each returns screen points {x,y,a,r,c}; c=0 white, 1 lavender ---------- */
+const GA=Math.PI*(3-Math.sqrt(5));
+function fib(i,n){const y=1-(i+.5)/n*2,r=Math.sqrt(1-y*y),th=i*GA;return[Math.cos(th)*r,y,Math.sin(th)*r]}
+function rotP([x,y,z],ry,rx){const c=Math.cos(ry),s=Math.sin(ry);let X=x*c+z*s,Z=-x*s+z*c;const c2=Math.cos(rx),s2=Math.sin(rx);return[X,y*c2-Z*s2,y*s2+Z*c2]}
+function sphereDot(i,n,cx,cy,R,ry,rx,base=1,dot=1){const p=rotP(fib(i,n),ry,rx),d=(p[2]+1)/2;
+  const g=clamp(Math.pow(R/323,.8),1,3.1);return{x:cx+p[0]*R,y:cy+p[1]*R,a:base*(.4+.6*Math.pow(d,1.1))*(R>420?.6:1),r:dot*g*(.68+.62*d)*(R>420?1.25:1),c:0,z:p[2],u:p[0],v:p[1]}}
+/* cube wireframe as dots */
+function cubeVerts(cx,cy,s,ry,rx,tp=.09){const v=[];for(const x of[-1,1])for(const y of[-1,1])for(const z of[-1,1]){const p=rotP([x,y,z],ry,rx);v.push([cx+p[0]*s*(1-p[1]*tp),cy+p[1]*s,p[2]])}return v}
+const EDGES=[[0,1],[2,3],[4,5],[6,7],[0,2],[1,3],[4,6],[5,7],[0,4],[1,5],[2,6],[3,7]];
+function CubeDots(cx,cy,s){return t=>{const q=eio(prog(t,28.35,29.2)),ry=lerp(.42,.785,q),v=cubeVerts(cx,cy,s,ry,lerp(-.34,-.6,q)),o=[];
+  const per=110;for(const[a,b]of EDGES)for(let i=0;i<per;i++){const f=i/per;o.push({x:lerp(v[a][0],v[b][0],f),y:lerp(v[a][1],v[b][1],f),a:.55+.4*((lerp(v[a][2],v[b][2],f)+1.7)/3.4),r:.86,c:0})}return o}}
+
+/* ---------- film states: [t0,t1,shape]; between them particles travel and scatter ---------- */
+const sphereCx=t=>lerp(640,843,eio(prog(t,1.0,2.0)))+40*eio(prog(t,2,3));
+const sphereR=t=>{if(t<1.0)return lerp(1200,850,eo(prog(t,.55,1.0)));const e=eio(prog(t,1.0,2.0));return lerp(850,323,e)-lerp(0,67,eio(prog(t,2.0,3)))};
+const lavT=(t,q)=>{const e=prog(t,3.4,4.4);if(e<=0)return 0;return (q.u*-.7+q.v*-.7)>(1.05-e*1.05)&&(hash(q.x|0,3)>.25)?1:0};
+/* ---------- helpers for the choreography ---------- */
+const smooth=x=>x*x*(3-2*x);
+/* piecewise keyframes: [[t,[...numbers]],...] */
+function kf(keys,t){if(t<=keys[0][0])return keys[0][1];for(let i=1;i<keys.length;i++){if(t<=keys[i][0]){const[a,va]=keys[i-1],[b,vb]=keys[i],x=(t-a)/(b-a);return va.map((v,j)=>lerp(v,vb[j],x))}}return keys[keys.length-1][1]}
+const kf1=(keys,t)=>kf(keys.map(([a,b])=>[a,[b]]),t)[0];
+/* perspective mapping of the unit square onto a quad TL,TR,BR,BL */
+function quadMap([x0,y0,x1,y1,x2,y2,x3,y3]){const dx1=x1-x2,dx2=x3-x2,sx=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,sy=y0-y1+y2-y3,den=dx1*dy2-dx2*dy1,
+  g=(sx*dy2-dx2*sy)/den,h=(dx1*sy-sx*dy1)/den,a=x1-x0+g*x1,b=x3-x0+h*x3,d=y1-y0+g*y1,e=y3-y0+h*y3;
+  return(u,v)=>{const w=g*u+h*v+1;return[(a*u+b*v+x0)/w,(d*u+e*v+y0)/w]}}
+/* a soft cloud of dust; keys give [x,y,w,h,alpha] over time */
+const cloud=keys=>t=>{const[x,y,w,h,a]=kf(keys,t);return{x,y,w,h,a}};
+function cloudPt(c,i,s){return{x:c.x+(hash(i,s)*.72+hash(i,s+1)*.28-.5)*2*c.w,y:c.y+(hash(i,s+2)*.72+hash(i,s+3)*.28-.5)*2*c.h}}
+/* one visible group: a shape that condenses out of a cloud and later dissolves into another */
+function form(o){const st=o.st??.55,seed=o.seed||1,D=(p,a,b,lag)=>{const T=b-a,d=(lag||0)*T*.5;const s=a+d+(T-d)*st*hash(p,seed+11);return[s,s+(T-d)*(1-st)]};
+  return t=>{if(t<o.i0||t>o.o1)return[];const pts=o.shape(t),res=[],ci=o.ci&&t<o.i1?o.ci(t):null,co=o.co&&t>o.o0?o.co(t):null,ka=o.keep??.72;
+    for(let i=0;i<pts.length;i++){const p=pts[i];let x=p.x,y=p.y,al=p.a*(o.a?o.a(t,p,i):1),r=p.r;
+      const lg=o.lag?o.lag(p,i):0;
+      if(ci){const[s0,s1]=D(i,o.i0,o.i1,lg),e=eio(prog(t,s0,s1));if(e<1){if(hash(i,seed+5)>ka)continue;const c=cloudPt(ci,i,seed+20);x=lerp(c.x,x,e);y=lerp(c.y,y,e);al=lerp(ci.a,al,e);r=lerp(1.04,r,e)}}
+      if(co){const[s0,s1]=D(i,o.o0,o.o1,o.lagOut?o.lagOut(p,i):0),e=eio(prog(t,s0,s1));if(e>0){if(hash(i,seed+6)>ka&&e>.08)continue;const c=cloudPt(co,i,seed+30);x=lerp(x,c.x,e);y=lerp(y,c.y,e);al=lerp(al,co.a,e);r=lerp(r,1.04,e)}}
+      if(al>.02)res.push({x,y,a:al,r,c:p.c||0})}
+    return res}}
+/* free-floating dust between two groups */
+function dust(n,keys,seed){const cl=cloud(keys),a=keys[0][0],b=keys[keys.length-1][0];return t=>{if(t<a||t>b)return[];const c=cl(t),res=[];for(let i=0;i<n;i++){const q=cloudPt(c,i,seed);res.push({x:q.x,y:q.y,a:c.a*(.55+.45*hash(i,seed+7)),r:1.04,c:0})}return res}}
+
+/* ---------- cards: three dashed outlines, a 3x3 mark and two text lines, all dots ---------- */
+function cardUV(){const o=[],T=38,S=9;for(let i=0;i<=T;i++){o.push([i/T,0]);o.push([i/T,1])}for(let j=1;j<S;j++){o.push([0,j/S]);o.push([1,j/S])}
+  for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)o.push([.155+a*.024,.53+b*.095]);
+  for(let i=0;i<=18;i++)o.push([.27+i/18*.51,.35]);for(let i=0;i<=11;i++)o.push([.275+i/11*.31,.65]);return o}
+const UV=cardUV();
+function cardShape(keys,al=1){return t=>{const m=quadMap(kf(keys,t)),a=typeof al==='function'?al(t):al;return UV.map(([u,v])=>{const[x,y]=m(u,v);return{x,y,a,r:1.16,c:0}})}}
+const seen=(a,b,lo=.42)=>t=>lerp(lo,1,smooth(prog(t,a,b)));
+const fadeSteps=(a,b,c)=>t=>t<a?1:t<b?lerp(1,.3,(t-a)/(b-a)):lerp(.3,0,prog(t,b,c));
+/* measured from the source frames at 7.6, 8.6, 9.2 s */
+const RISE=[
+ [[6.6,[550,210,1100,145,1110,268,572,352]],[7.0,[544,194,1104,136,1116,258,567,342]],[7.6,[539,184,1110,122,1121,246,563,333]],[8.6,[528,123,1129,86,1137,215,549,276]],[9.2,[536,115,1147,91,1155,223,551,264]],[9.8,[540,112,1156,92,1163,226,553,262]]],
+ [[6.8,[580,398,1118,304,1128,420,602,536]],[7.0,[578,392,1120,300,1130,416,600,532]],[7.6,[573,383,1126,288,1136,406,596,525]],[8.6,[556,328,1140,261,1149,385,576,475]],[9.2,[557,316,1157,269,1162,397,571,458]],[9.8,[559,312,1166,272,1170,402,573,455]]],
+ [[7.0,[608,582,1132,458,1143,570,633,714]],[7.6,[604,574,1138,446,1149,560,629,708]],[8.6,[584,526,1153,429,1161,549,603,666]],[9.2,[576,509,1163,441,1170,565,590,649]],[9.8,[574,503,1172,446,1178,571,587,644]]]];
+const RISE_IN=cloud([[6.5,[885,390,150,140,.9]],[6.8,[900,370,260,220,.9]],[7.1,[900,450,300,230,.8]],[7.6,[900,560,290,170,.7]]]);
+const RISE_OUT=cloud([[9.35,[860,340,340,290,1]],[9.8,[830,330,330,240,1]],[10.0,[670,300,340,330,.95]],[10.2,[820,360,360,330,.95]]]);
+/* measured at 10.8, 11.6, 12.1 s */
+const LEAVE=[
+ [[10.25,[904,150,1505,62,1517,226,924,282]],[10.6,[668,150,1269,62,1281,226,688,282]],[10.8,[604,157,1205,74,1217,235,624,284]],[11.6,[604,162,1151,51,1167,203,623,282]],[12.1,[593,183,1172,95,1186,244,611,307]],[12.6,[588,195,1180,110,1194,258,606,320]]],
+ [[10.25,[922,330,1510,292,1520,442,943,452]],[10.6,[686,330,1274,292,1284,442,707,452]],[10.8,[631,328,1219,288,1229,438,652,450]],[11.6,[628,322,1174,255,1190,403,648,441]],[12.1,[614,336,1188,282,1200,428,629,458]],[12.6,[608,342,1196,292,1208,438,622,466]]],
+ [[10.25,[956,492,1514,495,1532,632,969,608]],[10.6,[720,492,1278,495,1296,632,733,608]],[10.8,[665,492,1224,495,1242,632,678,608]],[11.6,[652,481,1196,454,1212,598,669,597]],[12.1,[631,483,1204,457,1215,602,646,603]],[12.8,[620,482,1212,456,1224,604,636,604]]]];
+const LEAVE_IN=cloud([[10.0,[780,330,330,320,.95]],[10.2,[1040,400,240,320,1]],[10.4,[1230,430,70,300,1]],[10.7,[1200,480,120,190,1]]]);
+/* measured at 20.2, 21.8, 22.6 s; the stack climbs and then fans out */
+const REVEAL=[
+ [[19.3,[572,186,1205,82,1213,259,597,307]],[20.2,[572,70,1205,-34,1213,143,597,191]],[21.8,[510,-115,1210,-190,1226,-32,532,35]],[22.6,[490,-60,1180,-135,1190,0,508,77]],[23.2,[470,-30,1158,-100,1168,36,486,110]]],
+ [[20.2,[543,250,1226,193,1226,351,566,378]],[20.6,[543,211,1226,154,1226,312,566,339]],[21.8,[543,95,1226,38,1226,196,566,223]],[22.6,[522,131,1170,80,1172,237,550,253]],[23.2,[505,150,1130,105,1134,256,533,270]]],
+ [[20.8,[576,373,1225,355,1224,495,596,488]],[21.0,[576,354,1225,336,1224,476,596,469]],[21.8,[576,276,1225,258,1224,398,596,391]],[22.6,[560,302,1175,302,1179,441,588,412]],[23.2,[548,316,1138,324,1142,462,576,424]]],
+ [[21.4,[597,460,1213,482,1235,611,618,557]],[21.8,[597,441,1213,463,1235,592,618,538]],[22.6,[597,457,1182,493,1186,617,618,556]],[23.2,[590,466,1150,520,1154,646,611,562]]]];
+const REVEAL_IN=cloud([[19.25,[860,190,360,180,1]],[20.2,[860,300,420,130,1]],[21,[880,380,400,120,1]],[21.6,[900,480,380,130,1]],[22.2,[900,520,360,120,1]]]);
+const OUT23=cloud([[22.8,[760,400,240,300,1]],[23.1,[650,470,110,190,1]],[23.6,[640,470,90,170,.9]]]);
+const cardForms=[
+ ...RISE.map((k,n)=>form({i0:6.55+n*.18,i1:7.02+n*.2,o0:9.35,o1:10.15,ci:RISE_IN,co:RISE_OUT,shape:cardShape(k,seen([7.62,8.02,8.42][n],[7.85,8.25,8.65][n])),seed:40+n,keep:.8})),
+ ...LEAVE.map((k,n)=>form({i0:10.15+n*.07,i1:10.62+n*.14,o0:13,o1:13.1,ci:LEAVE_IN,shape:cardShape(k,[fadeSteps(11.75,11.92,12.15),fadeSteps(11.98,12.12,12.3),fadeSteps(12.2,12.35,12.7)][n]),seed:50+n,keep:.85})),
+ ...REVEAL.map((k,n)=>form({i0:[19.05,20.2,20.8,21.3][n],i1:[19.7,20.75,21.35,21.85][n],o0:22.92,o1:23.28,ci:REVEAL_IN,co:OUT23,shape:cardShape(k),seed:60+n,keep:.85,lagOut:(p)=>clamp(p.y/700)}))
+];
+/* text as dots */
+const tc=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
+function textPts(str,size,weight,step){tc.canvas.width=1000;tc.canvas.height=Math.ceil(size*1.4);tc.font=`${weight} ${size}px IV, sans-serif`;tc.textBaseline='alphabetic';
+  try{tc.letterSpacing='-1px'}catch(e){}
+  tc.clearRect(0,0,1000,999);tc.fillStyle='#fff';tc.fillText(str,0,size*1.05);
+  const w=Math.ceil(tc.measureText(str).width),d=tc.getImageData(0,0,1000,tc.canvas.height).data,o=[];
+  for(let y=0;y<tc.canvas.height;y+=step)for(let x=0;x<w+4;x+=step){if(d[(Math.round(y)*1000+Math.round(x))*4+3]>128)o.push([x,y-size*1.05])}
+  return{pts:o,w}}
+const MOVE=textPts('move',288,600,9.9),MORE=textPts('more',288,600,9.9),moW=textPts('mo',288,600,9.9).w;
+/* word box, measured at 14.0, 14.4, 15.0 s; ends flat */
+const WX=536,WY=442,bb=T=>{const xs=T.pts.map(p=>p[0]),ys=T.pts.map(p=>p[1]);return[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)]};
+const[mx0,mx1,my0,my1]=bb(MOVE);
+const flat=[WX+mx0,WY+my0,WX+mx1,WY+my0,WX+mx1,WY+my1,WX+mx0,WY+my1];
+const WORD=[[13.7,[760,356,1120,180,1150,300,796,497]],[14.0,[692,356,1075,222,1105,346,728,497]],[14.4,[604,353,1073,250,1101,367,638,494]],[15.0,[560,302,1190,290,1195,440,564,448]],[15.3,flat]];
+function wordPts(T,sel,a,lav){const pick=T.pts.filter(sel);return t=>{const m=quadMap(kf(WORD,t));return pick.map(([x,y])=>{const[X,Y]=m((x-mx0)/(mx1-mx0),(y-my0)/(my1-my0));return{x:X,y:Y,a:typeof a==='function'?a(t):a,r:1.2,c:lav?1:0}})}}
+const DIM=t=>lerp(.8,1,prog(t,14,14.8));
+const OUT18=cloud([[17.95,[860,370,340,110,1]],[18.25,[760,320,280,140,1]],[18.5,[650,290,190,120,1]]]);
+const CL13=cloud([[13.2,[640,520,330,220,.5]],[13.6,[1180,230,110,110,1]],[13.95,[1060,230,180,130,1]]]);
+const CL16=cloud([[15.1,[1020,340,180,160,.9]],[15.7,[1080,320,200,200,.8]],[16.2,[1090,320,190,180,.85]],[16.8,[1040,340,170,120,.9]]]);
+const wordForms=[
+ form({i0:13.55,i1:13.96,o0:17.95,o1:18.5,ci:CL13,co:OUT18,shape:wordPts(MOVE,p=>p[0]<moW,DIM),seed:70,keep:.95}),
+ form({i0:13.66,i1:14.2,o0:15.1,o1:15.7,ci:CL13,co:CL16,shape:wordPts(MOVE,p=>p[0]>=moW,DIM),a:t=>1-smooth(prog(t,16.1,16.5)),seed:71,keep:.95}),
+ form({i0:16.1,i1:16.85,o0:17.95,o1:18.5,ci:CL16,co:OUT18,shape:wordPts(MORE,p=>p[0]>=moW,1,true),seed:72,keep:.95}),
+ t=>t>=15.7&&t<16.5?dust(150,[[15.7,[1085,320,190,190,.75]],[16.5,[1050,330,170,130,.75]]],73)(t).map(p=>({...p,c:hash(p.x|0,4)>.55?1:0})):[]
+];
+/* ---------- small spheres ---------- */
+function ball(i,n,sc,t,base,dot){return sphereDot(i,n,sc[0],sc[1],sc[2],t*.32+.4,-.28,base,dot)}
+const P5=[[[4.9,[330,60,48]],[5.3,[370,70,48]],[5.6,[505,125,48]],[5.9,[537,169,48]],[6.2,[540,173,48]]],
+ [[4.9,[1320,330,80]],[5.3,[1330,345,80]],[5.6,[985,420,80]],[5.9,[820,430,80]],[6.2,[807,422,80]]],
+ [[4.9,[420,800,67]],[5.3,[420,790,67]],[5.6,[384,585,67]],[5.9,[358,520,67]],[6.2,[350,506,67]]],
+ [[4.9,[1330,300,50]],[5.3,[1340,320,50]],[5.6,[1040,378,50]],[5.9,[890,385,50]],[6.2,[880,377,50]]]];
+const smallAt=t=>P5.map(k=>kf(k,t));
+const smallA=[.72,1,.82,.34],smallD=[.62,.76,.66,.6];
+const CL67=cloud([[6.3,[825,415,80,80,1]],[6.5,[850,400,90,90,1]],[6.8,[900,380,230,180,1]],[7.2,[900,500,320,220,.2]]]);
+const pre=(()=>{const a=[];for(let i=0;i<N;i++){const p=rotP(fib(i,N),5.05*.32*0+1.84,-.28);const k=(p[1]<-.32&&p[0]<.42)?0:(p[0]<-.1&&p[1]>-.32)?2:(p[2]<-.42&&p[0]>.05)?3:1;a.push(k)}const cnt=[0,0,0,0],idx=a.map(k=>cnt[k]++);return{a,idx,cnt}})();
+/* the big sphere: holds until 4.5, then streams into four small spheres, which then leave one by one */
+function sphereFilm(t){if(t<.55||t>7.25)return[];const res=[];const cx=sphereCx(Math.min(t,4.5)),R=sphereR(Math.min(t,4.5));const small=smallAt(t);
+  const fades=[1-smooth(prog(t,6.25,6.6)),1,1-smooth(prog(t,6.3,6.75)),1-smooth(prog(t,6.1,6.42))];
+  for(let i=0;i<N;i++){const q=sphereDot(i,N,cx,360,R,Math.min(t,4.62)*.32+.4,-.28);if(t<3.4||t<4.6){if(lavT(t,q)>0)q.c=1}
+    if(t<4.45){res.push(q);continue}
+    const k=pre.a[i],j=pre.idx[i],n=pre.cnt[k];const g=ball(j,n,small[k],t,smallA[k],smallD[k]);
+    /* the right side leaves first, the top cap last, which draws the Y of 5.2 s */
+    const order=k===1||k===3?-.1:k===2?.03:.1,s0=4.6+order+hash(i,31)*.42,e=eio(prog(t,s0,s0+.95));
+    const sp=34*Math.sin(Math.PI*clamp(e));
+    const Jx=k===1||k===3?790:610,Jy=k===1||k===3?372:392,w0=(1-e)*(1-e),w1=2*e*(1-e),w2=e*e;
+    let x=w0*q.x+w1*Jx+w2*g.x+(hash(i,34)-.5)*2*sp,y=w0*q.y+w1*Jy+w2*g.y+(hash(i,35)-.5)*2*sp,al=lerp(q.a,g.a,e)*(1-.42*Math.sin(Math.PI*e))*fades[k],r=lerp(q.r,g.r,e);
+    if(k===1&&t>6.1){const lift=smooth(prog(t,6.1,6.32));al=lerp(al,.9,lift);r*=1+.12*lift;
+      const s1=6.3+hash(i,32)*.5,f=eio(prog(t,s1,s1+.3));if(f>0){if(hash(i,33)>.7)continue;const c=cloudPt(CL67(t),i,80);x=lerp(x,c.x,f);y=lerp(y,c.y,f);al=lerp(al,CL67(t).a,f);r=lerp(r,1.04,f)}}
+    if(al>.02)res.push({x,y,a:al,r,c:e<.2?q.c:0})}
+  return res}
+/* four adapter spheres */
+const A4=[
+ [[23.2,[858,132,57]],[23.4,[858,132,57]],[24.1,[924,194,44]],[26.5,[924,194,44]]],
+ [[23.3,[1290,270,120]],[23.4,[1271,273,110]],[23.6,[1090,400,88]],[24.1,[897,448,69]],[26.5,[897,448,69]]],
+ [[23.3,[640,480,74]],[23.6,[634,450,60]],[24.1,[659,436,51]],[26.5,[659,436,51]]],
+ [[23.3,[1290,357,66]],[23.4,[1264,357,60]],[24.1,[1173,449,51]],[26.5,[1173,449,51]]]];
+const A4n=[300,430,300,300],A4a=[.74,.95,.78,.78],A4d=[.66,.72,.66,.66];
+const OUT27=cloud([[26.45,[780,420,300,230,.85]],[26.95,[730,400,300,220,.9]],[27.5,[640,360,250,230,1]]]);
+const IN4=[[1010,60,60,70,1],[1280,290,60,120,1],[640,470,90,180,1],[1290,350,50,90,1]].map(v=>()=>({x:v[0],y:v[1],w:v[2],h:v[3],a:v[4]}));
+const LOBE=[[800,300],[770,440],[540,440],[1060,470]];
+const OUT4=LOBE.map(([x,y])=>cloud([[26.7,[x,y,70,70,.9]],[27.2,[x,y,170,110,.9]],[27.6,[650,370,230,220,1]]]));
+const spheres4=A4.map((k,n)=>form({i0:[22.8,23,23.22,23][n],i1:[23.12,23.26,23.56,23.26][n],o0:[26.72,26.82,26.8,26.82][n],o1:27.55,ci:IN4[n],co:OUT4[n],st:.7,seed:90+n,keep:.92,shape:t=>{const[x,y,R]=kf(k,t),s=[];for(let i=0;i<A4n[n];i++)s.push(ball(i,A4n[n],[x,y,R],t,A4a[n],A4d[n]));return s}}));
+const CL27=cloud([[27.2,[650,370,230,220,.95]],[27.7,[640,360,240,240,1]]]);
+const big=form({i0:27.25,i1:27.92,o0:99,o1:99,ci:CL27,seed:95,keep:.95,st:.45,shape:t=>{if(t>28.2)return[];const q=[];for(let i=0;i<N;i++)q.push(sphereDot(i,N,638,356,238,t*.32+.4,-.28));return q}});
+const cubeDots=CubeDots(642,372,147);
+const pairing=(()=>{const c=cubeDots(28.3),n=c.length,used=new Uint8Array(N),o=[],ball=[];for(let i=0;i<N;i++){const q=sphereDot(i,N,638,356,238,28.2*.32+.4,-.28);ball.push(q)}
+  for(let j=0;j<n;j++){let best=-1,bd=1e12;for(let i=0;i<N;i+=1){if(used[i])continue;const dx=ball[i].x-c[j].x,dy=ball[i].y-c[j].y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=i}}used[best]=1;o.push(best)}return o})();
+function cube(t){if(t<28.2||t>29.1)return[];const c=cubeDots(t),res=[];for(let j=0;j<c.length;j++){const i=pairing[j],q=sphereDot(i,N,638,356,238,Math.min(t,28.2)*.32+.4,-.28),s0=28.2+hash(i,41)*.36,e=eio(prog(t,s0,s0+.42));
+    res.push({x:lerp(q.x,c[j].x,e),y:lerp(q.y,c[j].y,e),a:lerp(q.a,c[j].a,e),r:lerp(q.r,c[j].r,e),c:0})}return res}
+const dustTracks=[dust(240,[[12.55,[840,500,420,260,0]],[12.95,[720,500,380,240,.14]],[13.2,[640,520,330,220,.52]],[13.6,[1180,230,110,110,1]],[13.9,[1060,230,180,130,0]]],100),
+ dust(270,[[18.4,[650,290,190,120,1]],[18.8,[1190,660,100,70,.55]],[19.25,[860,430,430,300,.36]],[19.6,[860,470,440,270,.32]],[21,[860,540,440,200,.4]],[21.8,[900,600,420,140,.35]],[22.2,[900,620,400,120,0]]],101)];
+const TRACKS=[sphereFilm,...cardForms,...wordForms,...dustTracks,...spheres4,big,cube];
+function frame(t){return{pts:TRACKS.flatMap(f=>f(t))}}
+/* ---------- type ---------- */
+const typeG=$('type');
+function makeLine(id,str,x,y,size,weight,fill,opt={}){const g=document.createElementNS(NS,'g');g.id=id;const clipId='clip-'+id;
+  const clip=document.createElementNS(NS,'clipPath');clip.id=clipId;const r=document.createElementNS(NS,'rect');
+  r.setAttribute('x',x-20);r.setAttribute('y',y-size*1.0);r.setAttribute('width',1200);r.setAttribute('height',size*1.1);clip.appendChild(r);$('defs').appendChild(clip);
+  g.setAttribute('clip-path',`url(#${clipId})`);
+  tc.font=`${weight} ${size}px IV, sans-serif`;const ls=opt.ls??-.03*size;try{tc.letterSpacing=ls+'px'}catch(e){}
+  const chars=[...str].map((ch,i)=>{const px=tc.measureText(str.slice(0,i)).width;const el=document.createElementNS(NS,'text');el.textContent=ch;el.setAttribute('x',(opt.anchor==='middle'?x-tc.measureText(str).width/2:x)+px);el.setAttribute('y',y);el.setAttribute('font-size',size);el.setAttribute('font-weight',weight);el.setAttribute('fill',fill);g.appendChild(el);return{el,y}});
+  try{tc.letterSpacing='0px'}catch(e){}
+  typeG.appendChild(g);return{g,chars,size,y,...opt}}
+const L={};
+const lines=[
+ ['fm','Four motions.',92,344,84,470,'#fff',1.75,4.36],
+ ['nd','No dials.',92,435,84,470,'#a6a8f4',2.55,4.36],
+ ['rs','rise()',92,380,110,470,'#fff',7.28,9.13],
+ ['rs2','An easy entrance.',92,436,23,400,'#8d8d92',7.58,9.05],
+ ['lv','leave()',92,380,110,470,'#fff',10.72,12.33],
+ ['lv2','A clean exit.',92,436,23,400,'#8d8d92',11.1,12.15],
+ ['mp','morph()',92,380,110,470,'#fff',14.18,17.56],
+ ['mp2','One state into the next.',92,436,23,400,'#8d8d92',14.45,17.4],
+ ['rv','reveal()',92,380,110,470,'#fff',19.25,22.2],
+ ['rv2','When it enters view.',92,436,23,400,'#8d8d92',19.55,22.05],
+ ['fa','Four adapters.',92,380,78,470,'#fff',23.6,26.14],
+].map(([id,s,x,y,sz,w,f,ti,to,o])=>{const m=makeLine(id,s,x,y,sz,w,f,o||{});m.ti=ti;m.to=to;return m});
+function drawLine(m,t){const n=m.chars.length;const big=m.size>30;
+  if(t<m.ti-.05||t>m.to+1.05){m.g.style.display='none';return}m.g.style.display='';
+  if(t>m.ti+1.3&&t<m.to-.02)m.g.removeAttribute('clip-path');else m.g.setAttribute('clip-path',`url(#clip-${m.g.id})`);
+  m.chars.forEach((c,i)=>{const st=m.ti+i*(big?.05:.012);const e=eoq(prog(t,st,st+.72));
+    if(big){const lst=m.to+i*.036,out=Math.pow(prog(t,lst,lst+.3),2);c.el.setAttribute('y',c.y+(1-e)*m.size*1.08+out*m.size*1.08);c.el.removeAttribute('opacity')}
+    else{const out=prog(t,m.to-.05,m.to+.2);c.el.setAttribute('y',c.y+(1-e)*m.size*1.08);c.el.setAttribute('opacity',(1-out).toFixed(3))}})}
+/* ---------- adapters ---------- */
+const adG=$('adapters');
+const AD=[['Alpha',924,269,'s'],['Beta',659,514,'b'],['Gamma',897,549,'c'],['Delta',1173,530,'t']];
+AD.forEach(([label,x,y,k],i)=>{const g=document.createElementNS(NS,'g');g.dataset.i=i;g.dataset.y=y;
+ g.innerHTML=(k==='s'?`<path d="M${x-9} ${y+6}q9-8 18-4l-4 8q-8-3-14 2z" fill="#a6a8f4"/><path d="M${x+9} ${y-6}q-9 8-18 4l4-8q8 3 14-2z" fill="#a6a8f4" opacity=".75"/>`
+  :k==='b'?`<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#a6a8f4" stroke-width="2.6"/><circle cx="${x}" cy="${y}" r="3" fill="#a6a8f4"/>`
+  :k==='c'?`<g fill="none" stroke="#a6a8f4" stroke-width="1.5"><ellipse cx="${x}" cy="${y}" rx="11" ry="4.4"/><ellipse cx="${x}" cy="${y}" rx="11" ry="4.4" transform="rotate(60 ${x} ${y})"/><ellipse cx="${x}" cy="${y}" rx="11" ry="4.4" transform="rotate(-60 ${x} ${y})"/></g><circle cx="${x}" cy="${y}" r="2" fill="#a6a8f4"/>`
+  :`<path d="M${x-11} ${y-9}h22l-11 19z" fill="#a6a8f4"/>`)
+  +`<text x="${x}" y="${y+36}" text-anchor="middle" font-size="18" font-weight="500" fill="#d9d9dc">${label}</text>`;
+ adG.appendChild(g)});
+function drawAd(t){[...adG.children].forEach((g,i)=>{const s=[24.28,24.12,23.9,24.2][i],e=eoq(prog(t,s,s+.6)),o=1-prog(t,26.0,26.25);g.setAttribute('opacity',(e*o).toFixed(3));g.setAttribute('transform',`translate(0 ${(1-e)*12})`)})}
+/* ---------- light logo ending ---------- */
+const lg=$('logo');
+lg.innerHTML=`<g id="lcube" fill="none" stroke="#5a78dd" stroke-linejoin="round"></g>
+<g id="lword"></g>`;
+const lcube=$('lcube'),lw=$('lword');
+const clipW=document.createElementNS(NS,'clipPath');clipW.id='cw';clipW.innerHTML='<rect x="200" y="330" width="880" height="146"/>';$('defs').appendChild(clipW);
+lw.innerHTML=`<g clip-path="url(#cw)"><text id="w1" x="640" y="460" text-anchor="middle" font-size="148" font-weight="600" letter-spacing="-5.5" fill="#17171a">form</text></g>
+<text id="w2" x="640" y="543" text-anchor="middle" font-size="25" font-weight="500" fill="#2a2a2d">form-motion.dev</text>
+<clipPath id="cn"><rect x="300" y="592" width="680" height="28"/></clipPath>
+<g clip-path="url(#cn)"><text id="w3" x="640" y="613" text-anchor="middle" font-size="20.5" font-weight="500" fill="#5a78dd">npm i form-motion</text></g>`;
+function drawLogo(t){
+  const light=t>=29.03;$('bg').setAttribute('fill',discR(t)>=760?'#f5f4f1':'#1a191c');
+  lg.style.display=light?'':'none';if(!light)return;
+  const tint=smooth(prog(t,29.05,29.55));
+  const e=eio(prog(t,29.85,30.85));
+  const cy=lerp(372,212,e),sz=lerp(147,76,e);
+  const v=cubeVerts(642-2*e,cy,sz,.785,-.6,.09*(1-e*.7));
+  const mix=(a,b,x)=>a.map((v,i)=>Math.round(lerp(v,b[i],x)));const stroke=`rgb(${mix([236,236,244],[90,120,221],tint).join(',')})`;
+  let html='';
+  const minz=v.indexOf(v.slice().sort((a,b)=>a[2]-b[2])[0]);
+  EDGES.forEach(([a,b])=>{const dash=(a===minz||b===minz);html+=`<line x1="${v[a][0].toFixed(1)}" y1="${v[a][1].toFixed(1)}" x2="${v[b][0].toFixed(1)}" y2="${v[b][1].toFixed(1)}" stroke="${stroke}" stroke-width="${dash?1:lerp(2.6,2,e)}" ${dash?`stroke-dasharray="${t<29.7?'none':'3 4'}" opacity=".42"`:''}/>`});
+  lcube.innerHTML=html;
+  const a=eio(prog(t,30.7,31.6));$('w1').setAttribute('transform',`translate(0 ${(1-a)*130})`);
+  const b=eoq(prog(t,31.5,32.1));$('w2').setAttribute('transform',`translate(0 ${(1-b)*8})`);$('w2').setAttribute('opacity',b);
+  const c=eio(prog(t,32.6,33.2));$('w3').setAttribute('transform',`translate(0 ${(1-c)*30})`);
+}
+/* ---------- disc opening ---------- */
+const disc=document.createElementNS(NS,'circle');disc.setAttribute('cx',640);disc.setAttribute('cy',360);disc.setAttribute('fill','#f5f4f1');$('disc').appendChild(disc);
+function discR(t){return t<29?0:Math.pow(prog(t,29.42,29.95),1.95)*1020}
+function drawDisc(t){const up=eoq(prog(t,.45,1)),dn=eio(prog(t,1.1,1.65));const r2=discR(t);disc.setAttribute('r',t>=29?r2:Math.max(0,up*102*(1-dn)));disc.setAttribute('opacity',(t<.45||t>1.65)&&t<29?0:1);disc.setAttribute('fill','#f5f4f1');
+  $('disc').parentNode.appendChild($('disc'));$('logo').parentNode.appendChild($('logo'));$('type').parentNode.appendChild($('type'))}
+/* ---------- particle output as stroke paths, one per bucket ---------- */
+const buckets=new Map(),pG=$('particles');
+function pathFor(k){if(buckets.has(k))return buckets.get(k);const[c,al,sz]=k.split('|');const p=document.createElementNS(NS,'path');p.setAttribute('stroke',c==='1'?'#a6a8f4':'#fff');p.setAttribute('stroke-opacity',al);p.setAttribute('stroke-width',sz);pG.appendChild(p);buckets.set(k,p);return p}
+function drawParticles(t){
+  const f=frame(t);const seg={};
+  const put=(x,y,a,r,c)=>{if(a<=.02||x<-20||x>1300||y<-20||y>740)return;const al=Math.round(a*7)/7,sz=Math.round(r*2*2.5*2)/2/2.5,k=(c?1:0)+'|'+al.toFixed(2)+'|'+sz.toFixed(1);(seg[k]||(seg[k]=[])).push(`M${x.toFixed(1)} ${y.toFixed(1)}h0`)};
+  const dot=1.85;
+  for(const p of f.pts)put(p.x,p.y,p.a,p.r*dot,p.c);
+  for(const[k,p]of buckets){const d=seg[k];p.setAttribute('d',d?d.join(''):'');}
+  for(const k in seg){if(!buckets.has(k))pathFor(k).setAttribute('d',seg[k].join(''))}
+}
+/* ---------- master ---------- */
+function render(t){drawDisc(t);drawParticles(t);lines.forEach(m=>drawLine(m,t));drawAd(t);drawLogo(t);$('particles').style.display=t>=29.05?'none':'';}
+window.seek=t=>{playing=false;cur=t;render(t)};
+let playing=true,cur=0,last=null;
+const q=new URLSearchParams(location.search),qt=q.get('t');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(qt!==null){playing=false;cur=+qt;render(cur)}
+else if(reduce){playing=false;cur=33.5;render(cur)}
+function tick(ts){if(playing){if(last!==null)cur+=(ts-last)/1000;if(cur>DUR){cur=0}render(cur)}last=ts;requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+$('stage').addEventListener('click',()=>{playing=!playing;last=null});
+window.__ready=true;
+})();
+</script>
+</body></html>

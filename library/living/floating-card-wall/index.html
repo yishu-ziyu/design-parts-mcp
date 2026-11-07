@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>Floating Card Wall</title>
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:News;src:url(fonts/newsreader.woff2) format("woff2");font-weight:200 800}
+*{box-sizing:border-box}html,body{margin:0;background:#000;color:#111;font-family:Inter,system-ui,sans-serif}
+#wall{position:relative;width:100vw;height:100vh;overflow:hidden;background:#000}
+#stars{position:absolute;inset:0;width:100%;height:100%}
+#view{position:absolute;inset:0}
+#scene{position:absolute;left:50%;top:50%;width:0;height:0}
+.card{position:absolute;left:0;top:0;border-radius:calc(13px*var(--s));overflow:hidden;backface-visibility:hidden;transform-origin:0 0;will-change:transform;box-shadow:0 0 0 .5px rgba(255,255,255,.14)}
+.c{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden}
+.serif{font-family:News,"Times New Roman",serif}
+#card-research{box-shadow:none!important}
+.tag{position:absolute;padding:0 18px;height:32px;line-height:32px;border-radius:5px;color:#fff;font-size:15.5px;font-weight:600;white-space:nowrap;opacity:0;transition:opacity .35s;z-index:5}
+.tag.on{opacity:1}.tag.w{background:#fff;color:#111;border-radius:6px;padding:0 13px}.tag.w i{display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid #111;vertical-align:-3px;margin-right:6px}
+.mini{font-size:6px;color:#8a8a8a}.bar{position:absolute;background:#e9e9ec;border-radius:2px}
+.tb{position:absolute;left:0;top:0;right:0;height:21px;display:flex;align-items:center;gap:4px;padding:0 7px;font-size:5.5px;color:#444;font-weight:600}
+.tb b{width:6px;height:6px;border-radius:2px;background:#e8503f}.tb u{margin-left:auto;display:flex;gap:1px;text-decoration:none}.tb u s{width:7px;height:7px;border-radius:50%;background:#a7d8b2}.tb u s:nth-child(2){background:#c4b5f3}
+.lay{position:absolute;inset:0;transition:opacity .5s}
+.tail{position:absolute;left:-9999px}
+@media(prefers-reduced-motion:reduce){.tag,.lay{transition:none}}
+.notes{background:#0a0a0a;color:#aaa;font:13px/1.7 Inter,sans-serif;padding:32px max(24px,calc(50vw - 340px)) 60px}.notes h3{color:#eee;font-weight:500}.notes code{color:#eee}.notes dd{margin:0 0 10px}
+</style></head><body>
+<div id="wall"><canvas id="stars"></canvas><div id="view"><div id="scene"></div></div></div>
+<section class="notes"><h3>可拆</h3><dl>
+<dt><code>#view</code></dt><dd>位置按相机在球心看球内壁算：行线向两侧翘起，越靠边越歪越大。卡片自身只取一部分透视形变，所以不会梯形变形。</dd>
+<dt><code>#scene</code></dt><dd>三行反向漂移：中间一行向右，上下两行向左。每行 10 张，60 秒走完一圈。</dd>
+<dt><code>#stars</code></dt><dd>静止星空：密的小点加少量大星和四角闪光，卡片在它前面动。</dd>
+</dl><p>卡片是原帖视频的暂停帧，按透视摆正后贴回（含原作素材，只留本机）。原视频里那枚 AI 标签的品牌标志换成了圆圈和 Assistant。按 <code>?t=秒</code> 可以冻结到某一时刻。</p></section>
+<script>
+const $=s=>document.querySelector(s);
+/* ---------- 卡片：w,h 是 1080 视频里正对时的尺寸，a 为随机微倾 ---------- */
+const T=(x,y,s,txt,e='')=>`<div style="position:absolute;left:${x}px;top:${y}px;${s}${e}">${txt}</div>`;
+const IMG=f=>`<img src="source-assets/${f}.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;display:block">`;
+const LAY=(id,f,o='')=>`<div id="${id}" class="lay" style="${o}">${IMG(f)}</div>`;
+const CARDS={
+top:[
+ {id:'weekend',w:185,h:195,bg:'#fff',z:-4,html:IMG('weekend')},
+ {id:'shared',w:185,h:190,bg:'linear-gradient(160deg,#6d9bd2,#8ab1dc 50%,#a6c6e6)',html:IMG('shared')},
+ {id:'weather',w:285,h:180,bg:'#fff',html:IMG('weather')},
+ {id:'async',w:232,h:232,bg:'#f33d1f',z:3,html:IMG('async')},
+ {id:'reports',w:180,h:155,bg:'#fff',html:IMG('reports')},
+ {id:'open',w:285,h:175,bg:'#a7d8f8',z:-3,html:IMG('open')},
+ {id:'research',w:185,h:225,bg:'#000',html:`<img src="source-assets/research.jpg" alt="" style="position:absolute;left:0;top:0;width:85px;height:225px">`+T(92,48,'font-size:8.5px;line-height:1.15;color:#ddd;font-weight:500;','RESEARCH &<br>ANALYSIS')+T(116,182,'font-size:27px;color:#eee;letter-spacing:-.4px;','02')},
+ {id:'room',w:245,h:165,bg:'#fff',html:IMG('room')},
+ {id:'runner',w:155,h:225,bg:'linear-gradient(120deg,#35506e,#7ea1c4 55%,#3a556f)',z:4,html:IMG('runner')},
+ {id:'maroon',w:190,h:125,bg:'#651a30',html:IMG('maroon')},
+],
+mid:[
+ {id:'chart',w:198,h:125,bg:'#fff',html:IMG('chart')},
+ {id:'kickoff',w:300,h:195,bg:'#fced26',html:IMG('kickoff')},
+ {id:'noah',w:118,h:165,bg:'#fff',html:IMG('noah')},
+ {id:'map',w:205,h:205,bg:'#a9bfa4',html:IMG('map')},
+ {id:'ribbon',w:285,h:172,bg:'#0b3fe0',html:LAY('ry-a','ribbon-2025')+LAY('ry-b','ribbon-2026','opacity:0')},
+ {id:'invoice',w:165,h:195,bg:'#fff',html:IMG('invoice')},
+ {id:'rides',w:252,h:192,bg:'#df3c23',html:IMG('rides')},
+ {id:'first',w:130,h:178,bg:'#0d3bb8',html:IMG('first')},
+ {id:'pres',w:232,h:158,bg:'#fff',html:LAY('pres-a','pres-a')+LAY('pres-b','pres-b','opacity:0')+LAY('pres-c','pres-c','opacity:0')},
+ {id:'lisbon',w:136,h:215,bg:'#a7aeb0',html:IMG('lisbon')},
+],
+bot:[
+ {id:'chairblue',w:165,h:165,bg:'#fff',z:-4,html:`<div id="dots" class="lay" style="background-color:#f5f5f7;background-image:radial-gradient(#c8c8cd 1px,transparent 1.2px);background-size:9px 9px"></div>`+LAY('chairon','chair','opacity:0')},
+ {id:'onboard',w:150,h:205,bg:'#dff6d9',z:-3,html:IMG('onboard')},
+ {id:'todo',w:208,h:155,bg:'#fff',html:IMG('todo')},
+ {id:'sidepath',w:178,h:218,bg:'#7c7b72',z:3,html:IMG('sidepath')},
+ {id:'bento',w:280,h:210,bg:'#fff',html:IMG('bento')},
+ {id:'relay',w:280,h:222,bg:'#a4ccdc',html:IMG('relay')},
+ {id:'agenda',w:290,h:190,bg:'#a9cfc1',z:2,html:IMG('agenda')},
+ {id:'explore',w:280,h:175,bg:'#ececee',html:IMG('explore')},
+ {id:'energy',w:178,h:222,bg:'#9fc1dc',z:-3,html:IMG('energy')},
+ {id:'team',w:285,h:215,bg:'#fff',html:IMG('team')},
+]};
+const ROWS=[{k:'top',phi:-31,dir:-1,off:0},{k:'mid',phi:0,dir:1,off:0},{k:'bot',phi:31,dir:-1,off:0}];
+const PITCH=27,LOOP=60,SPEED=PITCH*10/LOOP; // 每行 10 张，弧长 270°，60 秒一圈，即 4.5°/s
+const F=480; // 1080 画幅下的焦距，从上行卡片的抬高量反推
+/* 用 t=1 秒原帧里卡片的位置校准每行起点 */
+const START={top:{weekend:-27.5},mid:{chart:-221},bot:{chairblue:-46}};
+/* 每张卡对原帧的校正：[角度差°, 纵向 px, 缩放, 转角°]，由 30 张帧的卡片四角算出 */
+const CAL={"weekend":[0.66,-1.3,0.961,3.58],"shared":[2.26,12.2,1.112,0.73],"weather":[2.82,16.2,1.004,0.16],"first":[-1.96,4.7,0.873,1.13],"pres":[-0.21,4.3,0.94,-1.69],"lisbon":[-2.29,-2.2,0.898,2.19],"todo":[4.99,19.0,1.141,2.91],"sidepath":[6.09,5.7,0.981,-0.87],"rides":[-1.89,-10.4,0.828,-0.93],"async":[2.83,2.2,1.038,-4.08],"invoice":[-2.43,0.8,0.895,-0.43],"bento":[5.02,19.8,1.094,1.28],"reports":[5.08,18.4,0.983,-1.26],"relay":[2.92,26.7,0.933,-0.88],"ribbon":[-1.44,2.8,0.895,-0.57],"open":[3.65,-4.4,1.012,1.76],"agenda":[0.11,38.7,0.95,-1.97],"research":[0,0,1,0],"map":[-1.32,-2.1,0.911,-3.21],"explore":[-0.91,30.5,1.061,1.97],"noah":[-2.45,9.6,0.868,0.79],"room":[2.02,19.1,1.026,0.27],"energy":[-1.79,33.5,1.029,2.31],"runner":[1.83,17.0,0.958,-4.98],"kickoff":[-2.98,-11.2,0.877,0.6],"team":[-2.4,7.5,1.054,1.42],"maroon":[0.28,12.8,1.002,1.42],"chart":[-3.14,13.2,0.847,2.12],"chairblue":[-2.1,26.0,1.062,1.84],"onboard":[0,0,1.045,0]};
+const scene=$('#scene'),items=[];
+ROWS.forEach(r=>{const list=CARDS[r.k];const base=START[r.k][list[0].id];
+ /* 卡片间距按相邻两张的宽度分配，总弧长仍是 270°：窄卡挨得近，宽卡离得远 */
+ const gaps=list.map((c,i)=>(c.w+list[(i+1)%10].w)/2+45),sum=gaps.reduce((a,b)=>a+b),scale=270/sum;let acc=0;
+ list.forEach((c,i)=>{const cal=CAL[c.id]||[0,0,1,0];const th0=base+acc*scale+cal[0];acc+=gaps[i];const e=document.createElement('div');e.className='card';e.id='card-'+c.id;e.style.background=c.bg;
+  const inner=document.createElement('div');inner.className='c';inner.style.cssText=`width:${c.w}px;height:${c.h}px`;inner.innerHTML=c.html;e.append(inner);scene.append(e);
+  items.push({el:e,inner,c,row:r,th0,seed:i,blur:-1,cal})})});
+/* 协作者标签：[起始秒, 卡片, x, y]；到点淡出换卡。原帧里读出来的位置 */
+const TAGS=[
+ {name:'Henry',cls:'',bg:'#a07ee6',path:[[0,null,0,0],[1,'pres',113,99],[3,'pres',96,73],[5,'lisbon',-10,37],[6.2,null,0,0],[17,'ribbon',160,102],[19,'ribbon',76,59],[21,'ribbon',80,55],[23,'ribbon',92,54],[25,'ribbon',44,143],[27,'ribbon',228,44],[28.2,null,0,0],[51,'pres',56,144],[53,'pres',11,78],[55,'pres',-7,132],[57,'pres',86,130],[59,'pres',139,66],[60,null,0,0]]},
+ {name:'Eric',cls:'',bg:'#46b45e',path:[[0,null,0,0],[13,'reports',195,91],[15,'reports',162,50],[17,'reports',110,148],[19,'reports',133,136],[21,'open',-24,138],[23,'open',-38,119],[25,'reports',75,117],[26.2,null,0,0],[35,'kickoff',188,25],[37,'kickoff',114,68],[39,'kickoff',140,85],[41,'kickoff',143,124],[43,'kickoff',236,92],[45,'noah',-49,34],[46.2,null,0,0]]},
+ {name:'Maya',cls:'',bg:'#f08033',path:[[0,null,0,0],[51,'chairblue',91,120],[52.2,null,0,0],[57,'lisbon',-31,59],[58.2,null,0,0]]},
+ {name:'Jasmine',cls:'',bg:'#ee7bb1',path:[[0,null,0,0],[1,'todo',45,84],[3,'todo',148,126],[5,'todo',-2,108],[6.2,null,0,0],[11,'relay',170,196],[13,'relay',93,201],[14.2,null,0,0],[57,'sidepath',8,145],[59,'todo',121,96],[60,null,0,0]]},
+ {name:'Assistant',cls:'w',bg:'',path:[[0,null,0,0],[49,'weekend',110,150],[55.5,'shared',-30,-28],[59,null,0,0]],icon:1}];
+TAGS.forEach(g=>{g.el=document.createElement('div');g.el.className='tag '+g.cls;if(g.bg)g.el.style.background=g.bg;g.el.innerHTML=(g.icon?'<i></i>':'')+g.name;g.cur=-1});
+const rnd=(i,s)=>{const x=Math.sin(i*12.9898+s*78.233)*43758.5453;return (x-Math.floor(x))*2-1};
+const wrap=(a)=>{const L=PITCH*10;return ((a+L/2)%L+L)%L-L/2};
+let S=1,W=1,H=1;
+function layout(){W=innerWidth;H=innerHeight;S=Math.min(W,H)/1080;const f=F*S;$('#wall').style.setProperty('--f',f+'px');$('#wall').style.setProperty('--s',S);stars()}
+function render(t){const tt=((t%LOOP)+LOOP)%LOOP;const maxT=Math.min(84,Math.atan(Math.max(W,H)/(2*F*S))*180/Math.PI+22);
+ for(const it of items){const c=it.c,th=wrap(it.th0+it.row.dir*SPEED*tt);
+  if(Math.abs(th)>maxT){if(it.vis!==0){it.el.style.display='none';it.vis=0}continue}
+  if(it.vis!==1){it.el.style.display='';it.vis=1}
+  const phi=it.row.phi+rnd(it.seed,it.row.phi)*1.6;
+  const tz=(c.z??rnd(it.seed,3)*2.5),ry=rnd(it.seed,5)*3,rx=rnd(it.seed,7)*3;
+  const R=Math.PI/180,tp=Math.tan(phi*R),st=Math.sin(th*R),ct=Math.cos(th*R),f=F*S;
+  /* 位置按球面投影，卡片本身只取一部分形变：转角 0.55 倍，透视倾斜 0.35 倍。原片的卡片几乎不梯形变形 */
+  const x=f*Math.tan(th*R),y=f*tp/ct+it.cal[1]*S,rot=Math.atan(tp*st)/R*.55+it.cal[3];
+  const k=(it.row.phi?.92:1)*Math.pow(1/ct,0.702)*it.cal[2],ww=c.w*S,hh=c.h*S;
+  it.el.style.width=ww+'px';it.el.style.height=hh+'px';it.inner.style.transform=`scale(${S})`;
+  it.el.style.transform=`translate(${x}px,${y}px) perspective(${1500*S}px) rotateY(${-th*.35+ry}deg) rotateX(${phi*.4+rx}deg) rotateZ(${rot+tz}deg) scale(${k}) translate(${-ww/2}px,${-hh/2}px)`;
+  const ang=Math.acos(Math.cos(th*Math.PI/180)*Math.cos(phi*Math.PI/180))*180/Math.PI;
+  const b=Math.round(Math.max(0,ang-46)/10*2)/2*S; if(b!==it.blur){it.blur=b;it.el.style.filter=b?`blur(${b}px)`:'none'}
+ }
+ const pres=tt<5||tt>=52?0:tt<25?1:2;['a','b','c'].forEach((k,i)=>{$('#pres-'+k).style.opacity=i===pres?1:0});
+ const y25=tt<26;$('#ry-a').style.opacity=y25?1:0;$('#ry-b').style.opacity=y25?0:1;const gen=tt<30||tt>=46;$('#dots').style.opacity=gen?0:1;$('#chairon').style.opacity=gen?1:0;
+ for(const g of TAGS){let idx=0;g.path.forEach((p,i)=>{if(tt>=p[0])idx=i});const p=g.path[idx],nx=g.path[idx+1];
+  if(idx!==g.cur){const same=g.cur>=0&&g.path[g.cur][1]===p[1];g.cur=idx;if(!p[1]){g.el.classList.remove('on')}else if(!same){const host=$('#card-'+p[1]);g.el.classList.remove('on');host.append(g.el);host.style.overflow='visible';host.firstElementChild.style.borderRadius='inherit';requestAnimationFrame(()=>g.el.classList.add('on'))}}
+  if(!p[1])continue;const k=nx&&nx[1]===p[1]?(tt-p[0])/(nx[0]-p[0]):0;
+  g.el.style.transform=`scale(${S})`;g.el.style.transformOrigin='0 0';g.el.style.left=(p[2]+((nx&&nx[2])-p[2])*k||p[2])*S+'px';g.el.style.top=(p[3]+((nx&&nx[3])-p[3])*k||p[3])*S+'px'}
+}
+function stars(){const cv=$('#stars'),d=devicePixelRatio||1;cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);x.fillStyle='#000';x.fillRect(0,0,W,H);let s=9;const r=()=>(s=(s*16807)%2147483647)/2147483647;const n=Math.round(W*H/1300);
+ for(let i=0;i<n;i++){const a=r()**2.4,sz=.35+a*1.0;x.fillStyle=`rgba(${215+r()*40},${220+r()*35},255,${.16+a*.8})`;x.beginPath();x.arc(r()*W,r()*H,sz*Math.max(S,.7),0,7);x.fill()}
+ for(let i=0;i<W*H/42000;i++){const px=r()*W,py=r()*H,warm=r()>.5;const g=x.createRadialGradient(px,py,0,px,py,5*S+2);g.addColorStop(0,warm?'rgba(255,225,190,.95)':'rgba(220,235,255,.95)');g.addColorStop(.3,warm?'rgba(255,200,150,.25)':'rgba(170,200,255,.25)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(px-8,py-8,16,16)}
+ for(let i=0;i<W*H/260000;i++){const px=r()*W,py=r()*H,l=7*S+2;x.fillStyle='rgba(205,225,255,.8)';x.beginPath();x.moveTo(px,py-l);x.quadraticCurveTo(px,py,px+l,py);x.quadraticCurveTo(px,py,px,py+l);x.quadraticCurveTo(px,py,px-l,py);x.quadraticCurveTo(px,py,px,py-l);x.fill()}}
+const q=new URLSearchParams(location.search),frozen=q.has('t');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+addEventListener('resize',()=>{layout();render(lastT)});layout();
+let lastT=frozen?+q.get('t'):0;render(lastT);
+if(!frozen&&!reduce){const t0=performance.now();(function l(n){lastT=(n-t0)/1000;render(lastT);requestAnimationFrame(l)})(t0)}
+</script></body></html>

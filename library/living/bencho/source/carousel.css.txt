@@ -1,0 +1,52 @@
+/* NOTHING EVER LEAVES THE FRAME, and that is the whole
+   arrangement. This was a row twice â cards in a line, the
+   ones at the ends either dissolving into a mask or cut by
+   the edge of a box â and both are answers to the same
+   question: what happens to a card when it runs out of block?
+   A ring does not ask it. The furthest a card gets is the
+   radius, which is a number the component chose. */
+const th = (i - turn) * (Math.PI * 2 / n);
+const f  = (Math.cos(th) + 1) / 2;   /* 1 front, 0 back */
+const x  = Math.sin(th) * orbit;
+const s  = mix(backScale, 1, f);
+
+/* IT IS THEREFORE ENDLESS. A row has a first card and a last
+   one and has to decide what to do at each; a ring has
+   neither, so the swipe never runs out and never rubber-bands.
+   Swipe once and the front card shrinks and goes to the back
+   while the next comes forward â which falls out of the
+   geometry rather than being animated on top of it. */
+
+/* AND THE ANGLE IS NOT TAKEN MODULO ANYTHING. Wrapping turn
+   to 0..360 sends a card the long way round the moment it
+   crosses the seam, which is the one visible bug this
+   arrangement can have. */
+turn.current = turn0 - dx / PULL;   /* no clamp, no wrap */
+
+/* THE BACK OF THE RING RIDES UP. Scale alone says smaller,
+   which reads as further away OR as literally smaller; a card
+   that also lifts as it recedes is unmistakably going back,
+   because that is what a ring seen from slightly above does.
+   One term, and most of what makes the depth read. */
+const y = -(1 - f) * 22;
+
+/* PAINT ORDER IS A Z-INDEX, BY HAND. Everything here is 2D â
+   scale and offset, not translateZ â so nothing sorts itself
+   and a card would paint in DOM order over the one in front
+   of it. f already knows which is nearer. */
+const z = Math.round(f * 100);
+
+/* THREE MOTIONS, THREE ELEMENTS, ONE TRANSFORM EACH. The slot
+   carries the ring, the floater the drift, the card the tilt.
+   One node cannot be written by three authors â a drag, a CSS
+   animation and a pair of springs â without one losing. */
+<div className="slot">      /* placed by the drag  */
+  <div className="float">   /* keyframes, untouched */
+    <div className="card" />/* sprung by the pointer */
+
+/* IT SINKS, IT DOES NOT LIFT. Every tilt card rotates TOWARD
+   the cursor; this one goes away under it. One minus sign,
+   and it is the difference between a surface being displayed
+   to you and one being touched. */
+const rx = -ny * max;
+const ry =  nx * max;

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVG 分批作画</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:NotoSC;src:url(fonts/noto-sc-regular.woff2) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:NotoSC;src:url(fonts/noto-sc-bold.woff2) format("woff2");font-weight:700;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#222}
+#player{position:relative;width:540px;max-width:100vw;margin:0 auto;padding-top:16px;background:#fff;overflow:hidden;cursor:pointer}
+#hud{position:relative;height:45px;background:#14191d;padding:3px 10px 0 11.5px;font-family:NotoSC,sans-serif;display:flex;justify-content:space-between;gap:10px}
+#title{font-size:12.1px;font-weight:700;line-height:20px;color:#6fcfc9;white-space:nowrap;overflow:hidden}
+#sub{font-size:9px;line-height:14px;color:#b6bcc0;white-space:nowrap;overflow:hidden}
+#meters{flex:none;font:600 9.2px/16px "Geist Mono",monospace;white-space:pre;color:#e6eaec;padding-top:2px}#pg{color:#8a9fa0}
+#bar{position:absolute;left:0;bottom:0;height:2px;width:0;background:#62c9c8}
+#board{display:block;width:100%;height:auto;aspect-ratio:540/749;background:#f9fbfa}
+#notes{max-width:540px;margin:0 auto;padding:30px 16px 60px;font:400 13.5px/1.65 system-ui,sans-serif;color:#555}#notes h3{font-size:15px;color:#111;margin:0 0 6px}#notes code{font:500 12px "Geist Mono",monospace;color:#111}#notes dd{margin:0 0 10px}
+</style></head><body>
+<div id="player" role="img" aria-label="一幅矢量插画被分四个阶段逐笔画出">
+ <div id="hud"><div style="min-width:0"><div id="title"></div><div id="sub"></div></div><div id="meters"><div id="count"></div><div id="pg"></div></div><div id="bar"></div></div>
+ <canvas id="board" width="540" height="749"></canvas>
+</div>
+<section id="notes"><h3>可拆</h3><dl>
+<dt><code>#hud</code></dt><dd>顶部信息栏：当前阶段、批次说明、元素计数、百分比和细进度条，数值都由同一条时间线算出。</dd>
+<dt><code>#board</code></dt><dd>画面主体：原帖动图的逐帧截图，每秒 20 帧，点一下暂停或继续。</dd>
+</dl></section>
+<script>
+/* 时间线从视频读数得来：秒 → 画面上的元素数。进度是线性的，每秒 7.93% */
+const TIMELINE=[[0,0],[1,22],[1.1,26],[1.9,26],[2,27],[3,43],[3.1,47],[4,162],[5,288],[5.05,301],[5.85,304],[6,322],[7,517],[8,713],[9,937],[10,1147],[11,1352],[12,1547],[12.6,1634]];
+const STAGES=[[0,'阶段 1/4：画草稿，确定大形和比例','批次 1A：绘制动态重心线、头胸盆体块与四肢关节初始草图'],[1.1,'阶段 1/4：观察与修改 — 调整大形比例与动态姿态','观察修正 #1：调整头部15°倾角、右腿外展重心、左腿落点与袖口体块宽度'],[1.9,'阶段 1/4：画草稿，细化轮廓结构线','批次 1B：在修正后的体块比例基础上，勾勒双马尾、机能外套与战靴外轮廓'],[3.1,'阶段 2/4：铺大色块，建立明暗关系','批次 2A：由后向前铺设双马尾、肤色、深灰连衣裙、白外套与黑丝袜大色块及主暗部'],[5.05,'阶段 2/4：观察与修改 — 修整剪影镂空与结构衔接','观察修正 #2：镂空颈肩与马尾间负空间，收紧腰臀与胯部色块边界，压暗草稿线'],[5.85,'阶段 3/4：逐步细化结构、光影和细节（上身与头部）','批次 3A：深入刻画挂脖衣裙渐变、透明袖电路纹理、立体方块发饰、刘海发丝与面部底光'],[8.3,'阶段 3/4：逐步细化结构、光影和细节（裙摆与双马尾、战靴）','批次 3B：绘制青色发光音浪裙摆、金色星图连线、长马尾多层次发丝、腿环与机能战靴'],[10.75,'阶段 4/4：检查整体，调整收尾（五官高光微雕与线稿终检）','观察修正 #3 & 收尾：强化翡翠双眸虹膜高光、笑口、比耶手指、01条码徽章与深色线稿'],[12.45,'绘制完成：初音未来（机能风）高精度矢量 SVG','总计 1634 个 SVG 绘图元素（可见精绘元素 1589 个 + 结构草稿元素 45 个）']];
+const TOTAL=1634,N=264,FPS=20,LEN=N/FPS;
+const $=i=>document.getElementById(i),ctx=$('board').getContext('2d');
+const frames=Array.from({length:N},(_,i)=>{const m=new Image();m.src='source-assets/frames/f'+String(i).padStart(3,'0')+'.webp';return m});
+function count(t){for(let i=1;i<TIMELINE.length;i++){const[a,x]=TIMELINE[i-1],[b,y]=TIMELINE[i];if(t<=b)return Math.round(x+(y-x)*(t-a)/(b-a))}return TOTAL}
+let shown=-1,last=-1;window.__shown=()=>shown;
+function hud(t){let st=0;STAGES.forEach((s,i)=>{if(t>=s[0])st=i});if(st!==last){last=st;$('title').textContent=STAGES[st][1];$('sub').textContent=STAGES[st][2]}
+ const pct=Math.min(100,t*7.93);$('count').textContent=`SVG Elements: ${String(count(t)).padStart(4,' ')} / ${TOTAL}`;$('pg').textContent=`Progress: ${pct.toFixed(1).padStart(5,' ')}%`;$('bar').style.width=pct+'%'}
+function draw(i){const m=frames[i];if(!m.complete||!m.naturalWidth)return false;ctx.drawImage(m,0,0,540,749);shown=i;return true}
+function seek(t){hud(t);return draw(Math.min(N-1,Math.floor(t*FPS)))}
+const q=new URLSearchParams(location.search),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,fix=q.get('t');
+if(fix!==null||reduce){const t=fix===null?LEN-.01:+fix,i=Math.min(N-1,Math.floor(t*FPS));hud(t);if(!draw(i))frames[i].onload=()=>draw(i)}
+else{let t0=null,paused=null;
+ const loop=n=>{if(paused===null){if(t0===null)t0=n;seek(((n-t0)/1000)%LEN)}requestAnimationFrame(loop)};requestAnimationFrame(loop);
+ $('player').onclick=()=>{const n=performance.now();if(paused===null)paused=n;else{t0+=n-paused;paused=null}}}
+</script></body></html>

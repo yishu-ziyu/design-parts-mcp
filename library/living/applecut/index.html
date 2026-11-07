@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Applecut — 一格一事</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --void: #000;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body {
+    font-family: var(--serif);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1280px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button, button.play {
+    font: 600 13px var(--sans);
+    padding: 8px 12px;
+    border: 1px solid var(--note-ink);
+    background: var(--note-ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .toggles button:hover, button.play:hover {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--cream);
+  }
+
+  #stage {
+    position: relative;
+    background: var(--void);
+    overflow: hidden;
+    border: 1px solid var(--note-ink);
+    aspect-ratio: 16 / 9;
+  }
+  #tape {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: 50% 50%;
+    transition: transform .45s cubic-bezier(.2, .7, .2, 1);
+  }
+  #stage[data-solo="nw"] #tape { transform-origin: 0 0; transform: scale(2); }
+  #stage[data-solo="ne"] #tape { transform-origin: 100% 0; transform: scale(2); }
+  #stage[data-solo="sw"] #tape { transform-origin: 0 100%; transform: scale(2); }
+  #stage[data-solo="se"] #tape { transform-origin: 100% 100%; transform: scale(2); }
+  @media (prefers-reduced-motion: reduce) {
+    #tape { transition: none; }
+  }
+
+  .cells {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  .cells button {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  .cells button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: -4px;
+  }
+  .cells button span {
+    position: absolute;
+    font: 500 11px/1 var(--sans);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.55);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .cells:hover button span, .cells button:focus-visible span { opacity: 1; }
+  .cells button:nth-child(1) span { top: 12px; left: 14px; }
+  .cells button:nth-child(2) span { top: 12px; right: 14px; }
+  .cells button:nth-child(3) span { bottom: 12px; left: 14px; }
+  .cells button:nth-child(4) span { bottom: 12px; right: 14px; }
+
+  #clock {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    min-width: 4.2em;
+    text-align: right;
+    color: var(--muted);
+  }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #000; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .shots {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 0 0 22px;
+  }
+  .shots figure { margin: 0; }
+  .nums {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 0 0 18px;
+  }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+    vertical-align: top;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+  }
+  .recipe { border-top: 1px solid var(--note-ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  #notes {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+  }
+  #notes h3 { margin-bottom: 14px; }
+  #notes dl { margin: 0; }
+  #notes dt {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    margin: 16px 0 6px;
+  }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .92em; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · x.com/leomeethewoo</div>
+  <h1>一格一事</h1>
+  <p class="sub">黑底 2×2。四段产品片同时播放。每格一件产品，其余留空。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-grid" aria-pressed="true">四分格</button>
+      <button type="button" id="t-sound" aria-pressed="false">声音</button>
+      <button type="button" class="play" id="replay">重播</button>
+      <span id="clock">0.0s</span>
+    </div>
+  </div>
+
+  <div id="stage" data-solo="">
+    <video id="tape" muted loop playsinline autoplay poster="assets/poster.jpg">
+      <source src="assets/grid.mp4" type="video/mp4" />
+    </video>
+    <div class="cells" id="solo">
+      <button type="button" data-cell="nw" aria-label="左上格"><span>左上</span></button>
+      <button type="button" data-cell="ne" aria-label="右上格"><span>右上</span></button>
+      <button type="button" data-cell="sw" aria-label="左下格"><span>左下</span></button>
+      <button type="button" data-cell="se" aria-label="右下格"><span>右下</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原帖第一屏</h3>
+      <p>9.3 秒、3840×2160、60fps。画面始终是黑底上的四格。没有标题叠在片子上，没有转场花字。四段 Apple 发布会镜头同时运行，用来对照同一套语法。</p>
+      <p>点其中一格会放大到满框（<code>scale(2)</code>，原点落在该角）。再点同一格，或打开「四分格」，回到 2×2。原片有声；自动播放默认静音。</p>
+    </div>
+    <figure>
+      <img src="assets/frame-01.jpg" alt="原帖视频开场：黑底四格" />
+      <figcaption><strong>图 1.</strong> t ≈ 0.5s。左上图标条、左下整机、右上特写、右下「Siri AI」字与光带。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>这不是三维场景，也不是网页组件。原件是一条剪辑好的片子。本页用同一条片子做标本：第一屏就是它，可重播，可单格放大。</p>
+    <p>每格遵守同一条规则：一件产品或一句字，背景接近纯黑。颜色只出现在产品、UI 或那一条光谱上。格与格之间没有装饰分隔，黑底本身就是分隔。</p>
+    <p>一页之中强调元素不宜过多。这里的强调靠留白和对比，不靠把四件事塞进同一镜。</p>
+  </div>
+
+  <div class="shots">
+    <figure>
+      <img src="assets/frame-07.jpg" alt="波形、光谱、手表与手机特写" />
+      <figcaption><strong>图 2.</strong> t ≈ 3.5s。左上彩色波形，左下光谱，右上手表，右下手机。每格一件。</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/frame-15.jpg" alt="笔记本、三只表、通知与 iPhone 18 Pro" />
+      <figcaption><strong>图 3.</strong> t ≈ 7.5s。字在产品上，产品在黑底上。铜橙色只出现在左下那台手机。</figcaption>
+    </figure>
+  </div>
+
+  <aside class="tip">
+    <b>原则：</b>简单不是把功能埋掉，而是让核心目的显出来。清晰靠层级：顺序、间距、对比。一格一事，其余留空。
+  </aside>
+
+  <div class="prose">
+    <h3>原帖列出的五条</h3>
+    <p><b>构图。</b>一镜一个想法。空不是没做完，是把视觉权重留给中间那一件。</p>
+    <p><b>字体。</b>全片同一套品牌字体。标题、UI、附注共用规则。</p>
+    <p><b>颜色。</b>房间保持黑或白。响的颜色只在产品或界面上。不要亮色叠亮色。</p>
+    <p><b>转场。</b>剪接点尽量不被看见。不要闪光、不要硬切把人拉出片子。</p>
+    <p><b>声音。</b>音乐贴着剪辑走。音效只保留必要的一下，不和画面抢。</p>
+  </div>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>原片</td><td>3840×2160，60fps，9.33s，H.264</td></tr>
+      <tr><td>本页播放</td><td>1920×1080，约 3.0MB，循环</td></tr>
+      <tr><td>布局</td><td>2×2，16:9，背景 #000</td></tr>
+      <tr><td>单格放大</td><td><code>transform: scale(2)</code>，原点为该角，0.45s <code>cubic-bezier(.2, .7, .2, 1)</code></td></tr>
+      <tr><td>来源</td><td><a href="https://x.com/leomeethewoo/status/2098033411000828007">x.com/leomeethewoo/status/2098033411000828007</a></td></tr>
+    </tbody>
+  </table>
+
+  <div class="recipe">
+    <h3>复用要点</h3>
+    <ol class="how">
+      <li>一镜只放一件产品或一句字。其余用黑或白空出来。</li>
+      <li>颜色只给产品或 UI。不要让背景和主体同时响。</li>
+      <li>转场不要自成一景。剪接点应当让人先看见产品，后才意识到切了。</li>
+      <li>对照时用四分格同时播，比口头描述五条原则更有效。</li>
+    </ol>
+  </div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#stage</code></dt>
+    <dd>原片 9.33s、16:9、黑底 2×2。本页 <code>1920×1080</code> 循环播放。自动播放静音；「声音」打开后取消 mute。「重播」将 <code>currentTime</code> 置 0。</dd>
+    <dt><code>#solo</code></dt>
+    <dd>四格可点。选中格 <code>transform-origin</code> 落在该角，<code>scale(2)</code>，0.45s <code>cubic-bezier(.2, .7, .2, 1)</code>。容器 <code>overflow: hidden</code>。再点同一格或打开「四分格」回到全图。reduced-motion 下无过渡。</dd>
+  </dl>
+</section>
+
+<footer class="colophon">
+  <p>来源：<a href="https://x.com/leomeethewoo/status/2098033411000828007">leo @leomeethewoo</a> · 目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const stage = document.getElementById('stage')
+  const tape = document.getElementById('tape')
+  const clock = document.getElementById('clock')
+  const gridBtn = document.getElementById('t-grid')
+  const soundBtn = document.getElementById('t-sound')
+  const cells = [...document.querySelectorAll('#solo button')]
+
+  function setSolo(cell) {
+    const next = stage.dataset.solo === cell ? '' : (cell || '')
+    stage.dataset.solo = next
+    gridBtn.setAttribute('aria-pressed', next ? 'false' : 'true')
+  }
+
+  cells.forEach((btn) => {
+    btn.addEventListener('click', () => setSolo(btn.dataset.cell))
+  })
+
+  gridBtn.addEventListener('click', () => setSolo(''))
+
+  soundBtn.addEventListener('click', () => {
+    const on = soundBtn.getAttribute('aria-pressed') !== 'true'
+    soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false')
+    tape.muted = !on
+    if (on) tape.play().catch(function () {})
+  })
+
+  document.getElementById('replay').addEventListener('click', () => {
+    tape.currentTime = 0
+    tape.play().catch(function () {})
+  })
+
+  function tick() {
+    clock.textContent = tape.currentTime.toFixed(1) + 's'
+    requestAnimationFrame(tick)
+  }
+  tape.addEventListener('loadedmetadata', tick)
+  requestAnimationFrame(tick)
+})()
+</script>
+</body>
+</html>

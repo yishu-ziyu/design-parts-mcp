@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>Mitten</title>
+<style>
+@font-face{font-family:Plex;src:url(fonts/plex400.woff2);font-weight:400}
+@font-face{font-family:Plex;src:url(fonts/plex500.woff2);font-weight:500}
+:root{--bg:#f3f3f1;--ink:#0a0a0a;--text:#161615}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg)}
+body{font-family:Plex,ui-monospace,monospace;color:var(--text);-webkit-font-smoothing:antialiased}
+#hero{position:relative;height:100vh;min-height:620px;overflow:hidden}
+#scan{position:absolute;right:0;top:80px;height:calc(100% - 80px);aspect-ratio:780/676;display:block;-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px);mask-image:linear-gradient(90deg,transparent,#000 28px)}
+header{position:absolute;inset:0 0 auto;height:80px;z-index:2}
+#logo{position:absolute;left:34px;top:27px;width:28px;height:25px;display:block}
+nav{position:absolute;right:33px;top:30px;display:flex;gap:30.8px;font-size:13.5px;line-height:20px}
+nav a{color:var(--text);text-decoration:none}nav a:hover{color:#000;text-decoration:underline;text-underline-offset:3px}
+#title{position:absolute;left:43px;top:200px;width:min(455px,62vw);display:block;z-index:2}
+#lede{position:absolute;left:34px;bottom:173px;margin:0;font-size:15.7px;line-height:23px;width:330px;z-index:2}
+#cta{position:absolute;left:34px;bottom:90px;display:flex;align-items:center;gap:20px;z-index:2}
+#adopt{height:46px;width:138px;border:0;border-radius:0;background:var(--ink);color:#fff;font:500 13.5px Plex,monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:none}
+#adopt:hover{background:#2c2c2a}#adopt:active{transform:translateY(1px)}
+#watch{color:var(--text);text-decoration:none;font-size:13.5px;display:flex;align-items:center;gap:9px}
+#watch svg{transition:transform .15s steps(2)}#watch:hover svg{transform:translateX(3px)}
+#notes{padding:48px 33px 72px;max-width:780px;font-size:13px;line-height:1.65}
+#notes h3{font-size:14px;font-weight:500}#notes dd{margin:0 0 12px}#notes code{color:#000}
+@media (max-width:760px){#scan{opacity:.8}nav{display:none}#lede{width:calc(100% - 66px)}}
+</style></head><body>
+<section id="hero">
+<header><svg id="logo" viewBox="0 0 9 8" shape-rendering="crispEdges" aria-label="logo"></svg>
+<nav><a href="#hero">Skills</a><a href="#hero">How It Works</a><a href="#hero">Pricing</a><a href="#hero">Changelog</a><a href="#hero">Contact</a></nav></header>
+<svg id="title" viewBox="0 0 45 13" shape-rendering="crispEdges" role="img" aria-label="HEY, I'M MITTEN"></svg>
+<canvas id="scan" aria-hidden="true"></canvas>
+<p id="lede">A small AI agent that sorts your inbox, books the boring stuff and nudges you before deadlines slip.</p>
+<div id="cta"><button id="adopt">Adopt Mitten</button><a id="watch" href="#hero">Watch It Work <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 1l5 5-5 5"/></svg></a></div>
+</section>
+<section id="notes"><h3>可拆</h3><dl>
+<dt><code>#scan</code></dt><dd>默认逐帧播放原作预览视频的 115 张截图（每秒 12 帧）。加 <code>?mode=sampler</code> 改跑取样代码：把模糊后的画面按 6px 一行扫描，够暗画线，极暗并成实心块。</dd>
+<dt><code>#title</code></dt><dd>5 格高的方块字，用 SVG 矩形画，不依赖字体文件。</dd>
+<dt><code>#adopt</code></dt><dd>零圆角的纯黑按钮，配等宽字，和像素标题同一个硬朗语气。</dd>
+</dl></section>
+<script>
+// ---------- 方块字：每个字形按原帖逐格量出 ----------
+const G={H:['##.##','##.##','#####','##.##','##.##'],E:['####','##..','####','##..','####'],Y:['##..##','.####.','..##..','..##..','..##..'],
+ I:['##','##','##','##','##'],Q:['##','##'],M:['##..##','######','######','##..##','##..##'],T:['####','.##.','.##.','.##.','.##.'],
+ N:['##..##','###.##','######','##.###','##..##'],C:['.##','##.']};
+function put(svg,g,x,y){g.forEach((r,j)=>[...r].forEach((c,i)=>{if(c==='#'){const e=document.createElementNS('http://www.w3.org/2000/svg','rect');e.setAttribute('x',x+i);e.setAttribute('y',y+j);e.setAttribute('width',1.02);e.setAttribute('height',1.02);svg.append(e)}}))}
+const tt=document.getElementById('title');tt.setAttribute('fill','#0a0a0a');
+[['H',0,0],['E',7,0],['Y',13,0],['C',21,4],['I',30,0],['Q',34,0],['M',38,0],['M',0,7.6],['I',8,7.6],['T',12,7.6],['T',18,7.6],['E',24,7.6],['N',30,7.6]].forEach(([k,x,y])=>put(tt,G[k],x,y));
+const lg=document.getElementById('logo');lg.setAttribute('fill','#0a0a0a');put(lg,['##.....##','###...###','#########','##.###.##','#########','####.####','#########','.#######.'],0,0);
+
+// ---------- 主体：原作预览视频逐帧截图（只留本机），12 帧循环 ----------
+const N=115,FPS=12,CW=780,CH=676;
+const frames=Array.from({length:N},(_,i)=>{const m=new Image();m.src='source-assets/frames/f'+String(i).padStart(3,'0')+'.webp';return m});
+const c=document.getElementById('scan'),x=c.getContext('2d');c.width=CW;c.height=CH;
+const q=new URLSearchParams(location.search),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sampler=q.get('mode')==='sampler';
+// ---------- 取样代码：把任意画面变成横线。默认不用，?mode=sampler 时用模糊后的原作帧作灰度源 ----------
+const SW=390,SH=338,src=document.createElement('canvas');src.width=SW;src.height=SH;const s=src.getContext('2d',{willReadFrequently:true});
+const ROW=6,CELL=4,h1=n=>{const v=Math.sin(n*127.1)*43758.5453;return v-Math.floor(v)};
+function sample(m,seed){
+ s.filter='blur(3px)';s.drawImage(m,0,0,SW,SH);s.filter='none';
+ const d=s.getImageData(0,0,SW,SH).data;
+ x.fillStyle='#f3f3f1';x.fillRect(0,0,CW,CH);x.fillStyle='#0a0a0a';
+ for(let y=0,r=0;y<CH;y+=ROW,r++){
+  const jr=(h1(r*3.1+seed*.71)-.5)*.16;let run=-1,rh=0;
+  const end=xe=>{if(run>=0){x.fillRect(run,y+(ROW-rh)/2,xe-run,rh);run=-1}};
+  for(let cx=0;cx<CW;cx+=CELL){
+   const i=(Math.min(SH-1,(y+ROW/2)>>1)*SW+Math.min(SW-1,cx>>1))*4;
+   const dk=(1-d[i]/255)*1.7+jr+(h1(cx*.13+r*7.7+seed)-.5)*.08;
+   const hh=dk>.84?ROW+.6:dk>.40?3:0;
+   if(hh!==rh||!hh){end(cx);rh=hh;if(hh)run=cx}
+  }
+  end(CW);
+ }
+}
+let shown=-1;
+function paint(i){
+ const m=frames[i];if(!m.complete||!m.naturalWidth)return false;
+ if(sampler)sample(m,i);else x.drawImage(m,0,0,CW,CH);
+ shown=i;return true;
+}
+window.__shown=()=>shown;
+const fixed=q.get('f');
+if(fixed!==null||reduce){const i=+(fixed||30);if(!paint(i))frames[i].onload=()=>paint(i)}
+else{const st=performance.now();let was=-1;const loop=n=>{const i=Math.floor((n-st)/1000*FPS)%N;if(i!==was&&paint(i))was=i;requestAnimationFrame(loop)};requestAnimationFrame(loop)}
+</script></body></html>

@@ -1,0 +1,137 @@
+/* ONE NUMBER IS THE STATE, and everything else is read off
+   it. A single tween runs 0 â 1 and every position, size,
+   radius and type size is a mix() of its two ends â so there
+   is no transition anywhere in the stylesheet for the shape.
+
+   With eight CSS transitions there are eight chances for one
+   to arrive early and break the illusion that this is one
+   object. With one number there are none. */
+const p = useTween(open ? 1 : 0, ms);
+const mix = (a, b, t) => a + (b - a) * t;
+
+/* EASED, NOT SPRUNG, and the corner is the reason. A spring
+   past its target takes every value derived from it along:
+   measured, the height reached 492 against a target of 404
+   and the radius went with it, dipping under its own end
+   value and coming back. That is a wobble, not a bounce.
+
+   Quart-out is cubic-bezier(0.22, 1, 0.36, 1) in all but
+   name â quick off the mark, lands without ever passing the
+   number it is going to. */
+const e = 1 - (1 - t) ** 4;
+
+/* SO THE BOUNCE IS A SECOND NUMBER, and it only scales. The
+   progress stays monotonic and the composition stays
+   internally consistent every frame â the sleeve, the box and the margin
+   between them always in the ratio that keeps the corners
+   concentric. What bounces is the whole object, uniformly: a
+   scale takes the box, the sleeve, the corners and the type
+   together, so nothing can get out of step with anything
+   else. It is the same picture, briefly smaller.
+
+   Its own LINEAR clock, because the progress above is
+   quart-out and near its end for most of the move â a swell
+   read off it spikes in the first two frames and is flat for
+   the rest. Peak pushed
+   late so the object gathers and releases as it lands.
+
+   ON THE CLOSE ONLY. Opening already has its event: the box
+   goes 78 â 189 and that is the thing you are meant to watch,
+   so a scale on top is a second size change in the same
+   direction at the same time. Closing collapses into a bar
+   and most of it stops existing â there the dip is something
+   to go with the disappearance. */
+const u = useTween(open ? 1 : 0, ms, (t) => t);
+const swell = Math.sin(Math.PI * clamp(u, 0, 1) ** 1.5);
+scale: open ? 1 : 1 - 0.035 * swell;
+
+/* THE COVER IS THE HINGE. It is the only thing on the bar big
+   enough to be recognised, so it is what the eye tracks â and
+   it never crossfades or disappears. It travels from a 40px
+   square to a 64px one without ever leaving the corner it
+   started in, and everything else takes its lead from where
+   it went.
+
+   ONE MARGIN, BOTH STATES â not one per state. At 10 on the
+   bar and 16 on the card the sleeve, the track and the
+   transport all slid inward as it opened: a fourth motion
+   nobody asked for, on top of the three that are the point.
+   The object grows; its frame does not move. */
+<span style={{
+  left:   10,
+  top:    10,
+  width:  mix(40, 64, p),
+  height: mix(40, 64, p),
+}} />
+
+/* THE WIDTH NEVER CHANGES. A bar that also got wider would be
+   growing in two directions at once, and the second adds
+   nothing: what a player does when it opens is show you more,
+   downward. Holding it still also means the transport only
+   has to travel rather than resize and travel. */
+height: mix(78, 189, p);
+
+/* THE CORNERS ARE CONCENTRIC â the box's radius is the
+   sleeve's plus the margin between them. Not a preference:
+   two curves offset by a constant distance stay parallel,
+   and any other pair pinches at 45Â°. 32 was picked by eye
+   and it was six too many â the card's curve swept wider
+   than the artwork's and left its top-left sitting inside a
+   bend that had already turned.
+
+   IT IS ALSO WHY THE CORNER CAN BE A KNOB. It was a control
+   once and it was removed, because what it set was the box's
+   corner on its own: turn it down and the card squared off
+   around a sleeve that had not; turn it up and the card's
+   curve swept wide of the picture. Every setting but one was
+   wrong. What the slider moves now is the SLEEVE, and the box
+   is derived â so the pair stays concentric at every value
+   and there is no setting that pinches. A knob on a
+   relationship, not on one of its halves.
+
+   AND THE OFFSET FADES IN. Ten pixels at every setting,
+   including zero, drew a perfectly sharp picture inside a
+   card that was still visibly rounded â concentric on paper,
+   two different decisions to look at. At radius zero there is
+   no curve to stay parallel to, so the rule was answering a
+   question nobody had asked there. Scaled by how far up the
+   slider you are, it reaches its full ten by the default:
+   below that the corners converge until they are square
+   together, above it the rule takes over, which is where it
+   earns its keep. */
+const PAD = 10, CORNER = 16;
+const artR = [corner * 40 / 64, corner];        /* 0 â 32 */
+const off  = PAD * Math.min(1, corner / CORNER);
+border-radius: mix(artR[0] + off, artR[1] + off, p);
+
+/* The parts that only exist in the card are held back to the
+   last 40% of the move, so they arrive into a shape that has
+   stopped growing rather than sliding about inside one that
+   has not. */
+const late = clamp((p - 0.6) / 0.4, 0, 1);
+
+/* THE PLAY MARK IS DRAWN, NOT SWAPPED. Two icons exchanged
+   is a cut however short you make the crossfade, and this is
+   the one control you press more than once â a cut you see
+   forty times is the thing you end up looking at.
+
+   So both marks are the SAME two quadrilaterals and the
+   difference between them is where eight points are. The
+   pause is a pair of bars; the play is that pair with the
+   inner edges pulled to the middle and collapsed to a point,
+   which is a triangle split down its own axis. Wound the
+   same way in both, or the halves turn inside out crossing. */
+const PAUSE_L = [6,4, 10,4, 10,20, 6,20];
+const PLAY_L  = [6.5,4, 13.25,8, 13.25,16, 6.5,20];
+
+/* THE GOO IS ZERO AT BOTH ENDS. Everything soft here rides
+   sin(pi * t), so it is a bulge on the way rather than a
+   difference between the two states â press twice and it
+   lands on exactly what it started as. The mark squashes
+   across as it stretches up, the halves lean in until they
+   touch, and the whole thing tips a few degrees and comes
+   back level. Changing size without changing volume is what
+   reads as soft rather than as redrawn. */
+const goo = Math.sin(clamp(t, 0, 1) * Math.PI);
+transform: rotate(9deg * goo * dir)
+           scale(1 - 0.13 * goo, 1 + 0.11 * goo);

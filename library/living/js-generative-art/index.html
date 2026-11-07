@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>工程图信号流复刻</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#222;font:13px/1.6 ui-monospace,Menlo,monospace}
+#wrap{width:100%;max-width:1134px;margin:0 auto}
+#stage{position:relative;width:100%;aspect-ratio:1134/637;overflow:hidden;background:#f6f6f4}
+#stage img,#stage canvas,#stage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#arcs path{fill:none;stroke:#a9a9a6;stroke-width:.7;stroke-dasharray:2.4 3.6}
+.notes{max-width:760px;margin:40px auto;padding:0 16px;color:#666}.notes h3{font-size:13px;color:#222;margin:0 0 8px}.notes dt{margin-top:10px}.notes dd{margin:2px 0 0}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+ <img src="source-assets/plate.jpg" alt="工程图底图：四排仪表面板和管线" width="1134" height="637">
+ <svg id="arcs" viewBox="0 0 1134 637" aria-hidden="true"></svg>
+ <canvas id="events"></canvas>
+ <canvas id="signal"></canvas>
+</div></div>
+<div class="notes"><h3>可拆</h3><dl>
+ <dt><code>#signal</code></dt><dd>沿折线管道匀速走的信号珠串：圆环、实心、胶囊三种。</dd>
+ <dt><code>#events</code></dt><dd>面板上错开出现的红色读数：折线、条码、色块、放射环。</dd>
+ <dt><code>#arcs</code></dt><dd>虚线弧在面板间流动，带箭头。</dd>
+</dl></div>
+<script>
+(function(){
+const W=1134,H=637,RED='#a42a33',PINK='#e2a4a8';
+const sig=document.getElementById('signal'),ev=document.getElementById('events'),arcs=document.getElementById('arcs');
+const sc=sig.getContext('2d'),ec=ev.getContext('2d');
+function fit(){const r=sig.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);for(const c of[sig,ev]){c.width=r.width*d;c.height=r.height*d;c.getContext('2d').setTransform(c.width/W,0,0,c.height/H,0,0)}}
+addEventListener('resize',fit);fit();
+function mk(pts){const seg=[];let L=0;for(let i=1;i<pts.length;i++){const dx=pts[i][0]-pts[i-1][0],dy=pts[i][1]-pts[i-1][1],l=Math.hypot(dx,dy);seg.push({a:pts[i-1],dx:dx/l,dy:dy/l,l,s:L});L+=l}return{seg,L}}
+function at(p,s){if(s<0||s>p.L)return null;for(const g of p.seg)if(s<=g.s+g.l){const t=s-g.s;return{x:g.a[0]+g.dx*t,y:g.a[1]+g.dy*t,a:Math.atan2(g.dy,g.dx)}}return null}
+/* pipe centre lines, read off the plate; train = bead letters, r ring, d disc, c capsule, g grey, o orange */
+const TR='rddccdr',S1='ccg',S2='g',S3='ro';
+const P=[
+ {pts:[[72,103],[472,103],[481,105],[484,112],[484,134]],spd:50,every:8.2,ph:0,tr:[TR,'',S3,'c','g']},
+ {pts:[[72,103],[60,103],[54,109],[53,118],[53,202],[55,209],[62,211],[403,211]],spd:50,every:8.2,ph:.2,tr:[TR,'','gc','g']},
+ {pts:[[762,205],[900,238],[1032,264],[1038,270]],spd:44,every:7.1,ph:2,tr:['gcr','','g','rddr']},
+ {pts:[[756,226],[1072,226],[1082,231],[1085,243],[1085,335]],spd:48,every:6.4,ph:3.4,tr:['rdd','gc','','og']},
+ {pts:[[900,218],[1064,218],[1076,222],[1080,232]],spd:42,every:5.2,ph:1,tr:['go','','g']},
+ {pts:[[52,334],[540,334],[550,338],[553,348],[553,356]],spd:52,every:7.6,ph:1.3,tr:[TR,'ccg','rd','g','']},
+ {pts:[[52,334],[47,342],[47,448],[52,456],[62,457],[463,457]],spd:50,every:7.6,ph:4,tr:['ccr','','gd','r']},
+ {pts:[[665,353],[1078,353],[1090,342]],spd:46,every:6.8,ph:5,tr:['gc','r','','gc']},
+ {pts:[[1085,456],[763,456]],spd:46,every:6.1,ph:2.2,tr:['cc','gr','g']},
+ {pts:[[1098,336],[1098,445],[1092,455]],spd:40,every:5.5,ph:3.3,tr:['cg','','r']},
+ {pts:[[1076,560],[854,560]],spd:44,every:6.6,ph:0.6,tr:['gcg','','cr']},
+ {pts:[[1079,482],[1079,538]],spd:36,every:4.6,ph:1.4,tr:['g','o','']},
+ {pts:[[222,566],[282,566]],spd:30,every:4.4,ph:.3,tr:['d','r']}
+].map(p=>Object.assign(p,mk(p.pts)));
+function bead(ctx,k,x,y,a){ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(.74,.74);ctx.lineWidth=1.1;
+ const circ=(r,f,s)=>{ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fillStyle=f;ctx.fill();if(s){ctx.strokeStyle=s;ctx.stroke()}};
+ if(k==='r'){ctx.fillStyle='rgba(226,164,168,.35)';ctx.fillRect(-5.2,-5.2,10.4,10.4);circ(4,'#fff',RED);circ(1.1,RED)}
+ else if(k==='d'){circ(4.4,'#f3d4d6',PINK);circ(3.4,RED,'#5e1a20')}
+ else if(k==='c'){ctx.beginPath();ctx.roundRect(-5.4,-3.8,10.8,7.6,3.8);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#7c4b4e';ctx.stroke();ctx.beginPath();ctx.moveTo(-3.8,0);ctx.lineTo(3.8,0);ctx.stroke()}
+ else if(k==='g'){circ(3.8,'#8a8a88','#3c3c3a')}
+ else if(k==='o'){circ(3.8,'#ec9a2e','#b86e12')}
+ ctx.restore()}
+/* red read-outs on the panels */
+function burst(ctx,x,y,r,k,t){ctx.save();ctx.translate(x,y);ctx.strokeStyle=RED;
+ for(let i=0;i<3;i++){const q=(t*1.6+i/3)%1;ctx.globalAlpha=k*(1-q)*.7;ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(0,0,r*(.25+q*.8),0,7);ctx.stroke()}
+ ctx.globalAlpha=k*.2;ctx.fillStyle=RED;ctx.beginPath();ctx.arc(0,0,r*.85,0,7);ctx.fill();
+ ctx.globalAlpha=k;ctx.lineWidth=2.4;ctx.beginPath();ctx.arc(0,0,r*.28,0,7);ctx.stroke();ctx.fillStyle=RED;ctx.beginPath();ctx.arc(0,0,r*.12,0,7);ctx.fill();
+ ctx.globalAlpha=k*.9;ctx.lineWidth=1;for(let i=0;i<16;i++){const a=i/16*6.283;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*1.02,Math.sin(a)*r*1.02);ctx.lineTo(Math.cos(a)*r*(1.12+(i%2)*.14),Math.sin(a)*r*(1.12+(i%2)*.14));ctx.stroke()}
+ ctx.restore()}
+function step(ctx,x,y,w,h,k,seed,t){ctx.save();ctx.globalAlpha=k;ctx.strokeStyle=RED;ctx.fillStyle=RED;ctx.fillRect(x,y+h-1.5,w,1.8);ctx.lineWidth=.8;ctx.beginPath();let v=y+h*.8;ctx.moveTo(x,v);const n=6;for(let i=1;i<=n;i++){const nx=x+w*i/n;v=y+h*(.15+.65*Math.abs(Math.sin(seed*3.1+i*1.7+t*.8)));ctx.lineTo(nx,ctx.__l=v);ctx.lineTo(nx,v)}ctx.stroke();ctx.restore()}
+function wedge(ctx,x,y,w,h,k,seed){ctx.save();ctx.globalAlpha=k;ctx.strokeStyle=RED;ctx.fillStyle=RED;ctx.lineWidth=.8;ctx.fillRect(x,y+h-1.5,w,1.8);for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(x+w*(.05+i*.05),y+h-1);ctx.lineTo(x+w*(.2+i*.08),y+h*(.05+i*.18));ctx.lineTo(x+w,y+h-1-i);ctx.stroke()}ctx.restore()}
+function bars(ctx,x,y,w,h,k,seed){ctx.save();ctx.globalAlpha=k;ctx.fillStyle=RED;const n=Math.round(w/2.4);for(let i=0;i<n;i++){if((i*7+seed)%5===0)continue;ctx.fillRect(x+i*w/n,y,w/n*.55,h)}ctx.restore()}
+function block(ctx,x,y,w,h,k,striped){ctx.save();ctx.globalAlpha=k;ctx.fillStyle=RED;ctx.fillRect(x,y,w,h);if(striped){ctx.fillStyle='#f0c6c8';for(let i=1;i<h;i+=2.4)ctx.fillRect(x,y+i,w,.8)}ctx.restore()}
+function sparks(ctx,x,y,r,k,seed,t){ctx.save();ctx.globalAlpha=k;ctx.fillStyle=RED;for(let i=0;i<22;i++){const a=(i*2.399+seed),q=((i*.37+t*.5)%1);const R=r*q;ctx.fillRect(x+Math.cos(a)*R,y+Math.sin(a)*R,1.3,1.3)}ctx.restore()}
+const E=[
+ ['burst',968,291,20,13,5,0],['burst',547,406,14,9,3,4],['burst',282,523,12,11,3,7],['burst',512,173,10,7,2,2],['burst',399,283,11,8,2.5,9],
+ ['step',591,382,46,18,8,3,1],['step',685,382,30,18,7,2.5,5],['step',144,505,38,17,9,3,2],
+ ['wedge',258,276,30,17,7,2.5,3],['wedge',353,276,38,12,9,2.5,6],['wedge',325,382,28,13,6,2.5,0],['wedge',795,382,23,13,8,2.5,4],['wedge',479,506,28,10,7,2.5,8],['wedge',932,505,30,7,9,2,1],['wedge',600,159,38,11,8,2.5,5],
+ ['bars',285,379,9,15,6,2.5,2],['bars',371,503,11,23,7,3,0],['bars',323,409,15,11,8,2.5,6],['bars',982,503,25,7,9,3,3],['bars',593,275,22,14,10,2,7],
+ ['block',845,381,33,12,5,3,1,1],['block',689,416,15,9,6,2,4,1],['block',800,413,13,10,7,2,7,1],['block',659,390,4,6,3,1,1,0],['block',908,420,7,4,4,1,5,0],['block',540,523,4,8,5,1,2,0],['block',302,289,8,4,4,1,3,0],['block',440,279,3,3,5,1,6,0],
+ ['sparks',370,300,22,6,4,4],['sparks',555,165,20,5,3,6],['sparks',762,500,22,7,3.5,1],['sparks',140,412,20,8,4,3]
+];
+const A=[ /* dashed arcs between panels */
+ 'M410 138C330 130 290 200 248 300','M212 380C260 350 320 340 372 372','M608 398C560 415 520 412 470 404','M840 400C800 412 760 410 720 402','M1010 410C1030 440 1040 470 1038 498','M210 555C180 520 170 480 180 462','M660 520C620 545 590 548 560 540'
+];
+arcs.innerHTML=A.map((d,i)=>`<path d="${d}" data-i="${i}"/>`).join('');
+const paths=[...arcs.querySelectorAll('path')];
+function drawArrow(ctx,p,q,k){const s=q*p.getTotalLength(),a=p.getPointAtLength(s),b=p.getPointAtLength(Math.max(0,s-3));const an=Math.atan2(a.y-b.y,a.x-b.x);ctx.save();ctx.globalAlpha=k;ctx.translate(a.x,a.y);ctx.rotate(an);ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.moveTo(3,0);ctx.lineTo(-2,-1.7);ctx.lineTo(-2,1.7);ctx.fill();ctx.restore()}
+function env(t,on,dur){const u=(t-on)/dur;if(u<0||u>1)return 0;return Math.min(1,Math.min(u,1-u)*8)}
+function frame(ms){const t=ms/1000;sc.clearRect(0,0,W,H);ec.clearRect(0,0,W,H);
+ for(const p of P){const n=p.tr.length;const base=Math.floor((t+p.ph)/p.every);const trav=p.L/p.spd/p.every+1;
+  for(let j=base;j>base-trav-1;j--){const tr=p.tr[((j%n)+n)%n];if(!tr)continue;const age=t+p.ph-j*p.every;const head=age*p.spd;
+   [...tr].forEach((k,i)=>{const q=at(p,head-i*7.2);if(q)bead(sc,k,q.x,q.y,q.a)})}}
+ for(const e of E){const[ty,x,y,w,h,per,dur,off,st]=e;const type=ty;const isSpark=type==='sparks',isBurst=type==='burst';
+  if(isBurst){const cyc=(x*7)%6+7;const u=(t+y)%cyc;const k=env(u,0,w>20?4.6:2.4);if(k)burst(ec,x,y,w,k,t);continue}
+  if(isSpark){const cyc=7+(x%5);const u=(t+y)%cyc;const k=env(u,0,1.8);if(k)sparks(ec,x,y,w,k,h,t);continue}
+  const cyc=per+3,u=(t+off)%cyc;const k=env(u,0,dur);if(!k)continue;
+  if(type==='step')step(ec,x,y,w,h,k,x,t);else if(type==='wedge')wedge(ec,x,y,w,h,k,x);else if(type==='bars')bars(ec,x,y,w,h,k,x);else block(ec,x,y,w,h,k,st);}
+ paths.forEach((p,i)=>{const cyc=5+i%3,u=((t+i*1.7)%cyc)/cyc;const k=Math.min(1,Math.min(u,1-u)*6);p.style.opacity=k;p.style.strokeDashoffset=-t*14;drawArrow(ec,p,u,k)});
+ if(!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(frame)}
+const start=new URLSearchParams(location.search).get('t');
+if(start!==null){const T=+start*1000;frame(T);window.__draw=x=>frame(x*1000)}
+else if(matchMedia('(prefers-reduced-motion: reduce)').matches){arcs.style.opacity=.6;}
+else requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>检索问答流程图：忠实复刻</title>
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#18181b;--mid:#6f6f76;--low:#85858c;--faint:#a9a9af;--tile:#f3f3f4;--track:#efeff1;--line:#e6e6e8;
+--q:#ee6f2d;--e:#8250f0;--r:#4479f2;--a:#2fb673;--g:#e9395f;--qt:#c2500f;--et:#7437e6;--rt:#2563eb;--at:#17813f;--gt:#d81f45}
+*{box-sizing:border-box}html,body{margin:0;background:#fff;color:var(--ink);font:400 12px/21px Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Geist Mono",ui-monospace,monospace;font-size:11px;letter-spacing:0}
+#stage{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+#card{width:500px;max-width:100%;background:var(--tile);border-radius:25px;padding:0 11px;box-shadow:0 1px 2px #0000000f,0 2px 4px #0000000a,0 24px 48px -8px #00000014;outline:1px solid #0000000a}
+header{height:58px;display:flex;align-items:center;justify-content:space-between;padding:7px 14px 0}
+h1{font-size:15.2px;line-height:20px;font-weight:600;letter-spacing:-.012em;margin:0}
+#clock{height:22px;min-width:77px;padding:0 11px;border-radius:99px;background:linear-gradient(90deg,#f0f0f2,#e8e8eb 45%);color:#55555b;display:flex;align-items:center;justify-content:flex-end;font-variant-numeric:tabular-nums}
+.body{background:#fff;border-radius:17px;padding:21px 21px 21px 20px;box-shadow:0 0 0 1px #0000000a}
+.st{position:relative;display:grid;grid-template-columns:28px 1fr;column-gap:14px;--c:var(--ink)}
+.st+.st{margin-top:19px}
+.st[data-s=query]{--c:var(--q)}.st[data-s=embed]{--c:var(--e)}.st[data-s=retrieve]{--c:var(--r)}.st[data-s=assemble]{--c:var(--a)}.st[data-s=generate]{--c:var(--g)}
+.st:not(:last-of-type)::before{content:"";position:absolute;left:13.5px;top:28px;bottom:-19px;width:1px;background:var(--line)}
+.ic{position:relative;z-index:1;width:28px;height:28px;border-radius:8px;background:var(--tile);display:grid;place-items:center;color:var(--ink);transition:background .25s,color .25s,scale .25s}
+.ic svg{width:15px;height:15px;display:block}
+.pending .ic{color:var(--mid)}
+.active .ic{background:var(--c);color:#fff}
+.dot{position:absolute;left:8px;top:26px;width:11px;height:11px;border-radius:50%;background:var(--c);z-index:2;display:none}
+.active .dot{display:block;animation:travel var(--dur,1200ms) linear both}
+@keyframes travel{from{top:19px;opacity:1}85%{opacity:1}to{top:calc(100% + 2px);opacity:0}}
+.main{min-width:0}
+.tt{display:flex;justify-content:space-between;align-items:center;height:28px}
+.tt b{font-size:12px;font-weight:600;letter-spacing:-.005em;transition:color .25s}
+.pending .tt b{color:var(--mid)}
+.tt time{color:var(--low)}
+.sub{margin:0;height:21px;line-height:21px;margin-top:2px;white-space:nowrap}
+.sub.mono{color:#3c3c42;display:flex;align-items:center;gap:6px;font-size:11px}
+.sub svg{width:14px;height:8px;flex:none}
+.pending .sub{color:var(--mid);font:400 12px/21px Inter,sans-serif}
+#tok{display:grid;grid-template-columns:repeat(40,1fr);gap:3px;margin-top:8px;height:13px}
+#tok i{border-radius:3px;background:#f0f0f2;transition:background .22s}
+#docs{list-style:none;margin:7px 0 -6px;padding:0}
+#docs li{height:31px;display:grid;grid-template-columns:17px 1fr 66px 40px;column-gap:10px;align-items:center;cursor:default}
+.num{position:relative;width:17px;height:17px;border-radius:50%;background:var(--h);color:#fff;font:500 10.5px/17px Inter,sans-serif;text-align:center;display:inline-block}
+.num::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--h);opacity:0;z-index:-1;scale:1}
+#docs,#answer{isolation:isolate}
+.pinged::after{animation:ping .9s cubic-bezier(.2,.7,.3,1) backwards}
+.lit::after{opacity:.24;scale:1.72;transition:opacity .15s,scale .2s cubic-bezier(.2,.8,.3,1.2)}
+@keyframes ping{0%{opacity:.5;scale:1}35%{opacity:.34;scale:1.9}100%{opacity:0;scale:2.2}}
+.bar{height:4px;border-radius:9px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px;background:var(--h);width:0;transition:width .55s cubic-bezier(.2,.7,.2,1)}
+.score{text-align:right;color:var(--h);font-size:11.5px}
+.name{white-space:nowrap;overflow:hidden;color:#2d2d33;transition:color .15s}
+.pending #docs .num{background:#fff;box-shadow:inset 0 0 0 1.25px #d8d8db;color:transparent}
+.pending #docs .name{font-size:0}.pending #docs .name::before{content:"–";font:400 12px/1 Inter,sans-serif;color:#c9c9cd}
+.pending #q{color:var(--mid)}#q{color:#232327;font:400 12px/21px Inter,sans-serif}
+.pending #docs .bar,.pending #docs .score{visibility:hidden}
+#mix{display:flex;gap:1.6px;height:12px;margin-top:7.5px;background:#f0f0f2;border-radius:9px;overflow:hidden}
+#mix i{height:100%;flex:0 0 auto;width:0;transition:width .42s cubic-bezier(.3,.7,.2,1)}
+.answer-wrap{grid-column:1/-1;display:grid;grid-template-rows:0fr;transition:grid-template-rows .36s cubic-bezier(.3,.7,.2,1)}
+.answer-wrap.open{grid-template-rows:1fr}
+.answer-in{overflow:hidden;min-height:0}
+#answer{margin:19px 0 0;padding:17.5px 0 0;border-top:1px dashed var(--line);height:81px;color:#232327;line-height:21px;padding-right:12px}
+#answer .w{transition:color .32s}
+#answer .w.new{color:#cfcfd3}
+#answer .num{margin:0 1px;vertical-align:baseline;cursor:default}
+#answer .num.pop{animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes pop{from{scale:.3;opacity:0}to{scale:1;opacity:1}}
+#caret{display:inline-block;width:5px;height:12px;background:#111;margin-left:3px;vertical-align:-1px;animation:blink 1s steps(2,jump-none) infinite}
+@keyframes blink{50%{opacity:.25}}
+footer{height:69px;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+#status{display:flex;align-items:center;gap:9px;color:var(--mid);transition:color .2s;line-height:21px}
+#status .d{width:9px;height:9px;border-radius:50%;background:currentColor}
+#status.idle{color:#85858c}#status.idle .d{background:#d7d7da}
+#status.done{color:#26262b}#status .tri{display:none}
+#status.done .d{display:none}#status.done .tri{display:flex}
+.tri i{position:relative;width:9px;height:9px;border-radius:50%;margin-left:-4px;background:var(--h);outline:1px solid var(--tile)}.tri i:first-child{margin-left:0;z-index:3}.tri i:nth-child(2){z-index:2}
+.btns{display:flex;gap:6px;align-items:center}
+button{font:500 12px/1 Inter,sans-serif;border:0;cursor:pointer}
+#run{height:34px;padding:0 15px 0 15px;border-radius:99px;background:#1c1c1f;color:#fff;display:flex;align-items:center;gap:7px;transition:background .15s,scale .15s}
+#run:hover{background:#3a3a3f}#run:active{scale:.97}
+#run svg,#reset svg{width:12px;height:12px}
+#reset{width:34px;height:34px;border-radius:50%;background:#e8e8eb;color:#3a3a40;display:none;place-items:center;transition:background .15s}
+#reset:hover{background:#dedee1}
+#reset.show{display:grid}
+.foot{max-width:640px;margin:0 auto;padding:56px 24px 64px;font-size:13px;color:#555}.foot h3{font-size:13px;color:var(--ink);margin:0 0 8px}.foot dt{margin-top:10px}.foot dd{margin:2px 0 0}.foot code{font:12px "Geist Mono",monospace}.foot a{color:inherit}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="a" viewBox="0 0 14 8"><path d="M0 4h12.500M10 1l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+</defs></svg>
+<div id="stage">
+<div id="card">
+  <header><h1>RAG Pipeline</h1><span id="clock" class="mono">5 stages</span></header>
+  <div class="body" id="pipeline">
+    <section class="st pending" data-s="query"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.500h8A1.500 1.500 0 0 1 13.500 4v6a1.500 1.500 0 0 1-1.500 1.500H7l-3 2.300v-2.300A1.500 1.500 0 0 1 2.500 10V4A1.500 1.500 0 0 1 4 2.500Z"/><path d="M6.600 5.700A1.450 1.450 0 1 1 8 7.500V8"/><path d="M8 9.800v.01"/></svg></span><span class="dot"></span>
+      <div class="main"><div class="tt"><b>Query</b></div><p class="sub" id="q">How do I rotate an API key without downtime?</p></div></section>
+    <section class="st pending" data-s="embed"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 2 4.500 14M11.500 2 10 14M2.500 6h11.500M2 10h11.500"/></svg></span><span class="dot"></span>
+      <div class="main"><div class="tt"><b>Embed</b><time class="mono"></time></div><p class="sub" data-p="Encode the query as a vector" data-d="11 tok|1,536-dim vector"></p><div id="tok"></div></div></section>
+    <section class="st pending" data-s="retrieve" id="retrieve"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7.200" cy="7.200" r="4.700"/><path d="m10.700 10.700 3 3"/></svg></span><span class="dot"></span>
+      <div class="main"><div class="tt"><b>Retrieve</b><time class="mono"></time></div><p class="sub" data-p="Nearest neighbors from the index" data-d="top 3 of 1,284 chunks · cosine"></p><ul id="docs"></ul></div></section>
+    <section class="st pending" data-s="assemble"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.500 1.800H4.300A1.300 1.300 0 0 0 3 3.100v9.800a1.300 1.300 0 0 0 1.300 1.300h7.400a1.300 1.300 0 0 0 1.300-1.300V5.300ZM9.300 2v3.500H13M5.800 8.700h4.400M5.800 11.200h3"/></svg></span><span class="dot"></span>
+      <div class="main"><div class="tt"><b>Assemble</b><time class="mono"></time></div><p class="sub" data-p="Merge top chunks into the prompt" data-d="3 chunks + query|488 tok"></p><div id="mix"></div></div></section>
+    <section class="st pending" data-s="generate"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.200" stroke-linejoin="round" stroke-linecap="round"><path d="M7.200 2.800 8.400 6.600 12.200 7.800 8.400 9 7.200 12.800 6 9 2.200 7.800 6 6.600ZM12.800 1.600v2.400M11.600 2.800H14"/></svg></span>
+      <div class="main"><div class="tt"><b>Generate</b><time class="mono"></time></div><p class="sub" data-p="Stream the answer with citations" data-d="488 tok|cited answer"></p></div><div class="answer-wrap" id="wrap"><div class="answer-in"><p id="answer"></p></div></div></section>
+  </div>
+  <footer><div id="status" class="idle"><span class="d"></span><span class="tri"><i style="--h:var(--r)"></i><i style="--h:var(--e)"></i><i style="--h:var(--g)"></i></span><span id="stxt">Ready</span></div>
+  <div class="btns"><button id="reset" aria-label="Reset"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.300" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.800A4 4 0 1 0 3.300 2.900L2 4.200M2 1.600v2.700h2.700"/></svg></button>
+  <button id="run"><svg id="runi" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.300" stroke-linejoin="round"><path d="M3.500 2.200v7.600L9.500 6Z"/></svg><span id="runt">Run pipeline</span></button></div></footer>
+</div></div>
+<div class="foot"><h3>可拆</h3><dl>
+<dt><code>#pipeline</code></dt><dd>分阶段流程：每阶段先占位后填真数据，版面不跳；活动阶段图标上色，一颗同色圆点沿竖线走向下一阶段。</dd>
+<dt><code>#docs</code></dt><dd>引用互亮：正文流到 [n] 时来源行的序号打一次光晕；悬停序号或来源行，另一端同色点亮。</dd>
+<dt><code>#answer</code></dt><dd>流式正文：每个词从浅灰淡入到正文色，块状光标跟在末尾。</dd>
+<dt><code>#clock</code></dt><dd>耗时胶囊：显示值不等于真实时长，把 945 ms 铺开到约 12 秒的播放里。</dd>
+</dl><p>来源：<a href="https://x.com/jeetnirnejak/status/2095507715556831429">@jeetnirnejak</a>，取自帖子视频。代码未公开，本页自写。</p></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DOCS=[['security/api-keys.md',.92,'--r','--rt'],['guides/key-rotation.md',.87,'--e','--et'],['reference/auth-tokens.md',.79,'--g','--gt']];
+const MIX=[['--q',2.200],['--r',33],['--e',28.500],['--g',23.700],['#d3d3d6',10.800]];
+const GREY=[.1,.45,.3,.15,.75,.4,.45,.3,.35,.6,.15,.3,.2,.3,.6,.15,.25,.55,.5,.4,.25,.35,.75,.15,.25,.55,.5,.1,.3,.5,.15,.4,.45,.25,.55,.45,.7,.3,.7,.15];
+const TEXT=['Create','a','second','key','and','deploy','it','alongside','the','old','one',1,',','then','shift','traffic','over','and','watch','for','auth','failures',2,'.','Once','the','old','key','sees','no','requests','for','24','hours,','revoke','it',3,'.'];
+const STAGES=[{s:'query',dur:1400,ms:0,t:'Reading query',c:'--qt'},{s:'embed',dur:1800,ms:42,t:'Embedding query',c:'--et'},{s:'retrieve',dur:2200,ms:11,t:'Searching index',c:'--rt'},{s:'assemble',dur:1600,ms:2,t:'Assembling prompt',c:'--at'},{s:'generate',dur:5400,ms:890,t:'Streaming answer',c:'--gt'}];
+const sec=s=>$(`.st[data-s=${s}]`),clock=$('#clock'),status=$('#status'),stxt=$('#stxt');
+$('#tok').innerHTML=GREY.map(()=>'<i></i>').join('');
+$('#docs').innerHTML=DOCS.map(([n,v,h],i)=>`<li data-n="${i+1}" style="--h:var(${h})"><span class="num">${i+1}</span><span class="name mono">${n}</span><span class="bar"><i></i></span><span class="score mono">${v.toFixed(2)}</span></li>`).join('');
+$('#mix').innerHTML=MIX.map(([c])=>`<i style="background:${c[0]=='-'?`var(${c})`:c}"></i>`).join('');
+const arrow='<svg style="color:#3c3c42"><use href="#a"/></svg>';
+function sub(sc,done){const p=sc.querySelector('.sub[data-p]');if(!p)return;p.classList.toggle('mono',done);p.innerHTML=done?p.dataset.d.split('|').join(arrow):p.dataset.p}
+let token=0;const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function setStatus(cls,text,color){status.className=cls;stxt.textContent=text;status.style.color=color?`var(${color})`:''}
+function setRun(done){$('#runt').textContent=done?'Replay':'Run pipeline';$('#runi').innerHTML=done?'<path d="M2 5.800A4 4 0 1 0 3.300 2.900L2 4.200M2 1.600v2.700h2.700" stroke-linecap="round"/>':'<path d="M3.500 2.200v7.600L9.500 6Z"/>';$('#reset').classList.toggle('show',done)}
+function fillTok(on,stag){$$('#tok i').forEach((c,i)=>{const g=Math.round(240-(GREY[i]*175));const v=on?`rgb(${g},${g},${g+1})`:'';if(stag&&on)setTimeout(()=>c.style.background=v,i*(stag));else c.style.background=v})}
+function fillDocs(on,stag){$$('#docs li').forEach((li,i)=>{const b=li.querySelector('.bar i');if(stag&&on)setTimeout(()=>b.style.width=DOCS[i][1]*100+'%',i*stag);else b.style.width=on?DOCS[i][1]*100+'%':'0'})}
+function fillMix(on,stag){$$('#mix i').forEach((m,i)=>{const w=on?`calc(${MIX[i][1]}% - 1.300px)`:'0';if(stag&&on)setTimeout(()=>m.style.width=w,i*stag);else m.style.width=w})}
+function reset(){token++;$$('.st').forEach(s=>{s.className='st pending';const t=s.querySelector('time');if(t)t.textContent='';sub(s,false)});
+ fillTok(false);fillDocs(false);fillMix(false);$('#answer').innerHTML='';$('#wrap').classList.remove('open');clock.textContent='5 stages';setStatus('idle','Ready');setRun(false);$$('.lit').forEach(e=>e.classList.remove('lit'))}
+function settle(st){const sc=sec(st.s);sc.classList.remove('active');const t=sc.querySelector('time');if(t&&st.ms)t.textContent=st.ms+' ms'}
+function word(w){if(typeof w==='number'){const d=DOCS[w-1];return `<span class="num" data-n="${w}" style="--h:var(${d[2]})">${w}</span>`}return w}
+function answerHTML(n){let h='';for(let i=0;i<n;i++){const w=TEXT[i],next=TEXT[i+1];h+=typeof w==='number'?word(w):`<span class="w">${w}</span>`;if(i<n-1&&next!=='.'&&next!==','&&!(typeof w==='string'&&false))h+=' '}return h}
+function finish(){clock.textContent='945 ms';setStatus('done','Grounded in 3 sources');setRun(true)}
+async function play(){reset();const my=token;let total=0;
+ for(const st of STAGES){if(my!==token)return;const sc=sec(st.s);sc.classList.remove('pending');sc.classList.add('active');sc.style.setProperty('--dur',st.dur+'ms');setStatus('live',st.t,st.c);
+  if(st.s!=='query')sub(sc,true);
+  if(st.s==='embed')fillTok(true,reduce?0:Math.round((st.dur-500)/40));
+  if(st.s==='retrieve')fillDocs(true,reduce?0:260);
+  if(st.s==='assemble')fillMix(true,reduce?0:260);
+  const from=total,t0=performance.now();total+=st.ms;
+  if(st.s==='generate'){$('#wrap').classList.add('open');const a=$('#answer');a.innerHTML='<span id="caret"></span>';await wait(reduce?0:380);const step=(st.dur-500)/TEXT.length;
+   for(let i=0;i<TEXT.length;i++){if(my!==token)return;const w=TEXT[i];let el;const tmp=document.createElement('template');const glue=i>0&&w!=='.'&&w!==','?' ':'';tmp.innerHTML=typeof w==='number'?word(w):`<span class="w new">${w}</span>`;el=tmp.content.firstChild;
+    const caret=$('#caret');if(glue)a.insertBefore(document.createTextNode(' '),caret);a.insertBefore(el,caret);
+    if(el.classList.contains('w'))requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.remove('new')));else{el.classList.add('pop');const src=$(`#docs li[data-n="${w}"] .num`);src.classList.remove('pinged');src.offsetWidth;src.classList.add('pinged')}
+    clock.textContent=Math.round(from+(st.ms)*(i+1)/TEXT.length)+' ms';if(!reduce)await wait(step)}
+   $('#caret').remove();
+  }else{const tick=()=>{if(my!==token)return;const k=Math.min(1,(performance.now()-t0)/st.dur);clock.textContent=Math.round(from+st.ms*k)+' ms';if(k<1&&!reduce)requestAnimationFrame(tick)};tick();await wait(reduce?0:st.dur)}
+  if(my!==token)return;clock.textContent=total+' ms';settle(st)}
+ finish()}
+function instant(){reset();STAGES.forEach(st=>{const sc=sec(st.s);sc.classList.remove('pending');if(st.s!=='query')sub(sc,true);settle(st)});fillTok(true);fillDocs(true);fillMix(true);$('#wrap').classList.add('open');const a=$('#answer');a.innerHTML=TEXT.map((w,i)=>(i>0&&w!=='.'&&w!==','?' ':'')+(typeof w==='number'?word(w):`<span class="w">${w}</span>`)).join('');finish()}
+function lit(n,on){$$(`.num[data-n="${n}"]`).forEach(e=>e.classList.toggle('lit',on));$$(`#docs .num`).forEach(e=>{});const li=$(`#docs li[data-n="${n}"]`);li.classList.toggle('lit-row',on);li.querySelector('.num').classList.toggle('lit',on)}
+document.addEventListener('pointerover',e=>{const t=e.target.closest('#docs li,#answer .num');if(t)lit(t.dataset.n,true)});
+document.addEventListener('pointerout',e=>{const t=e.target.closest('#docs li,#answer .num');if(t)lit(t.dataset.n,false)});
+$('#run').addEventListener('click',play);$('#reset').addEventListener('click',reset);
+const q=new URLSearchParams(location.search).get('state');reset();if(q==='done')instant();
+</script></body></html>

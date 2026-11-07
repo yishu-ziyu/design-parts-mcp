@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Flood — 进度铺满整张卡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --field: #e4e4e6;
+    --ink: #17181a;
+    --lede: #6b6862;
+    --status: #6c5cf6;
+    --flood: #e6eaff;
+    --bar: #7064f6;
+    --bar-pause: #3a3a40;
+    --xlsx: #12c87a;
+    --check: #12b85a;
+    --trash-bg: #ffe4e8;
+    --trash: #e85a6c;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --sans: Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+
+  header.mast { max-width: 760px; margin: 0 auto; padding: 48px 24px 10px; text-align: center; }
+  header.mast .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  header.mast h1 { font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; margin: 8px 0; }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1080px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bar-row h2 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--sans); padding: 8px 12px;
+    border: 1px solid var(--note-ink); background: var(--note-ink); color: var(--cream); cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] { background: transparent; color: var(--muted); }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage {
+    position: relative;
+    background: var(--field);
+    border: 1px solid var(--note-ink);
+    min-height: 520px;
+    display: grid;
+    place-items: center;
+    padding: 72px 24px 88px;
+  }
+  .corner {
+    position: absolute;
+    font-family: var(--sans);
+    color: #8a8a92;
+  }
+  .corner.bl { left: 28px; bottom: 24px; }
+  .corner.bl .cat { font-size: 12.5px; }
+  .corner.bl .title { font-size: 18px; font-weight: 600; color: #5c5c64; margin-top: 2px; }
+
+  .stack {
+    width: min(680px, 92%);
+    border-radius: 28px;
+    padding: 0;
+    background: transparent;
+    transition: background 320ms ease, padding 320ms ease;
+  }
+  .stack.is-done {
+    background: #f2f2f4;
+    padding: 0 0 10px;
+  }
+
+  .file {
+    position: relative;
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px -22px rgba(20, 20, 30, .22);
+    z-index: 1;
+  }
+  .file.is-gone {
+    opacity: 0;
+    transform: scale(.96);
+    pointer-events: none;
+    transition: opacity 280ms, transform 280ms;
+  }
+
+  .flood {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0%;
+    background: linear-gradient(90deg, #eef1ff 0%, #e4e8ff 78%, #dcd6ff 100%);
+    box-shadow: 8px 0 18px rgba(108, 92, 246, .14);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 1;
+    transition: opacity 280ms ease;
+  }
+  .file.is-run .flood { min-width: 16px; }
+  .file[data-state="paused"] .flood,
+  .file[data-state="done"] .flood,
+  .file[data-state="idle"] .flood { opacity: 0; min-width: 0; }
+
+  .body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 22px 22px 18px;
+  }
+  .icon {
+    width: 46px; height: 54px;
+    border-radius: 8px;
+    clip-path: polygon(0 0, 68% 0, 100% 24%, 100% 100%, 0 100%);
+    background: var(--xlsx);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .icon .cells {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5px;
+    width: 22px;
+  }
+  .icon .cells i { display: block; aspect-ratio: 1; background: #fff; border-radius: 2.5px; }
+  .icon b { font: 700 8px/1 var(--sans); letter-spacing: .04em; }
+  .meta { min-width: 0; }
+  .name {
+    font: 600 16.5px/1.2 var(--sans);
+    color: var(--ink);
+    letter-spacing: -.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .status {
+    margin-top: 6px;
+    font: 500 14.5px/1.2 var(--sans);
+    color: var(--status);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 18px;
+  }
+  .file[data-state="paused"] .status { color: #9b9ba3; }
+  .file[data-state="done"] .status { color: #6b6b72; }
+  .check {
+    width: 16px; height: 16px;
+    border-radius: 99px;
+    background: var(--check);
+    color: #fff;
+    display: none;
+    place-items: center;
+    flex: 0 0 16px;
+  }
+  .check svg { width: 10px; height: 10px; display: block; }
+  .file[data-state="done"] .check,
+  .file.is-finishing .check { display: grid; }
+  .verb { font-variant-numeric: tabular-nums; display: inline-block; transition: opacity 180ms ease; }
+  .verb.is-swap { opacity: 0; }
+  .pct { font-variant-numeric: tabular-nums; }
+  .dot { opacity: .55; }
+  .bytes { color: #9b9ba3; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .file[data-state="paused"] .bytes { color: #9b9ba3; }
+
+  .ops { display: flex; align-items: center; gap: 8px; }
+  .ops button {
+    appearance: none;
+    border: 0;
+    background: #ececee;
+    width: 32px; height: 32px;
+    border-radius: 99px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: #3a3a40;
+    padding: 0;
+  }
+  .ops button:hover { background: #e0e0e4; }
+  .ops .x {
+    background: transparent;
+    width: 28px;
+    font: 500 20px/1 var(--sans);
+    color: #6a6a72;
+  }
+  .ops .x:hover { background: #ececee; color: var(--ink); }
+  .ops .trash {
+    background: var(--trash-bg);
+    color: var(--trash);
+    display: none;
+  }
+  .ops .trash:hover { background: #ffd3da; }
+  .file[data-state="done"] .pause,
+  .file[data-state="done"] .x { display: none; }
+  .file[data-state="done"] .trash { display: grid; }
+  .ops svg { width: 12px; height: 12px; display: block; }
+
+  .track {
+    position: relative;
+    z-index: 1;
+    height: 5px;
+    margin: 0 22px 18px;
+    border-radius: 99px;
+    background: #ececee;
+    overflow: hidden;
+    display: flex;
+  }
+  .file[data-state="done"] .track,
+  .file[data-state="idle"] .track { opacity: 0; height: 0; margin-bottom: 0; }
+  .bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #8b7cf8, #6456f0);
+  }
+  .file[data-state="paused"] .bar { background: var(--bar-pause); }
+  .file.is-finishing .track { justify-content: flex-end; }
+  .file.is-finishing .bar { width: 18% !important; opacity: .55; }
+
+  .actions {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    padding: 0 10px;
+    overflow: hidden;
+    transition: grid-template-rows 360ms cubic-bezier(.22, 1, .36, 1), opacity 280ms ease, padding 280ms ease;
+  }
+  .actions .row {
+    min-height: 0;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stack.is-done .actions {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    padding: 10px 10px 0;
+  }
+  .actions button {
+    height: 48px;
+    border: 0;
+    border-radius: 14px;
+    font: 600 15.5px var(--sans);
+    cursor: pointer;
+  }
+  .actions .change { background: #ececee; color: var(--ink); }
+  .actions .change:hover { background: #e2e2e6; }
+  .actions .dl { background: #1c1c1e; color: #fff; }
+  .actions .dl:hover { background: #111; }
+  .actions .dl.is-flash { background: #12b85a; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: start; }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+    #stage { padding: 56px 16px 80px; min-height: 440px; }
+    .body { grid-template-columns: 44px 1fr auto; gap: 10px; padding: 16px 14px 12px; }
+    .icon { width: 44px; height: 44px; }
+    .name { font-size: 15px; }
+    .status { font-size: 13px; flex-wrap: nowrap; }
+    .dot, .bytes { display: none; }
+    .track { margin: 0 14px 14px; }
+    .ops .x { width: 24px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 18px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .nums { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: ui-monospace, Menlo, monospace; font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon {
+    max-width: 980px; margin: 0 auto; padding: 0 28px 48px;
+    font-size: 12.5px; color: var(--muted);
+  }
+  a { color: inherit; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .92em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flood, .bar, .stack, .actions, .file { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · x.com/itschatto</div>
+  <h1>进度铺满整张卡</h1>
+  <p class="sub">淡紫色从左边灌进文件行。暂停时灌色退去，细条变深。完成后绿勾，底下长出 Change 和 Download。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-replay">重播上传</button>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div class="stack" id="stack">
+      <article class="file" id="card" data-state="uploading">
+        <div class="flood" id="flood"></div>
+        <div class="body">
+          <div class="icon" aria-hidden="true">
+            <span class="cells"><i></i><i></i><i></i><i></i></span>
+            <b>XLSX</b>
+          </div>
+          <div class="meta">
+            <div class="name">create-ui.xlsx</div>
+            <div class="status">
+              <span class="check" aria-hidden="true">
+                <svg viewBox="0 0 10 10"><path d="M1.5 5.2 L3.8 7.5 L8.5 2.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="verb" id="verb">Uploading</span>
+              <span class="pct" id="pct">0%</span>
+              <span class="dot">·</span>
+              <span class="bytes" id="bytes">0.0 MB of 2.3 MB</span>
+            </div>
+          </div>
+          <div class="ops">
+            <button type="button" class="pause" id="pause" aria-label="暂停">
+              <svg id="pause-ico" viewBox="0 0 12 12"><rect x="2" y="1.5" width="2.4" height="9" rx=".6" fill="currentColor"/><rect x="7.6" y="1.5" width="2.4" height="9" rx=".6" fill="currentColor"/></svg>
+            </button>
+            <button type="button" class="x" id="cancel" aria-label="取消">×</button>
+            <button type="button" class="trash" id="trash" aria-label="删除">
+              <svg viewBox="0 0 12 12"><path d="M2.2 3.2h7.6M4.1 3.2V2.3A.8.8 0 0 1 4.9 1.5h2.2a.8.8 0 0 1 .8.8v.9M3.2 3.2l.5 7.1A1 1 0 0 0 4.7 11.2h2.6a1 1 0 0 0 1-.9l.5-7.1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="track" id="track"><i class="bar" id="bar"></i></div>
+      </article>
+      <div class="actions" id="actions">
+        <div class="row">
+          <button type="button" class="change" id="change">Change</button>
+          <button type="button" class="dl" id="download">Download</button>
+        </div>
+      </div>
+    </div>
+    <div class="corner bl">
+      <div class="cat">Form Controls</div>
+      <div class="title">File Upload</div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原帖第一屏</h3>
+      <p>浅灰底。一张白圆角文件卡停在正中：绿图标、文件名 <code>create-ui.xlsx</code>、紫色 <code>Uploading 27%</code>。淡紫色从左边灌进来，底下一条更饱和的细条跟着同一个百分比。</p>
+      <p>原帖是 16.1 秒、1600×1200、60fps 的组件演示。本页收文件卡本身：灌满、暂停、完成。Create UI 的商标和六个框架圆点不收。</p>
+    </div>
+    <figure>
+      <img src="assets/source-fill.jpg" alt="上传中，淡紫色灌到约三成" />
+      <figcaption><strong>图 1.</strong> 灌色铺在整张卡上。细条是同一进度的回声。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>灌色是卡里一层从左变宽的矩形，圆角跟卡相同，溢出裁掉。0% 仍留 16px，左缘看起来像一粒胶囊。暂停时这一层透明度收到 0，细条改成炭灰。Paused 才站到第一层。</p>
+    <p>原录像在约 5 秒、65% 处点暂停，停 1.1 秒再继续。0→65% 用 5 秒，65→100% 用 4.5 秒。完成那一帧先出现绿勾，仍写 Uploading，细条收到右边；随后字换成 Completed，暂停和关闭换成垃圾桶，Change / Download 从卡下长出来。</p>
+    <p>状态写在文件名下面：<code>Uploading 27% · 0.5 MB of 2.3 MB</code>。没有「进度」标签。数字自己说明自己。</p>
+  </div>
+
+  <figure>
+    <img src="assets/source-paused.jpg" alt="暂停在 65%，灌色已退去" />
+    <figcaption><strong>图 2.</strong> 暂停。灌色拿掉。细条变深。字改成 Paused 65%。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/source-done.jpg" alt="完成态，Change 和 Download 出现在卡下" />
+    <figcaption><strong>图 3.</strong> 完成。绿勾、垃圾桶、两颗按钮。外层浅灰托把按钮托住。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>原则：</b>进度写在卡上。暂停先把灌色拿掉，Paused 才读得见。文案用最短的词。
+  </aside>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>原件</td><td>16.1s，1600×1200，60fps，1.25MB。文件 2.3 MB</td></tr>
+      <tr><td>底</td><td>#e4e4e6。卡白，圆角 24px。托盘圆角 28px，#f2f2f4</td></tr>
+      <tr><td>卡宽</td><td>原帧 943px / 1600。本页 min(680px, 92%)</td></tr>
+      <tr><td>灌色</td><td>#e6eaff 到 #dcd6ff。0% 最小宽 16px</td></tr>
+      <tr><td>细条</td><td>高 5px。上传 #7064f6，暂停 #3a3a40</td></tr>
+      <tr><td>状态色</td><td>上传 #6c5cf6。暂停 / 完成次行 #9b9ba3</td></tr>
+      <tr><td>图标</td><td>52px，#12c87a，四格白块</td></tr>
+      <tr><td>时序</td><td>0→65% 5s，暂停 1.1s，65→100% 4.5s。完成后再 600ms 长出按钮</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#card</code></dt>
+    <dd>文件行自己是进度。灌色层 <code>#flood</code> 从左变宽。细条 <code>#bar</code> 同一百分比。</dd>
+    <dt><code>#pause</code></dt>
+    <dd>暂停拿掉灌色，细条变深，Uploading 换成 Paused。再点继续。</dd>
+    <dt><code>#actions</code></dt>
+    <dd>完成后托盘垫出浅灰。Change 重传，Download 只闪一下。垃圾桶回到起点。</dd>
+  </dl>
+</section>
+<footer class="colophon">
+  <p>来源：<a href="https://x.com/itschatto/status/2096962716036472894">@itschatto</a> · Create UI File Upload · <a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const TOTAL = 2.3
+  const PHASE1 = 5000
+  const HOLD = 1100
+  const PHASE2 = 4500
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+  const card = document.getElementById("card")
+  const flood = document.getElementById("flood")
+  const bar = document.getElementById("bar")
+  const verb = document.getElementById("verb")
+  const pctEl = document.getElementById("pct")
+  const bytes = document.getElementById("bytes")
+  const stack = document.getElementById("stack")
+  const pauseBtn = document.getElementById("pause")
+  const pauseIco = document.getElementById("pause-ico")
+
+  const ICO_PAUSE = '<rect x="2" y="1.5" width="2.4" height="9" rx=".6" fill="currentColor"/><rect x="7.6" y="1.5" width="2.4" height="9" rx=".6" fill="currentColor"/>'
+  const ICO_PLAY = '<path d="M3.2 1.6 L10.2 6 L3.2 10.4Z" fill="currentColor"/>'
+
+  let p = 0
+  let state = "uploading"
+  let raf = 0
+  let t0 = 0
+  let acc = 0
+  let scripted = true
+  let held = false
+  let morphTimer = 0
+  let holdTimer = 0
+
+  function mb(n) {
+    return (Math.round(n * 10) / 10).toFixed(1)
+  }
+
+  function setFill(v) {
+    p = Math.max(0, Math.min(1, v))
+    const w = (p * 100).toFixed(3) + "%"
+    flood.style.width = w
+    bar.style.width = w
+    pctEl.textContent = Math.round(p * 100) + "%"
+    bytes.textContent = mb(p * TOTAL) + " MB of " + TOTAL.toFixed(1) + " MB"
+  }
+
+  function morph(el, to) {
+    if (reduce || el.textContent === to) { el.textContent = to; return }
+    el.classList.add("is-swap")
+    clearTimeout(morphTimer)
+    morphTimer = window.setTimeout(function () {
+      el.textContent = to
+      el.classList.remove("is-swap")
+    }, 180)
+  }
+
+  function setState(next) {
+    state = next
+    card.dataset.state = next
+    card.classList.toggle("is-run", next === "uploading")
+    card.classList.toggle("is-finishing", next === "finishing")
+    stack.classList.toggle("is-done", next === "done")
+    if (next === "paused") {
+      pauseIco.innerHTML = ICO_PLAY
+      pauseBtn.setAttribute("aria-label", "继续")
+    } else {
+      pauseIco.innerHTML = ICO_PAUSE
+      pauseBtn.setAttribute("aria-label", "暂停")
+    }
+  }
+
+  function progressAt(ms) {
+    if (ms <= PHASE1) return 0.65 * (ms / PHASE1)
+    const t2 = ms - PHASE1
+    return 0.65 + 0.35 * Math.min(1, t2 / PHASE2)
+  }
+
+  function tick(now) {
+    const elapsed = acc + (now - t0)
+    if (scripted && !held && elapsed >= PHASE1) {
+      acc = PHASE1
+      t0 = now
+      setFill(0.65)
+      pauseDemo(true)
+      return
+    }
+    const v = progressAt(elapsed)
+    setFill(v)
+    if (v >= 1) {
+      raf = 0
+      finish()
+      return
+    }
+    raf = requestAnimationFrame(tick)
+  }
+
+  function play() {
+    if (state === "done") return
+    if (p >= 1) { finish(); return }
+    held = false
+    setState("uploading")
+    morph(verb, "Uploading")
+    pctEl.style.display = ""
+    t0 = performance.now()
+    raf = requestAnimationFrame(tick)
+  }
+
+  function pauseDemo(fromScript) {
+    if (state !== "uploading") return
+    cancelAnimationFrame(raf)
+    raf = 0
+    acc += performance.now() - t0
+    held = true
+    setState("paused")
+    morph(verb, "Paused")
+    if (fromScript && scripted) {
+      clearTimeout(holdTimer)
+      holdTimer = window.setTimeout(function () {
+        if (state !== "paused" || !scripted) return
+        resume()
+      }, reduce ? 0 : HOLD)
+    }
+  }
+
+  function resume() {
+    if (state !== "paused") return
+    scripted = false
+    play()
+  }
+
+  function finish() {
+    cancelAnimationFrame(raf)
+    raf = 0
+    setFill(1)
+    setState("finishing")
+    card.classList.add("is-finishing")
+    pctEl.style.display = "none"
+    bytes.textContent = TOTAL.toFixed(1) + " MB"
+    window.setTimeout(function () {
+      card.classList.remove("is-finishing")
+      setState("done")
+      morph(verb, "Completed")
+    }, reduce ? 0 : 420)
+  }
+
+  function reset() {
+    cancelAnimationFrame(raf)
+    clearTimeout(holdTimer)
+    clearTimeout(morphTimer)
+    raf = 0
+    acc = 0
+    held = false
+    scripted = !reduce
+    p = 0
+    card.classList.remove("is-gone", "is-finishing")
+    pctEl.style.display = ""
+    verb.textContent = "Uploading"
+    setState("uploading")
+    setFill(0)
+    if (reduce) {
+      setFill(1)
+      finish()
+      return
+    }
+    t0 = performance.now()
+    raf = requestAnimationFrame(tick)
+  }
+
+  pauseBtn.addEventListener("click", function () {
+    scripted = false
+    if (state === "uploading") pauseDemo(false)
+    else if (state === "paused") resume()
+  })
+  document.getElementById("cancel").addEventListener("click", function () {
+    scripted = false
+    cancelAnimationFrame(raf)
+    raf = 0
+    card.classList.add("is-gone")
+    window.setTimeout(reset, 320)
+  })
+  document.getElementById("trash").addEventListener("click", reset)
+  document.getElementById("change").addEventListener("click", reset)
+  document.getElementById("download").addEventListener("click", function () {
+    const b = document.getElementById("download")
+    b.classList.add("is-flash")
+    window.setTimeout(function () { b.classList.remove("is-flash") }, 700)
+  })
+  document.getElementById("t-replay").addEventListener("click", reset)
+
+  reset()
+})()
+</script>
+</body>
+</html>

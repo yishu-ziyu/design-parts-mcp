@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Sample Grid</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Plex;src:url(fonts/plex-mono.woff2) format("woff2");font-weight:400}
+:root{--bg:#f4f3f0;--ink:#1d1d1b;--mid:#8d8c88;--pale:#dcdbd7;--gray:#7a7976;--line:#c9c8c4;--btn:#bdbcb8}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 9.5px/14px Plex,ui-monospace,monospace;-webkit-font-smoothing:antialiased}
+.app{position:relative;width:1280px;min-height:720px;margin:0 auto;transform:translate(-2.73px,1.65px) scale(.9925);transform-origin:0 0}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--btn);height:23px;padding:0;cursor:pointer;letter-spacing:.015em;border-radius:0}
+button.on,button:active{background:#111;color:#f2f1ee;border-color:#111}
+button:disabled{color:#b6b5b1;border-color:#d8d7d3;cursor:default;background:none}
+button:focus-visible,input:focus-visible{outline:1px solid #111;outline-offset:2px}
+.abs{position:absolute}
+#title{left:36px;top:46px;font-size:19px;line-height:24px;letter-spacing:.01em}
+#src{left:327px;top:56px;font-size:8px;line-height:12px;color:#bcbbb7;letter-spacing:.04em}
+#vis{left:36px;top:87px;width:315px;height:315px;display:block}
+#rule{left:36px;top:415px;width:315px;height:1px;background:var(--line)}
+#stat{left:36px;top:427px;color:var(--mid);font-size:9px;line-height:16px;letter-spacing:.022em;white-space:nowrap}
+#play{left:36px;top:470px;width:42px}#stop{left:85px;top:470px;width:41px}
+#bpmL{left:133px;top:475px;color:var(--mid);font-size:8.5px;line-height:12px}
+#bpm{-webkit-appearance:none;appearance:none;position:absolute;left:155px;top:475px;width:97px;height:14px;margin:0;background:none}
+#bpm::-webkit-slider-runnable-track{height:1px;background:#a9a8a4}
+#bpm::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:10px;margin-top:-5px;background:#111;border-radius:0}
+#bpm::-moz-range-track{height:1px;background:#a9a8a4}#bpm::-moz-range-thumb{width:8px;height:10px;background:#111;border:0;border-radius:0}
+#bpmV{left:258px;top:474px;width:40px;text-align:center;font-size:9.5px;line-height:14px;border-bottom:0}
+#new{left:36px;top:499px;width:77px}#undo{left:120px;top:499px;width:83px}
+#hint{left:37px;top:483px;height:14px;padding:0 4px;font-size:8px;line-height:12px;background:var(--bg);border:1px solid var(--btn);color:#77766f;white-space:nowrap;display:none}
+#map{left:36px;top:546px;width:78px;height:26px;background:#111;color:#f2f1ee;border-color:#111}
+#core{left:1158px;top:42px;width:41px;height:24px}#pro{left:1199px;top:42px;width:41px;height:24px;margin-left:0}
+#close{left:1193px;top:87px;width:48px;height:26px}
+.tb{top:89px;height:22px;font-size:9px;color:#807f7a}
+#rr,#ra{color:#1d1d1b}.tb.on{color:#f2f1ee}
+#howL{left:950px;top:93px;color:var(--mid);font-size:9px;line-height:14px}
+#how{left:1012px;top:93px;font-size:10.5px;line-height:14px;color:#666;background:none;border:0;height:14px;width:22px;letter-spacing:.04em}
+#grid{position:absolute;left:374px;top:125px;width:867px;display:grid;grid-template-columns:280px 280px 280px;column-gap:13.5px;row-gap:0}
+.cell{position:relative;width:280px;padding-bottom:19px}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:9px;font-size:8.1px;line-height:10px;letter-spacing:.01em}
+.nm{white-space:nowrap;color:#2a2a28}
+.mt{margin-left:auto;margin-top:7px;color:var(--mid);white-space:nowrap;letter-spacing:.02em}
+.head.fits .mt{margin-top:0}
+.wv{display:block;width:280px;height:19px;margin-top:6px}
+.body{position:relative;margin-top:7px;width:280px}
+.chunk{position:absolute;display:flex;align-items:center;overflow:hidden;font-size:6px;line-height:9px;color:#222;padding-left:1px;white-space:nowrap;letter-spacing:0}
+.chunk.dk{background:var(--gray);color:#1d1d1b}
+.chunk.lt{background:var(--pale)}
+.chunk.base{background:#e0dfdb}
+.chunk.fire{background:#0c0c0c!important;color:#f2f1ee}
+.tl{position:relative;height:28px;margin-top:5px;width:280px}
+.tl .ln{position:absolute;left:0;right:0;bottom:6px;height:1px;background:#cfcec9}
+.tl .end{position:absolute;bottom:3px;width:1px;height:7px;background:#cfcec9}
+.tl .ev{position:absolute;bottom:4px;width:3px;height:5px;background:#62615e;margin-left:-1px}
+.tl .ev.hit{background:#111}
+.tl .num{position:absolute;font-size:6.6px;line-height:8px;color:#8b8a86;transform:translateX(-50%);letter-spacing:0}
+#phs{position:absolute;inset:0;pointer-events:none}
+.ph{position:absolute;width:1px;background:#3a3a38}
+.notes{width:867px;margin:0 auto;padding:30px 0 70px;font-size:11px;line-height:17px;color:#55544f;border-top:1px solid #dcdbd7}
+.notes h3{font-size:12px;margin:0 0 8px;color:#111;font-weight:400}.notes dt{margin-top:8px}.notes dd{margin:0}.notes code{color:#111;font:inherit}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="abs" id="title">phrz</div><div class="abs" id="src">local</div>
+  <canvas class="abs" id="vis" width="630" height="630" role="img" aria-label="原帖云图，随触发切片错位"></canvas>
+  <div class="abs" id="rule"></div>
+  <div class="abs" id="stat"></div>
+  <button class="abs" id="play" disabled>play</button><button class="abs" id="stop">stop</button>
+  <span class="abs" id="bpmL">bpm</span><input id="bpm" type="range" min="40" max="176" value="120" aria-label="bpm"><span class="abs" id="bpmV">120</span>
+  <div class="abs" id="hint">release to change at loop end</div>
+  <button class="abs" id="new">new phrase</button><button class="abs" id="undo">undo phrase</button>
+  <button class="abs" id="map">phrase map</button>
+  <button class="abs" id="core">core</button><button class="abs on" id="pro">pro</button>
+  <section id="tools">
+    <button class="abs tb" style="left:374px;width:60px" data-m="overlap">overlap</button>
+    <button class="abs tb" style="left:436px;width:60px" data-m="divide">divide</button>
+    <button class="abs tb on" style="left:499px;width:60px" data-m="transient">transient</button>
+    <button class="abs tb" style="left:562px;width:59px" data-m="random">random</button>
+    <button class="abs tb on" style="left:631px;width:56px" data-s="local">local</button>
+    <button class="abs tb" style="left:690px;width:56px" data-s="cc0">cc0</button>
+    <button class="abs tb" id="rr" style="left:756px;width:101px;font-size:10px">random replace</button>
+    <button class="abs tb" id="ra" style="left:864px;width:76px;font-size:10px">random add</button>
+    <span class="abs" id="howL">how many</span><button class="abs" id="how" aria-label="how many">16</button>
+    <button class="abs" id="close">close</button>
+  </section>
+  <div id="grid"></div>
+  <div id="phs"></div>
+</div>
+<div class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#grid</code></dt><dd>样本网格：每格一条文件名、一行波形、一条切片轨、一条 64 步时间线。</dd>
+<dt><code>#tools</code></dt><dd>模式切换：overlap、divide、transient 决定切片轨长什么样，random 让每格各抽一种。</dd>
+<dt><code>#vis</code></dt><dd>声音驱动的图像：每次触发换一种切法（裁切、拉丝、分层拉伸、拼贴、三通道错位）。</dd>
+<dt><code>#new</code></dt><dd>延迟生效的按钮：按下先记下，循环结束才换乐句。</dd>
+</dl>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// seeded rng so the page always opens on the same phrase
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const FILES=[
+ ['AMS3_KIT_115_Bpm_1.wav',16.696,45,'drum'],['DD_BWJAZZ_101_drum_groove_new_orleans_sidestick_tom_groove.wav',9.505,44,'jazz'],['RU_TF_140_synth_graze_Amin.wav',13.714,49,'flat'],
+ ['SC_EK_90_texture_loud_C.wav',10.667,35,'tex'],['SPELL_90_scratch_go.wav',1.333,4,'short'],['ab_drum_78_school_full.wav',12.308,57,'comb'],
+ ['SS_NHHC_90_vocal_chop_banks_dj_mashup.wav',10.667,42,'vox'],['OS_GS4_93_drum_loop_fresco.wav',20.645,67,'comb'],['ORBIT_ERA_95_drum_loop_full_backbeat.wav',10.105,40,'comb'],
+ ['SO_RSS_80_resampled_vocals_love_me_C#min.wav',12,12,'tex'],['RU_TF_synth_u1_brighten_Dmaj.wav',1.35,5,'fade'],['DBM_LRPT_93_Electric_Guitar_Wah_Loop_Clear_As_Day_G#min.wav',10.323,28,'fade2'],
+ ['SLS_OS_117_electric_piano_plot_Ebmin.wav',32.821,44,'tex2'],['BOS_CCS_125_Texture_Loop_Gated_Vox_Em.wav',15.36,65,'tex'],['MO_APU_130_perc_loop_beep.wav',3.692,21,'sparse']
+];
+const EXTRA=[['KV_LOOP_88_tape_hiss_Gmin.wav',8.727,31,'tex'],['HH_808_140_rattle_short.wav',1.714,9,'short'],['WN_FIELD_rain_on_tin_roof.wav',24.32,52,'flat'],['CP_DUST_92_break_chopped.wav',10.435,38,'drum'],['LO_KALIMBA_104_arp_Fmaj.wav',9.231,27,'sparse']];
+function amp(kind,x,r){ // amplitude 0..1 at x 0..1
+ const n=r()*.12;
+ switch(kind){
+  case 'drum':{const p=(x*8)%1;return (p<.45?.95*(1-p/.45)**.6:0.04+(p>.55&&p<.92?.5*Math.abs(Math.sin(p*40)):0))*.9+n*.3}
+  case 'jazz':return .12+.22*Math.abs(Math.sin(x*70))+(Math.sin(x*11)>.7?.2:0)+n;
+  case 'flat':return .3+.14*Math.abs(Math.sin(x*200))+n;
+  case 'tex':return .3+.1*Math.sin(x*9)+.12*Math.sin(x*53)+n;
+  case 'tex2':return .46+.05*Math.sin(x*23)+n;
+  case 'short':return x<.68?(.35+.5*Math.abs(Math.sin(x*22))**2)+n:(x<.7?.8:0);
+  case 'comb':return (Math.abs(Math.sin(x*170))**5)*.85*(.6+.4*Math.abs(Math.sin(x*31)))+.16+n*.7;
+  case 'vox':return .35+.3*Math.abs(Math.sin(x*140))*Math.abs(Math.sin(x*7))+n;
+  case 'fade':return x<.68?.75*(1-x/.68)**.8+.12*Math.abs(Math.sin(x*60)):.02;
+  case 'fade2':return .5*Math.exp(-((x-.15)%.42)*7)+.08+n*.4;
+  case 'sparse':return (Math.abs(Math.sin(x*44))>.93?.8:.06)+n*.3;
+ }
+ return .3;
+}
+const WAVES=new Map();
+function drawWave(c,kind,seed,name){
+ const dpr=2,w=280,h=19;c.width=w*dpr;c.height=h*dpr;const g=c.getContext('2d');g.scale(dpr,dpr);g.fillStyle='#e0dfdb';
+ if(WAVES.has(name)){g.drawImage(WAVES.get(name),0,0,w,h);return}
+ const r=rng(seed);
+ for(let x=0;x<w;x+=.5){const a=Math.min(1,amp(kind,x/w,r));const v=a*h/2;g.fillRect(x,h/2-v,.6,v*2)}
+}
+const LEN=64;
+function makeCell(f,i,seed,mode){
+ const r=rng(seed*77+i*13);
+ const cuts=mode==='transient'?f[2]:mode==='overlap'?12:Math.round(f[2]*3.8+5);
+ const c={f,i,mode,cuts,seed:seed+i,slices:[],events:[],lanes:1};
+ if(mode==='transient'){
+  let x=0;const ws=[];for(let n=0;n<cuts;n++){ws.push(.35+r()**3*1.5)}const tot=ws.reduce((a,b)=>a+b);
+  ws.forEach((w,n)=>{const wd=w/tot*280;c.slices.push({n:n+1,x,w:wd,l:0,s:0});x+=wd});
+ }else if(mode==='divide'){
+  for(let n=0;n<cuts;n++)c.slices.push({n:n+1,x:n/cuts*280,w:280/cuts,l:0,s:0});
+ }else{
+  // bars spread along the sample, placed into the first lane where they fit
+  const free=[];const bars=[];const start=r()*60;
+  for(let n=0;n<12;n++){bars.push({n:n+1,x:start*(.2+r()*.9)+(n/12)*(280-start*.8)+r()*14,w:7+r()**1.4*38})}
+  bars.sort((a,b)=>a.x-b.x);
+  bars.forEach((b,idx)=>{b.n=idx+1;b.x=Math.min(b.x,275-b.w);let l=0;while(free[l]!==undefined&&free[l]>b.x-3)l++;free[l]=b.x+b.w;b.l=l;c.slices.push(b)});
+  c.lanes=free.length;
+ }
+ // phrase: which slices sound on which of the 64 steps
+ const count=mode==='transient'?Math.round(8+r()*7):Math.round(9+r()*5);
+ const steps=new Set();while(steps.size<count)steps.add(Math.floor(r()*LEN));
+ [...steps].sort((a,b)=>a-b).forEach(st=>{c.events.push({st,sl:Math.floor(r()*c.slices.length)})});
+ const used=new Set(c.events.map(e=>e.sl));
+ c.slices.forEach((s,idx)=>{s.s=used.has(idx)?(r()<.4?2:1):(mode==='overlap'?1:0)});
+ return c;
+}
+let cells=[],hist=[],step=0,running=true,bpm=120,lastStep=0,pendingNew=false,phraseSeed=7,visible=15;
+function modeFor(i,m,seed){if(m!=='random')return m;const r=rng(seed*31+i);const v=r();return v<.62?'overlap':v<.82?'transient':'divide'}
+let curMode='transient';
+function build(){cells=FILES.slice(0,visible).map((f,i)=>makeCell(f,i,phraseSeed,modeFor(i,curMode,phraseSeed)));render()}
+function chunkEl(s,c){
+ const d=document.createElement('div');d.className='chunk';
+ if(c.mode==='overlap'){d.classList.add(s.s===2?'dk':'lt');d.style.cssText=`left:${s.x}px;top:${s.l*9}px;width:${s.w}px;height:7px`;if(s.w>7)d.textContent=s.n}
+ else if(c.mode==='divide'){d.style.cssText=`left:${s.x}px;top:0;width:${Math.max(s.w,1)}px;height:9px`;if(s.s)d.classList.add('dk')}
+ else{d.classList.add('base');if(s.s===2)d.classList.replace('base','dk');else if(s.s===1)d.style.background='#b2b1ad';else if(s.n%3===0)d.style.background='#d3d2ce';
+  d.style.cssText+=`;left:${s.x}px;top:0;width:${s.w+.2}px;height:9px`;if(s.s&&s.w>6)d.textContent=s.n}
+ return d;
+}
+function render(){
+ const g=$('#grid');g.innerHTML='';
+ cells.forEach(c=>{
+  const el=document.createElement('div');el.className='cell';
+  const label=c.mode==='divide'?`divide 8-191`:c.mode;
+  el.innerHTML=`<div class="head"><span class="nm">${c.f[0]}</span><span class="mt">${c.f[1].toFixed(3).replace(/(\.\d*?)0+$/,(m,a)=>a.padEnd(4,'0'))}s · ${label} · ${c.cuts} cuts</span></div><canvas class="wv"></canvas><div class="body"></div><div class="tl"><div class="ln"></div><div class="end" style="left:0"></div><div class="end" style="right:0"></div></div>`;
+  const nm=el.querySelector('.nm');
+  drawWave(el.querySelector('.wv'),c.f[3],c.seed*5+3,c.f[0]);
+  const body=el.querySelector('.body');body.style.height=(c.mode==='overlap'?Math.max(c.lanes,1)*9+1:9)+'px';
+  if(c.mode!=='overlap'){const b=document.createElement('div');b.className='chunk base';b.style.cssText='left:0;top:0;width:280px;height:9px';body.append(b)}
+  c.slices.forEach(s=>{const d=chunkEl(s,c);s.el=d;body.append(d)});
+  const tl=el.querySelector('.tl');let prevX=-99,prevLvl=0;
+  c.events.forEach(e=>{const x=e.st/LEN*280;const t=document.createElement('div');t.className='ev';t.style.left=x+'px';tl.append(t);e.el=t;
+   const n=document.createElement('div');n.className='num';const lvl=(x-prevX<9&&!prevLvl)?1:0;prevX=x;prevLvl=lvl;n.style.left=x+'px';n.style.bottom=(lvl?10:18)+'px';n.textContent=c.slices[e.sl].n;tl.append(n)});
+  g.append(el);c.tl=tl;c.el=el;
+  const metaFits=()=>{const mt=el.querySelector('.mt');el.querySelector('.head').classList.toggle('fits',nm.offsetWidth+9+mt.offsetWidth<=280)};metaFits();
+ });
+ // one playhead per cell, drawn on top
+ const ph=$('#phs');ph.innerHTML='';
+ cells.forEach(c=>{const d=document.createElement('div');d.className='ph';ph.append(d);c.ph=d;
+  const b=c.tl.getBoundingClientRect(),a=$('#app').getBoundingClientRect();c.phY=(b.top-a.top)/.9925+3;c.phX=(b.left-a.left)/.9925;d.style.top=c.phY+'px';d.style.height='20px';});
+ place();
+}
+function place(){const pos=(step+frac)/LEN;cells.forEach(c=>{c.ph.style.left=(c.phX+pos*280)+'px'})}
+let frac=0;
+
+// clouds: stills cropped from the original post's video, kept on this machine only
+const VIS=$('#vis'),vg=VIS.getContext('2d');
+const S=315,skies=[];
+let cut={k:'smear',sky:0,seed:1,t:0};
+const vr=rng(99);
+function newCut(){const v=vr();cut={k:v<.3?'crop':v<.42?'smear':v<.54?'repeat':v<.66?'slab':v<.82?'collage':'chroma',sky:Math.floor(vr()*skies.length),seed:Math.floor(vr()*1e6),t:0};dirty=true}
+let dirty=true;const tmp=document.createElement('canvas');tmp.width=tmp.height=630;const tg=tmp.getContext('2d');
+function chan(g,sky,c,col,dx,dy,W){tg.globalCompositeOperation='source-over';tg.drawImage(sky,...c,dx-30,dy-30,W+60,W+60);tg.globalCompositeOperation='multiply';tg.fillStyle=col;tg.fillRect(0,0,W,W);tg.globalCompositeOperation='source-over';g.drawImage(tmp,0,0)}
+function drawVis(){
+ if(!skies.length)return;
+ const W=630,g=vg,r=rng(cut.seed),sky=skies[cut.sky],drift=reduce?0:cut.t*3;
+ if(!dirty&&cut.k!=='crop')return;dirty=false;
+ g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,W,W);
+ const crop=(z,ox,oy)=>{const s=S/z;return[Math.max(0,Math.min(S-s,ox*(S-s)+drift*.3)),Math.max(0,Math.min(S-s,oy*(S-s))),s,s]};
+ if(cut.k==='crop'){const big=r()<.3,wide=!big&&r()<.45;const c=crop(big?3.2+r()*2:1+r()*.5,r(),r());if(wide){c[1]=Math.min(S-c[3]/2,c[1]);c[3]/=2.2}g.drawImage(sky,...c,0,0,W,W)}
+ else if(cut.k==='smear'){
+  const c=crop(1+r()*.25,r(),r());g.drawImage(sky,...c,0,0,W,W);
+  // vertical pull: one band of columns keeps x but stretches tall, with a slow sideways wiggle
+  const bandL=r()*W*.55,bandW=W*(.14+r()*.34),ys=r()*S*.55,h=24+r()*50,amp=6+r()*16,fq=.018+r()*.02;
+  for(let x=0;x<bandW;x+=2){const sx=c[0]+(bandL+x)/W*c[2];g.drawImage(sky,sx+Math.sin(x*fq)*2,ys,1,h,bandL+x,0,2.2,W)}
+  // the band's own bright stripes wiggle along y
+  g.save();g.beginPath();g.rect(bandL,0,bandW,W);g.clip();for(let y=0;y<W;y+=6){const dx=Math.sin(y*fq*1.6)*amp;g.drawImage(VIS,bandL,y,bandW,6,bandL+dx,y,bandW,6)}g.restore();
+ }else if(cut.k==='repeat'){
+  // the same crop dealt into three columns, each pulled tall, with stretched seams
+  const c=crop(1.1,r(),r()),n=3,cw=W/n,sh=c[3]*(.5+r()*.25);
+  for(let i=0;i<n;i++){g.drawImage(sky,c[0],c[1]+(c[3]-sh)*r(),c[2]*.5,sh,i*cw,0,cw,W);const sw=12+r()*10;for(let x=0;x<sw;x+=2)g.drawImage(sky,c[0]+c[2]*.5,c[1],1,20,i*cw+cw-sw+x,0,2.2,W)}
+ }else if(cut.k==='slab'){
+  // clean slab on top, a thin horizontal pull, then vertically pulled bottom
+  const c=crop(1.02,r(),r()),a=W*(.38+r()*.14),m=W*(.1+r()*.05);
+  g.drawImage(sky,c[0],c[1],c[2],c[3]*a/W,0,0,W,a);
+  const ys=r()*S*.8;for(let y=0;y<m;y+=2)g.drawImage(sky,0,ys+y*.09,S,1,0,a+y,W,2.2);
+  const by=a+m,ry=r()*S*.5;for(let x=0;x<W;x+=2)g.drawImage(sky,x/W*S,ry,1,30+Math.sin(x*.03)*12,x,by,2.2,W-by);
+ }else if(cut.k==='collage'){
+  const n=2+Math.floor(r()*3);for(let i=0;i<n;i++){const w=210+r()*260,h=240+r()*300,x=r()*(W-w),y=r()*(W-h),s=skies[Math.floor(r()*skies.length)],sx=r()*(S-w/2.4),sy=r()*(S-h/2.4);g.drawImage(s,sx,sy,w/2.4,h/2.4,x,y,w,h);if(i===n-1&&r()<.45){g.globalCompositeOperation='screen';g.globalAlpha=.9;g.fillStyle='#bfe2ff';g.fillRect(x+w*.14,y+h*.14,w*.72,h*.72);g.drawImage(s,sx,sy,w/2.4,h/2.4,x+w*.14,y+h*.14,w*.72,h*.72);g.globalCompositeOperation='source-over';g.globalAlpha=1}}
+ }else{
+  // chroma: the three channels drawn apart, added back together
+  const c=crop(1+r()*.3,r(),r()),d=10+r()*16,wash=r()<.22;
+  g.fillStyle='#000';g.fillRect(0,0,W,W);g.globalCompositeOperation='lighter';
+  chan(g,sky,c,'#f00',d,-d*.25,W);chan(g,sky,c,'#0f0',0,0,W);chan(g,sky,c,'#00f',-d,d*.25,W);
+  g.globalCompositeOperation='source-over';
+  if(wash){g.globalCompositeOperation='screen';g.fillStyle='rgba(205,175,190,.55)';g.fillRect(0,0,W,W);g.globalCompositeOperation='source-over';g.fillStyle='#45C9C4';g.fillRect(W-d*1.4,0,d*1.4,W)}
+ }
+}
+
+// sound: procedurally written sample per file, started on first user gesture
+let ac=null,bufs=new Map();
+function audioOn(){if(ac||reduce)return;try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){ac=null}}
+addEventListener('pointerdown',audioOn,{once:true});
+function bufFor(c){
+ if(!ac)return null;if(bufs.has(c.f[0]))return bufs.get(c.f[0]);
+ const sr=ac.sampleRate,len=Math.min(4,Math.max(.8,c.f[1]/3))*sr|0,b=ac.createBuffer(1,len,sr),d=b.getChannelData(0),r=rng(c.i*17+3);
+ const f0=70+r()*340,noise=/drum|comb|jazz|sparse/.test(c.f[3]),am=x=>amp(c.f[3],x,r);
+ for(let i=0;i<len;i++){const t=i/sr;d[i]=am(i/len)*(noise?(r()*2-1)*.6+Math.sin(t*f0*6.28)*.4:Math.sin(t*f0*6.28+Math.sin(t*3)*2)*.7+(r()*2-1)*.08)}
+ bufs.set(c.f[0],b);return b;
+}
+function trig(c,sl){
+ if(!ac||ac.state!=='running'){if(ac&&ac.state==='suspended')ac.resume();return}
+ const b=bufFor(c);if(!b)return;const s=ac.createBufferSource(),g=ac.createGain();s.buffer=b;s.connect(g);g.connect(ac.destination);
+ const at=ac.currentTime,off=(c.slices[sl].x/280)*b.duration,dur=.16;g.gain.setValueAtTime(.12,at);g.gain.exponentialRampToValueAtTime(.001,at+dur);s.start(at,off,dur);
+}
+function onStep(st){
+ let any=false;
+ cells.forEach(c=>{
+  c.events.forEach(e=>{if(e.st===st){any=true;const sl=c.slices[e.sl];sl.el&&sl.el.classList.add('fire');e.el&&e.el.classList.add('hit');trig(c,e.sl);
+    setTimeout(()=>{sl.el&&sl.el.classList.remove('fire');e.el&&e.el.classList.remove('hit')},reduce?40:Math.max(120,240*sl.w/20))}})
+ });
+ if(st%8===0||(any&&vr()<.05))newCut();
+ if(st===0&&pendingNew){pendingNew=false;$('#new').classList.remove('on');$('#hint').style.display='none';hist.push(phraseSeed);phraseSeed+=11;build()}
+ stat(16);
+}
+const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+function stat(l){
+ const loop=LEN*15/bpm/4*1,now=step*15/bpm/4*1;
+ $('#stat').innerHTML=`layers ${l} / 24 · position ${step} / ${LEN} · ${fmt(now*4)} / ${fmt(loop*4)}<br>memory ${(164+(cut.seed%40)).toFixed(1)} MB · audio ${(67.4+(step%8)*.6).toFixed(1)} · visual ${(96.6-(cut.seed%5)*.3).toFixed(1)}`;
+}
+let prev=performance.now();
+function tick(now){
+ const dt=Math.min(.1,(now-prev)/1000);prev=now;
+ if(running){
+  const s16=15/bpm; // one step = 1/16 note
+  frac+=dt/s16;
+  while(frac>=1){frac-=1;step=(step+1)%LEN;onStep(step)}
+  place();
+ }
+ cut.t+=dt;
+ if(!reduce||cut.t<.1)drawVis();
+ requestAnimationFrame(tick);
+}
+$('#play').onclick=()=>{running=true;$('#play').disabled=true;$('#stop').disabled=false;audioOn();ac&&ac.resume()};
+$('#stop').onclick=()=>{running=false;$('#play').disabled=false;$('#stop').disabled=true;ac&&ac.suspend()};
+$('#bpm').oninput=e=>{bpm=+e.target.value;$('#bpmV').textContent=bpm};
+$('#new').onclick=()=>{pendingNew=true;$('#new').classList.add('on');$('#hint').style.display='block'};
+$('#undo').onclick=()=>{if(hist.length){phraseSeed=hist.pop();build()}};
+$('#map').onclick=()=>{cut.k='collage';cut.seed=(cut.seed+1)|0;dirty=true};
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-m]').forEach(o=>o.classList.toggle('on',o===b));curMode=b.dataset.m;hist.push(phraseSeed);build()});
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-s]').forEach(o=>o.classList.toggle('on',o===b));$('#src').textContent=b.dataset.s});
+$('#core').onclick=()=>{$('#core').classList.add('on');$('#pro').classList.remove('on');visible=9;build()};
+$('#pro').onclick=()=>{$('#pro').classList.add('on');$('#core').classList.remove('on');visible=15;build()};
+$('#rr').onclick=()=>{const i=Math.floor(Math.random()*FILES.length),j=Math.floor(Math.random()*EXTRA.length),o=FILES[i];FILES[i]=EXTRA[j];EXTRA[j]=o;build()};
+$('#ra').onclick=()=>{if(EXTRA.length){FILES.push(EXTRA.pop());visible=Math.min(FILES.length,18);build()}};
+$('#how').onclick=e=>{const v=[8,12,16,24];const i=v.indexOf(+e.target.textContent);e.target.textContent=v[(i+1)%4]};
+let closed=false;$('#close').onclick=()=>{closed=!closed;$('#grid').style.opacity=closed?0:1;$('#phs').style.opacity=closed?0:1;$('#close').textContent=closed?'open':'close'};
+const load=src=>new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src});
+const pad=n=>String(n).padStart(2,'0');
+Promise.all([Promise.all(Array.from({length:13},(_,i)=>load(`source-assets/sky-${pad(i)}.jpg`))),Promise.all(FILES.slice(0,15).map((f,i)=>load(`source-assets/wave-${pad(i)}.png`)))]).then(([sk,wv])=>{
+ sk.filter(Boolean).forEach(x=>skies.push(x));FILES.slice(0,15).forEach((f,i)=>{if(wv[i])WAVES.set(f[0],wv[i])});
+ const q=new URLSearchParams(location.search);
+ if(q.get('mode')){curMode=q.get('mode');document.querySelectorAll('[data-m]').forEach(o=>o.classList.toggle('on',o.dataset.m===curMode))}
+ build();
+ if(q.get('cut')){cut={k:q.get('cut'),sky:+(q.get('sky')||0),seed:+(q.get('seed')||1),t:0};dirty=true;if(q.has('hold')){running=false;step=+q.get('hold');place();$('#stop').disabled=true;$('#play').disabled=false}}
+ else newCut();
+ stat(16);drawVis();requestAnimationFrame(tick);});
+</script>
+</body>
+</html>

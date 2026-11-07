@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>四个标志动效：忠实复刻</title>
+<style>
+@font-face{font-family:Nunito;src:url(fonts/nunito.woff2) format("woff2");font-weight:200 1000;font-display:block}
+html,body{margin:0;background:#fff}
+body{display:grid;justify-items:center;padding:24px 0 40px;font-family:Nunito,system-ui,sans-serif}
+#fit{position:relative}
+#stage{position:absolute;left:0;top:0;width:2000px;height:1000px;transform-origin:0 0;overflow:hidden;border-radius:30px;background:#f3f3f3;box-shadow:0 0 0 3px #d9dde0;cursor:pointer}
+.cell{position:absolute;overflow:hidden}
+#tl{left:0;top:0;width:996px;height:502px;background:#fff}
+#bl{left:0;top:502px;width:996px;height:498px;background:#f9f9f9}
+#tr{left:1032px;top:22px;width:940px;height:450px;border-radius:44px;background:#fcfcfc}
+#br{left:1032px;top:513px;width:940px;height:449px;border-radius:44px;background:#fff}
+svg{overflow:visible;display:block}
+.abs{position:absolute;left:0;top:0;will-change:transform,opacity}
+.clip{position:absolute}
+.ink{fill:none;stroke:#0b0b0b;stroke-width:22;stroke-linecap:round;stroke-linejoin:round}
+.dot{fill:#0b0b0b}
+.ltr{transform-origin:center;transform-box:fill-box}
+.tile{width:150px;height:150px;border-radius:40px;background:#f1f1f1;display:grid;place-items:center}
+.coin{width:120px;height:120px}
+#forw{position:absolute;left:628px;top:318px;display:flex;align-items:baseline;gap:24px;font:400 34px/44px Nunito;color:#8b8b8b}
+#forw b{font:800 44px/44px Nunito;color:#0b0b0b}
+#hlp{position:absolute;left:692px;top:347px;width:178px;height:36px;border-radius:14px;background:#e4e4e4}
+#notes{width:min(760px,calc(100vw - 32px));margin-top:30px;font-size:14px;line-height:1.6;color:#555}
+#notes h3{font-size:14px;margin:0 0 8px;color:#111}#notes dl{margin:0;display:grid;grid-template-columns:90px 1fr;gap:6px 12px}#notes dd{margin:0}#notes code{color:#111}
+</style></head><body>
+<div id="fit"><div id="stage" role="button" tabindex="0" aria-label="replay">
+ <div class="cell" id="tl"></div><div class="cell" id="bl"></div><div class="cell" id="tr"></div><div class="cell" id="br"></div>
+</div></div>
+<section id="notes"><h3>可拆</h3><dl>
+<dt><code>#tl</code></dt><dd>角色从基线冒头，抖三下，再被字母挤到左边；字母逐个翻正，i 上的点变爱心</dd>
+<dt><code>#bl</code></dt><dd>第二只推开第一只：两个角色共用一组字母，用背景色盖住被挡的字</dd>
+<dt><code>#tr</code></dt><dd>小图标落进中心变成一本书，书飞走再回来带出文字，颜色从左到右扫过</dd>
+<dt><code>#br</code></dt><dd>硬币从一条线里掉出来堆成一堆，再砸进长条变成徽章</dd>
+</dl></section>
+<svg width="0" height="0" style="position:absolute"><defs>
+ <linearGradient id="gBar" x1="0" x2="1"><stop offset="0" stop-color="#ef8d33"/><stop offset="1" stop-color="#ef7a66"/></linearGradient>
+ <linearGradient id="gPay" x1="0" x2="1"><stop offset="0" stop-color="#ef7a66"/><stop offset="1" stop-color="#ef8d33"/></linearGradient>
+ <linearGradient id="gIc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ee6c52"/><stop offset="1" stop-color="#ef8d33"/></linearGradient>
+</defs></svg>
+<script>
+const S='http://www.w3.org/2000/svg';const $=s=>document.querySelector(s);
+const el=(p,h,cls,st)=>{const d=document.createElement('div');if(cls)d.className=cls;if(st)d.style.cssText=st;d.innerHTML=h;p.appendChild(d);return d};
+const ANIMS=[];
+/* 关键帧写法：[秒,{属性},缓动]；一个元素一条循环 */
+function A(e,dur,fr){const o=fr.map(([t,p,ez])=>({offset:Math.min(1,t/dur),...p,...(ez?{easing:ez}:{})}));if(o[0].offset>0)o.unshift({...o[0],offset:0});if(o[o.length-1].offset<1)o.push({...o[o.length-1],offset:1,easing:undefined});o.forEach(k=>{if(k.easing===undefined)delete k.easing});const a=e.animate(o,{duration:dur*1000,iterations:Infinity,fill:'both'});ANIMS.push(a);return a}
+const OUT='cubic-bezier(.2,.9,.3,1)',INOUT='cubic-bezier(.6,0,.3,1)',BACK='cubic-bezier(.3,1.5,.5,1)',IN='cubic-bezier(.5,0,.9,.4)';
+/* ---------- 单线字母（占位名 nomimi / nomilio） ---------- */
+const G={n:[66,'M11 11V72M11 38C11 22 22 11 36 11C50 11 60 22 60 38V72'],o:[78,'M39 11C56 11 68 24 68 41.500C68 59 56 72 39 72C22 72 10 59 10 41.500C10 24 22 11 39 11Z'],m:[107,'M11 11V72M11 38C11 22 20 11 33 11C46 11 54 22 54 38V72M54 38C54 22 63 11 76 11C89 11 97 22 97 38V72'],i:[22,'M11 11V72'],l:[22,'M11 -30V72']};
+function glyph(ch,col,sw){const [w,d]=G[ch];return `<svg class="ltr" width="${w}" height="83" viewBox="0 0 ${w} 83"><path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" class="p"/></svg>`}
+const HEART='M19 34C6 24 0 18 0 10C0 4 5 0 10 0C14 0 17 2 19 6C21 2 24 0 28 0C33 0 38 4 38 10C38 18 32 24 19 34Z';
+const bunnyHead='M15 190C12 160 25 130 38 112C30 95 28 75 28 55C28 25 45 11 72 11C100 11 115 28 115 55V92M115 55C115 28 132 11 158 11C187 11 200 28 200 55C200 75 198 95 190 112C205 130 218 160 215 190';
+function bunny(sleep,fill){const eyes=sleep?'<path d="M62 148H105M140 148H180" class="ink" />':'<circle class="dot" cx="68" cy="158" r="13"/><circle class="dot" cx="132" cy="158" r="13"/>';
+ const mask=fill?`<path d="M15 200C12 160 25 130 38 112C30 95 28 75 28 55C28 25 45 11 72 11C100 11 115 28 115 55C115 28 132 11 158 11C187 11 200 28 200 55C200 75 198 95 190 112C205 130 218 160 215 200Z" fill="${fill}"/>`:'';
+ return `<svg width="230" height="202" viewBox="0 0 230 202">${mask}<path d="${bunnyHead}" class="ink"/>${eyes}</svg>`}
+/* ---------- 左列公用：一行字 ---------- */
+const XS=[0,81,171,288,329,448];const WORD='nomimi';
+function wordRow(cell,y,hearts){const row=el(cell,'','abs',`left:387px;top:${y}px;width:480px;height:83px`);const letters=[...WORD].map((ch,i)=>{const w=el(row,glyph(ch,'#0b0b0b',22),'abs',`left:${XS[i]}px;top:0;width:${G[ch][0]}px;height:83px`);return w});
+ const hs=[3,5].map(i=>{const h=el(row,`<svg width="56" height="40" viewBox="0 0 56 40"><path d="${HEART}" fill="#6b6b6b" transform="translate(16,2) scale(.82)"/><path d="${HEART}" fill="#0b0b0b"/></svg>`,'abs',`left:${XS[i]-8}px;top:-44px;width:56px;height:40px;transform-origin:30% 100%`);return h});
+ const dots=[3,5].map(i=>el(row,`<svg width="24" height="24"><circle cx="12" cy="12" r="12" fill="#0b0b0b"/></svg>`,'abs',`left:${XS[i]-1}px;top:-20px;width:24px;height:24px`));
+ return {row,letters,hs,dots}}
+function animWord(w,dur){const ST=2.25;
+ A(w.row,dur,[[0,{transform:'translateX(500px)'}],[2.2,{transform:'translateX(500px)'},'linear'],[2.6,{transform:'translateX(225px)'},OUT],[3,{transform:'translateX(32px)'},OUT],[3.5,{transform:'translateX(0px)'}],[dur,{transform:'translateX(0px)'}]]);
+ w.letters.forEach((e,i)=>{const t=ST+i*.12;A(e,dur,[[0,{opacity:0,transform:'rotate(200deg) scale(.6)'}],[t,{opacity:0,transform:'rotate(200deg) scale(.6)'},'steps(1)'],[t+.02,{opacity:1,transform:'rotate(200deg) scale(.85)'},'cubic-bezier(.4,.2,.3,1)'],[t+.68,{opacity:1,transform:'rotate(0deg) scale(1)'}],[dur-.02,{opacity:1,transform:'rotate(0deg) scale(1)'},'steps(1)'],[dur,{opacity:0,transform:'rotate(0deg) scale(1)'}]])});
+ w.dots.forEach((e,i)=>{const t=3.42+i*.05;A(e,dur,[[0,{opacity:0,transform:'scale(0)'}],[t,{opacity:0,transform:'scale(0)'},OUT],[t+.15,{opacity:1,transform:'scale(1)'}],[3.76,{opacity:1,transform:'scale(1)'},'steps(1)'],[3.8,{opacity:0,transform:'scale(1)'}],[dur,{opacity:0,transform:'scale(1)'}]])});
+ w.hs.forEach((e,i)=>{const t=3.72+i*.05;A(e,dur,[[0,{opacity:0,transform:'scale(0)'}],[t,{opacity:0,transform:'scale(0)'},BACK],[t+.28,{opacity:1,transform:'scale(1)'}],[dur-.02,{opacity:1,transform:'scale(1)'},'steps(1)'],[dur,{opacity:0,transform:'scale(1)'}]])})}
+/* ---------- 左上 ---------- */
+(()=>{const c=$('#tl');const D=8;
+ const clip=el(c,'','clip','left:0;right:0;top:0;height:342px;overflow:hidden');
+ const b=el(clip,bunny(false),'abs','left:0;top:140px;transform-origin:115px 200px');
+ A(b,D,[[0,{transform:'translate(275px,210px) scale(1,1)',opacity:0}],[.08,{transform:'translate(275px,210px) scale(1,1)',opacity:0},'steps(1)'],[.1,{transform:'translate(275px,190px) scale(1,1)',opacity:1},OUT],[.28,{transform:'translate(275px,95px) scale(1,1)',opacity:1}],[.42,{transform:'translate(275px,95px) scale(1.12,.86)',opacity:1}],[.58,{transform:'translate(275px,95px) scale(.95,1.04)',opacity:1}],[.74,{transform:'translate(275px,95px) scale(1.12,.86)',opacity:1}],[.9,{transform:'translate(275px,95px) scale(.95,1.04)',opacity:1}],[1.06,{transform:'translate(275px,95px) scale(1.12,.86)',opacity:1}],[1.18,{transform:'translate(275px,95px) scale(1,1)',opacity:1},OUT],[1.5,{transform:'translate(275px,6px) scale(1,1)',opacity:1},'linear'],[2,{transform:'translate(275px,6px) scale(1,1)',opacity:1},'linear'],[2.3,{transform:'translate(190px,4px) scale(1,1)',opacity:1},'linear'],[2.6,{transform:'translate(88px,2px) scale(1,1)',opacity:1},OUT],[3,{transform:'translate(0px,0px) scale(1,1)',opacity:1}],[D-.02,{transform:'translate(0px,0px) scale(1,1)',opacity:1},'steps(1)'],[D,{transform:'translate(0px,0px) scale(1,1)',opacity:0}]]);
+ b.style.left='135px';
+ const w=wordRow(c,235);animWord(w,D)})();
+/* ---------- 左下 ---------- */
+(()=>{const c=$('#bl');const D=8;
+ /* 第一段：竖线后面探头 */
+ const clip=el(c,'','clip','left:0;top:0;width:570px;height:100%;overflow:hidden');
+ const p=el(clip,bunny(false),'abs','left:0;top:85px;transform-origin:115px 100px');
+ A(p,D,[[0,{transform:'translate(560px,0) rotate(-12deg)',opacity:0}],[.08,{transform:'translate(560px,0) rotate(-12deg)',opacity:0},'steps(1)'],[.1,{transform:'translate(560px,0) rotate(-12deg)',opacity:1},OUT],[.3,{transform:'translate(400px,0) rotate(-12deg)',opacity:1}],[1,{transform:'translate(400px,0) rotate(-12deg)',opacity:1},IN],[1.14,{transform:'translate(580px,0) rotate(-12deg)',opacity:1},'steps(1)'],[1.16,{transform:'translate(580px,0) rotate(-12deg)',opacity:0}],[D,{transform:'translate(580px,0) rotate(-12deg)',opacity:0}]]);
+ const w=wordRow(c,211);animWord(w,D);
+ const sl=el(c,bunny(true),'abs','left:0;top:120px;z-index:3');
+ const aw=el(c,bunny(false,'#f9f9f9'),'abs','left:0;top:105px;z-index:2');
+ A(aw,D,[[0,{transform:'translate(-60px,0)',opacity:0}],[1.25,{transform:'translate(-60px,0)',opacity:0},'linear'],[1.3,{transform:'translate(-45px,0)',opacity:.1},'linear'],[1.6,{transform:'translate(-30px,0)',opacity:.75},'linear'],[2,{transform:'translate(30px,0)',opacity:1},'linear'],[2.3,{transform:'translate(46px,0)',opacity:1},'linear'],[2.6,{transform:'translate(95px,0)',opacity:1},'linear'],[3,{transform:'translate(117px,0)',opacity:1},'linear'],[3.5,{transform:'translate(182px,0)',opacity:1},OUT],[4.6,{transform:'translate(232px,0)',opacity:1},'linear'],[5.3,{transform:'translate(272px,0)',opacity:1},INOUT],[5.95,{transform:'translate(135px,15px)',opacity:1},'steps(1)'],[5.96,{transform:'translate(135px,15px)',opacity:0}],[D,{transform:'translate(135px,15px)',opacity:0}]]);
+ A(sl,D,[[0,{transform:'translate(-240px,0)',opacity:0}],[2.15,{transform:'translate(-240px,0)',opacity:0},'steps(1)'],[2.17,{transform:'translate(-200px,0)',opacity:1},OUT],[2.3,{transform:'translate(-118px,0)',opacity:1},'linear'],[3,{transform:'translate(-70px,0)',opacity:1},'linear'],[3.5,{transform:'translate(-10px,0)',opacity:1},'linear'],[3.9,{transform:'translate(25px,0)',opacity:1},'linear'],[4.6,{transform:'translate(50px,0)',opacity:1},'linear'],[5.3,{transform:'translate(65px,0)',opacity:1},INOUT],[5.95,{transform:'translate(135px,0)',opacity:1}],[D-.02,{transform:'translate(135px,0)',opacity:1},'steps(1)'],[D,{transform:'translate(135px,0)',opacity:0}]]);
+ const hp=el(c,'','abs','left:692px;top:352px;width:178px;height:34px;border-radius:14px;background:#e6e6e6;transform-origin:0 50%');
+ const fw=el(c,'<span>for</span><b>Web</b>','','position:absolute;left:628px;top:325px;display:flex;align-items:baseline;gap:30px;font:400 34px/44px Nunito;color:#8b8b8b;z-index:4');fw.querySelector('b').style.cssText='font:800 50px/44px Nunito;color:#0b0b0b';
+ A(fw,D,[[0,{opacity:0,transform:'translateY(14px)'}],[6.1,{opacity:0,transform:'translateY(14px)'},OUT],[6.5,{opacity:1,transform:'translateY(0)'}],[D-.02,{opacity:1,transform:'translateY(0)'},'steps(1)'],[D,{opacity:0,transform:'translateY(0)'}]]);
+ A(hp,D,[[0,{opacity:0,transform:'scaleX(0)'}],[6.3,{opacity:0,transform:'scaleX(0)'},OUT],[6.7,{opacity:1,transform:'scaleX(1)'}],[D-.02,{opacity:1,transform:'scaleX(1)'},'steps(1)'],[D,{opacity:0,transform:'scaleX(1)'}]])})();
+/* ---------- 右上 ---------- */
+(()=>{const c=$('#tr');const D=4.5;const W=940,H=450;const P=(u,v)=>[u*W-75,v*H-75];
+ const ic={coin:`<svg width="74" height="74" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11.500" fill="#ee7a42"/><circle cx="12" cy="12" r="8.500" fill="#ef6e4e" stroke="#fff" stroke-width="0"/><text x="12" y="17" font-family="Nunito" font-weight="900" font-size="14" fill="#fff" text-anchor="middle">P</text></svg>`,
+ heart:`<svg width="76" height="68" viewBox="0 0 38 34"><path d="${HEART}" fill="url(#gIc)"/></svg>`,
+ pen:`<svg width="86" height="96" viewBox="0 0 24 27"><path d="M18.500 1.500l4 3-2 2.700-4-3zM15.300 5l4 3L7.500 23.500 2 26l.5-6z" fill="url(#gIc)"/></svg>`,
+ flag:`<svg width="118" height="106" viewBox="0 0 34 30"><rect x="16" y="3" width="17" height="20" rx="2" fill="#f6c58a" transform="rotate(6 24 13)"/><path d="M3 1l17 2-2 19-11 1-6 6z" fill="url(#gIc)"/><text x="9" y="15" font-family="Nunito" font-weight="900" font-size="11" fill="#fff" text-anchor="middle">A</text><text x="25" y="17" font-family="Nunito" font-weight="800" font-size="9" fill="#fff" text-anchor="middle">x</text></svg>`};
+ const T=(k,fr)=>{const e=el(c,ic[k],'abs tile');A(e,D,fr.map(([t,u,v,r,s,o])=>{const [x,y]=P(u,v);return [t,{transform:`translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`,opacity:o??1}]}))};
+ T('coin',[[0,.18,.42,-8,.5,0],[.05,.18,.42,-8,.7,1],[.1,.18,.35,-6,.85],[.3,.3,.14,8,1],[.5,.4,.34,-4,1],[.7,.42,.45,4,.9],[.72,.42,.45,4,.85,0],[4.5,.5,.5,0,0,0]]);
+ T('heart',[[0,.8,.3,-6,.4,0],[.15,.8,.3,-6,.5,0],[.2,.8,.26,-6,.8,1],[.3,.77,.1,8,1],[.5,.63,.02,-4,1],[.74,.5,.14,-8,1],[.76,.5,.14,-8,1,0],[4.5,.5,.45,0,0,0]]);
+ T('pen',[[0,.1,.6,-20,.2,0],[.2,.1,.6,-20,.6,0],[.3,.14,.5,-12,.9,1],[.52,.12,.06,10,1],[.8,.41,.22,10,1],[.92,.48,.4,4,.85],[.94,.48,.4,4,.85,0],[4.5,.5,.45,0,0,0]]);
+ T('flag',[[0,.86,.52,8,.2,0],[.34,.86,.52,8,.5,0],[.45,.78,.42,-8,1,1],[.8,.63,.18,6,1],[1,.54,.42,-6,.95],[1.06,.52,.45,0,.5],[1.08,.5,.45,0,.2,0],[4.5,.5,.45,0,.2,0]]);
+ /* 书 → 对话框 */
+ const bk=el(c,`<svg width="135" height="107" viewBox="0 0 135 107"><path class="bookP" d="M10 0H135V68H34C20 68 20 88 34 88H135V107H24C18 107 16 106 14 104L4 92C1 88 0 86 0 80V10C0 4 4 0 10 0Z" fill="#ef8d33"/></svg>`,'abs','transform-origin:50% 50%');
+ const bb=el(c,`<svg width="135" height="107" viewBox="0 0 135 107"><path d="M10 0H135V88H42L22 107V88H10C4 88 0 84 0 78V10C0 4 4 0 10 0Z" fill="url(#gIc)"/><path d="M26 67H135V73H26z" fill="#fff" opacity=".0"/></svg>`,'abs','transform-origin:50% 50%');
+ const BX=[113,172];
+ A(bk,D,[[0,{transform:'translate(402px,150px) rotate(-8deg) scale(0)',opacity:0}],[1.04,{transform:'translate(402px,150px) rotate(-8deg) scale(0)',opacity:0},'steps(1)'],[1.06,{transform:'translate(402px,150px) rotate(-8deg) scale(.1)',opacity:1},BACK],[1.3,{transform:'translate(402px,70px) rotate(-8deg) scale(1.42)',opacity:1},OUT],[1.6,{transform:'translate(402px,150px) rotate(0deg) scale(1.2)',opacity:1}],[1.85,{transform:'translate(402px,150px) rotate(0deg) scale(1.2)',opacity:1},INOUT],[2.05,{transform:'translate(730px,105px) rotate(15deg) scale(1.42)',opacity:1}],[2.3,{transform:'translate(860px,110px) rotate(22deg) scale(1.42)',opacity:1},'steps(1)'],[2.42,{transform:'translate(860px,172px) rotate(0deg) scale(1)',opacity:1},OUT],[2.62,{transform:'translate(314px,172px) rotate(0deg) scale(1)',opacity:1},OUT],[2.9,{transform:`translate(${BX[0]}px,${BX[1]}px) rotate(0deg) scale(1)`,opacity:1}],[3.72,{transform:`translate(${BX[0]}px,${BX[1]}px) rotate(0deg) scale(1)`,opacity:1},'steps(1)'],[3.74,{transform:`translate(${BX[0]}px,${BX[1]}px) rotate(0deg) scale(1)`,opacity:0}],[D,{transform:`translate(${BX[0]}px,${BX[1]}px) rotate(0deg) scale(1)`,opacity:0}]]);
+ A(bb,D,[[0,{transform:`translate(${BX[0]}px,${BX[1]}px)`,opacity:0}],[3.72,{transform:`translate(${BX[0]}px,${BX[1]}px)`,opacity:0},'steps(1)'],[3.74,{transform:`translate(${BX[0]}px,${BX[1]}px)`,opacity:1}],[4.48,{transform:`translate(${BX[0]}px,${BX[1]}px)`,opacity:1},'steps(1)'],[D,{transform:`translate(${BX[0]}px,${BX[1]}px)`,opacity:0}]]);
+ /* 字 */
+ const LW='nomilio';const xs=[0,83,172,290,331,372,413];const row=el(c,'','abs','left:273px;top:188px;width:520px;height:84px;transform-origin:0 85%;scale:1.1');
+ const under=el(c,'','abs','left:425px;top:274px;width:370px;height:2px;background:#f4b778;transform-origin:100% 50%');A(under,D,[[0,{opacity:0,transform:'scaleX(.4)'}],[2.48,{opacity:0,transform:'scaleX(.4)'}],[2.6,{opacity:.7,transform:'scaleX(1)'}],[2.74,{opacity:0,transform:'scaleX(1)'}],[D,{opacity:0,transform:'scaleX(1)'}]]);
+ const paths=[...LW].map((ch,i)=>{const d=el(row,glyph(ch,'#f4b778',20),'abs',`left:${xs[i]}px;top:0`);if(ch==='i'){el(row,`<svg width="24" height="24"><circle cx="12" cy="12" r="12" fill="currentColor"/></svg>`,'abs',`left:${xs[i]-1}px;top:-22px;color:#f4b778`).dataset.dot=i}return d.querySelector('.p')});
+ A(row,D,[[0,{clipPath:'inset(-50px 0 -10px 100%)'}],[2.45,{clipPath:'inset(-50px 0 -10px 100%)'},'linear'],[2.62,{clipPath:'inset(-50px 0 -10px 74%)'},'linear'],[2.88,{clipPath:'inset(-50px 0 -10px 0%)'}],[4.48,{clipPath:'inset(-50px 0 -10px 0%)'},'steps(1)'],[D,{clipPath:'inset(-50px 0 -10px 100%)'}]]);
+ const colorFr=i=>{const t=3.55+i*.07;return [[0,{stroke:'#f4b778'}],[t,{stroke:'#f4b778'}],[t+.22,{stroke:'#e55c3f'}],[t+.5,{stroke:'#3b2315'}],[D,{stroke:'#3b2315'}]]};
+ paths.forEach((p,i)=>A(p,D,colorFr(i)));
+ row.querySelectorAll('[data-dot]').forEach(e=>{const i=+e.dataset.dot,t=3.55+i*.07;A(e,D,[[0,{color:'#f4b778'}],[t,{color:'#f4b778'}],[t+.22,{color:'#e55c3f'}],[t+.5,{color:'#3b2315'}],[D,{color:'#3b2315'}]])})})();
+/* ---------- 右下 ---------- */
+(()=>{const c=$('#br');const D=4.5;const cx=470;
+ const bar=el(c,'','abs','left:348px;top:42px;width:247px;height:24px;border-radius:12px;background:linear-gradient(90deg,#ef8d33,#ef7a66);transform-origin:50% 50%;z-index:4');
+ A(bar,D,[[0,{transform:'scaleX(0)',opacity:0}],[.04,{transform:'scaleX(.05)',opacity:1},'linear'],[.14,{transform:'scaleX(.18)',opacity:1},OUT],[.32,{transform:'scaleX(1)',opacity:1}],[.95,{transform:'scaleX(1)',opacity:1},INOUT],[1.06,{transform:'scaleX(.05)',opacity:1},'steps(1)'],[1.08,{transform:'scaleX(.05)',opacity:0}],[D,{transform:'scaleX(.05)',opacity:0}]]);
+ const coin=`<svg class="coin" viewBox="0 0 120 120"><circle cx="60" cy="62" r="58" fill="#f3a763"/><circle cx="60" cy="58" r="56" fill="#ee8a2d"/><circle cx="60" cy="58" r="44" fill="#ef8d33" stroke="#f1a15b" stroke-width="3"/><text x="60" y="84" font-family="Nunito" font-weight="1000" font-size="70" fill="#fff" text-anchor="middle">P</text></svg>`;
+ const clip=el(c,'','clip','left:0;right:0;top:54px;bottom:0;overflow:visible;z-index:2');clip.style.clipPath='inset(0 -500px -500px -500px)';
+ const pts=[[412,300],[516,296],[470,235]];const ts=[.42,.3,.54];
+ pts.forEach((q,i)=>{const e=el(clip,coin,'abs');const t=ts[i];const [x,y]=q;const X=x-60,Y=y-60-54;const tr=(a,b,s=1,r=0)=>`translate(${a}px,${b}px) rotate(${r}deg) scale(${s})`;
+  A(e,D,[[0,{transform:tr(cx-60,-130),opacity:0}],[t-.18,{transform:tr(cx-60,-130),opacity:0},'steps(1)'],[t-.16,{transform:tr(cx-60,-130),opacity:1},IN],[t,{transform:tr(X,Y),opacity:1},BACK],[1.6,{transform:tr(X,Y),opacity:1},OUT],[1.88+i*.05,{transform:tr(i==0?300:i==1?470:390,-40+i*70,1,10),opacity:1},IN],[2.14+i*.05,{transform:tr(470-60,185,.86),opacity:1},'steps(1)'],[2.16+i*.05,{transform:tr(470-60,185,.86),opacity:0}],[D,{transform:tr(470-60,180,.86),opacity:0}]])});
+ /* 长条 → 徽章 */
+ const pay=el(c,`<div style="position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,#ef7a66,#ef8d33)"></div><svg class="payT" width="190" height="84" viewBox="0 0 190 84" style="position:absolute;left:50%;margin-left:-95px;top:50%;margin-top:-42px"><text x="0" y="74" font-family="Nunito" font-weight="1000" font-size="96" fill="#fff" stroke="#fff" stroke-width="3">P</text><path d="M95 8C98 8 100 10 102 13L128 66C131 72 127 78 120 78H70C63 78 59 72 62 66L88 13C90 10 92 8 95 8Z" fill="#fff"/><circle cx="95" cy="52" r="12" fill="#ef8558"/><text x="130" y="74" font-family="Nunito" font-weight="1000" font-size="96" fill="#fff" stroke="#fff" stroke-width="3">Y</text></svg>`,'abs','left:0;top:0;width:262px;height:134px;overflow:hidden;z-index:3');
+ const tx=pay.querySelector('.payT');
+ const sq='34px';
+ const st=(x,y,w,h,r,o=1)=>({left:x+'px',top:y+'px',width:w+'px',height:h+'px',borderRadius:r,opacity:o});
+ A(pay,D,[[0,st(690,270,24,24,'12px',0)],[1.08,st(690,270,24,24,'12px',0),'steps(1)'],[1.1,st(690,270,24,24,'12px',1),OUT],[1.26,st(650,258,250,44,'22px')],[1.72,st(650,258,250,44,'22px'),INOUT],[1.98,st(345,258,250,44,'22px')],[2.22,st(345,258,250,44,'22px'),OUT],[2.32,st(320,205,335,130,'65px'),OUT],[2.6,st(358,203,262,134,sq)],[3.05,st(358,203,262,134,sq),INOUT],[3.5,st(40,203,262,134,sq)],[3.56,st(40,203,262,134,sq),'cubic-bezier(.4,0,.2,1)'],[3.98,st(620,203,262,134,sq)],[4.48,st(620,203,262,134,sq),'steps(1)'],[D,st(620,203,262,134,sq,0)]]);
+ A(tx,D,[[0,{opacity:0,transform:'translateY(50px)'}],[2.24,{opacity:0,transform:'translateY(50px)'},OUT],[2.46,{opacity:1,transform:'translateY(0)'}],[D,{opacity:1,transform:'translateY(0)'}]]);
+ /* 第二段字 */
+ const xs=[0,83,172,290,331,372,413];const row=el(c,'','abs','left:58px;top:232px;width:520px;height:84px;z-index:1;transform-origin:0 85%;scale:1.1');
+ [...'nomilio'].forEach((ch,i)=>{const d=el(row,glyph(ch,'#2a2a2a',20)+(ch==='i'?`<svg width="24" height="24" style="position:absolute;left:-1px;top:-22px"><circle cx="12" cy="12" r="12" fill="#2a2a2a"/></svg>`:''),'abs',`left:${xs[i]}px;top:0;width:${G[ch][0]}px;height:83px`);const t=3.52+i*.06;A(d,D,[[0,{opacity:0,transform:'translateY(40px) rotate(-14deg)'}],[t,{opacity:0,transform:'translateY(40px) rotate(-14deg)'},'steps(1)'],[t+.02,{opacity:1,transform:'translateY(40px) rotate(-14deg)'},BACK],[t+.28,{opacity:1,transform:'translateY(0) rotate(0deg)'}],[4.48,{opacity:1,transform:'translateY(0) rotate(0deg)'},'steps(1)'],[D,{opacity:0,transform:'translateY(0) rotate(0deg)'}]])})})();
+/* ---------- 缩放、回放、定格 ---------- */
+const fit=()=>{const k=Math.min(1134,innerWidth-16)/2000;$('#stage').style.transform=`scale(${k})`;const f=$('#fit');f.style.width=2000*k+'px';f.style.height=1000*k+'px'};fit();addEventListener('resize',fit);
+const q=new URLSearchParams(location.search);const seek=t=>ANIMS.forEach(a=>{a.pause();a.currentTime=t*1000});window.__seek=seek;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.fonts.load('900 40px Nunito').then(()=>document.fonts.ready).then(()=>{document.body.dataset.ready=1;if(q.has('t'))seek(+q.get('t'));else if(reduce)seek(7)});
+$('#stage').addEventListener('click',()=>{if(reduce)return;ANIMS.forEach(a=>{a.currentTime=0;a.play()})});
+</script></body></html>

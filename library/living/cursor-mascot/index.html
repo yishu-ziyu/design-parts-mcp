@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cursor Mascot</title><link rel="icon" href="data:,">
+<style>
+:root{--sans:ui-sans-serif,system-ui,sans-serif;--ink:#12100e;--paper:#faf9f7;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/24px var(--sans);-webkit-font-smoothing:antialiased}
+#page{max-width:960px;margin:0 auto;padding:112px 40px 112px}
+header{display:flex;flex-direction:column;align-items:flex-start}
+.mascot{position:relative;display:block;flex-shrink:0;padding:0;border:0;background:transparent;appearance:none;cursor:pointer;user-select:none}
+.mascot>span{position:relative;display:block;width:100%;height:100%;transform-origin:50% 78%}
+.mascot>span>span{position:absolute;inset:0;background-size:300% 300%;background-repeat:no-repeat}
+#hero{margin-left:-16px;width:200px;height:200px}
+h1{margin:8px 0 0;font:700 60px/60px var(--mono);letter-spacing:-3px}
+.lead{margin:16px 0 0;max-width:539px;font:500 20px/27.5px var(--sans);color:rgba(18,16,14,.6)}
+.cta{margin-top:32px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.btn{border-radius:12px;padding:12px 16px;font:500 16px/24px var(--sans);text-decoration:none;cursor:pointer;background:none}
+.btn.pri{background:var(--ink);color:var(--paper);border:0;transition:opacity .15s}.btn.pri:hover{opacity:.85}
+.btn.sec{border:1px solid rgba(18,16,14,.15);color:rgba(18,16,14,.75);display:flex;align-items:center;gap:8px;transition:color .15s,border-color .15s}.btn.sec:hover{border-color:rgba(18,16,14,.4);color:var(--ink)}
+.hint{margin:12px 0 0;font:400 14px/20px var(--sans);color:rgba(18,16,14,.4)}
+section{margin-top:144px}section+section{margin-top:144px}
+h2{margin:0;font:700 30px/36px var(--sans);letter-spacing:-.75px}
+.sub{margin:12px 0 0;max-width:520.7px;font:400 18px/24.75px var(--sans);color:rgba(18,16,14,.55)}
+#styles{margin-top:40px;display:flex;gap:16px}
+.st{width:112px;flex:none}
+.st .cell{width:112px;height:112px;padding-top:4px}
+.st b{display:block;margin-top:8px;font:500 14px/20px var(--mono)}
+.st small{display:block;font:400 14px/20px var(--sans);color:rgba(18,16,14,.4)}
+.cell{position:relative;display:flex;justify-content:center;align-items:flex-start;border-radius:14px;transition:background .15s;padding-top:0}
+.cell:hover{background:rgba(18,16,14,.05)}
+.cell .mascot{width:104px;height:104px}
+.use{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);border:0;border-radius:99px;background:var(--ink);color:var(--paper);font:400 11px/16.5px var(--sans);padding:4px 10px;white-space:nowrap;opacity:0;transition:opacity .15s;cursor:pointer}
+.cell:hover .use,.use:focus-visible{opacity:1}
+#grid{margin-top:40px;display:grid;grid-template-columns:repeat(6,136px);gap:13px 13.6px}
+#grid .cell{width:136px;height:136px;align-items:center}
+#grid .mine{flex-direction:column;align-items:center;justify-content:center;border:0;background:none;font:400 12px/16px var(--sans);color:rgba(18,16,14,.45);cursor:pointer;gap:6px;padding:0}
+#grid .mine:hover{background:rgba(18,30,60,.08)}#grid .mine span{font-size:18px;line-height:18px}
+/* 抽屉 */
+#drawer{position:fixed;inset:0;z-index:50;display:none}
+#drawer.open{display:block}
+#scrim{position:absolute;inset:0;background:rgba(18,16,14,.25);animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+#panel{position:absolute;top:0;bottom:0;right:0;width:100%;max-width:620px;display:flex;flex-direction:column;overflow-y:auto;background:var(--paper);padding:32px 28px;box-shadow:0 0 50px rgba(18,16,14,.12);animation:slide .22s cubic-bezier(.22,1,.36,1)}
+@keyframes slide{from{transform:translateX(100%)}}
+#panel .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+#panel h2{font:700 24px/31px var(--mono);letter-spacing:-.6px;padding-top:1px}
+#panel .top p{margin:4px 0 0;color:rgba(18,16,14,.5)}
+#close{margin:-4px -8px 0 0;background:none;border:0;border-radius:8px;padding:4px 8px;font:400 24px/24px var(--sans);color:rgba(18,16,14,.4);cursor:pointer}#close:hover{color:var(--ink)}
+ol{list-style:none;margin:32px 0 0;padding:0;display:flex;flex-direction:column;gap:32px}
+.h{display:flex;align-items:center;gap:12px}.h i{font-style:normal;display:flex;width:24px;height:24px;flex:none;align-items:center;justify-content:center;border-radius:50%;background:var(--ink);color:var(--paper);font:500 12px/1 var(--sans)}.h h3{margin:0;font:500 16px/24px var(--sans)}
+.b{margin-top:8px;padding-left:36px;font-size:15px;line-height:20.6px}
+.b p{margin:16px 0 0;color:rgba(18,16,14,.55)}.b>p:first-child{margin-top:0}
+.b>p code{font:15px var(--mono);color:rgba(18,16,14,.75)}
+pre{position:relative;margin:12px 0 0;border-radius:12px;background:var(--ink);padding:12px 48px 12px 16px;font:13px/21.3px var(--mono);white-space:pre-wrap;color:rgba(250,249,247,.6)}
+pre code{font:inherit}pre u{text-decoration:none;color:#f0c274}pre s{text-decoration:none;color:#7cc1e6}pre em{font-style:normal;color:#a8d38a}pre b{font-weight:400;color:#e89fb4}pre i{font-style:normal;color:#faf9f7}
+.cp{position:absolute;top:8px;right:8px;border:0;background:none;border-radius:8px;padding:4px 8px;font:11px/16px var(--mono);color:rgba(250,249,247,.4);cursor:pointer}.cp:hover{background:rgba(250,249,247,.1);color:var(--paper)}
+.b p+.dl{margin-top:12px}.dl{display:block;margin-top:8px;border:1px solid rgba(18,16,14,.15);border-radius:10px;padding:9px 12px;font:13px/20px var(--mono);color:rgba(18,16,14,.75)}
+.foot{margin:14px 0 0 36px;font-size:13.5px;color:rgba(18,16,14,.45);line-height:19px}
+.notes{margin-top:96px;padding-top:24px;border-top:1px solid rgba(18,16,14,.1);font-size:14px;color:rgba(18,16,14,.6)}.notes h3{margin:0 0 8px;font:600 14px/20px var(--sans);color:var(--ink)}.notes dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 12px}.notes dd{margin:0}.notes code{font:12.5px var(--mono);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+@media (max-width:640px){h1{font-size:48px;line-height:48px}#page{padding:80px 24px}#grid{grid-template-columns:repeat(3,1fr)}}
+</style></head><body>
+<div id="page">
+<header>
+ <button id="hero" class="mascot" aria-label="Boop the fox" data-c="fox" data-dz="64"></button>
+ <h1>/page-mascot</h1>
+ <p class="lead">Skill to generate a character for the top of your page. It follows the reader’s cursor and blinks when they poke it.</p>
+ <div class="cta"><a class="btn pri" href="#characters">Use one of the 53</a><button class="btn sec" data-own>Make your own</button><a class="btn sec"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="7.2"/><path d="M5 12V9.5C4 9 3.8 7 4.8 6l-.1-1.6L6 5a6 6 0 0 1 4 0l1.3-.6-.1 1.6c1 1 .8 3-.2 3.5V12z" fill="var(--paper)"/></svg>GitHub</a></div>
+ <p class="hint">Pick one below, or have an agent skill draw a new one.</p>
+</header>
+<section id="stylesec"><h2>Different styles</h2><p class="sub">You can pick from one of the six styles. Or send a photo and get yourself turned into a character.</p><div id="styles"></div></section>
+<section id="characters"><h2>53 already drawn</h2><p class="sub">All of them follow your cursor. Poke one, or hover it and press Use to find out how to put it on your page.</p><div id="grid"></div></section>
+<div class="notes"><h3>可拆</h3><dl>
+<dt><code>#hero</code></dt><dd>两张 3×3 精灵图叠放：跟随鼠标时换 background-position，不做过渡；被点时切到表情图并压扁回弹。</dd>
+<dt><code>#styles</code></dt><dd>同一角色的七种画法并排，悬停出黑色 Use 胶囊。</dd>
+<dt><code>#grid</code></dt><dd>六列角色墙，每个都独立看向鼠标。</dd>
+<dt><code>#panel</code></dt><dd>右侧 620px 抽屉，220ms 滑入，步骤编号加深色代码块。</dd>
+</dl></div>
+</div>
+<div id="drawer"><div id="scrim"></div><aside id="panel" role="dialog"></aside></div>
+<script>
+/* ---------- 角色：原站精灵图的透明底截图（只留本机），每张 1080×1080、3×3 ---------- */
+const ORDER=['bear','bunny','cat','deer','dino','fox','frog','hamster','hedgehog','koala','mouse','otter','owl','panda','penguin','pug','raccoon','redpanda','sheep','sloth','tiger','afro','astronaut','bald','ballerina','beard','builder','cap','chef','glasses','grandpa','granny','hijabi','kamran','nurse','pirate','scientist','sikh','skater','wizard','clockwork','crt','cube','drone','gearbot','knight','lantern','postbot','radio','rocket','scout','toaster','tv'];
+const sheet=(name,style,kind)=>'url("source-assets/mascots/'+name+(style==='colour'?'':'-'+style)+(kind==='d'?'-directions':'-reactions')+'.webp")';
+/* ---------- 跟随与反应 ---------- */
+const all=[];const reduce=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function mount(btn,name,style='colour',size=200){btn.classList.add('mascot');btn.dataset.c=name;
+ btn.style.width=size+'px';btn.style.height=size+'px';
+ const wrap=document.createElement('span'),dir=document.createElement('span'),rea=document.createElement('span');
+ wrap.append(dir,rea);btn.append(wrap);rea.style.opacity=0;dir.style.backgroundPosition='50% 50%';rea.style.backgroundPosition='0% 0%';
+ const ds=sheet(name,style,'d'),rs=sheet(name,style,'r');
+ dir.style.backgroundImage=ds;rea.style.backgroundImage=rs;
+ const m={btn,dir,rea,wrap,dz:64*size/200,busy:false};all.push(m);
+ btn.addEventListener('click',e=>{if(e.target.closest('.use'))return;poke(m)});return m}
+function poke(m){if(!reduce())m.wrap.animate([{transform:'scale(1,1)',easing:'ease-in'},{offset:.18,transform:'scale(1.1,.86)',easing:'ease-out'},{offset:.45,transform:'scale(.95,1.08)',easing:'ease-in-out'},{offset:.72,transform:'scale(1.03,.97)',easing:'ease-in-out'},{transform:'scale(1,1)'}],{duration:420});
+ clearTimeout(m.t1);clearTimeout(m.t2);m.dir.style.opacity=0;m.rea.style.opacity=1;m.rea.style.backgroundPosition='0% 0%';
+ /* 第一格之后随机换一个表情，和原站一样；九格里除 0,0 外任选 */
+ const k=1+Math.floor(Math.random()*8);m.t1=setTimeout(()=>m.rea.style.backgroundPosition=(k%3)*50+'% '+Math.floor(k/3)*50+'%',100);m.t2=setTimeout(()=>{m.rea.style.opacity=0;m.dir.style.opacity=1;m.rea.style.backgroundPosition='0% 0%'},570)}
+let px=-1,py=-1,raf=0;
+function look(){raf=0;if(px<0)return;for(const m of all){const r=m.btn.getBoundingClientRect();if(r.bottom<-200||r.top>innerHeight+200)continue;
+  const cx=r.left+r.width/2,cy=r.top+r.height/2,dx=px-cx,dy=py-cy;let c=1,w=1;
+  if(Math.hypot(dx,dy)>m.dz){const a=Math.atan2(dy,dx),s=Math.round(a/(Math.PI/4));const v=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1],[-1,0]][(s+8)%8];c=v[0]+1;w=v[1]+1}
+  m.dir.style.backgroundPosition=(c*50)+'% '+(w*50)+'%'}}
+addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;if(!raf)raf=requestAnimationFrame(look)},{passive:true});
+addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(look)},{passive:true});
+/* ---------- 页面 ---------- */
+mount(document.getElementById('hero'),'fox','colour',200);
+const STY=[['colour','the default','colour'],['ink','black line','ink'],['sketch','pencil','sketch'],['riso','two-tone print','riso'],['paper','cut paper','paper'],['pixel','32 across','pixel'],['kamran','from a photo','colour']];
+const stBox=document.getElementById('styles');
+STY.forEach(([n,sub,s])=>{const d=document.createElement('div');d.className='st';d.innerHTML=`<div class="cell"><button aria-label="Boop ${n}"></button><button class="use">Use ${n}</button></div><b>${n}</b><small>${sub}</small>`;stBox.append(d);
+ mount(d.querySelector('.cell>button'),n==='kamran'?'kamran':'fox',s,104);d.querySelector('.use').onclick=()=>open(n==='kamran'?'kamran':n==='colour'?'fox':'fox-'+n)});
+const grid=document.getElementById('grid');
+ORDER.forEach(n=>{const c=document.createElement('div');c.className='cell';c.innerHTML=`<button aria-label="Boop ${n}"></button><button class="use">Use ${n}</button>`;grid.append(c);mount(c.firstChild,n,'colour',104);c.querySelector('.use').onclick=()=>open(n)});
+const mine=document.createElement('button');mine.className='cell mine';mine.innerHTML='<span>+</span>Make your own';mine.dataset.own=1;grid.append(mine);
+/* ---------- 抽屉 ---------- */
+const dr=document.getElementById('drawer'),panel=document.getElementById('panel');
+const cp='<button class="cp">copy</button>';
+function code(n){return `<pre><code><b>import</b> { <i>Mascot</i> } <b>from</b> <em>'page-mascot'</em>\n\n&lt;<s>Mascot</s>\n  <u>directions</u>=<em>"/mascots/${n}-directions.webp"</em>\n  <u>reactions</u>=<em>"/mascots/${n}-reactions.webp"</em>\n/&gt;</code>${cp}</pre>`}
+function open(n){panel.innerHTML=`<div class="top"><div><h2>${n}</h2><p>Three steps.</p></div><button id="close" aria-label="Close">×</button></div><ol>
+<li><div class="h"><i>1</i><h3>Install the component</h3></div><div class="b"><pre><code><u>npm</u> i page-mascot</code>${cp}</pre></div></li>
+<li><div class="h"><i>2</i><h3>Download the two sheets</h3></div><div class="b"><p>A character is two files. Put both in <code>public/mascots</code>.</p><a class="dl">↓ ${n}-directions.webp</a><a class="dl">↓ ${n}-reactions.webp</a></div></li>
+<li><div class="h"><i>3</i><h3>Point the component at them</h3></div><div class="b">${code(n)}</div></li></ol><p class="foot">Any two paths work. Put the files wherever you like, or import them and pass the imported urls.</p>`;show()}
+function own(){panel.innerHTML=`<div class="top"><div><h2>your own</h2><p>An agent draws it for you.</p></div><button id="close" aria-label="Close">×</button></div><ol>
+<li><div class="h"><i>1</i><h3>Install the skill</h3></div><div class="b"><pre><code><u>npx</u> skills add nilbuild/page-mascot <s>--skill</s> page-mascot <s>--global</s> <s>--yes</s></code>${cp}</pre></div></li>
+<li><div class="h"><i>2</i><h3>Ask for a character</h3></div><div class="b"><pre><code><u>/page-mascot</u> a chibi otter with chocolate-brown fur</code>${cp}</pre><p>Attach a photo and it draws you instead.</p><pre><code><u>/page-mascot</u> make one that looks like me</code>${cp}</pre><p>Name a style and it draws in that one.</p><pre><code><u>/page-mascot</u> a chibi fox, in the riso style</code>${cp}</pre></div></li>
+<li><div class="h"><i>3</i><h3>Let it check itself</h3></div><div class="b"><p>It draws nine head directions and nine expressions, builds them into two aligned sheets, and measures whether the character jumps or drifts between them. If it does, it draws again.</p></div></li>
+<li><div class="h"><i>4</i><h3>Put it on the page</h3></div><div class="b">${code('otter')}</div></li></ol><p class="foot" style="margin-left:0">Drawing needs an image tool. Codex has one. Claude Code goes through the OpenAI images API, so set OPENAI_API_KEY first.</p>`;show()}
+function show(){dr.classList.remove('open');void dr.offsetWidth;dr.classList.add('open');panel.scrollTop=0;panel.querySelector('#close').onclick=hide;panel.querySelectorAll('.cp').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(b.previousElementSibling.textContent).catch(()=>{});b.textContent='copied';setTimeout(()=>b.textContent='copy',1200)})}
+function hide(){dr.classList.remove('open')}
+document.getElementById('scrim').onclick=hide;addEventListener('keydown',e=>{if(e.key==='Escape')hide()});
+document.querySelectorAll('[data-own]').forEach(b=>b.onclick=own);
+</script></body></html>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ornament Drop Caps</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"EB Garamond";src:url(fonts/eb-garamond.woff2) format("woff2");font-weight:400 800;font-style:normal}
+@font-face{font-family:"EB Garamond";src:url(fonts/eb-garamond-i.woff2) format("woff2");font-weight:400 800;font-style:italic}
+@font-face{font-family:Inter;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900;font-style:normal}
+@font-face{font-family:Inter;src:url(fonts/inter-i.woff2) format("woff2");font-weight:100 900;font-style:italic}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;color:#e7e7e7;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#app{position:relative;width:1495px;height:962px;margin:0 auto;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.abs{position:absolute}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:1px solid #888;outline-offset:2px}
+#logo{left:258px;top:2px;font:500 46px/50px "EB Garamond",serif;color:#f4f4f4}
+#count{left:1044px;top:23px;font-size:14px;line-height:18px;color:#5d5d60}
+#count i{font-style:normal;margin-left:10px;font-size:10px}
+#save{left:1098px;top:18px;width:101px;height:28px;background:#2c2c2f;border-radius:5px;display:flex;align-items:center;font-size:14px;font-weight:500;color:#c5c5c8}
+#save svg{margin:0 9px 0 12px}
+#save i{position:absolute;right:0;top:0;width:24px;height:28px;border-left:1px solid #454548;font-style:normal;text-align:center;line-height:22px;font-size:11px}
+#more{left:1212px;top:17px;width:31px;height:30px;background:#2c2c2f;border-radius:5px;font-size:16px;line-height:26px;font-weight:700;letter-spacing:0;text-align:center}
+.tbtn{display:flex;align-items:center;justify-content:center;color:#c9c9cc;border-radius:5px;height:32px}
+.tbtn.on{background:#3a3a3d;color:#f2f2f2}
+.tbtn:hover{background:#2a2a2d}
+#adj{left:258px;top:92px;width:33px}
+#tog{left:299px;top:101px;width:27px;height:14px;border-radius:7px;background:#252527}
+#tog::before{content:"";position:absolute;left:1px;top:1px;width:12px;height:12px;border-radius:50%;background:#f4f1ea;transition:left .18s}
+#tog.dark::before{left:14px}
+#div{left:342px;top:96px;width:1px;height:25px;background:#2e2e30}
+#i1{left:350px;top:92px;width:26px}#i2{left:378px;top:92px;width:26px}#i3{left:406px;top:92px;width:26px}
+#row2{transition:opacity .15s}
+#font{left:258px;top:131px;width:140px;height:32px;background:#1e1e20;border:0;border-radius:5px;color:#d8d8d8;font:500 12.5px "EB Garamond",serif;padding:0 8px;-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,#999 50%,#999 56%,transparent 56%),linear-gradient(-45deg,transparent 50%,#999 50%,#999 56%,transparent 56%);background-size:6px 6px;background-position:122px 13px,127px 13px;background-repeat:no-repeat}
+#lh{left:407px;top:131px;width:50px;gap:7px;font-size:11px;color:#6d6d70}
+#capBtn{left:464px;top:131px;width:41px;font-size:11px;gap:6px}
+#capIcon{width:15px;height:15px;display:block}
+#hy{left:517px;top:131px;width:36px;font-size:12px;color:#c9c9cc}#hy.off{color:#5d5d60;text-decoration:line-through}
+#just{left:561px;top:131px;width:34px}#just.off{color:#5d5d60}#fit{left:593px;top:131px;width:34px}
+#src{left:268px;top:182px;width:364px;font-size:14.5px;line-height:24.2px;color:#f5f5f5;font-weight:450;outline:0;min-height:60px}
+#doc{left:673px;top:153px;width:570px;background:#f5f5f3;border-radius:20px;padding:109px 150px 109px 161px;color:#1c1b19;transition:background .2s,color .2s}
+#doc.dark{background:#1b1a18;color:#e8e6e0}
+#page{font:400 18px/22.9px "EB Garamond",serif;text-align:justify;hyphens:none;width:258px}
+#page.hy{hyphens:auto}#page.left{text-align:left}
+#page.swap{animation:swap .3s cubic-bezier(.2,.7,.2,1)}
+@keyframes swap{from{filter:blur(3.5px);opacity:.75}to{filter:blur(0);opacity:1}}
+#cap{float:left;display:block;margin:3px 5px 0 0}
+#cap.big{font:400 1em/1 "EB Garamond",serif}
+#foot{left:707px;top:913px;font-size:12px;line-height:18px;color:#5d5d60}
+#foot u{text-decoration:underline dotted;text-underline-offset:3px}
+#panel{left:464px;top:167px;width:226px;background:#1b1b1d;border-radius:6px;display:none;box-shadow:0 0 0 1px #000;font-size:12.5px;color:#a4a4a7;padding-bottom:14px;z-index:5;transform-origin:50% 0}
+#panel.open{display:block;animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;translate:0 -4px}to{opacity:1;translate:0 0}}
+.pr{position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 13px}
+.switch{position:relative;width:44px;height:23px;border-radius:12px;background:#333336;cursor:pointer;border:0;flex:none}
+.switch::before{content:"";position:absolute;left:2px;top:2px;width:19px;height:19px;border-radius:50%;background:#7a7a7d;transition:left .18s,background .18s}
+.switch.on{background:#68686b}.switch.on::before{left:23px;background:#f4f4f4}
+#lines{-webkit-appearance:none;appearance:none;display:block;width:200px;height:14px;margin:8px 13px 0;background:none}
+#lines::-webkit-slider-runnable-track{height:2px;background:#46464a;border-radius:1px}
+#lines::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#4a4a4e;border:1px solid #77777b;margin-top:-5px}
+#lines::-moz-range-track{height:2px;background:#46464a}#lines::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#4a4a4e;border:1px solid #77777b}
+.cap-h{text-align:center;color:#8b8b8e;font-size:12.5px;line-height:16px}
+.opts{display:grid;grid-template-columns:1fr 1fr;column-gap:2px;padding:0 13px;justify-items:stretch}
+.opt{height:50px;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;line-height:12px;color:#77777a;transition:background .15s}
+.opt.on{background:#3a3a3d;color:#d6d6d8}.opt:hover:not(.on){background:#262628}
+.opts.tall .opt{height:72px}
+.opt .mi{display:block;width:18px;height:18px}
+.mi{background:#c9c9cc;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+#capIcon.mi{display:block;width:15px;height:15px}
+#cap.orn{display:block;float:left;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.opts.tall .opt .mi{width:28px;height:28px}
+.opts.mute{opacity:.45}
+.opt .A{font:700 17px/18px "EB Garamond",serif;color:#c5c5c8}
+#styleBtn{display:flex;justify-content:space-between;align-items:center;margin:16px 13px 0;width:200px;height:30px;padding:0 6px;color:#8b8b8e;font-size:12.5px;border-top:1px solid #252527}
+#stylePanel{display:none;padding:2px 0 4px}#stylePanel.open{display:block}
+#swatches{display:flex;gap:2px;margin:6px 13px 0;padding:3px;background:#242426;border-radius:5px}
+#swatches button{flex:1;height:24px;border-radius:4px;display:grid;place-items:center}
+#swatches button.on{background:#3a3a3d}
+#swatches i{display:block;width:13px;height:13px;border-radius:2px}
+.notes{max-width:640px;margin:0 auto;padding:36px 20px 80px;color:#8f8f92;font:13px/1.7 Inter,sans-serif;border-top:1px solid #1e1e20}
+.notes h3{font-size:14px;color:#eee;margin:0 0 8px}.notes dt{margin-top:10px}.notes dd{margin:2px 0 0}.notes code{color:#e8e8e8;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="abs" id="logo" aria-label="logo">a</div>
+  <div class="abs" id="count"><span id="n">511</span><i>⌄</i></div>
+  <button class="abs" id="save"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1.5 1.5h7l3 3v7h-10zM4 1.5v3h4v-3M3.5 11.5v-4h6v4"/></svg>save<i>⌄</i></button>
+  <button class="abs" id="more" aria-label="more">⋮</button>
+
+  <button class="abs tbtn on" id="adj" aria-label="settings"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 4h7M11 4h4M1 8h2M6 8h9M1 12h8M12 12h3M8 2.5v3M3 6.5v3M9 10.5v3"/></svg></button>
+  <button class="abs" id="tog" aria-label="dark page"></button>
+  <span class="abs" id="div"></span>
+  <button class="abs tbtn" id="i1" aria-label="padding"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="13" height="13" rx="1.5"/><rect x="4.5" y="4.5" width="6" height="6"/></svg></button>
+  <button class="abs tbtn" id="i2" aria-label="smileys"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7.5" cy="7.5" r="6.3"/><path d="M4.8 9c.8 1.3 4.6 1.3 5.4 0"/><path d="M5.3 5.6h.1M9.6 5.6h.1" stroke-width="1.6"/></svg></button>
+  <button class="abs tbtn" id="i3" aria-label="sparkle"><svg width="17" height="17" viewBox="0 0 15 15" fill="currentColor"><path d="M6 1.5l1.3 4.2 4.2 1.3-4.2 1.3L6 12.5 4.7 8.3.5 7l4.2-1.3zM12 8.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg></button>
+
+  <div id="row2">
+    <select class="abs" id="font" aria-label="font"><option>EB Garamond</option></select>
+    <div class="abs tbtn" id="lh"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#a9a9ac" stroke-width="1.1"><rect x="1" y="1" width="11" height="11" rx="1"/><path d="M1 6.5h11"/></svg>1.3</div>
+    <button class="abs tbtn on" id="capBtn" aria-expanded="false" aria-label="drop cap"><canvas id="capIcon" width="30" height="30"></canvas><span id="capN">5</span></button>
+    <button class="abs tbtn" id="hy">hy-ph</button>
+    <button class="abs tbtn" id="just" aria-label="justify"><svg width="13" height="13" viewBox="0 0 13 13" stroke="currentColor" stroke-width="1.2"><path d="M1 2h11M1 5h11M1 8h11M1 11h11"/></svg></button>
+    <button class="abs tbtn" id="fit" aria-label="fit"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 4V1h3M10 1h3v3M13 10v3h-3M4 13H1v-3"/><rect x="4" y="4" width="6" height="6"/></svg></button>
+  </div>
+
+  <div class="abs" id="src" contenteditable="plaintext-only" spellcheck="false">What is it that makes things beautiful? <em>A perceptible excess of consideration.</em> Our environment used to be coated with little surpluses of consideration—like wiggles and floral motifs in lamp posts and public fountains. All these small things contribute to an ambient atmosphere of beauty; and, more importantly, they announce that <em>there is no thing too menial to deserve aesthetic refinement.</em> Alembic's mission is this, but applied to <em>ideas:</em> there is no thought too menial to be worth a considered presentation.</div>
+
+  <div class="abs" id="doc"><div id="page"></div></div>
+
+  <div class="abs" id="panel">
+    <div class="pr" style="height:44px;padding-top:6px"><span>enable drop cap</span><button class="switch on" id="en" aria-label="enable drop cap"></button></div>
+    <div class="pr" style="height:18px;margin-top:8px;color:#8b8b8e"><span>lines</span><span id="linesV" style="color:#6d6d70;font-size:11px">5</span></div>
+    <input id="lines" type="range" min="2" max="9" value="5" aria-label="lines">
+    <div class="cap-h" style="margin-top:20px">look</div>
+    <div class="opts" id="looks" style="margin-top:6px">
+      <button class="opt" data-look="regular"><span class="A">A</span>regular</button>
+      <button class="opt on" data-look="ornamental"><canvas data-i="floral squares" width="54" height="54"></canvas>ornamental</button>
+    </div>
+    <div class="cap-h" style="margin-top:17px">initials</div>
+    <div class="opts tall" id="sets" style="margin-top:6px">
+      <button class="opt" data-set="filled"><canvas width="78" height="102"></canvas>filled</button>
+      <button class="opt on" data-set="floral"><canvas width="78" height="102"></canvas>floral</button>
+      <button class="opt" data-set="floral squares"><canvas width="78" height="102"></canvas>floral squares</button>
+      <button class="opt" data-set="wiggly"><canvas width="78" height="102"></canvas>wiggly</button>
+    </div>
+    <button id="styleBtn" aria-expanded="false"><span>style</span><span id="styleI">⌄</span></button>
+    <div id="stylePanel">
+      <div class="pr" style="height:34px"><span>run-in small caps</span><button class="switch on" id="runin" aria-label="run-in small caps"></button></div>
+      <div class="pr" style="height:18px;color:#8b8b8e"><span>cap color</span></div>
+      <div id="swatches">
+        <button class="on" data-c="" aria-label="ink"><i style="background:linear-gradient(135deg,transparent 46%,#8b8b8e 46%,#8b8b8e 54%,transparent 54%)"></i></button>
+        <button data-c="#b8532f" aria-label="red"><i style="background:#c8452f"></i></button>
+        <button data-c="#2f4aa0" aria-label="blue"><i style="background:#2f4aa0"></i></button>
+        <button data-c="#c29a35" aria-label="gold"><i style="background:#c29a35"></i></button>
+        <button data-c="#4c7f4a" aria-label="green"><i style="background:#4c7f4a"></i></button>
+        <button data-c="#222" aria-label="black"><i style="background:#2c2c2c"></i></button>
+      </div>
+    </div>
+  </div>
+  <div class="abs" id="foot"><u>sign in</u> &nbsp;·&nbsp; ○</div>
+</div>
+<div class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#page</code></dt><dd>排版页：左侧文本实时变成右侧的两端对齐书页，首字占 N 行，后面整词转大写。</dd>
+<dt><code>#panel</code></dt><dd>首字下沉面板：开关、行数、普通或装饰、四组字母、着色。</dd>
+<dt><code>#sets</code></dt><dd>装饰字母：四组 A–Z 共 104 张，从原站放大截图，转成透明蒙版；颜色由背景色决定，选项小图用同一张 A。</dd>
+</dl>
+</div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const state={on:true,lines:5,look:'ornamental',set:'floral',runin:true,color:'',dark:false,hy:false,just:true};
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+// --- 字母图：从原站 alembic.space/editor 放大截图取得，只留本机 --------------
+const DIR={filled:'filled',floral:'floral','floral squares':'floral-squares',wiggly:'wiggly'};
+const AR={"filled":{"A":0.925,"B":0.915,"C":0.983,"D":1.019,"E":0.892,"F":0.912,"G":0.923,"H":0.938,"I":1.01,"J":0.906,"K":0.915,"L":0.902,"M":0.96,"N":0.985,"O":0.912,"P":1.038,"Q":0.985,"R":0.912,"S":0.898,"T":1.025,"U":1.01,"V":0.923,"W":0.979,"X":1.01,"Y":1.019,"Z":1.04},"floral":{"A":1.019,"B":1.012,"C":1.019,"D":1.0,"E":1.0,"F":1.006,"G":1.0,"H":0.981,"I":1.002,"J":1.01,"K":1.01,"L":1.035,"M":1.017,"N":1.019,"O":0.917,"P":1.012,"Q":1.002,"R":1.015,"S":0.977,"T":1.01,"U":1.012,"V":0.99,"W":0.99,"X":0.819,"Y":0.748,"Z":1.015},"floral-squares":{"A":0.996,"B":0.994,"C":1.0,"D":1.0,"E":1.056,"F":0.994,"G":0.994,"H":0.96,"I":0.996,"J":0.983,"K":1.006,"L":0.969,"M":1.0,"N":0.985,"O":1.019,"P":0.99,"Q":0.981,"R":1.006,"S":0.981,"T":1.0,"U":0.994,"V":0.994,"W":0.931,"X":1.0,"Y":0.988,"Z":0.983},"wiggly":{"A":0.994,"B":0.994,"C":1.019,"D":0.979,"E":0.994,"F":1.052,"G":0.965,"H":0.969,"I":0.985,"J":0.958,"K":1.023,"L":0.979,"M":1.006,"N":0.971,"O":0.977,"P":0.996,"Q":0.969,"R":1.006,"S":1.0,"T":0.969,"U":1.006,"V":0.996,"W":0.994,"X":1.0,"Y":0.994,"Z":0.992}};
+const letterURL=(set,ch)=>`source-assets/letters/${DIR[set]}/${ch}.png`;
+function maskStyle(el,url){el.style.webkitMaskImage=el.style.maskImage=`url("${url}")`}
+Object.keys(DIR).forEach(st=>{new Image().src=letterURL(st,'A');new Image().src=letterURL(st,'W')});
+// --------------------------------------------------------------------------
+function firstText(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.textContent.trim())return n}return null}
+function compose(animate){
+ const pg=$('#page'),src=$('#src');
+ const c=src.cloneNode(true),ft=firstText(c);pg.innerHTML='';
+ let ch='';
+ if(ft&&state.on){
+  const tx=ft.textContent.replace(/^\s+/,'');ch=tx[0]||'';let rest=tx.slice(1);
+  const m=rest.match(/^[^\s]*/);const word=m?m[0]:'';rest=rest.slice(word.length);
+  const frag=document.createDocumentFragment();
+  if(word){const sp=document.createElement('span');sp.textContent=state.runin?word.toUpperCase():word;frag.append(sp)}
+  frag.append(document.createTextNode(rest));ft.replaceWith(frag);
+ }
+ pg.append(...c.childNodes);
+ const lh=22.9;
+ if(ch){
+  const H=Math.round(state.lines*lh-(state.look==='ornamental'?9:4));
+  const CH=ch.toUpperCase();
+  if(state.look==='ornamental'&&/^[A-Z]$/.test(CH)){
+   const W=H*AR[DIR[state.set]][CH],m=document.createElement('span');
+   m.id='cap';m.className='orn';m.setAttribute('role','img');m.setAttribute('aria-label',CH);
+   m.style.width=W+'px';m.style.height=H+'px';m.style.background=state.color||(state.dark?'#e8e6e0':'#111');maskStyle(m,letterURL(state.set,CH));pg.prepend(m);
+  }else{
+   const sp=document.createElement('span');sp.id='cap';sp.className='big';sp.textContent=ch.toUpperCase();
+   sp.style.fontSize=(H*1.18)+'px';sp.style.lineHeight=H+'px';sp.style.height=H+'px';sp.style.color=state.color||'';pg.prepend(sp);
+  }
+ }
+ pg.classList.toggle('hy',state.hy);pg.classList.toggle('left',!state.just);
+ $('#doc').classList.toggle('dark',state.dark);
+ $('#n').textContent=src.textContent.length;$('#capN').textContent=state.lines;$('#linesV').textContent=state.lines;
+ $('#looks').querySelectorAll('.opt').forEach(b=>b.classList.toggle('on',b.dataset.look===state.look));
+ $('#sets').querySelectorAll('.opt').forEach(b=>b.classList.toggle('on',b.dataset.set===state.set));
+ $('#sets').classList.toggle('mute',state.look!=='ornamental');
+ if(animate&&!reduce){pg.classList.remove('swap');void pg.offsetWidth;pg.classList.add('swap')}
+}
+function paintIcons(){
+ const put=(c,set)=>{const m=document.createElement('span');m.className='mi'+(c.id?' '+c.id:'');if(c.id)m.id=c.id;if(c.dataset.i)m.dataset.i=c.dataset.i;maskStyle(m,letterURL(set,'A'));c.replaceWith(m)};
+ $$('#sets canvas').forEach(c=>put(c,c.parentElement.dataset.set));
+ put($('[data-i]'),'floral squares');
+ put($('#capIcon'),'floral squares');
+}
+$('#capBtn').onclick=()=>{const p=$('#panel'),o=p.classList.toggle('open');$('#capBtn').setAttribute('aria-expanded',o)};
+$('#en').onclick=e=>{state.on=!state.on;e.target.classList.toggle('on',state.on);compose(true)};
+$('#lines').oninput=e=>{state.lines=+e.target.value;compose(false)};
+$('#looks').onclick=e=>{const b=e.target.closest('.opt');if(b){state.look=b.dataset.look;compose(true)}};
+$('#sets').onclick=e=>{const b=e.target.closest('.opt');if(b){state.set=b.dataset.set;state.look='ornamental';compose(true)}};
+$('#styleBtn').onclick=()=>{const o=$('#stylePanel').classList.toggle('open');$('#styleI').textContent=o?'⌃':'⌄';$('#styleBtn').setAttribute('aria-expanded',o)};
+$('#runin').onclick=e=>{state.runin=!state.runin;e.target.classList.toggle('on',state.runin);compose(true)};
+$('#swatches').onclick=e=>{const b=e.target.closest('button');if(b){state.color=b.dataset.c;$$('#swatches button').forEach(o=>o.classList.toggle('on',o===b));compose(true)}};
+$('#tog').onclick=e=>{state.dark=!state.dark;e.target.classList.toggle('dark',state.dark);compose(true)};
+$('#adj').onclick=e=>{const hide=e.currentTarget.classList.toggle('on')===false;$('#row2').style.display=hide?'none':'';$('#panel').classList.remove('open')};
+$('#hy').onclick=e=>{state.hy=!state.hy;e.target.style.color=state.hy?'#fff':'';compose(false)};
+$('#just').onclick=e=>{state.just=!state.just;e.currentTarget.classList.toggle('off',!state.just);compose(false)};
+$('#src').addEventListener('input',()=>compose(false));
+function fit(){const z=Math.min(1,innerWidth/1495);$('#app').style.zoom=z}
+addEventListener('resize',fit);fit();
+document.fonts.load('700 40px "EB Garamond"').then(()=>Promise.all([document.fonts.load('400 18px "EB Garamond"'),document.fonts.load('italic 400 18px "EB Garamond"')])).then(()=>{paintIcons();compose(false)});
+</script>
+</body>
+</html>

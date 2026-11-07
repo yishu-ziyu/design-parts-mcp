@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一圈旗子慢慢转</title>
+<style>
+:root{--paper:#f4efe4;--ink:#1c1914;--muted:#5c564c;--serif:"Iowan Old Style",Palatino,"Songti SC","Noto Serif SC",Georgia,serif;--sans:-apple-system,"SF Pro Text","PingFang SC",Inter,Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16.5px/1.55 var(--serif)}
+header{max-width:760px;margin:auto;padding:48px 24px 14px;text-align:center}h1{font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;margin:0 0 8px}header p{margin:0;font-style:italic;color:var(--muted)}
+#stage{max-width:760px;margin:20px auto 0;background:#fff;border:1px solid var(--ink);display:grid;place-items:center;padding:42px 16px 0;overflow:hidden}
+.phone{width:min(372px,100%);height:600px;background:#f0f0f1;border-radius:48px 48px 0 0;border:7px solid #23242a;border-bottom:0;box-shadow:26px 24px 50px -22px #0003;padding:18px 20px 0;font-family:var(--sans);overflow:hidden;position:relative}
+.status{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;padding:0 14px}.island{width:88px;height:25px;border-radius:99px;background:#101012}.bat{width:24px;height:11px;border-radius:3px;background:#111}
+.back{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;margin-top:20px;font-size:15px;box-shadow:0 1px 2px #0000000d}
+#ring{position:relative;height:150px;margin-top:16px}
+.flag{position:absolute;left:50%;top:50%;width:78px;height:78px;margin:-39px 0 0 -39px;border-radius:50%;overflow:hidden;will-change:transform,filter;box-shadow:0 5px 12px -5px #0000004d}
+.flag svg{display:block;width:100%;height:100%}.flag:after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 34% 26%,#ffffff55,#fff0 46%),radial-gradient(circle at 70% 82%,#0000001f,#0000 56%);box-shadow:inset 0 0 0 1px #00000014,inset 0 2px 3px #ffffff4d}
+h2{font:500 21px/1.25 var(--sans);text-align:center;margin:10px 0 4px;letter-spacing:-.01em}.sub{font-size:14px;line-height:1.4;color:#6d6d72;text-align:center;margin:0 12px 18px}
+.list{background:#f5f5f6;border:1px solid #e3e3e6;border-radius:18px}.li{display:grid;grid-template-columns:20px 1fr;gap:6px 10px;padding:13px 14px;border-top:1px solid #e6e6e8}.li:first-child{border:0}.n{font-style:normal;width:18px;height:18px;border-radius:50%;background:#333;color:#fff;font-size:11px;display:grid;place-items:center;margin-top:1px}.li b{font-weight:500;font-size:14px;display:block}.li span{font-size:12.5px;line-height:1.35;color:#6d6d72;display:block}
+.note{max-width:760px;margin:26px auto 60px;padding:0 24px}h3{font-weight:500;font-size:17px;margin:18px 0 6px}dl{margin:0;font-size:15px}dt code{font-size:13px}dd{margin:2px 0 12px}
+</style></head><body>
+<header><h1>一圈旗子慢慢转</h1><p>七枚徽章绕一个扁椭圆转。前面的大而清楚，后面的小而模糊，空间感只靠三个数。</p></header>
+<div id="stage"><div class="phone"><div class="status"><span>9:41</span><i class="island"></i><i class="bat"></i></div><div class="back" aria-hidden="true">‹</div>
+<div id="ring" role="img" aria-label="七枚国家和地区旗帜徽章缓慢旋转"></div>
+<h2>Receive and send cash</h2><p class="sub">Get your bank details to receive payments directly into your account.</p>
+<div class="list"><div class="li"><i class="n">1</i><div><b>Verify your details</b><span>We need a few more details to enable bank transfers.</span></div></div><div class="li"><i class="n">2</i><div><b>Make your first transfer</b><span>Add money, receive payments, or send money to others.</span></div></div></div></div></div>
+<div class="note"><h3>可拆</h3><dl><dt><code>#ring</code></dt><dd>七枚圆徽章均匀放在椭圆上，每帧走一点。深度 d 从 0 到 1：缩放 0.62→1.08，模糊 2.6px→0，层级跟随深度。徽章自身随角度倾斜 ±18°。转一格约 1.27s，匀速，不停顿。</dd></dl>
+<p>来源：<a href="https://x.com/60fpsdesign/status/2109604725880762373">@60fpsdesign</a>，2026-10-12，Plasma 的界面。旗帜和代码为本页自绘自写，不收品牌。</p></div>
+<script>
+const star=(x,y,r,f)=>{let p='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,q=i%2?r*.42:r;p+=(i?'L':'M')+(x+q*Math.cos(a)).toFixed(2)+' '+(y+q*Math.sin(a)).toFixed(2)}return `<path d="${p}Z" fill="${f}"/>`};
+const eu=[...Array(12)].map((_,i)=>{const a=i*Math.PI/6;return star(50+25*Math.cos(a),50+25*Math.sin(a),5.2,'#ffd84d')}).join('');
+const us=[...Array(7)].map((_,i)=>`<rect y="${i*14.3}" width="100" height="7.15" fill="#ee2f62"/>`).join('');
+const F=[`<rect width="100" height="100" fill="#79ac55"/><path d="M50 18 91 50 50 82 9 50Z" fill="#f4dd5b"/><circle cx="50" cy="50" r="17" fill="#2f6fd6"/><path d="M33 47q18-6 34 4v5q-17-9-34-4Z" fill="#fff"/>`,
+`<rect width="100" height="100" fill="#f2f0ec"/><rect width="34" height="100" fill="#79ac55"/><rect x="66" width="34" height="100" fill="#ec2f6f"/><path d="M40 47q10 8 20 0-1 15-10 16-9-1-10-16Z" fill="#7da457"/><path d="M38 44l12 6 12-6-5 8H43Z" fill="#ef9a35"/>`,
+`<rect width="100" height="50" fill="#f6da55"/><rect y="50" width="100" height="26" fill="#2d6fd3"/><rect y="76" width="100" height="24" fill="#ee2f62"/>`,
+`<rect width="100" height="100" fill="#fff"/>${us}<rect width="50" height="50" fill="#2d6fd3"/>${[...Array(9)].map((_,i)=>star(9+(i%3)*16,9+Math.floor(i/3)*15,3.2,'#fff')).join('')}`,
+`<rect width="100" height="100" fill="#2f73d8"/>${eu}`,
+`<rect width="100" height="100" fill="#3f8ed6"/><path d="M0 0 100 100M100 0 0 100" stroke="#fff" stroke-width="20"/><path d="M0 0 100 100M100 0 0 100" stroke="#ee2f62" stroke-width="7"/><path d="M50 0V100M0 50H100" stroke="#fff" stroke-width="30"/><path d="M50 0V100M0 50H100" stroke="#ee2f62" stroke-width="17"/>`,
+`<rect width="100" height="34" fill="#7cae57"/><rect y="34" width="100" height="33" fill="#f1f0ed"/><rect y="67" width="100" height="33" fill="#0d0d0f"/><rect width="28" height="100" fill="#c81f4e"/>`];
+const ring=document.getElementById('ring'),els=F.map(s=>{const d=document.createElement('div');d.className='flag';d.innerHTML=`<svg viewBox="0 0 100 100" aria-hidden="true">${s}</svg>`;ring.append(d);return d});
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,SLOT=1270,N=F.length;
+const q=new URLSearchParams(location.search);const start=q.has('t')?+q.get('t'):0;
+function draw(t){els.forEach((e,i)=>{const a=(i/N)*2*Math.PI+t/(SLOT*N)*2*Math.PI;const d=(Math.sin(a)+1)/2;const x=Math.cos(a)*88,y=Math.sin(a)*22+2;const s=.62+d*.46;const b=(1-d)*2.6;const tilt=Math.cos(a)*-18;e.style.transform=`translate(${x.toFixed(2)}px,${y.toFixed(2)}px) scale(${s.toFixed(3)}) rotate(${tilt.toFixed(1)}deg)`;e.style.filter=b<.1?'none':`blur(${b.toFixed(2)}px)`;e.style.zIndex=Math.round(d*100)})}
+draw(start);if(!reduce&&!q.has('t')){const t0=performance.now();(function l(n){draw(n-t0);requestAnimationFrame(l)})(t0)}
+</script></body></html>

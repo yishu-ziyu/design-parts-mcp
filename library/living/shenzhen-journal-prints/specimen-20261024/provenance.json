@@ -1,0 +1,14 @@
+{
+  "saved_at": "2026-10-24",
+  "kind": "frozen runnable specimen",
+  "source_directory": "<local-path>",
+  "runtime_entry": "index.html",
+  "source_files": {
+    "index.html": "1a78b95bc260a7562494e5201ebe1650d933301a43bacefcd0a496574bdbe44e",
+    "app.js": "88b04da0c0f71b80613737f89a4c82726507694de540cf35cae111d5ba08d65c",
+    "assets.js": "126f1fe63928983759463f69bc0655d56132614311b1de07df81026b656eef95",
+    "generation.js": "a035de4c376dea520a2ef8e3d78efb9627980d641a304c344a66ce5047564549",
+    "generation.css": "ea7d447ea450934df5c14b054411b65c66ebe51b35cc933b1d46a3193990f222"
+  },
+  "local_change": "Page title identifies the library specimen; reference navigation points to bundled sources.html. Runtime logic is unchanged."
+}

@@ -1,0 +1,91 @@
+/* ONE OBJECT, NOT TWO. Everything follows from that.
+
+   The obvious build is an icon that fades out and an input
+   that fades in â obvious because it is easy, and wrong
+   because two things swapping is never mistaken for one thing
+   changing, however well the crossfade is tuned. So there is
+   a single box whose WIDTH is the state, with the icon and
+   the field both inside it the whole time.
+
+   Which turns the interesting problems into geometry rather
+   than choreography. */
+
+/* 1 Â· THE LENS NEVER MOVES relative to the box. It sits at a
+      fixed inset from the left edge â and at the closed width
+      that inset happens to centre it:
+
+        (44 - 18) / 2 = 13
+
+      13 is also the padding the open field wants. One number
+      is both "centred in a circle" and "aligned in a field",
+      so the lens travelling leftward across the page is not
+      an animation anybody wrote. It is the box growing around
+      a mark that stayed put. */
+left: var(--inset);
+
+/* 2 Â· IT GROWS FROM ITS MIDDLE, so the composition stays
+      centred at every frame. From the left would pin the lens
+      and throw the field off centre; from the right would
+      slide the lens across the page. Neither is the object
+      transforming, and both are what you get by accident. */
+
+/* 3 Â· ONE SHAPE RULE. Fully round at every width: at 44 it is
+      a circle, at 320 a pill, and those are the same
+      statement rather than two ends of a tween. The radius
+      used to interpolate 22 â 13, which was a second thing
+      that had to agree with the first â a stadium corner
+      needs no agreement at all. Height is fixed, so it cannot
+      be anything else. */
+border-radius: 999px;
+
+/* FLAT, AND GLASS ONLY IF ASKED. The surface reads --pane,
+   the bench's own material token, so it follows the Glass
+   dial rather than deciding for itself: 0 resolves to a solid
+   board, 100 to the frosted pane. It was a translucent ink
+   wash with an inset hairline â glass by every visual measure
+   while answering to no control, which is the worst of both,
+   because it could not be turned off.
+
+   And it picks up Fill for free: flat resolves --pane to
+   --board, and Fill redeclares --board, so a dark fill gives
+   a dark pill without this rule naming a colour.
+
+   The edge is the same story. It is a transparent ::before
+   until Stroke colours it â a hairline nobody switched on is
+   a hairline the control cannot remove. */
+background: var(--pane);
+
+/* 4 Â· ONE NUMBER DRIVES EVERYTHING. The width is sprung in
+      JS; the radius, the placeholder's opacity and its slide
+      are all read off how far through that spring it is. That
+      is the whole reason the transformation reads as
+      continuous â with one source there is nothing that can
+      arrive at the wrong time relative to anything else. */
+const p = (w - SHUT) / (OPEN - SHUT);
+--say: clamp((p - 0.55) / 0.45, 0, 1);   /* the last third */
+
+/* THE PRESS IS A REAL BEAT. A click compresses the object for
+   90ms before it expands: a thing that yields before it moves
+   reads as having been pushed, and a thing that only moves
+   reads as having been triggered. Long enough to feel, short
+   enough that nobody waits for it. */
+
+/* FOCUS LANDS WITH THE EXPANSION, not at the end of it, so
+   the caret is already there when the field arrives. Waiting
+   for the width to settle puts a visible pause between the
+   box being ready and the box being usable. */
+
+/* THE MAGNET is measured from the FRAME, which never moves,
+   and not from the object, which does. A vector read off the
+   thing it is displacing is a feedback loop â it converges,
+   but it converges by ringing, and on an object this small
+   the ring is visible as a shiver.
+
+   A few pixels, and the ceiling is the whole design: past
+   about seven it stops being a thing that acknowledges you
+   and starts being a thing you are dragging around. */
+const pull = (1 - d / R) ** 1.4 * (2 + (give / 100) * 5);
+
+/* And it is off once open. A field that drifts toward the
+   pointer while you are trying to click into it is a field
+   fighting you. */

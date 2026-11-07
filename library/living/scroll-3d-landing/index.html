@@ -1,0 +1,122 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scroll temple — replica</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Manrope";src:url(fonts/manrope.woff2) format("woff2");font-weight:200 800;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}html{background:#05070b}
+body{font-family:"Manrope",system-ui,sans-serif;color:#e6e4dd;background:#05070b;height:5500px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+#doc{position:absolute;left:0;top:0;width:1178px;height:5500px;pointer-events:none}#doc>*{position:absolute}
+a,button{pointer-events:auto;color:inherit;text-decoration:none;background:none;border:0;font:inherit;cursor:pointer}
+#nav{position:fixed;left:0;top:0;width:100%;height:64px;z-index:5;pointer-events:none;border-bottom:1px solid rgba(255,255,255,.06);background:linear-gradient(rgba(5,7,11,.72),rgba(5,7,11,0))}
+#nav .lg{position:absolute;left:42px;top:20px;display:flex;gap:12px;align-items:center}#nav .lg i{width:22px;height:18px;display:block;position:relative;border-top:3px solid #e8e4da}#nav .lg i::after{content:"";position:absolute;left:8px;top:0;width:6px;height:14px;background:#c8352b}
+#nav b{font:600 10.5px/1 "Manrope";letter-spacing:.24em;display:block}#nav small{font:500 7.5px/1 "Manrope";letter-spacing:.26em;color:#6b6a68;display:block;margin-top:4px}
+#nav ul{position:absolute;right:112px;top:26px;display:flex;gap:32px;list-style:none;font:600 8.8px/1 "Manrope";letter-spacing:.2em;color:#b9b6ae}#nav li{padding-bottom:3px;border-bottom:1px solid transparent}#nav li.on{color:#e8e4da;border-color:#c8352b}
+#nav em{position:absolute;right:42px;top:27px;width:22px;height:7px;border-top:2px solid #cfccc4;border-bottom:1px solid #cfccc4}
+.h1{font-weight:400;letter-spacing:-.02em;line-height:1.085;text-transform:uppercase}.lab{font:600 8.8px/1 "Manrope";letter-spacing:.24em;color:#aaa8a0;text-transform:uppercase}.lab i{color:#c8352b;font-style:normal}
+.p{font-size:12.5px;line-height:1.72;color:#b6b4ad;font-weight:400}.num{font-weight:300;color:#cfccc4}
+#rail{position:fixed;right:40px;top:50%;width:14px;height:90px;margin-top:-45px;z-index:5;pointer-events:none}#rail i{position:absolute;right:0;height:1px;background:#6b6a68;width:10px}#rail i.on{width:18px;background:#e8e4da}
+.cell{border:1px solid rgba(255,255,255,.11);background:rgba(7,9,13,.72);padding:20px 20px 0;pointer-events:auto;transition:background .3s}.cell:hover{background:rgba(32,10,12,.9)}.cell small{font:500 9px/1 "Manrope";letter-spacing:.2em;color:#807e78}.cell h4{font:400 24px/1.1 "Manrope";letter-spacing:-.01em;margin-top:20px;color:#ece9e1}.cell h4 span{font-size:16px;color:#8a8882;margin-left:8px;letter-spacing:.14em}.cell p{font-size:11.2px;line-height:1.54;color:#8f8d87;margin-top:16px;width:250px}.cell u{text-decoration:none;position:absolute;bottom:20px;font:500 9px/1 "Manrope";letter-spacing:.14em;color:#807e78}
+.kp{left:-9999px;top:0;width:600px}
+</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script></head><body>
+<canvas id="gl"></canvas>
+<header id="nav"><div class="lg"><i></i><div><b>SAGE</b><small>HIDDEN REALMS OF KYOTO</small></div></div><ul id="links"><li>TEMPLES</li><li>GARDENS</li><li>RITUALS</li><li>AFTERLIGHT</li></ul><em></em></header>
+<div id="rail"><i style="top:0"></i><i style="top:18px"></i><i class="on" style="top:36px"></i><i style="top:54px"></i><i style="top:72px"></i></div>
+<main id="doc">
+ <div id="hero-t" style="left:0;top:0;width:1178px;height:960px">
+  <div class="lab" style="position:absolute;left:42px;top:96px"><i>●</i>&nbsp; CHAPTER 00 — THE HIDDEN GATE</div>
+  <h1 class="h1" style="position:absolute;left:41px;top:120px;font-size:38px">Where stillness<br>reveals the<br>unseen.</h1>
+  <p class="p" style="position:absolute;left:41px;top:257px;width:280px;font-size:11.6px">Enter Kyoto through its quiet thresholds, where ritual, craft, and memory shape the path.</p>
+  <div style="position:absolute;left:1088px;top:100px;font-size:33px;line-height:43px;width:40px;color:#cfccc4;font-weight:300">影の道</div>
+  <div class="lab" style="position:absolute;left:41px;top:855px;color:#5e5d5a">SCROLL TO ENTER &nbsp; <span style="display:inline-block;width:34px;height:1px;background:#a3a19a;vertical-align:middle"></span></div>
+  <div class="num" style="position:absolute;left:41px;top:884px;font-size:35px;word-spacing:44px;letter-spacing:.04em;border-top:1px solid rgba(255,255,255,.07);padding-top:6px;width:390px">01 02 03 04</div>
+  <div style="position:absolute;left:952px;top:825px;font-size:23px;line-height:30px;width:26px;color:#c9c6be;font-weight:300">山門</div><div class="lab" style="position:absolute;left:1012px;top:845px;width:130px;line-height:13px;color:#6b6a68;font-size:7.6px">SANMON — BEFORE THE BELL</div>
+ </div>
+ <section id="stats" style="left:0;top:860px;width:1178px;height:960px">
+  <div class="lab" style="position:absolute;left:41px;top:260px"><i>01</i> — THE SANMON</div><div style="position:absolute;left:41px;right:42px;top:265px;border-top:1px solid rgba(255,255,255,.07);margin-left:110px;width:990px"></div>
+  <h2 class="h1" style="position:absolute;left:40px;top:316px;font-size:50px">Charred<br>cypress, worn<br>stone, one gate<br>left open.</h2>
+  <p class="p" style="position:absolute;left:750px;top:337px;width:388px;font-size:13.3px;color:#cfccc4">Kage begins where the city stops: a mountain gate of cedar burned black, standing in its own weather. The soot is not decoration. It is how a board is taught to survive a hundred rainy seasons, and the first thing this place asks you to understand.</p>
+  <p class="p" style="position:absolute;left:750px;top:467px;width:392px;font-size:11.5px;color:#8f8d87">Climb the worn steps and the worship hall lifts out of the mist, its paper screens lit from inside like a lantern the size of a house. Above the eaves a vermilion moon holds its place, patient, half hidden. Nothing here is in a hurry. Neither, for the next ninety minutes, are you.</p>
+  <a class="lab" style="position:absolute;left:750px;top:592px">CROSS THE THRESHOLD &nbsp; ↗</a>
+  <div class="num" style="position:absolute;left:56px;top:735px;font-size:25px">05<div class="lab" style="margin-top:12px;font-size:7.8px;color:#5e5d5a">CHAPTERS</div></div><div class="num" style="position:absolute;left:330px;top:735px;font-size:25px">92<div class="lab" style="margin-top:12px;font-size:7.8px;color:#5e5d5a">MINUTES</div></div><div class="num" style="position:absolute;left:604px;top:735px;font-size:25px">1611<div class="lab" style="margin-top:12px;font-size:7.8px;color:#5e5d5a">HALL RAISED</div></div><div class="num" style="position:absolute;left:878px;top:735px;font-size:25px">∞<div class="lab" style="margin-top:12px;font-size:7.8px;color:#5e5d5a">STILLNESS</div></div>
+ </section>
+ <div style="left:42px;top:1700px;width:0;height:0"><div class="lab" style="position:absolute;left:0;top:744px;width:200px;font-size:7.6px;color:#5e5d5a">THE LONG CLIMB</div><div class="lab" style="position:absolute;left:695px;top:744px;width:80px;font-size:7.6px;color:#6b6a68">01 / 03</div><div class="lab" style="position:absolute;left:742px;top:416px;width:200px;font-size:7.6px;color:#6b6a68">LANTERN COURT</div><div class="lab" style="position:absolute;left:1057px;top:416px;width:60px;font-size:7.6px;color:#6b6a68">02 / 03</div><div class="lab" style="position:absolute;left:742px;top:744px;width:200px;font-size:7.6px;color:#6b6a68">THE WET COURT</div><div class="lab" style="position:absolute;left:1057px;top:744px;width:60px;font-size:7.6px;color:#6b6a68">03 / 03</div></div>
+ <section id="chap" style="left:0;top:2600px;width:1178px;height:960px">
+  <div class="lab" style="position:absolute;left:41px;top:68px"><i>03</i> — SACRED CRAFT</div><div style="position:absolute;left:158px;top:73px;width:940px;border-top:1px solid rgba(255,255,255,.08)"></div><div style="position:absolute;left:1116px;top:67px;font-size:9px;color:#8a8882">手業</div>
+  <h2 class="h1" style="position:absolute;left:40px;top:122px;font-size:50px">Five chapters.<br>Ninety minutes.<br>One quiet mind.</h2>
+  <p class="p" style="position:absolute;left:488px;top:138px;width:650px;font-size:12.2px;color:#c5c3bc">Each chapter is a walk, not a lecture. You arrive at the gate, climb the steps, sit with the lantern, and leave with one thing worth keeping.</p>
+  <div class="cell" style="position:absolute;left:40px;top:335px;width:549px;height:206px"><small>01</small><h4>The Hidden Gate<span>山門</span></h4><p>Why a gate is a sentence, and what you agree to when you walk under one.</p><u>14 min</u></div>
+  <div class="cell" style="position:absolute;left:588px;top:335px;width:548px;height:206px"><small>02</small><h4>Borrowed Scenery<span>借景</span></h4><p>Shakkei: composing with a mountain you will never own.</p><u>18 min</u></div>
+  <div class="cell" style="position:absolute;left:40px;top:540px;width:366px;height:206px"><small>03</small><h4>Charred Cypress<span>焼杉</span></h4><p>Yakisugi: burning a board black so the weather will let it live.</p><u>21 min</u></div>
+  <div class="cell" style="position:absolute;left:405px;top:540px;width:366px;height:206px"><small style="color:#c8352b">04</small><h4>Lantern Light<span>灯籠</span></h4><p>How a single ember decides the scale of everything around it.</p><u>17 min</u></div>
+  <div class="cell" style="position:absolute;left:770px;top:540px;width:366px;height:206px"><small>05</small><h4>The Vermilion Moon<span>朱月</span></h4><p>Why the moon burns red over the valley, and what the garden does with it.</p><u>22 min</u></div>
+ </section>
+ <section id="after" style="left:0;top:3500px;width:1178px;height:960px">
+  <div class="lab" style="position:absolute;left:40px;top:192px">CHAPTER 04 — AFTERLIGHT</div>
+  <p class="p" style="position:absolute;left:40px;top:298px;width:365px;font-size:11.7px">The gate does not close behind you. Take the walk whenever the noise gets loud — it is always the same path, and never the same light.</p>
+  <a class="lab" style="position:absolute;left:40px;top:458px;height:43px;line-height:42px;padding:0 24px;border:1px solid rgba(255,255,255,.2);border-radius:22px;color:#d7d4cc">BEGIN THE WALK &nbsp; ↗</a>
+  <div class="h1" style="position:absolute;left:1081px;top:119px;font-size:58px;line-height:1;writing-mode:vertical-rl;letter-spacing:-.01em;color:#ece9e1;font-weight:400">Afterlight</div>
+  <p style="position:absolute;left:230px;top:870px;width:720px;text-align:center;font-size:23px;line-height:1.38;font-weight:400;color:#c5c3bc">A five-chapter night walk through a Kyoto mountain temple. Three illustrated garden field notes sit inside a live Three.js sanctuary.</p>
+ </section>
+ <section class="kp" aria-label="可拆"><h3>可拆</h3><dl><dt><code>#gl</code></dt><dd>整页固定的 WebGL 画布，图层按滚动关键帧移动</dd><dt><code>#hero-t</code></dt><dd>首屏大字夹在场景前后层之间</dd><dt><code>#stats</code></dt><dd>文字段落和数字条随滚动移过场景</dd><dt><code>#chap</code></dt><dd>半透明章节格子，悬停变红</dd><dt><code>#after</code></dt><dd>竖排大字收尾</dd></dl></section>
+</main>
+<script type="module">
+import * as THREE from 'three';
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('gl'),antialias:true,alpha:false});renderer.setClearColor(0x05070b);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),cam=new THREE.OrthographicCamera(0,1,0,-1,-10,10);const tl=new THREE.TextureLoader();
+let pending=0;const load=u=>{pending++;const t=tl.load('source-assets/'+u,()=>{pending--;need=true});t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t};
+let need=true;const VW=1178,E=1178/1106;
+const layers=[];
+// layer(texture, x,y,w,h, keyframes[[scroll,dx,dy,scale,opacity]]) in page px
+function layer(map,x,y,w,h,kf,o={}){const mat=o.mat||new THREE.MeshBasicMaterial({map,transparent:true,depthTest:false,depthWrite:false});const seg=o.seg||1;const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1,seg,seg),mat);m.renderOrder=layers.length;scene.add(m);layers.push({m,x,y,w,h,kf,mat});return m}
+function evalK(kf,s){if(s<=kf[0][0])return kf[0];for(let i=1;i<kf.length;i++)if(s<=kf[i][0]){const a=kf[i-1],b=kf[i],t=(s-a[0])/(b[0]-a[0]||1),e=t*t*(3-2*t);return a.map((v,k)=>v+(b[k]-v)*e)}return kf[kf.length-1]}
+function canvasTex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+const backKF=[[0,0,0,1,1],[860,2,140,.72,1],[1250,2,40,.72,.7],[1500,2,-80,.72,0]];
+layer(load('hero-back.png'),0,0,1178,554,backKF);
+const stairs=canvasTex(1178,420,(x,w,h)=>{x.fillStyle='#07090d';x.fillRect(0,0,w,h);const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#150d0b');g.addColorStop(1,'#08090d');x.fillStyle=g;x.fillRect(459,0,270,h);x.strokeStyle='rgba(170,170,180,.13)';for(let i=0;i<24;i++){x.beginPath();x.moveTo(459,20+i*14);x.lineTo(729,20+i*14);x.stroke()}x.fillStyle='#4a130f';x.fillRect(456,0,9,h);x.fillRect(724,0,9,h);for(const a of[358,818]){const r=x.createRadialGradient(a,70,2,a,70,40);r.addColorStop(0,'rgba(255,170,90,.7)');r.addColorStop(.2,'rgba(170,60,40,.22)');r.addColorStop(1,'rgba(200,50,40,0)');x.fillStyle=r;x.fillRect(a-50,20,100,100)}});
+layer(stairs,0,540,1178,420,[[0,0,0,1,1],[500,0,-120,1,.6],[860,0,-200,1,0]]);
+await document.fonts.load('800 300px Manrope');
+const letters=canvasTex(1178,360,(x)=>{x.font='800 300px Manrope';x.textBaseline='alphabetic';const g=x.createLinearGradient(0,60,0,300);g.addColorStop(0,'#eef0ec');g.addColorStop(1,'#cfd3cd');x.fillStyle=g;x.fillText('S',-42,290);x.fillText('A',342,290);x.fillText('G',648,290);x.fillText('E',1040,290)});
+layer(letters,0,472,1178,360,[[0,0,0,1,1],[420,0,-240,1,.75],[800,0,-420,1,0]]);
+const mossKF=[[0,0,0,1,1],[860,0,-130,1,.45],[1200,0,-520,1,.4],[1450,0,-800,1,0]];
+layer(load('hero-moss.png'),0,500*E,1178,406*E,mossKF);layer(load('thumb.jpg'),891*E,646*E,176*E,110*E,[[0,0,0,1,1],[500,0,-260,1,.6],[800,0,-500,1,0]]);layer(load('hero-maple.png'),780*E,430*E,326*E,476*E,[[0,0,0,1,1],[500,30,-260,1,.6],[800,50,-500,1,0]]);
+const strip=(s0,s1)=>[[s0-500,0,500,1,0],[s0,0,0,1,1],[s1,0,s0-s1,1,1],[s1+250,0,s0-s1-250,1,0]];
+layer(load('fence.png'),0,790,570,170,strip(860,1250));layer(load('bonsai.png'),1000,670,178,290,strip(860,1250));
+// gallery: cloth-like card planes
+const U={uTime:{value:0},uM:{value:new THREE.Vector2(-9,-9)},uAmp:{value:0}};
+const clothMat=(map)=>new THREE.ShaderMaterial({transparent:true,depthTest:false,depthWrite:false,uniforms:{map:{value:map},uOp:{value:1},uTime:U.uTime,uM:U.uM,uAmp:U.uAmp,uRect:{value:new THREE.Vector4()}},
+vertexShader:`varying vec2 vUv;uniform float uTime,uAmp;uniform vec2 uM;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.);float d=distance(w.xy,uM);float a=uAmp*smoothstep(170.,0.,d);w.xy+=normalize(w.xy-uM+.001)*a*sin(d*.05-uTime*5.)*9.;w.xy+=vec2(sin(uv.y*6.+uTime*.8),cos(uv.x*5.+uTime*.6))*(.7+uAmp*1.4);gl_Position=projectionMatrix*viewMatrix*w;}`,
+fragmentShader:`varying vec2 vUv;uniform sampler2D map;uniform float uOp;void main(){vec4 c=texture2D(map,vUv);gl_FragColor=vec4(c.rgb,c.a*uOp);
+ #include <colorspace_fragment>
+}`});
+const galBg=canvasTex(1178,960,(x,w,h)=>{const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#070a10');g.addColorStop(.6,'#090b12');g.addColorStop(1,'#050508');x.fillStyle=g;x.fillRect(0,0,w,h);x.fillStyle='rgba(255,255,255,.035)';for(let i=0;i<18;i++)x.fillRect(240,740+i*13,780,2);x.fillStyle='#3a1110';x.fillRect(320,740,30,220);x.fillRect(760,740,30,220)});
+const gk=(a,b,o=1)=>[[a-500,0,520,1,0],[a,0,0,1,o],[b,0,0,1,o],[b+400,0,-540,1,0]];
+layer(galBg,0,0,1178,960,gk(1700,2100));
+const cards=[['card-approach.jpg',42,113,730,625],['card-lanterns.jpg',784,113,357,293],['card-moonwater.jpg',784,441,354,292]];
+for(const[f,x,y,w,h]of cards){const t=load(f),mt=clothMat(t);layer(t,x,y,w,h,gk(1700,2100),{mat:mt,seg:24})}
+layer(load('branch.png'),0,640,520,320,gk(1700,2100));layer(load('leaves.png'),810,730,368,230,gk(1700,2100));
+layer(load('chapters-bg.jpg'),0,0,1178,960,[[2100,0,300,1,0],[2500,0,0,1,1],[2800,0,-30,1,1],[3100,0,-120,1,0]]);
+layer(load('after-bg.jpg'),0,0,1178,960,[[2800,0,120,1,0],[3350,0,0,1,1],[3650,0,-20,1,1],[4100,0,-300,1,.9],[4800,0,-500,1,.5]]);
+// fireflies + falling leaves
+const N=55,pos=new Float32Array(N*3),seed=[];for(let i=0;i<N;i++){seed.push([Math.random()*1178,Math.random()*960,Math.random()*6.28,.25+Math.random()*.7])}
+const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0xcfe0ff,size:1.7,sizeAttenuation:false,transparent:true,opacity:.55,depthTest:false}));pts.renderOrder=90;scene.add(pts);
+const leafT=canvasTex(32,32,(x)=>{x.fillStyle='#a51f1c';x.beginPath();for(let i=0;i<10;i++){const a=i/10*6.283,r=i%2?7:15;x.lineTo(16+Math.cos(a)*r,16+Math.sin(a)*r)}x.fill()});
+const leaves=[];for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:leafT,transparent:true,depthTest:false,opacity:.9}));m.renderOrder=91;const z=8+Math.random()*16;m.scale.set(z,z,1);scene.add(m);leaves.push({m,x:Math.random()*1178,y:Math.random()*960,v:10+Math.random()*24,p:Math.random()*6})}
+function size(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);cam.left=0;cam.right=w;cam.top=0;cam.bottom=-h;cam.updateProjectionMatrix();need=true}
+addEventListener('resize',size);size();
+let cur=scrollY,mouse=[-9,-9],hover=0;addEventListener('pointermove',e=>{mouse=[e.clientX,-e.clientY];hover=1;need=true});addEventListener('scroll',()=>need=true,{passive:true});
+const links=[...document.querySelectorAll('#links li')];
+function apply(s){const sw=innerWidth/VW;for(const l of layers){const[,dx,dy,sc,op]=evalK(l.kf,s);l.m.visible=op>.002;if(!l.m.visible)continue;const w=l.w*sc*sw,h=l.h*sc*sw;l.m.scale.set(w,h,1);l.m.position.set((l.x*sc+dx)*sw+w/2,-((l.y*sc+dy)*sw+h/2),0);if(l.mat.uniforms)l.mat.uniforms.uOp.value=op;else l.mat.opacity=op}
+ const a=s<1200?-1:s<2300?1:s<3100?2:3;links.forEach((x,i)=>x.classList.toggle('on',i===a));document.getElementById('nav').style.borderBottomColor=s>1500?'rgba(255,255,255,.06)':'transparent';
+ document.getElementById('doc').style.transformOrigin='0 0';document.getElementById('doc').style.transform=`scale(${sw})`}
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;const t=now/1000;const target=scrollY;cur+=(target-cur)*(REDUCED?1:.14);const moving=Math.abs(target-cur)>.2;
+ hover*=.96;U.uTime.value=t;U.uM.value.set(mouse[0],mouse[1]);U.uAmp.value=hover;
+ if(REDUCED&&!need&&!moving)return;
+ apply(cur);const sw=innerWidth/VW;for(let i=0;i<N;i++){const[a,b,p,sp]=seed[i];pos[i*3]=(a+Math.sin(t*sp+p)*12)*sw;pos[i*3+1]=-(((b-t*sp*6-cur*.08)%960+960)%960)*sw;pos[i*3+2]=0}pg.attributes.position.needsUpdate=true;
+ for(const l of leaves){const y=((l.y+t*l.v-cur*.2)%960+960)%960,x=l.x+Math.sin(t*.6+l.p)*40;l.m.position.set(x*sw,-y*sw,0);l.m.rotation.z=t*.5+l.p;l.m.material.opacity=Math.max(0,1-Math.abs(cur-600)/1300)*.9}
+ renderer.render(scene,cam);need=false}
+apply(cur);requestAnimationFrame(loop);window.__ready=()=>pending===0;
+if(REDUCED)pts.visible=false;
+</script></body></html>

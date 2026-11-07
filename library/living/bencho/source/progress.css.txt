@@ -1,0 +1,6 @@
+/* dark cards stay solid. no frost, no edge highlight,
+   they are a different material to the glass. */
+background: #0e0f11;
+border-radius: 20px;
+color: #f2f1ee;
+box-shadow: none;

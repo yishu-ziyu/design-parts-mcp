@@ -1,0 +1,101 @@
+/* A button that slides away from the cursor, and then stops.
+
+   READ THIS PART FIRST. Near-miss targeting is one hop from a
+   genuine dark pattern: the same mechanism aimed the other way
+   is a close button that drifts out from under a finger, a
+   Decline placed a little harder to hit than an Accept, an
+   unsubscribe that needs a second go. It is the same code. It
+   is not the same thing only because of the count below.
+
+   What keeps this on the right side of the line:
+     Â· it gives in on its own, after a fixed number of tries
+     Â· it gives in within a few seconds, every time
+     Â· a keyboard never sees it move at all
+   Remove any one of those and you have shipped the pattern
+   you were imitating. */
+
+/* The vector from the button's HOME to the cursor, in the
+   button's own pixels â a board may be drawn at any zoom, and
+   a rect comes back in screen ones. Home, not the button's
+   current rect: measuring off a box the displacement has just
+   moved is a feedback loop, and it converges by RINGING. Ten
+   events at one fixed cursor point gave 21, 35, 26, 32, 28,
+   30, 29px â a Â±6px shiver on a 40px pill, re-seeded by every
+   event. The field never moves and the button is centred in
+   it, so the field's centre is home. */
+const box = field.getBoundingClientRect();
+const k   = box.width / field.offsetWidth;
+const dx  = (cursor.x - (box.left + box.width / 2)) / k;
+const dy  = (cursor.y - (box.top + box.height / 2)) / k;
+const distance = Math.hypot(dx, dy);
+
+/* SQUARED, not linear. The button has to be almost inert at
+   the edge of its field and bolt over the last third â
+   linear made it drift away from a cursor two rooms distant,
+   which reads as a bug rather than as nerves. */
+const flee  = (1 - distance / radius) ** 2;
+const reach = 14 + (skittishness / 100) * 106;
+
+/* The field paints nothing. It was a grey well, on the
+   reasoning that an invisible boundary reads as the button
+   sticking â right about a SMALL boundary, wrong about the
+   component. At 300x160 the clamp sat fifty pixels from home
+   and the button hit it constantly, so the wall had to be
+   drawn to explain itself; and a drawn wall is a widget in a
+   box, which is the one thing here that has a frame round it.
+   At 360x240 the clamp is over a hundred pixels out and is
+   almost never reached, so it needs no explaining. The box
+   still exists â it is what the travel is clamped to and what
+   home is measured from â it simply has no surface. */
+
+/* Away, and never out of its own container. The direction is
+   undefined when the cursor is exactly on home and INVERTS as
+   it crosses â which is the good behaviour rather than a bug:
+   the button darts around you to the other side instead of
+   being walked into a corner. Held through the undefined
+   frame, and the flip travels rather than teleporting. */
+if (distance > 6) dir = { x: -dx / distance, y: -dy / distance };
+x = clamp(dir.x * flee * reach, -room.x, room.x);
+y = clamp(dir.y * flee * reach, -room.y, room.y);
+
+/* ONE DODGE PER APPROACH. Counting every frame inside the
+   radius spends the whole joke in a third of a second; the
+   flag re-arms only on the way out of the full field, so one
+   sweep through is one dodge however fast it was. */
+if (distance < radius * 0.55 && armed) { armed = false; dodges++; }
+if (distance > radius) armed = true;
+
+/* Two durations behind one attribute. Fleeing is short â
+   long enough that the dart across the cursor travels, short
+   enough that it is never a wind-up. Coming home is soft,
+   because that one is a relief rather than a reaction. */
+.esc-btn            { transition: transform 620ms cubic-bezier(.22,1.12,.36,1); }
+.esc-btn[data-fled] { transition: transform 130ms cubic-bezier(.3,.8,.4,1); }
+
+/* Reduced motion takes the travel and leaves the joke: the
+   count still runs, it still gives in on the same dodge, and
+   the button never leaves the middle. */
+
+/* ââ Fill and Stroke âââââââââââââââââââââââââââââââââââââââââ
+   The surface reads the stage's fill tokens with its own value
+   left as the var() FALLBACK rather than as a second
+   declaration underneath, which is what lets one line serve
+   both cases.
+
+   And both happen. .bench-app carries a data-fill of its own
+   that follows the theme, so on the wall this is already
+   filled and the overlay's control is a choice to DIFFER from
+   the bench rather than a switch from nothing. The fallback is
+   for a surface mounted outside .bench-app altogether â
+   which is what this file is for, since a block lifted out of
+   this project has to draw.
+
+   --fill-on-rgb rather than --fill-on wherever the ink is not
+   at full strength, because a fallback has to nest inside the
+   rgba() to survive: rgba(var(--fill-on-rgb, var(--ink-rgb)), .78).
+
+   The hairline hangs on a ::before that is transparent until
+   [data-stroke="on"] colours it â the same ::before every
+   other surface on the bench uses. Nothing here is glass, so
+   there is no lit rim for the stroke to lose to: the hairline
+   is the only edge these can have. */

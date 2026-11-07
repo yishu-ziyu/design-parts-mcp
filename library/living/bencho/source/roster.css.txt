@@ -1,0 +1,10 @@
+/* selection lives in a Set so order of clicks never
+   leaks into the rendered order */
+const [picked, setPicked] = useState<Set<string>>(new Set());
+
+const toggle = (id: string) =>
+  setPicked((s) => {
+    const next = new Set(s);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });

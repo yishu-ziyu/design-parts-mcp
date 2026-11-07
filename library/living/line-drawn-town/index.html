@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Line Drawn Town</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Josefin;src:url(fonts/josefin.woff2) format("woff2");font-weight:100 700}
+@font-face{font-family:Inter;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:NotoJP;src:url(fonts/noto-jp.woff2) format("woff2")}
+:root{--u:calc(100vw/1344)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+html,body{margin:0;background:#fff;color:#0b0b0b;font-family:Inter,NotoJP,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+nav{position:absolute;z-index:3;left:0;right:0;top:0;height:calc(var(--u)*120);font-size:calc(var(--u)*18)}
+nav>*{position:absolute;top:calc(var(--u)*60);transform:translateY(-50%);display:flex;align-items:center;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+#logo{left:calc(var(--u)*70);gap:calc(var(--u)*8);font:400 calc(var(--u)*27)/1 Josefin,sans-serif;letter-spacing:.015em;color:#222}
+#logo svg{width:calc(var(--u)*22);height:calc(var(--u)*32);margin-top:calc(var(--u)*-5)}
+nav a:hover{opacity:.55}
+#lang{left:calc(var(--u)*1166);gap:calc(var(--u)*12);font-family:NotoJP,sans-serif;font-weight:500;letter-spacing:.02em;-webkit-text-stroke:.3px #111}
+#lang svg{width:calc(var(--u)*24);height:calc(var(--u)*24)}
+#lang i{font-style:normal;font-size:calc(var(--u)*13);margin-left:calc(var(--u)*5);margin-top:calc(var(--u)*7)}
+#hero{position:relative;height:100vh;min-height:calc(var(--u)*900);overflow:hidden}
+h1{position:absolute;z-index:1;left:0;right:0;top:calc(var(--u)*233);margin:0;text-align:center;font:400 calc(var(--u)*115.6)/calc(var(--u)*129.5) Josefin,sans-serif;letter-spacing:-.025em}
+#sub{position:absolute;z-index:1;left:0;right:0;top:calc(var(--u)*537);text-align:center;font:400 calc(var(--u)*18.2)/calc(var(--u)*40) NotoJP,sans-serif;letter-spacing:.14em;color:#5c5c5c}
+#band{position:absolute;left:0;right:0;top:calc(var(--u)*573.5);height:calc(var(--u)*440);z-index:2;overflow:hidden;}
+#far{position:absolute;left:0;top:0;height:100%;max-width:none;will-change:transform}
+#town,#actors{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+#actors{cursor:pointer}
+#bar{position:absolute;z-index:3;right:0;bottom:calc(var(--u)*26);left:0;height:calc(var(--u)*24);font:400 calc(var(--u)*16)/calc(var(--u)*24) NotoJP,sans-serif;letter-spacing:.08em}
+#bar>*{position:absolute;top:0;background:none;border:0;padding:0;font:inherit;letter-spacing:inherit;color:inherit;white-space:nowrap;cursor:pointer}
+#tip{left:calc(var(--u)*828);color:#777;cursor:default!important}
+#redo{left:calc(var(--u)*1036);display:flex;gap:calc(var(--u)*12);align-items:center;color:#111}
+#redo svg{width:calc(var(--u)*20);height:calc(var(--u)*20);margin-top:calc(var(--u)*5)}
+#pause{left:calc(var(--u)*1243);width:calc(var(--u)*14);height:calc(var(--u)*24);color:#111}
+#pause b{position:absolute;top:calc(var(--u)*5);width:calc(var(--u)*3.4);height:calc(var(--u)*14);background:#111}
+#pause b:first-child{left:0}#pause b:last-child{right:0}
+#pause.off b:first-child{left:0;width:0;height:0;background:none;border-style:solid;border-width:calc(var(--u)*7) 0 calc(var(--u)*7) calc(var(--u)*12);border-color:transparent transparent transparent #111}
+#pause.off b:last-child{display:none}
+#down{position:absolute;z-index:3;left:calc(var(--u)*55);bottom:calc(var(--u)*2);width:calc(var(--u)*24);height:calc(var(--u)*60)}
+@media (prefers-reduced-motion:no-preference){#down{animation:bob 2.4s ease-in-out infinite}}
+@keyframes bob{50%{translate:0 calc(var(--u)*6)}}
+.outline{margin:0;text-align:center;font:900 calc(var(--u)*72)/1.1 Inter,sans-serif;letter-spacing:.01em;color:#fff;-webkit-text-stroke:calc(var(--u)*3) #111;paint-order:stroke fill}
+.lead{margin:calc(var(--u)*30) 0 0;text-align:center;font:400 calc(var(--u)*21)/1.6 NotoJP,sans-serif;letter-spacing:.03em}
+#works{position:relative;padding-top:calc(var(--u)*115)}
+#list{position:relative;height:calc(var(--u)*1340);margin-top:calc(var(--u)*120)}
+.item{position:absolute;width:calc(var(--u)*500)}
+.item img.art{display:block;position:absolute;transition:opacity .35s}
+.item .link{position:absolute;transform:scale(1.02);border:calc(var(--u)*3.2) solid transparent;border-radius:calc(var(--u)*29);overflow:hidden;transition:border-color .35s}
+.item:hover .link,.item.hov .link{border-color:#111}
+.item .ogp{display:block;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s}
+.item:hover .ogp,.item.hov .ogp{opacity:1}.item:hover .art,.item.hov .art{opacity:0}.item:hover h3,.item.hov h3{text-decoration:underline;text-underline-offset:.13em;text-decoration-thickness:.06em}
+.item h3{position:absolute;left:0;margin:0;font:500 calc(var(--u)*43)/1 Josefin,sans-serif;letter-spacing:-.005em;white-space:nowrap}
+.item .big{position:absolute;left:0;margin:0;font:400 calc(var(--u)*19.5)/1 NotoJP,sans-serif;letter-spacing:.05em;white-space:nowrap}
+.item .small{position:absolute;left:0;margin:0;font:400 calc(var(--u)*16)/1 NotoJP,sans-serif;letter-spacing:.06em;color:#5c5c5c;white-space:nowrap}
+.item .go{position:absolute;width:calc(var(--u)*50);height:calc(var(--u)*50);fill:none;stroke:#111;stroke-width:2.4;transition:translate .3s cubic-bezier(.2,.8,.2,1)}
+.item:hover .go{translate:calc(var(--u)*6) calc(var(--u)*-6)}
+#ask{text-align:center;padding:calc(var(--u)*400) 0 calc(var(--u)*30);font:400 calc(var(--u)*30)/calc(var(--u)*58) NotoJP,sans-serif;letter-spacing:.08em}
+#ask img{display:block;margin:0 auto calc(var(--u)*30);width:calc(var(--u)*255);height:calc(var(--u)*216)}
+#small{text-align:center;padding-top:calc(var(--u)*210);font:500 calc(var(--u)*21)/1 Inter,sans-serif;letter-spacing:-.01em}
+#notes{padding:calc(var(--u)*290) calc(var(--u)*110) calc(var(--u)*140)}
+#all{display:flex;justify-content:flex-end;align-items:center;gap:calc(var(--u)*14);margin-top:calc(var(--u)*62);font:400 calc(var(--u)*15)/1 NotoJP,sans-serif;letter-spacing:.06em;color:#333}
+#all svg,.row svg{width:calc(var(--u)*34);height:calc(var(--u)*34);fill:none;stroke:#111;stroke-width:2}
+.row{display:grid;grid-template-columns:calc(var(--u)*205) 1fr calc(var(--u)*34);align-items:center;height:calc(var(--u)*142);border-top:1px solid #ddd;font:500 calc(var(--u)*17)/1.4 NotoJP,sans-serif;letter-spacing:.05em;-webkit-text-stroke:.35px #111}
+.row time{font:500 calc(var(--u)*15.5)/1 Inter,sans-serif;letter-spacing:.02em;color:#333;-webkit-text-stroke:0}
+#all{padding-bottom:calc(var(--u)*30)}
+#contact{padding:calc(var(--u)*90) calc(var(--u)*145) calc(var(--u)*180)}
+#mail{display:flex;justify-content:space-between;align-items:center;margin-top:calc(var(--u)*80)}#mail p{margin:0 0 calc(var(--u)*40);font:400 calc(var(--u)*21)/calc(var(--u)*48) NotoJP,sans-serif}#mail a{font:500 calc(var(--u)*38)/1 Inter,sans-serif;letter-spacing:-.03em}#mail img{width:calc(var(--u)*506);height:calc(var(--u)*420)}
+.rv{opacity:0;translate:0 24px;transition:opacity .7s,translate .7s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;translate:0 0}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;translate:0 0;transition:none}}
+.parts{max-width:720px;margin:0 auto;padding:40px 20px 80px;border-top:1px solid #eee;font:14px/1.7 Inter,NotoJP,sans-serif;color:#444}
+.parts h3{font-size:15px;color:#111;margin:0 0 10px}.parts dt{margin-top:10px}.parts dd{margin:2px 0 0}.parts code{font-size:13px;color:#111}
+</style>
+</head>
+<body>
+<section id="hero">
+  <nav>
+    <a id="logo" href="#hero"><svg viewBox="0 0 22 32" aria-hidden="true"><path d="M6 31 8 12 3 9l3-2 2-6 3 5 8-2-4 7-3 4-2 14z"/></svg>Syncraft</a>
+    <a href="#works" style="left:calc(var(--u)*769)">WORKS</a>
+    <a href="#notes" style="left:calc(var(--u)*900)">NOTES</a>
+    <a href="#notes" style="left:calc(var(--u)*1025)">CONTACT</a>
+    <span id="lang"><svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.6"><circle cx="12" cy="12" r="10.4"/><ellipse cx="12" cy="12" rx="4.6" ry="10.4"/><path d="M1.6 12h20.8"/></svg>日本語<i>⌄</i></span>
+  </nav>
+  <h1>Crafting ideas<br>in sync.</h1>
+  <div id="sub">ちいさなひらめきが、歩きだす。<br>毎日を、ちょっとおもしろく。</div>
+  <div id="band"><img id="far" src="source-assets/clouds.png" alt=""><canvas id="town" role="img" aria-label="一条黑线向右画出房子、树和钟楼，三个小角色沿线行走"></canvas><canvas id="actors"></canvas></div>
+  <div id="bar">
+    <span id="tip">街をタップでジャンプ</span>
+    <button id="redo"><svg viewBox="0 0 20 20" fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="round"><path d="M16.5 10.5a6.5 6.5 0 1 1-3-5.6"/><path d="M12 1.6l2 3.6-3.8 1.4" stroke-width="2"/></svg>もういちど描く</button>
+    <button id="pause" aria-label="pause"><b></b><b></b></button>
+  </div>
+  <a id="down" href="#works" aria-label="scroll"><svg viewBox="0 0 24 60" width="100%" height="100%" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round"><path d="M6 2c1 16 3 32 6 52"/><path d="M2 42c3 5 7 9 10 12 3-3 7-7 10-10"/></svg></a>
+</section>
+
+<section id="works">
+  <h2 class="outline rv">WORKS</h2>
+  <p class="lead rv">プロダクト一覧</p>
+  <div id="list">
+    <a class="item rv" href="#works" style="left:calc(var(--u)*125);top:calc(var(--u)*0)">
+      <span class="link" style="left:calc(var(--u)*-19.2);top:calc(var(--u)*16.0);width:calc(var(--u)*503.3);height:calc(var(--u)*264.2)"><img class="ogp" src="source-assets/ogp-time.jpg" alt=""></span>
+      <img class="art" src="source-assets/art-time.png" alt="" style="left:calc(var(--u)*-25.6);top:calc(var(--u)*9.6);width:calc(var(--u)*516.1);height:calc(var(--u)*277.0)">
+      <h3 style="top:calc(var(--u)*309)">TimeSense.</h3>
+      <svg class="go" viewBox="0 0 50 50" style="left:calc(var(--u)*442);top:calc(var(--u)*313)"><path d="M1 49 48 2M18 3l30-1-2 30"/></svg>
+      <p class="big" style="top:calc(var(--u)*388)">「はやくして！」が、冒険の合図になる。</p>
+      <p class="small" style="top:calc(var(--u)*441)">子どもと育つ、声かけタイマー</p>
+    </a>
+    <a class="item rv" href="#works" style="left:calc(var(--u)*720);top:calc(var(--u)*162)">
+      <span class="link" style="left:calc(var(--u)*-11.1);top:calc(var(--u)*34.8);width:calc(var(--u)*503.3);height:calc(var(--u)*245.5)"><img class="ogp" src="source-assets/ogp-cat.jpg" alt=""></span>
+      <img class="art" src="source-assets/art-cat.png" alt="" style="left:calc(var(--u)*-28.5);top:calc(var(--u)*28.4);width:calc(var(--u)*516.1);height:calc(var(--u)*258.3)">
+      <h3 style="top:calc(var(--u)*309)">SwingCat.</h3>
+      <svg class="go" viewBox="0 0 50 50" style="left:calc(var(--u)*442);top:calc(var(--u)*313)"><path d="M1 49 48 2M18 3l30-1-2 30"/></svg>
+      <p class="big" style="top:calc(var(--u)*388)">集中のそばに、猫がいる。</p>
+      <p class="small" style="top:calc(var(--u)*441)">猫と暮らす、フォーカスタイマー</p>
+    </a>
+    <a class="item rv" href="#works" style="left:calc(var(--u)*125);top:calc(var(--u)*791)">
+      <span class="link" style="left:calc(var(--u)*-19.2);top:calc(var(--u)*-70.0);width:calc(var(--u)*503.3);height:calc(var(--u)*264.2)"><img class="ogp" src="source-assets/ogp-radar.jpg" alt=""></span>
+      <img class="art" src="source-assets/art-radar.png" alt="" style="left:calc(var(--u)*-25.6);top:calc(var(--u)*-76.4);width:calc(var(--u)*516.1);height:calc(var(--u)*277.0)">
+      <h3 style="top:calc(var(--u)*223)">Stealth Radar.</h3>
+      <svg class="go" viewBox="0 0 50 50" style="left:calc(var(--u)*442);top:calc(var(--u)*225)"><path d="M1 49 48 2M18 3l30-1-2 30"/></svg>
+      <p class="big" style="top:calc(var(--u)*300)">いつもの街を、未知のフィールドに。</p>
+      <p class="small" style="top:calc(var(--u)*352)">日常を冒険に変える、GPS探索アプリ</p>
+    </a>
+    <a class="item rv" href="#works" style="left:calc(var(--u)*720);top:calc(var(--u)*903)">
+      <span class="link" style="left:calc(var(--u)*-11.1);top:calc(var(--u)*-1.0);width:calc(var(--u)*503.3);height:calc(var(--u)*264.2)"><img class="ogp" src="source-assets/ogp-clock.jpg" alt=""></span>
+      <img class="art" src="source-assets/art-clock.png" alt="" style="left:calc(var(--u)*-28.5);top:calc(var(--u)*-7.4);width:calc(var(--u)*516.1);height:calc(var(--u)*277.0)">
+      <h3 style="top:calc(var(--u)*292)">ClockTimer.</h3>
+      <svg class="go" viewBox="0 0 50 50" style="left:calc(var(--u)*442);top:calc(var(--u)*292)"><path d="M1 49 48 2M18 3l30-1-2 30"/></svg>
+      <p class="big" style="top:calc(var(--u)*365)">今日の一歩を、じぶんのペースで。</p>
+      <p class="small" style="top:calc(var(--u)*417)">時間・習慣・やることを、ひとつに</p>
+    </a>
+  </div>
+  <div id="ask" class="rv">
+    <img src="source-assets/art-ask.png" alt="">
+    「こんなの、あったら。」<br>から、はじまる。
+  </div>
+  <div id="small" class="rv">Small tech. Real smiles.</div>
+</section>
+<section id="notes">
+  <h2 class="outline rv">NOTES</h2>
+  <p class="lead rv">制作ノート</p>
+  <div id="all">すべてのノートを読む<svg viewBox="0 0 34 34"><path d="M2 32 32 2M12 3l20-1-1 20"/></svg></div>
+  <a class="row rv" href="#notes"><time>2026.06.21</time><span>TimeSenseが、いろんな国のことばを覚えました。</span><svg viewBox="0 0 34 34"><path d="M2 32 32 2M12 3l20-1-1 20"/></svg></a>
+  <a class="row rv" href="#notes"><time>2026.02.15</time><span>「知育時計×声かけタイマー」TimeSenseとは？</span><svg viewBox="0 0 34 34"><path d="M2 32 32 2M12 3l20-1-1 20"/></svg></a>
+</section>
+
+<section id="contact">
+  <h2 class="outline rv">CONTACT</h2>
+  <p class="lead rv">お問い合わせ</p>
+  <div id="mail" class="rv"><div><p>プロダクト・開発についての<br>お問い合わせはこちらへ。</p><a href="#contact">hello@example.dev ↗</a></div><img src="source-assets/art-mail.png" alt=""></div>
+</section>
+
+<div class="parts">
+<h3>可拆</h3>
+<dl>
+<dt><code>#town</code></dt><dd>一笔画出来的街：墨线是原站截图拼成的长图，每个像素带一个出现时间，着色器按当前时间显示。三个角色和铅笔按记录的轨迹走。点击街景，角色依次跳起。</dd>
+<dt><code>#bar</code></dt><dd>动画的控制：重画、暂停，放在首屏底部，提示可以点街景让角色跳起。</dd>
+<dt><code>#works</code></dt><dd>描边大标题加左右错开的产品列表。鼠标移上去，线稿淡出，换成带黑框的产品图。</dd>
+</dl>
+</div>
+
+<script src="source-assets/track.js"></script>
+<script>
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const q=new URLSearchParams(location.search);
+const hero=document.getElementById('hero'),band=document.getElementById('band'),cv=document.getElementById('town'),ac=document.getElementById('actors'),far=document.getElementById('far');
+const A=ac.getContext('2d');
+const T=window.TRACK,FPS=45,N=T.tx.length,S=T.pxPerUnit,OX=T.ox;
+let U=1,DPR=1,W=1,H=1;
+const gl=cv.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false});
+let uF,uCam,uRes,uScale,ready=false,PW=1,PH=1;
+function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(o));return o}
+function initGL(img){
+ PW=img.naturalWidth;PH=img.naturalHeight;
+ const p=gl.createProgram();
+ gl.attachShader(p,sh(gl.VERTEX_SHADER,'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}'));
+ gl.attachShader(p,sh(gl.FRAGMENT_SHADER,`precision highp float;uniform sampler2D tT,tI;uniform float uF,uCam,uScale,uH;uniform vec2 uRes,uP;
+ void main(){vec2 px=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y)*uScale;px.x+=uCam;
+  vec2 uv=px/uP;if(uv.x<0.||uv.x>1.||uv.y>1.){gl_FragColor=vec4(0.);return;}
+  vec4 t=texture2D(tT,uv);float at=t.r*65280.+t.g*255.;
+  float ink=texture2D(tI,uv).b;float a=at<=uF?ink:0.;gl_FragColor=vec4(0.,0.,0.,a);}`));
+ gl.linkProgram(p);gl.useProgram(p);
+ const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+ const loc=gl.getAttribLocation(p,'a');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+ gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.NONE);
+ const tex=(unit,f)=>{const o=gl.createTexture();gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,o);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,f);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,f);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)};
+ tex(0,gl.NEAREST);tex(1,gl.LINEAR);
+ gl.uniform1i(gl.getUniformLocation(p,'tT'),0);gl.uniform1i(gl.getUniformLocation(p,'tI'),1);
+ gl.uniform2f(gl.getUniformLocation(p,'uP'),PW,PH);
+ uF=gl.getUniformLocation(p,'uF');uCam=gl.getUniformLocation(p,'uCam');uRes=gl.getUniformLocation(p,'uRes');uScale=gl.getUniformLocation(p,'uScale');
+ gl.clearColor(0,0,0,0);ready=true;size();draw();
+}
+function size(){const r=band.getBoundingClientRect();W=r.width;H=r.height;U=W/1344;DPR=Math.min(2,devicePixelRatio||1);
+ for(const c of [cv,ac]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR)}
+ if(ready){gl.viewport(0,0,cv.width,cv.height);gl.uniform2f(uRes,cv.width,cv.height);gl.uniform1f(uScale,2/(U*DPR))}
+ far.style.width=(far.naturalWidth/2*U)+'px';draw()}
+addEventListener('resize',size);
+let t=+(q.get('t')||0),paused=q.has('t')||false,jumps=[];
+const sprites=window.TRACK.sprites.map(s=>{const i=new Image();i.src='source-assets/'+s.src;return{...s,img:i}});
+const pen=new Image();pen.src='source-assets/pen.png';
+const lerp=(a,f)=>{const i=Math.min(a.length-2,Math.floor(f)),k=Math.min(1,f-i);return a[i]+(a[i+1]-a[i])*k};
+function draw(){
+ const f=Math.min(N-1,t*FPS),tx=lerp(T.tx,f),dx=lerp(T.dx,f);
+ if(ready){gl.clear(gl.COLOR_BUFFER_BIT);gl.uniform1f(uF,Math.floor(f));gl.uniform1f(uCam,-T.ctm-tx*S+OX*S);gl.drawArrays(gl.TRIANGLES,0,3)}
+ const K=S/2; // video units per world unit
+ far.style.transform=`translate(${(T.farX+dx)*K*U}px,0)`;
+ A.setTransform(DPR*U,0,0,DPR*U,0,0);A.clearRect(0,0,W/U,H/U);
+ const toX=x=>(x+tx)*K+T.ctm/2;
+ sprites.forEach((s,i)=>{const R=T.r[i];const x=toX(lerp(R.x,f));let y=lerp(R.y,f)*K;const by=lerp(R.b,f)*K,sx=lerp(R.sx,f),sy=lerp(R.sy,f);
+  let lift=0;const j=jumps[i];if(j!==undefined){const u=(t-j)/.62;if(u>=0&&u<1)lift=-Math.sin(u*Math.PI)*92;}
+  if(!s.img.complete||!s.img.naturalWidth)return;A.save();A.translate(x,y+by+lift);A.scale(sx,sy);A.drawImage(s.img,-s.ax/2,-s.ay/2,s.img.naturalWidth/2,s.img.naturalHeight/2);A.restore()});
+ if(pen.complete&&pen.naturalWidth){const px=toX(lerp(T.px,f)),py=lerp(T.py,f)*K;A.drawImage(pen,px-T.penAx/2,py-T.penAy/2,pen.naturalWidth/2,pen.naturalHeight/2)}
+}
+let last=performance.now(),wait=0;
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+ if(!paused&&!document.hidden){t+=dt;if(t*FPS>=N-1){wait+=dt;if(wait>2.4){wait=0;t=0;jumps=[]}}draw()}
+ requestAnimationFrame(loop)}
+const pauseB=document.getElementById('pause');
+pauseB.onclick=()=>{paused=!paused;pauseB.classList.toggle('off',paused)};
+document.getElementById('redo').onclick=()=>{t=0;wait=0;jumps=[];paused=false;pauseB.classList.remove('off');if(reduce){t=(N-1)/FPS;paused=true}draw()};
+ac.addEventListener('click',()=>{const n=t;jumps=[n,n+.09,n+.18];if(paused)draw()});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.08});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+const panoImg=new Image();panoImg.onload=()=>initGL(panoImg);panoImg.src='source-assets/town-time.png';
+far.onload=size;size();
+if(reduce){t=(N-1)/FPS;paused=true;pauseB.classList.add('off')}
+if(q.has('t')){draw()}else if(!reduce)requestAnimationFrame(loop);else draw();
+if(q.has('t'))requestAnimationFrame(function w(){draw();if(!ready||sprites.some(s=>!s.img.complete))requestAnimationFrame(w);else setTimeout(draw,50)});
+</script>
+</body>
+</html>

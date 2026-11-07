@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bencho — 目录是正在工作的组件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="blocks.css" />
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --bg: #fff;
+    --ink: #17181a;
+    --ink-3: #5c5b56;
+    --lede: #a3a29c;
+    --surface: rgba(23, 24, 26, .06);
+    --ui: Inter, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--paper); }
+  body { color: var(--note-ink); font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+
+  header.mast {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1280px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--ui);
+    padding: 8px 12px;
+    border: 1px solid var(--note-ink);
+    background: var(--note-ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--ui);
+    border: 1px solid var(--note-ink);
+    padding: 18px 28px 36px;
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 56px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .brand img { width: 28px; height: 28px; display: block; }
+  .brand .tabs { display: flex; gap: 14px; color: var(--ink-3); }
+  .brand .tabs b { color: var(--ink); font-weight: 500; }
+  .search {
+    flex: 1;
+    max-width: 360px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--lede);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+  .join {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 56px 0 36px;
+  }
+  .chip {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--surface);
+    margin-bottom: 22px;
+  }
+  .hero h2 {
+    margin: 0;
+    font-size: 46px;
+    font-weight: 500;
+    line-height: 1.06;
+    letter-spacing: -.02em;
+  }
+  .hero h2 .verb {
+    display: inline-block;
+    text-align: left;
+  }
+  .hero h2 .verb span {
+    display: inline-block;
+    animation: verb-in .48s cubic-bezier(.2, .75, .2, 1) both;
+  }
+  @keyframes verb-in {
+    from { transform: translateY(-.5em); opacity: 0; filter: blur(5px); }
+    to { transform: none; opacity: 1; filter: none; }
+  }
+  .lede {
+    margin: 14px auto 0;
+    max-width: 454px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--lede);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .hero h2 { font-size: 32px; } }
+  article.block {
+    background: var(--surface);
+    border-radius: 28px;
+    min-height: 300px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  article.block .cap {
+    position: absolute;
+    left: 16px;
+    bottom: 12px;
+    font-size: 13px;
+    color: var(--ink);
+    pointer-events: none;
+    z-index: 3;
+  }
+  #stage.is-still .stage { pointer-events: none; filter: grayscale(.15); }
+
+  .magnet { width: 220px; height: 220px; position: relative; }
+  .orb {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 64px; height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f4e6ff, #e06ad4 40%, #6fd3a0 75%, #f08a5c);
+  }
+  .dot {
+    position: absolute;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    left: 0; top: 0;
+  }
+
+  .sheet {
+    width: 240px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 16px 16px 10px;
+    box-shadow: 0 0 0 .5px rgba(23,24,26,.08);
+  }
+  .sheet label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    padding: 8px 0;
+    cursor: pointer;
+  }
+  .sheet label.dim { color: var(--lede); }
+  .sheet input { width: 16px; height: 16px; accent-color: var(--ink); }
+
+  .pad { width: 100%; height: 100%; min-height: 300px; position: relative; touch-action: none; }
+  .ball {
+    position: absolute;
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: #fff;
+    left: 50%; top: 50%;
+    margin: -36px 0 0 -36px;
+    cursor: grab;
+  }
+  .ball:active { cursor: grabbing; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 18px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .nums { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .recipe { border-top: 1px solid var(--note-ink); padding-top: 22px; margin-top: 8px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: ui-monospace, Menlo, monospace; font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon {
+    max-width: 980px; margin: 0 auto; padding: 0 28px 48px;
+    font-size: 12.5px; color: var(--muted);
+  }
+  a { color: inherit; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .92em; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · bencho.dev</div>
+  <h1>目录是正在工作的组件</h1>
+  <p class="sub">白底。标题最后一个词按 6 秒换色。下面三列圆角卡片里是原站全部 29 个可点组件。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-cycle" aria-pressed="true">轮换词</button>
+      <button type="button" id="t-live" aria-pressed="true">实机</button>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div class="nav">
+      <div class="brand">
+        <img src="assets/goat.png" width="180" height="180" alt="Bencho" />
+        <span class="tabs"><b>Blocks</b> Bench</span>
+      </div>
+      <div class="search">Search components</div>
+      <span class="join">Join for free</span>
+    </div>
+
+    <div class="hero" id="copy">
+      <div class="chip">New blocks every week</div>
+      <h2>UI blocks you can <span class="verb" id="verb"></span>.</h2>
+      <p class="lede">A library of interactive UI blocks you can explore, tweak, and take straight into your projects.</p>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原站第一屏</h3>
+      <p>白底。顶栏是山羊标、Blocks / Bench、搜索和 Join。标题 46px / 500，最后一个词在 <code>tune / bench / share / take</code> 之间切换，并带上各自的颜色。下面是三列圆角 28px 的 surface 卡片，里面是正在运行的组件。</p>
+      <p>原站共 29 张卡片，本页按同一三列网格全部复刻，均可指针操作。Bench（<code>#bench</code>）是点阵无限画布，不在这一发明里。原站 GitHub 仓库私有；Code 页提供 MIT 的 Usage / CSS，实现按那些说明和现场交互。</p>
+    </div>
+    <figure>
+      <img src="assets/source-hero.png" alt="bencho.dev Blocks 第一屏" />
+      <figcaption><strong>图 1.</strong> bencho.dev 默认视图。标题最后一个词当时是 bench，铜色。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>不是三维。卡片是 DOM。标题词用字母交错进入：<code>y: -0.5em → 0</code>，<code>blur(5px) → 0</code>，弹簧 <code>stiffness 420 / damping 30 / mass 0.9</code>，字母间隔 18ms。词表与色值抄自原站脚本。</p>
+    <p>卡片底 <code>rgba(23, 24, 26, .06)</code>，圆角 28px，列间距 12px。1495 视口下每卡宽 472px。层级靠浅底上的浅灰面，不用投影。</p>
+    <p>关掉「实机」后，卡片不再响应指针，用来对照静帧目录为什么不够。卡片标题保持 13px、贴在左下角：弱化名称，把注意力留给正在工作的控件。</p>
+  </div>
+
+  <figure>
+    <img src="assets/source-orbit.png" alt="分享图：山羊在卡片环中央" />
+    <figcaption><strong>图 2.</strong> 分享封面。山羊在中央，活卡片沿边缘裁切。那是传播用的构图，不是 Blocks 第一屏。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>原则：</b>多数 UI 是文字、按钮和少量图标。真正决定质量的是排版和正在工作的状态。目录如果只放截图，用户看不到手感。
+  </aside>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>背景 / 墨</td><td>#fff / #17181a</td></tr>
+      <tr><td>标题</td><td>46px / 48.76px，字重 500，字距 −0.92px</td></tr>
+      <tr><td>副文</td><td>15px / 22.5px，#a3a29c</td></tr>
+      <tr><td>胶囊</td><td>14px / 500，padding 12px 18px，圆角 999，底 rgba(23,24,26,.06)</td></tr>
+      <tr><td>轮换词</td><td>tune #2231dd · bench #b8431c · share #7c3aed · take #17181a；间隔约 6s</td></tr>
+      <tr><td>卡片</td><td>宽 472px，圆角 28px，间距 12px，三列，29 张</td></tr>
+    </tbody>
+  </table>
+
+  <div class="recipe">
+    <h3>复用要点</h3>
+    <ol class="how">
+      <li>组件库首页把活组件放进卡片，不要用截图代替手感。</li>
+      <li>标题可以只轮换一个词，并用颜色标记当前词。其余标题保持静止。</li>
+      <li>卡片层级用浅灰面，不用阴影。圆角 28px，列间距 12px。</li>
+      <li>无限画布（Bench）是另一发明。第一屏先收网格里的活组件。</li>
+    </ol>
+  </div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#copy</code></dt>
+    <dd>标题 46px / 500 / 字距 −0.92px。最后一个词在 tune / bench / share / take 间切换，色值 <code>#2231dd / #b8431c / #7c3aed / #17181a</code>。字母交错 18ms，进入 <code>translateY(-0.5em) + blur(5px)</code>。周期约 6s。</dd>
+    <dt><code>#grid</code></dt>
+    <dd>三列，间距 12px。卡片底 <code>rgba(23,24,26,.06)</code>，圆角 28px。29 张均可指针操作。名称 13px，贴左下角，不与控件抢层级。</dd>
+    <dt><code>#magnet-select</code></dt>
+    <dd>点选一枚芯片。GROW / ROOM / AURA：选中放大，邻居按向量被推开，衰减用 <code>exp</code>。远芯片每步晚 22ms。</dd>
+    <dt><code>#seek</code></dt>
+    <dd>一个物体，不是两个。关闭 44、打开 320，圆角 999。镜头相对盒子固定 inset 13。先压 90ms 再展开。</dd>
+    <dt><code>#escape</code></dt>
+    <dd>按钮从家位置躲开指针，<code>flee=(1-d/r)^2</code>。固定次数后自己认输。键盘从不移动。</dd>
+    <dt><code>#liq-create</code></dt>
+    <dd>药丸就是面板。先缩 120ms，95ms 起铺开。行延迟 70+i×38。点面板外关闭，问的是可见盒。</dd>
+    <dt><code>#slide-confirm</code></dt>
+    <dd>偏移在第一次移动时取，不在 pointerdown。提交是变形：手柄变宽，右缘不动。</dd>
+    <dt><code>#tilt</code></dt>
+    <dd>按下，不是抬起。指针处下沉，对侧抬起。阴影收紧。透视在框架上。</dd>
+    <dt><code>#slosh</code></dt>
+    <dd>手柄跟手。填充是第二根弹簧，会冲过挡块再荡回来。弯月用 clip-path，不用 skew。</dd>
+    <dt><code>#checklist</code></dt>
+    <dd>一行一根弹簧。填色、勾、删线、褪色都读同一个数。全部完成后从下往上塌。</dd>
+    <dt><code>#sound</code></dt>
+    <dd>一个数驱动开合。宽不变，高 78→189。封面是铰链，从不换淡。角同心。</dd>
+  </dl>
+</section>
+
+<footer class="colophon">
+  <p>来源：<a href="https://bencho.dev/">bencho.dev</a> · 目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script src="blocks.js"></script>
+<script>
+(function () {
+  const WORDS = [
+    { word: 'tune', tint: '#2231dd' },
+    { word: 'bench', tint: '#b8431c' },
+    { word: 'share', tint: '#7c3aed' },
+    { word: 'take', tint: '#17181a' }
+  ]
+  const verb = document.getElementById('verb')
+  const stage = document.getElementById('stage')
+  let i = 1
+  let timer = null
+
+  function paint(idx) {
+    const w = WORDS[idx]
+    verb.style.color = w.tint
+    verb.innerHTML = [...w.word].map((ch, n) =>
+      '<span style="animation-delay:' + (n * 18) + 'ms">' + ch + '</span>'
+    ).join('')
+  }
+  paint(i)
+
+  function start() {
+    stop()
+    timer = setInterval(() => {
+      i = (i + 1) % WORDS.length
+      paint(i)
+    }, 6000)
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null } }
+  start()
+
+  document.getElementById('t-cycle').addEventListener('click', function () {
+    const on = this.getAttribute('aria-pressed') !== 'true'
+    this.setAttribute('aria-pressed', on ? 'true' : 'false')
+    if (on) start()
+    else stop()
+  })
+  document.getElementById('t-live').addEventListener('click', function () {
+    const on = this.getAttribute('aria-pressed') !== 'true'
+    this.setAttribute('aria-pressed', on ? 'true' : 'false')
+    stage.classList.toggle('is-still', !on)
+  })
+
+  BenchoBlocks.mountAll(document.getElementById('grid'))
+})()
+</script>
+</body>
+</html>

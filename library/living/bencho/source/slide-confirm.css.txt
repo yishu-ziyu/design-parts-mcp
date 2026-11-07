@@ -1,0 +1,18 @@
+/* The handle follows the finger exactly and the offset is
+   taken at the FIRST MOVE, never at the press. Deciding it on
+   pointerdown is what makes a slider teleport: a press away
+   from the handle sets the offset to the handle's own middle
+   and the first move jumps it the whole way in one frame. */
+const move = (e) => {
+  const at = local(e.clientX);
+  if (grab === null) { grab = at - x.get(); return; }
+  x.set(clamp(at - grab, 0, TRAVEL));
+};
+
+/* And the commit is a MORPH, not a hand-over. The handle's
+   width and its offset move together and by the same amount,
+   so the right edge is stationary and the handle opens out
+   behind itself to fill the track it crossed. A scale would
+   have dragged the corner radius with it. */
+animate(x, TRAVEL, spring);
+setDone(true);          /* width: GRIP -> span - PAD * 2 */

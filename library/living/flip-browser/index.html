@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flip Browser</title>
+<style>
+@font-face{font-family:"Quicksand";src:url(fonts/quicksand.woff2) format("woff2");font-weight:300 700;font-display:block}
+:root{--u:1px;--bg:#f7f3ea;--ink:#141414;--empty:#e9e3d9}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--ink);font-family:Quicksand,system-ui,sans-serif;font-weight:500}
+#view{position:relative;height:100vh;min-height:calc(var(--u)*814);overflow:hidden}
+#win{position:absolute;left:calc(var(--u)*145);top:calc(var(--u)*28);width:calc(var(--u)*1178);height:calc(var(--u)*740);border:calc(var(--u)*1.6) solid #1c1c1c;border-radius:calc(var(--u)*36);background:#fdfbf6;overflow:hidden;box-shadow:0 calc(var(--u)*18) calc(var(--u)*50) rgba(90,80,60,.13)}
+#bar{position:absolute;left:0;right:0;top:0;height:calc(var(--u)*76);background:#fdfbf6;z-index:5;box-shadow:0 calc(var(--u)*1) calc(var(--u)*5) rgba(70,60,40,.1)}
+.dot{position:absolute;top:calc(var(--u)*30);width:calc(var(--u)*17);height:calc(var(--u)*17);border:calc(var(--u)*1.3) solid #c9c8c2;border-radius:50%}
+#pill{position:absolute;left:calc(var(--u)*104);right:calc(var(--u)*76);top:calc(var(--u)*15);height:calc(var(--u)*47);border:calc(var(--u)*2) solid #1c1c1c;border-radius:calc(var(--u)*24);background:#fff;display:flex;align-items:center;padding:0 calc(var(--u)*5);white-space:nowrap;overflow:hidden}
+#crumbs{flex:0 1 auto;min-width:0;overflow:hidden;display:flex;align-items:center;font-size:calc(var(--u)*15.4);letter-spacing:.012em;color:#3c3c3c}
+#crumbs.tight{font-size:calc(var(--u)*13.3);flex:none}#crumbs.tight~#q{flex:1 1 0}#crumbs.tight i{margin:0 calc(var(--u)*6)}#crumbs b{font-weight:700;color:#111}#crumbs i{font-style:normal;color:#999;margin:0 calc(var(--u)*9)}
+#crumbs button{all:unset;cursor:pointer;flex:none}#crumbs i{flex:none}#crumbs button:hover{text-decoration:underline}
+#fetch{font-size:calc(var(--u)*15.4);color:#222;letter-spacing:.012em}
+#q{flex:1 0 calc(var(--u)*118);min-width:0;border:0;outline:0;background:none;font:inherit;font-size:calc(var(--u)*15.4);letter-spacing:.012em;color:#111;padding:0 calc(var(--u)*12) 0 calc(var(--u)*0)}
+#q::placeholder{color:#a3a3a3}
+#go{all:unset;flex:none;margin-left:auto;width:calc(var(--u)*34);height:calc(var(--u)*34);border-radius:50%;background:#141414;color:#fff;display:grid;place-items:center;font-size:calc(var(--u)*14);cursor:pointer;font-weight:700}
+#go.clear{width:auto;padding:0 calc(var(--u)*14);height:calc(var(--u)*34);border-radius:calc(var(--u)*17);font-size:calc(var(--u)*13.2)}
+#paper{position:absolute;left:0;right:0;top:calc(var(--u)*76);bottom:0;background:var(--empty);overflow:hidden;cursor:pointer}
+.pg{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;user-select:none;-webkit-user-drag:none}
+#blank{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*14);padding-bottom:calc(var(--u)*8);cursor:default}
+#blank h2{font-size:calc(var(--u)*20.7);line-height:calc(var(--u)*29);font-weight:700;text-align:center;color:#111}
+#up{all:unset;display:flex;align-items:center;gap:calc(var(--u)*7);height:calc(var(--u)*45);padding:0 calc(var(--u)*17);border:calc(var(--u)*2) solid #1c1c1c;border-radius:calc(var(--u)*14);background:#fff;font-size:calc(var(--u)*14.8);cursor:pointer}
+#loading{position:absolute;left:0;right:0;top:48%;text-align:center;font-size:calc(var(--u)*13);color:#6c665c;display:none}
+#toast{position:absolute;z-index:6;width:calc(var(--u)*260);height:calc(var(--u)*92);padding:calc(var(--u)*10);display:none;gap:calc(var(--u)*11);align-items:center;background:#fff;border-radius:calc(var(--u)*14);box-shadow:0 calc(var(--u)*3) calc(var(--u)*14) rgba(50,40,20,.18);font-size:calc(var(--u)*12.5);line-height:calc(var(--u)*16.4);color:#2a2a2a;padding-right:calc(var(--u)*30);animation:rise .28s cubic-bezier(.2,.9,.3,1.2);cursor:default}
+#toast.on{display:flex}
+#thumb{flex:none;width:calc(var(--u)*70);height:calc(var(--u)*70);border-radius:calc(var(--u)*9);background:#9b9486 center/cover}
+#x{all:unset;position:absolute;right:calc(var(--u)*7);top:calc(var(--u)*7);width:calc(var(--u)*18);height:calc(var(--u)*18);border-radius:50%;background:#efefef;display:grid;place-items:center;font-size:calc(var(--u)*9);cursor:pointer}
+@keyframes rise{from{opacity:0;transform:translateY(calc(var(--u)*8)) scale(.96)}}
+#ring{position:absolute;z-index:6;width:calc(var(--u)*24);height:calc(var(--u)*24);margin:calc(var(--u)*-12) 0 0 calc(var(--u)*-12);border:calc(var(--u)*3) solid #111;border-radius:50%;background:rgba(255,255,255,.35);pointer-events:none;display:none}
+#ring.on{display:block;animation:press 1.1s ease-in-out infinite alternate}
+@keyframes press{to{transform:scale(.72)}}
+#mini{all:unset;position:absolute;right:calc(var(--u)*14);bottom:calc(var(--u)*17);width:calc(var(--u)*30);height:calc(var(--u)*30);border-radius:50%;z-index:4;cursor:pointer}
+#tapnote{position:absolute;left:0;width:100%;top:calc(var(--u)*778);text-align:center;font-size:calc(var(--u)*11.2);color:#a6a196;letter-spacing:.02em;font-weight:500;padding-right:calc(var(--u)*14)}
+#foot{max-width:720px;margin:0 auto;padding:64px 24px 80px;font-size:14px;line-height:1.6;color:#555}
+#foot h3{color:#111;font-size:15px}#foot dt{margin-top:12px}#foot code{color:#111}#foot dd{margin:2px 0 0}
+@media (prefers-reduced-motion:reduce){#ring.on{animation:none}#toast{animation:none}}
+</style></head><body>
+<div id="view">
+  <main id="win">
+    <header id="bar">
+      <span class="dot" style="left:calc(var(--u)*20)"></span><span class="dot" style="left:calc(var(--u)*46)"></span><span class="dot" style="left:calc(var(--u)*71)"></span>
+      <form id="pill" autocomplete="off">
+        <span id="crumbs"></span><span id="fetch"></span>
+        <input id="q" aria-label="Search" spellcheck="false">
+        <button id="go" type="submit" aria-label="Go">→</button>
+      </form>
+    </header>
+    <section id="paper" aria-label="Generated page">
+      <div id="blank">
+        <h2>Type something in the search bar or<br>upload an image to begin.</h2>
+        <button id="up" type="button"><svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="#111" stroke-width="1.5"><rect x="2" y="3" width="13" height="11" rx="2"/><circle cx="6" cy="7" r="1.2"/><path d="M3 13l4-3 3 2 2-2 3 3"/></svg>Upload image</button>
+      </div>
+      <div id="loading">Loading image...</div>
+      <div id="ring"></div>
+      <aside id="toast"><div id="thumb"></div><span>If you don't want to wait, you can continue with a draft version of the next page.</span><button id="x" aria-label="Dismiss" type="button">✕</button></aside>
+      <button id="mini" type="button" aria-label="Expand"></button>
+    </section>
+  </main>
+  <p id="tapnote">Tap anywhere on the page to expand</p>
+</div>
+<section id="foot">
+<h3>可拆</h3>
+<dl>
+<dt><code>#pill</code></dt><dd>地址栏同时是面包屑、加载状态和输入框：走过的页留在左边，当前页加粗，请求中显示正在取什么。</dd>
+<dt><code>#paper</code></dt><dd>整页是一张图，没有 DOM 内容：点图上任意位置就换页。Paris 路线逐帧放视频里的过渡，Chiang Mai 路线硬切。</dd>
+<dt><code>#toast</code></dt><dd>等待时贴在点击位置旁边的小卡，用下一页的模糊缩略图占位，说明可以先看草稿版。</dd>
+<dt><code>#blank</code></dt><dd>没有内容时只给一句话和一个上传按钮。</dd>
+</dl>
+</section>
+<script>
+(()=>{
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,qs=new URLSearchParams(location.search);
+const $=id=>document.getElementById(id);
+const fit=()=>document.documentElement.style.setProperty('--u',Math.min(innerWidth/1483,innerHeight/814)+'px');addEventListener('resize',fit);fit();
+// 两条路线，页面和文案都来自原帖视频
+const P={
+ paris:{t:'Paris Travel Overview',img:'paris',next:'notre',tr:'t1',n:39},
+ notre:{t:'Visiting Notre Dame',img:'notre',next:'general',tr:'t2',n:33},
+ general:{t:'General Entry at Notre Dame',img:'general',next:'towers',tr:'t3',n:31},
+ towers:{t:'Notre Dame Towers Tickets',img:'towers',next:'booked',tr:'t4',n:31},
+ booked:{t:'Tickets Confirmed',img:'booked',next:null},
+ chiang:{t:'Chiang Mai: The Rose of the North',img:'chiang',next:'khao',fetching:'Khao Soy Northern Thai Coconut Curry Noodles'},
+ khao:{t:'Khao Soy: The Soul of Chiang Mai',img:'khao',next:null}
+};
+Object.values(P).forEach(p=>{const i=new Image();i.src=`source-assets/${p.img}.jpg`});
+// Paris 路线的换页是视频里的真实过渡，20 帧每秒逐帧放
+const FPS=20,frames={};Object.values(P).forEach(p=>{if(!p.tr)return;frames[p.tr]=Array.from({length:p.n},(_,i)=>{const im=new Image();im.src=`source-assets/${p.tr}/${String(i).padStart(2,'0')}.jpg`;return im})});
+const paper=$('paper');
+let trail=[],busy=false,cur=null,timer=0;
+function crumbs(fetching){const c=$('crumbs');c.innerHTML='';c.classList.toggle('tight',trail.length>=4);trail.forEach((k,i)=>{const b=document.createElement('button');b.type='button';b.textContent=P[k].t;b.style.fontWeight=i===trail.length-1&&!fetching?700:500;b.style.color=i===trail.length-1&&!fetching?'#111':'';if(i===trail.length-1&&fetching){b.style.fontWeight=700;b.style.color='#111'}b.onclick=e=>{e.stopPropagation();jump(i)};c.append(b);const s=document.createElement('i');s.textContent='/';if(i<trail.length-1||true)c.append(s)});
+ $('fetch').textContent=fetching?`Fetching information about ${fetching}.`:'';$('q').style.display=fetching?'none':'';$('q').placeholder=trail.length?'Continue this session':'';sync()}
+function sync(){const has=$('q').value.trim().length>0,go=$('go');const clear=trail.length&&!has&&!busy;go.classList.toggle('clear',!!clear);go.textContent=clear?'Clear':'→';go.setAttribute('aria-label',clear?'Clear session':'Go')}
+function setPage(k){paper.querySelectorAll('.pg').forEach(e=>e.remove());const im=document.createElement('img');im.className='pg';im.alt=P[k].t;im.src=`source-assets/${P[k].img}.jpg`;paper.prepend(im);cur=k;$('blank').style.display='none';$('loading').style.display='none'}
+function blank(){clearTimeout(timer);paper.querySelectorAll('.pg').forEach(e=>e.remove());trail=[];cur=null;busy=false;$('blank').style.display='flex';$('loading').style.display='none';$('toast').classList.remove('on');$('ring').classList.remove('on');$('q').value='';crumbs(false)}
+function jump(i){if(busy)return;trail=trail.slice(0,i+1);setPage(trail[i]);crumbs(false)}
+function toastAt(x,y,thumb){const t=$('toast'),u=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--u'));const W=paper.clientWidth,H=paper.clientHeight,tw=260*u,th=92*u;let l=x-tw*.45,tp=y-th-18*u;if(l+tw>W-8*u)l=W-tw-8*u;if(l<8*u)l=8*u;if(tp<8*u)tp=y+24*u;t.style.left=l+'px';t.style.top=tp+'px';$('thumb').style.backgroundImage=thumb?`url(source-assets/${thumb}.jpg)`:'';$('thumb').style.filter=thumb?'blur(.6px)':'blur(0)';t.classList.add('on')}
+// 换页：Paris 路线逐帧放视频过渡，地址栏在过渡末尾才更新；Chiang Mai 路线和原版一样硬切
+function play(key,done){const seq=frames[key],c=document.createElement('canvas');c.className='pg';c.width=seq[0].naturalWidth||1178;c.height=seq[0].naturalHeight||664;const ctx=c.getContext('2d');
+ paper.querySelectorAll('.pg').forEach(e=>e.remove());paper.prepend(c);const t0=performance.now();let last=-1;
+ (function step(ts){const i=Math.floor(((ts||performance.now())-t0)/1000*FPS);if(i>=seq.length){c.remove();return done()}
+  if(i!==last&&i>=0&&seq[i].complete&&seq[i].naturalWidth){ctx.drawImage(seq[i],0,0,c.width,c.height);last=i}requestAnimationFrame(step)})();}
+function finish(next){setPage(next);busy=false;trail.push(next);$('toast').classList.remove('on');$('ring').classList.remove('on');crumbs(false)}
+paper.addEventListener('click',e=>{if(busy||!cur||e.target.closest('#toast,#blank'))return;const p=P[cur];if(!p.next)return;
+ if(p.tr){if(reduce)return finish(p.next);busy=true;sync();play(p.tr,()=>finish(p.next));return}
+ const r=paper.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+ const ring=$('ring');ring.style.left=x+'px';ring.style.top=y+'px';ring.classList.add('on');busy=true;crumbs(p.fetching);toastAt(x,y,P[p.next].img);timer=setTimeout(()=>finish(p.next),reduce?300:1900)});
+$('x').addEventListener('click',()=>$('toast').classList.remove('on'));
+$('q').addEventListener('input',sync);
+$('pill').addEventListener('submit',e=>{e.preventDefault();const v=$('q').value.trim();if(!v){if(trail.length)blank();return}
+ const k=/paris|france|巴黎/i.test(v)?'paris':'chiang';$('q').blur();busy=true;trail=[];$('crumbs').innerHTML='';sync();paper.querySelectorAll('.pg').forEach(x=>x.remove());$('blank').style.display='none';$('loading').style.display='block';
+ timer=setTimeout(()=>{$('loading').style.display='none';const W=paper.clientWidth,H=paper.clientHeight;toastAt(W/2,H/2+60,null);timer=setTimeout(()=>{$('toast').classList.remove('on');setPage(k);trail=[k];busy=false;$('q').value='';crumbs(false)},reduce?200:1700)},reduce?100:900)});
+window.__f={setPage,P,frames,get trail(){return trail}};
+const d=qs.get('demo');
+if(d&&P[d]){const order={notre:['paris','notre'],general:['paris','notre','general'],towers:['paris','notre','general','towers'],booked:['paris','notre','general','towers','booked'],khao:['chiang','khao']};trail=order[d]||[d];setPage(d);crumbs(false)}
+else if(d==='fetch'){trail=['chiang'];setPage('chiang');busy=true;crumbs(P.chiang.fetching);const u=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--u'));const x=1021*u,y=225*u;const ring=$('ring');ring.style.left=x+'px';ring.style.top=y+'px';ring.classList.add('on');toastAt(x,y,'khao')}
+else if(d==='typing'){blank();$('q').value='i live in chiangmai, ';sync()}
+else blank();
+})();
+</script></body></html>

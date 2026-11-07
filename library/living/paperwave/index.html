@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一张纸的波，全是 SVG</title>
+<style>
+:root{--paper:#f4efe4;--ink:#1c1914;--muted:#5c564c;--serif:"Iowan Old Style",Palatino,"Songti SC","Noto Serif SC",Georgia,serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16.5px/1.55 var(--serif)}
+header{max-width:760px;margin:auto;padding:48px 24px 14px;text-align:center}h1{font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;margin:0 0 8px}header p{margin:0;font-style:italic;color:var(--muted)}
+#stage{max-width:1000px;margin:18px auto 0;background:#fff;border:1px solid var(--ink);padding:10px 12px 18px}
+#wave{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+#pills{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;font:11.5px/1 ui-monospace,Menlo,monospace}
+.pill{display:flex;gap:10px;align-items:center;background:#f1f1f2;border:0;border-radius:99px;padding:8px 12px;color:#555;cursor:ew-resize;touch-action:none;user-select:none;transition:background 120ms}
+.pill:hover,.pill:focus-visible,.pill.on{background:#e2e2e4}.pill b{color:#111;font-weight:600;min-width:3.2em;text-align:right;font-variant-numeric:tabular-nums}
+.note{max-width:760px;margin:26px auto 60px;padding:0 24px}h3{font-weight:500;font-size:17px;margin:18px 0 6px}dl{margin:0;font-size:15px}dt code{font-size:13px}dd{margin:2px 0 12px}
+</style></head><body>
+<header><h1>一张纸的波，全是 SVG</h1><p>每个点先投影到三维，再逐帧重画。没有 3D 库。左右拖下面的数值。</p></header>
+<div id="stage"><svg id="wave" viewBox="0 0 1000 480" role="img" aria-label="一张起伏的纸，随参数变化"><g id="floor"></g><path id="shadow" fill="#00000012"/><g id="drops" stroke="#0005" stroke-dasharray="2 3" stroke-width=".7"></g><g id="strips"></g><path id="edgeB" fill="none" stroke="#111" stroke-width="1.4"/><path id="edgeF" fill="none" stroke="#111" stroke-width="1.8"/></svg>
+<div id="pills"></div></div>
+<div class="note"><h3>可拆</h3><dl>
+<dt><code>#wave</code></dt><dd>纸面是 96×4 的点阵。高度 z = 振幅 × sin(2π x / 波长 + 相位)。每点绕竖轴旋转、再按俯角投影到 2D，每帧重写路径；条带按深度从后往前画，亮度取坡度。</dd>
+<dt><code>#pills</code></dt><dd>胶囊数值条：按住左右拖改值，每像素改一档，数字等宽。方向键也能改。悬停和拖动时底色加深 120ms。</dd></dl>
+<p>来源：<a href="https://x.com/gabriell_lab/status/2112910045688279358">@gabriell_lab</a>，2026-10-21。算法和代码为本页自写，原帖代码未公开。</p></div>
+<script>
+const P={amp:{l:'Amplitude',v:20,min:0,max:60,step:1},wl:{l:'Wavelength',v:200,min:60,max:400,step:2},speed:{l:'Speed',v:.2,min:0,max:1,step:.01},rot:{l:'Rotate',v:145,min:0,max:360,step:1,u:'°'},tilt:{l:'Tilt',v:20,min:5,max:60,step:1,u:'°'}};
+const q=new URLSearchParams(location.search);for(const k in P)if(q.has(k))P[k].v=+q.get(k);
+const $=id=>document.getElementById(id),W=720,D=150,NX=96,NY=4,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pills=$('pills');
+function fmt(p){return (p.step<1?p.v.toFixed(2):Math.round(p.v))+(p.u||'')}
+for(const[k,p]of Object.entries(P)){const b=document.createElement('button');b.type='button';b.className='pill';b.setAttribute('role','slider');b.setAttribute('aria-label',p.l);b.setAttribute('aria-valuemin',p.min);b.setAttribute('aria-valuemax',p.max);b.innerHTML=`<span>${p.l}</span><b></b>`;const v=b.querySelector('b');const up=()=>{v.textContent=fmt(p);b.setAttribute('aria-valuenow',p.v)};up();
+ const set=x=>{p.v=Math.min(p.max,Math.max(p.min,Math.round(x/p.step)*p.step));up();if(reduce)draw()};let sx=0,s0=0;
+ b.addEventListener('pointerdown',e=>{sx=e.clientX;s0=p.v;b.setPointerCapture(e.pointerId);b.classList.add('on')});
+ b.addEventListener('pointermove',e=>{if(b.classList.contains('on'))set(s0+(e.clientX-sx)*p.step)});
+ const end=()=>b.classList.remove('on');b.addEventListener('pointerup',end);b.addEventListener('pointercancel',end);
+ b.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowUp'){set(p.v+p.step);e.preventDefault()}if(e.key==='ArrowLeft'||e.key==='ArrowDown'){set(p.v-p.step);e.preventDefault()}});pills.append(b)}
+const NS='http://www.w3.org/2000/svg',strips=$('strips'),drops=$('drops'),floor=$('floor');
+for(let i=0;i<NX*NY;i++){const s=document.createElementNS(NS,'path');s.setAttribute('stroke-width','.4');strips.append(s)}
+for(let i=0;i<14;i++){const l=document.createElementNS(NS,'line');drops.append(l)}
+const fd=[];for(let i=0;i<13;i++)for(let j=0;j<7;j++){const c=document.createElementNS(NS,'circle');c.setAttribute('r','.8');c.setAttribute('fill','#0002');floor.append(c);fd.push([c,(i/12-.5)*W*1.25,(j/6-.5)*D*2.2])}
+function project(x,y,z){const r=-P.rot.v*Math.PI/180,t=P.tilt.v*Math.PI/180,xr=x*Math.cos(r)-y*Math.sin(r),yr=x*Math.sin(r)+y*Math.cos(r);return{x:500+xr,y:230+yr*Math.sin(t)-z*Math.cos(t),d:yr}}
+let phase=0,last=0;const h=x=>P.amp.v*Math.sin(2*Math.PI*x/P.wl.v+phase),M=(a)=>a.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join('');
+function draw(){const g=[];for(let j=0;j<=NY;j++){const r=[];for(let i=0;i<=NX;i++){const x=(i/NX-.5)*W,y=(j/NY-.5)*D;r.push({x,y,p:project(x,y,h(x))})}g.push(r)}
+ const q=[];for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const a=g[j][i],b=g[j][i+1],c=g[j+1][i+1],d=g[j+1][i];q.push({a,b,c,d,z:(a.p.d+c.p.d)/2,s:(h(b.x)-h(a.x))/(W/NX)})}
+ q.sort((m,n)=>m.z-n.z);[...strips.children].forEach((e,i)=>{const o=q[i],l=Math.round(238+Math.max(-34,Math.min(17,o.s*-30)));const col=`rgb(${l},${l},${Math.min(255,l+1)})`;e.setAttribute('d',M([o.a.p,o.b.p,o.c.p,o.d.p])+'Z');e.setAttribute('fill',col);e.setAttribute('stroke',col)});
+ const c=[[-W/2,-D/2],[W/2,-D/2],[W/2,D/2],[-W/2,D/2]].map(([x,y])=>project(x,y,-34));$('shadow').setAttribute('d',M(c)+'Z');
+ const front=g[NY],back=g[0];const fe=project(0,D/2,0).d>project(0,-D/2,0).d;$('edgeF').setAttribute('d',M((fe?front:back).map(o=>o.p)));$('edgeB').setAttribute('d',M((fe?back:front).map(o=>o.p)));
+ [...drops.children].forEach((l,i)=>{const x=(i/13-.5)*W,yy=fe?D/2:-D/2,a=project(x,yy,h(x)),b=project(x,yy,-34);l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y)});
+ fd.forEach(([e,x,y])=>{const p=project(x,y,-34);e.setAttribute('cx',p.x);e.setAttribute('cy',p.y)})}
+function loop(t){const dt=last?(t-last)/1000:0;last=t;phase-=dt*P.speed.v*2*Math.PI;draw();requestAnimationFrame(loop)}
+draw();if(!reduce)requestAnimationFrame(loop);
+</script></body></html>

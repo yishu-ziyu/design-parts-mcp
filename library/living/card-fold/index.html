@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Card Fold</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Geist;src:url(fonts/geist-latin.woff2) format("woff2");font-weight:100 900;unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Geist;src:url(fonts/geist-ext.woff2) format("woff2");font-weight:100 900;unicode-range:U+0100-02AF}
+@font-face{font-family:Geist;src:url(fonts/geist-vi.woff2) format("woff2");font-weight:100 900;unicode-range:U+0102-0103,U+0110-0111,U+01A0-01A1,U+01AF-01B0,U+1EA0-1EF9}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono.woff2) format("woff2");font-weight:100 900}
+:root{--w:193px;--h:270px;--line:#111;--ink:#111;--mid:#737373}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:var(--ink);font-family:Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:relative;height:720px;overflow:hidden;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}
+#stage.drag{cursor:grabbing}
+#card{position:absolute;left:50%;top:178px;width:0;height:var(--h)}
+/* every leaf/face is laid out from the hinge line, x=0 */
+#leaf{position:absolute;left:0;top:0;width:var(--w);height:var(--h);background:#000;border-radius:0 9px 9px 0;transform-origin:0 50%;will-change:transform}
+.flat{position:absolute;top:0;height:var(--h);overflow:hidden;background:#fff;border:2px solid var(--line)}
+#right{left:0;width:var(--w);border-left:0;border-radius:0 8px 8px 0}
+#shade{position:absolute;inset:-2px;background:#000;opacity:0;pointer-events:none}
+#front{left:0;border-right-width:0;background:#fff}
+#inner{border-right:0;border-radius:8px 0 0 8px;display:none}
+.lay{position:absolute;left:0;top:0;width:var(--w);height:var(--h)}
+#front .lay,#right .lay{left:-2px;top:-2px}
+#inner .lay{top:-2px}
+#frontShade,#innerShade,.edge{position:absolute;inset:-2px;pointer-events:none}
+.edge{background:linear-gradient(180deg,#000,transparent 13px,transparent calc(100% - 13px),#000)}
+#crease{position:absolute;left:0;top:0;bottom:0;width:1px;background:rgba(0,0,0,.16)}
+#frontBlur{position:absolute;inset:0;pointer-events:none}
+.logo{position:absolute;left:15px;top:15px;width:31px;height:15px;display:block}
+.handle{position:absolute;right:14px;top:15px;font:400 9px/12px "Geist Mono",monospace;color:#858585}
+.name{position:absolute;left:15px;top:220px;font-size:14.6px;line-height:18px;font-weight:500;letter-spacing:-.01em}
+.role{position:absolute;left:15px;top:241px;font-size:10.5px;line-height:14px;color:var(--mid)}
+.links{position:absolute;left:15px;right:14px;top:92px;margin:0;font:400 9px/16.7px "Geist Mono",monospace}
+.links div{display:flex;justify-content:space-between}
+.links dt{color:var(--mid)}.links dd{margin:0;color:#111}
+#innerC{filter:blur(0)}
+.avatar{position:absolute;left:14px;top:14px;width:47px;height:47px;border-radius:50%;display:block;-webkit-user-drag:none}
+.tag{position:absolute;left:14px;top:201px;font-size:13.3px;line-height:19px;font-weight:500;letter-spacing:-.012em;white-space:nowrap}
+.now{position:absolute;left:14px;top:243px;font:400 9px/12px "Geist Mono",monospace;color:#737373}
+#ctrl{position:absolute;left:calc(50% - 96.5px);top:486px;width:191px;cursor:default}
+#ctrl p{margin:0;font-size:10.4px;line-height:14px;color:#777}
+#slider{-webkit-appearance:none;appearance:none;display:block;width:191px;height:12px;margin:12px 0 0;padding:0;background:none;outline-offset:4px;cursor:grab;touch-action:none}
+#slider::-webkit-slider-runnable-track{height:6px;border-radius:3px;box-shadow:inset 0 0 0 1px #cfcfcf;background:linear-gradient(90deg,#111 var(--fill,0%),#efefef var(--fill,0%))}
+#slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#111;margin-top:-3px}
+#slider::-moz-range-track{height:4px;border-radius:2px;background:#e6e6e6}
+#slider::-moz-range-progress{height:4px;background:#111}
+#slider::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#111}
+#read{display:block;margin-top:8px;font:400 8.8px/12px "Geist Mono",monospace;color:#777}
+.notes{max-width:620px;margin:0 auto;padding:40px 20px 80px;font-size:13px;line-height:1.6;color:#444;border-top:1px solid #eee}
+.notes h3{font-size:14px;color:#111;margin:0 0 10px}.notes dt{margin-top:10px}.notes dd{margin:2px 0 0}.notes code{font:12px "Geist Mono",monospace;color:#111}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="card">
+    <div class="flat" id="right">
+      <div class="lay">
+        <svg class="logo" viewBox="0 0 12 6" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h4v1H1zM0 1h2v4H0zM1 5h4v1H1zM7 0h1v6H7zM8 2h4v1H8zM10 0h1v6h-1z"/></svg>
+        <span class="handle">@ncdai</span>
+        <dl class="links">
+          <div><dt>Web</dt><dd>chanhdai.com</dd></div>
+          <div><dt>GitHub</dt><dd>ncdai</dd></div>
+          <div><dt>X</dt><dd>@iamncdai</dd></div>
+          <div><dt>LinkedIn</dt><dd>ncdai</dd></div>
+        </dl>
+        <div class="name">Chánh Đại</div>
+        <div class="role">Design Engineer</div>
+      </div>
+      <div id="crease"></div>
+      <div id="shade"></div>
+    </div>
+    <div id="leaf"></div>
+    <div class="flat" id="inner">
+      <div class="lay" id="innerC">
+        <img class="avatar" src="source-assets/avatar.png" width="47" height="47" alt="" draggable="false">
+        <div class="tag">Creating with code.<br>Small details matter.</div>
+        <div class="now">he/him</div>
+      </div>
+      <div id="innerShade"></div>
+      <div class="edge" id="innerEdge"></div>
+    </div>
+    <div class="flat" id="front">
+      <div class="lay">
+        <svg class="logo" viewBox="0 0 12 6" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h4v1H1zM0 1h2v4H0zM1 5h4v1H1zM7 0h1v6H7zM8 2h4v1H8zM10 0h1v6h-1z"/></svg>
+        <span class="handle">@ncdai</span>
+        <div class="name">Chánh Đại</div>
+        <div class="role">Design Engineer</div>
+      </div>
+      <div id="frontBlur"></div>
+      <div id="frontShade"></div>
+      <div class="edge" id="frontEdge"></div>
+    </div>
+  </div>
+  <div id="ctrl">
+    <p>Drag the page or the slider.</p>
+    <input id="slider" type="range" min="0" max="1" step=".001" value="0" aria-label="open amount">
+    <span id="read">p 0.00 / θ 0°</span>
+  </div>
+</div>
+
+<div class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#card</code></dt><dd>整张折叠卡：3D 黑片只露出上下楔形，正面内容是按投影宽度裁切的平面层。</dd>
+<dt><code>#slider</code></dt><dd>进度滑杆：p 线性映射到 θ = p × 180°，页面拖动与滑杆共用一个 p。</dd>
+</dl>
+</div>
+
+<script>
+const W=193,P=1000,$=s=>document.querySelector(s);
+const leaf=$('#leaf'),front=$('#front'),inner=$('#inner'),right=$('#right'),card=$('#card');
+const shade=$('#shade'),fs=$('#frontShade'),fb=$('#frontBlur'),is=$('#innerShade'),ic=$('#innerC');
+const ilay=inner.querySelector('.lay'),ie=$('#innerEdge'),fe=$('#frontEdge');
+const slider=$('#slider'),read=$('#read'),stage=$('#stage');
+const crease=$('#crease');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+let p=0,anim=0;
+
+// shade curves read off the video's greys, by θ
+const lerpT=(t,x)=>{for(let i=1;i<t.length;i++){if(x<=t[i][0]){const[a,b]=t[i-1],[c,d]=t[i];return b+(d-b)*(x-a)/(c-a)}}return t[t.length-1][1]};
+const PANEL=[[0,.85],[30,.8],[81,.686],[95,.6],[105,.53],[130,.36],[138,.306],[150,.21],[167,.106],[175,.03],[180,0]];
+const FAR=[[90,.62],[105,.627],[138,.64],[150,.5],[167,.23],[175,.08],[180,0]];
+
+function render(){
+  const th=p*180,r=th*Math.PI/180,cos=Math.cos(r),sin=Math.sin(r);
+  // the sheet recentres: closed the right half sits W/2 left of centre, open the hinge is the centre
+  const hinge=-(W/2)*(1-p);
+  card.style.transform=`translateX(${hinge}px)`;
+  leaf.style.transform=`translateX(${-hinge}px) perspective(${P}px) translateX(${hinge}px) rotateY(${-th}deg)`;
+  // projected x of the far edge, same maths as the CSS perspective above
+  const s=P/(P-W*sin),far=(hinge+W*cos)*s-hinge;
+  shade.style.opacity=lerpT(PANEL,th);
+  crease.style.opacity=th>170?(th-170)/10:0;
+  const open=th>=90;
+  front.style.display=open?'none':'block';
+  inner.style.display=open?'block':'none';
+  leaf.style.visibility=(th<.5||th>179.5)?'hidden':'visible';
+  if(!open){
+    front.style.width=Math.max(far,0)+'px';
+    const rad=0;
+    front.style.borderRadius=`${rad}px ${th<3?8:0}px ${th<3?8:0}px ${rad}px`;
+    front.style.borderRightWidth=th<3?'2px':'0';
+    const a=Math.min(.7,th/120);
+    fs.style.background=`linear-gradient(90deg,transparent 3%,rgba(0,0,0,${a}) 100%)`;
+    fe.style.opacity=Math.min(1,th/30)*.85;fe.style.maskImage=fe.style.webkitMaskImage='linear-gradient(90deg,transparent 40%,#000)';
+    const b=Math.min(1,th/30)*5;
+    fb.style.backdropFilter=fb.style.webkitBackdropFilter=b>.2?`blur(${b}px)`:'none';
+    fb.style.maskImage=fb.style.webkitMaskImage=`linear-gradient(90deg,transparent 12%,#000 72%)`;
+  }else{
+    const w=Math.max(-far,0);
+    inner.style.left=-w+'px';inner.style.width=(w+1)+'px';
+    ilay.style.left=(w-W-2)+'px';
+    inner.style.borderRadius=`8px 0 0 8px`;
+    const f=lerpT(FAR,th),n=lerpT(PANEL,th);
+    is.style.background=`linear-gradient(90deg,rgba(0,0,0,${f}) 0%,rgba(0,0,0,${f*.72+n*.28}) 22%,rgba(0,0,0,${(f+n)/2}) 45%,rgba(0,0,0,${n}) 88%)`;
+    const o=Math.min(1,Math.max(0,(th-125)/40));
+    ie.style.opacity=Math.min(1,(180-th)/30)*.8;ie.style.maskImage=ie.style.webkitMaskImage='linear-gradient(90deg,#000,transparent 75%)';
+    ic.style.opacity=o;
+    ic.style.filter=th>179?'none':`blur(${Math.min(9,(180-th)*.13+.2)}px)`;
+  }
+  if(document.activeElement!==slider||!slider.dataset.live)slider.value=p;
+  slider.style.setProperty('--fill',(p*100)+'%');
+  read.textContent=`p ${p.toFixed(2)} / θ ${Math.round(th)}°`;
+}
+function settle(to){
+  cancelAnimationFrame(anim);
+  if(reduce.matches){p=to;render();return}
+  // a critically damped pull toward the target: about 600ms open or shut
+  let v=0,last=performance.now();const k=70,c=2*Math.sqrt(k)*.95;
+  (function tick(now){
+    const dt=Math.min(.032,(now-last)/1000);last=now;
+    v+=(k*(to-p)-c*v)*dt;p+=v*dt;
+    if(Math.abs(to-p)<.002&&Math.abs(v)<.02){p=to;render();return}
+    p=Math.min(1,Math.max(0,p));render();anim=requestAnimationFrame(tick);
+  })(last);
+}
+let down=null;
+stage.addEventListener('pointerdown',e=>{
+  if(e.target.closest('#ctrl'))return;
+  cancelAnimationFrame(anim);
+  down={x:e.clientX,p0:p,moved:false};stage.setPointerCapture(e.pointerId);stage.classList.add('drag');
+});
+stage.addEventListener('pointermove',e=>{
+  if(!down)return;
+  const dx=e.clientX-down.x;
+  if(Math.abs(dx)>3)down.moved=true;
+  if(down.moved){p=Math.min(1,Math.max(0,down.p0-dx/(W*2)));render()}
+});
+const up=()=>{
+  if(!down)return;
+  const d=down;down=null;stage.classList.remove('drag');
+  if(!d.moved)settle(d.p0>.5?0:1);else settle(p>.5?1:0);
+};
+stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
+slider.addEventListener('input',()=>{cancelAnimationFrame(anim);slider.dataset.live=1;p=+slider.value;render()});
+slider.addEventListener('change',()=>{delete slider.dataset.live});
+render();
+</script>
+</body>
+</html>

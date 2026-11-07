@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel status notch</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Inter";src:url(fonts/InterVariable-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--bg:#efece5;--spring:cubic-bezier(.22,1.2,.36,1)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:#26231f;font:400 14px/21px "Inter",-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:relative;height:360px;overflow:hidden}
+/* 顶部主题选择器 */
+#theme{position:absolute;top:-9px;right:max(39px,calc(50% - 182px));display:flex;align-items:center;gap:14px;height:36px;color:#1d1b18;font:400 20.300px/24px "Inter"}
+#theme svg{display:block}
+/* 黑条 + 下垂的刘海；肩部用两个反向圆角 */
+#bar{position:absolute;left:0;right:0;top:41px;height:13px;background:#000}
+#notch{position:absolute;z-index:2;top:54px;left:50%;translate:-50% 0;height:81px;width:280px;background:#000;border-radius:0 0 27px 27px/0 0 25px 25px;transition:width .52s var(--spring);filter:drop-shadow(0 14px 22px #5a4f3a24);white-space:nowrap}
+#notch:before,#notch:after{content:"";position:absolute;top:0;width:15px;height:15px;background:radial-gradient(circle 15px at var(--c) 15px,#0000 14.500px,#000 15px)}
+#notch:before{left:-15px;--c:0}#notch:after{right:-15px;--c:100%}
+.row{position:absolute;left:0;right:0;display:grid;justify-items:center}
+.row>*{grid-area:1/1}
+#top{top:11px;height:24px;font:400 19px/24px "Inter";letter-spacing:.35px}
+#top .swap>span:first-child{color:#878787}#top .swap>span:last-child{color:#b5b5b5;margin-left:10px}
+#btm{top:42px;height:28px;font:450 22.800px/28px "Inter";letter-spacing:.3px;color:#fff}
+.swap{display:inline-flex;align-items:center;animation:in .42s ease-out both}
+.swap.out{animation:out .34s ease-in both}
+@keyframes in{from{opacity:0;filter:blur(5px)}to{opacity:1;filter:blur(0)}}
+@keyframes out{from{opacity:1;filter:blur(0)}to{opacity:0;filter:blur(5px)}}
+/* 像素方块：3x3，每格 6.667px，整块带辉光 */
+.px{display:grid;grid-template-columns:repeat(3,6.667px);grid-auto-rows:6.667px;width:20px;height:20px;margin-right:14px;flex:none;color:var(--c,#ffd9a8);filter:drop-shadow(0 0 4px var(--c,#ffd9a8)) blur(.35px);transition:color .5s}
+.px b{background:currentColor;opacity:var(--off,0);transition:opacity .11s linear}
+.px b.on{opacity:1}
+/* 二进制雨：只在 Creating prototype 时出现 */
+#rain{position:absolute;left:50%;translate:-50% 0;top:0;bottom:0;width:442px;pointer-events:none;color:#928c84;opacity:0;transition:opacity .9s;mask:linear-gradient(#0000 268px,#0007 300px,#000 345px)}
+#rain.on{opacity:1}
+#rain span{position:absolute;display:block;width:12px;height:17px;margin-left:-6px}#rain svg{display:block}
+.doc{max-width:442px;margin:0 auto;padding:40px 16px 72px}
+.doc h3{font:600 15px/22px "Inter";margin:0 0 8px}.doc dt{margin-top:10px}.doc dd{margin:2px 0 0;color:#5c574f}.doc code{font:500 12.500px "Geist Mono",ui-monospace,monospace}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<div id="stage">
+ <div id="theme"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6e6a64" stroke-width="1.900"><path d="M12 2.500a9.500 9.500 0 1 0 0 19c1.400 0 2.200-1 2.200-2 0-1.300-1-1.700-1-2.800 0-1 .9-1.700 2-1.700h2.300c2.400 0 4-1.800 4-3.900C21.500 6 17.300 2.500 12 2.500Z"/><circle cx="7.500" cy="11" r=".9" fill="#6e6a64"/><circle cx="10" cy="7" r=".9" fill="#6e6a64"/><circle cx="14.800" cy="7" r=".9" fill="#6e6a64"/><circle cx="17.500" cy="11" r=".9" fill="#6e6a64"/></svg>light<svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="#8a8680" stroke-width="1.700"><path d="m1.500 1.500 6.500 7 6.500-7"/></svg></div>
+ <div id="bar"></div>
+ <div id="notch" role="status" aria-live="polite"><div class="row" id="top"></div><div class="row" id="btm"></div></div>
+ <div id="rain" aria-hidden="true"></div>
+</div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#notch</code></dt><dd>黑色刘海：反向圆角的肩，宽度跟文字走，用带回弹的过渡。</dd>
+<dt><code>#btm</code></dt><dd>下行动作：像素方块加白字，换字时旧字模糊淡出、新字模糊淡入。</dd>
+<dt><code>#rain</code></dt><dd>进入生成阶段才出现的 0/1 雨，顶部用遮罩淡掉。</dd></dl></section>
+<script>
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 图案：每帧 4 行，1 亮 0 暗
+const G={
+ think:['111/111/000','000/111/111','011/111/110','110/110/111','111/100/110','100/111/111','011/011/111','111/110/100','000/110/111','110/111/011'],
+ read:['101/111/010','011/110/110','101/101/111','001/111/110'],
+ input:['000/010/000','010/000/000','010/010/000','000/000/000','000/010/010','000/000/000','010/000/000'],
+ bar:['000/011/000','000/100/000','000/110/000','000/001/000'],
+ fade:['111/111/111'],
+ x:['101/010/101','010/101/010','111/101/111'],
+ resp:['000/011/111','000/110/011','011/011/111','000/011/110'],
+ make:['101/010/101','111/111/111','010/101/010','010/111/010','111/111/111','101/010/101']};
+// 时间线（秒），文案和节奏取自原视频
+const T=[
+ {f:'__root.tsx',n:55,a:'Reading file',g:'read',c:['#e8c6dd'],d:.7},
+ {f:'app-sidebar.tsx',n:219,a:'Thinking',g:'think',c:['#ffdca8','#ffc08a','#ff9f86','#ff7f86'],d:4.6},
+ {f:'app-sidebar.tsx',n:219,a:'Reading file',g:'read',c:['#8fcbff'],d:.9},
+ {f:'dropdown-menu.tsx',n:257,a:'Reading file',g:'read',c:['#8fcbff'],d:1.5},
+ {f:'tooltip.tsx',n:63,a:'Reading file',g:'read',c:['#8fcbff'],d:.7},
+ {f:'tooltip.tsx',n:63,a:'Reading input.tsx',g:'input',c:['#ffbf86','#ff8b76'],d:3.2},
+ {f:'input.tsx',n:23,a:'Thinking',g:'bar',c:['#ffc58f'],d:1},
+ {f:'input.tsx',n:23,a:'Reading file',g:'fade',c:['#f3b184','#7a4a3a','#3a221c'],d:3.6},
+ {f:'sidebar.tsx',n:741,a:'Thinking',g:'x',c:['#ff8a8e'],d:2.4},
+ {f:'sidebar.tsx',n:741,a:'Responding',g:'resp',c:['#8fcbff'],d:1.8},
+ {f:'sidebar.tsx',n:741,a:'Creating prototype',g:'make',c:['#ffb37e','#ff8a8e','#ffa3c0','#c5c1ff','#8fcbff'],d:7.5,rain:1}];
+const $=id=>document.getElementById(id),notch=$('notch'),topR=$('top'),btm=$('btm'),rain=$('rain');
+const mkPx=()=>{const p=document.createElement('span');p.className='px';p.setAttribute('aria-hidden','true');p.innerHTML='<b></b>'.repeat(9);return p};
+const ms=(()=>{const c=document.createElement('canvas').getContext('2d');return(font,t)=>{c.font=font;return c.measureText(t).width}})();
+function swap(row,el){[...row.children].forEach(o=>{if(reduce){o.remove();return}o.classList.add('out');o.addEventListener('animationend',()=>o.remove(),{once:true})});row.append(el)}
+let cur=null,curPx=null,step=0;
+function setText(s){
+ const lineTop=`${s.f}|${s.n}`;
+ if(!cur||cur.f!==s.f||cur.n!==s.n){const e=document.createElement('span');e.className='swap';e.innerHTML=`<span>Read ${s.f}</span><span>${s.n} lines</span>`;swap(topR,e)}
+ if(!cur||cur.a!==s.a||cur.g!==s.g){const e=document.createElement('span');e.className='swap';curPx=mkPx();const t=document.createElement('span');t.textContent=s.a;e.append(curPx,t);swap(btm,e)}
+ const w1=ms('400 19px Inter',`Read ${s.f}`)+ms('400 19px Inter',`${s.n} lines`)+10+.35*(`Read ${s.f}${s.n} lines`.length);
+ const w2=ms('450 22.8px Inter',s.a)+34+.3*s.a.length;
+ notch.style.width=Math.round(Math.max(w1,w2)+40)+'px';
+ rain.classList.toggle('on',!!s.rain);cur=s}
+function paint(s,i){if(!curPx)return;const f=G[s.g];curPx.style.setProperty('--off',s.g==='make'||s.g==='x'?.22:s.g==='fade'?1:s.g==='think'||s.g==='read'||s.g==='resp'?.06:0);const pat=f[i%f.length].replace(/\//g,'');[...curPx.children].forEach((b,k)=>b.classList.toggle('on',pat[k]==='1'));
+ const seg=s.g==='fade'?Math.floor(i/10):Math.floor(i/(s.g==='make'?7:4));curPx.style.setProperty('--c',s.c[Math.min(seg,s.c.length-1)%s.c.length]||s.c[0]);if(s.g==='make'||s.g==='think')curPx.style.setProperty('--c',s.c[seg%s.c.length])}
+const dig=(sp,d)=>{sp.dataset.d=d;sp.innerHTML=d==='0'?'<svg width="12" height="17" viewBox="0 0 12 17"><rect x="1.300" y="1.200" width="9.400" height="14.600" rx="4.700" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4.800" y="6" width="2.400" height="5" rx="1.200" fill="currentColor"/></svg>':'<svg width="12" height="17" viewBox="0 0 12 17"><path d="M1.800 4.200 6.500 1.300V15.700M1 15.800H11.500" fill="none" stroke="currentColor" stroke-width="2"/></svg>'};
+const COLS=[80,98,178,235,316,348];const cols=COLS.map((x,j)=>{const a=[];for(let r=0;r<4;r++){const sp=document.createElement('span');sp.style.left=x+'px';dig(sp,Math.random()<.5?'0':'1');rain.append(sp);a.push(sp)}return{a,o:(j*13)%32,v:7+((j*5)%6)}});
+function rainTick(dt){cols.forEach(c=>{c.o=(c.o+c.v*dt)%32;c.a.forEach((sp,r)=>{sp.style.top=(264+r*32+c.o)+'px'});if(Math.random()<dt*2.2){const sp=c.a[Math.floor(Math.random()*c.a.length)];dig(sp,sp.dataset.d==='0'?'1':'0')}})}
+const q=new URLSearchParams(location.search);const pin=q.has('i')?+q.get('i'):null,fz=q.has('f')?+q.get('f'):null;
+let idx=pin??0,t0=performance.now(),lastF=-1,last=t0;
+async function boot(){try{await document.fonts.load('400 19px Inter');await document.fonts.load('450 22.8px Inter')}catch(e){}
+ setText(T[idx]);paint(T[idx],0);rainTick(0);
+ if(reduce&&pin==null){setText(T[10]);paint(T[10],1);rainTick(0);return}
+ const frame=now=>{const dt=(now-last)/1000;last=now;const s=T[idx];const el=(now-t0)/1000;
+  if(pin==null&&el>s.d){idx=(idx+1)%T.length;t0=now;lastF=-1;setText(T[idx]);requestAnimationFrame(frame);return}
+  const f=fz??Math.floor(el/.14);if(f!==lastF){lastF=f;paint(s,f)}rainTick(dt);requestAnimationFrame(frame)};
+ requestAnimationFrame(frame)}
+boot();window.__go=i=>{idx=i;t0=performance.now();lastF=-1;setText(T[i])};
+</script></body></html>

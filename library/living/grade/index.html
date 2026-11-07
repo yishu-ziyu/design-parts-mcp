@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>悬停变深，邻居不动</title>
+<style>
+@font-face{font-family:"Roboto Flex";src:url(fonts/RobotoFlex-latin.woff2) format("woff2");font-weight:100 1000;font-display:block}
+:root{--paper:#f4efe4;--ink:#1c1914;--muted:#5c564c;--field:#e7e4dc;--mark:#c2410c;--serif:"Iowan Old Style",Palatino,"Songti SC","Noto Serif SC",Georgia,serif;--nav:"Roboto Flex",Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16.5px/1.55 var(--serif)}
+header{max-width:760px;margin:auto;padding:48px 24px 14px;text-align:center}h1{font-weight:400;font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;margin:0 0 8px}header p{margin:0;font-style:italic;color:var(--muted)}
+#stage{max-width:1000px;margin:18px auto 0;padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pane{background:var(--field);border:1px solid var(--ink);padding:18px 16px 16px;min-width:0}
+.cap{font:600 13px/1.4 Arial,sans-serif;margin:0 0 14px}.cap small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.nav{display:flex;align-items:center;gap:22px;background:#fff;border-radius:14px;padding:12px 18px;font:400 15px/1 var(--nav);box-shadow:0 8px 24px -18px #0006}
+.nav b{font-weight:650;margin-right:18px}.nav a{color:#1c1914;text-decoration:none;padding:6px 0;cursor:pointer}
+.weight a:hover,.weight a.is-on{font-weight:700}
+#grade a{font-variation-settings:"GRAD" 0;transition:font-variation-settings 120ms ease}
+#grade a:hover,#grade a:focus-visible,#grade a.is-on{font-variation-settings:"GRAD" 150}
+.read{font:12.5px/1.4 ui-monospace,Menlo,monospace;margin:12px 0 0;color:var(--muted)}.read strong{color:var(--ink)}.weight+.read strong{color:var(--mark)}
+.note{max-width:760px;margin:26px auto 60px;padding:0 24px}h3{font-weight:500;font-size:17px;margin:18px 0 6px}dl{margin:0;font-size:15px}dt code{font-size:13px}dd{margin:2px 0 12px}
+button{font:600 13px Arial,sans-serif;padding:8px 12px;border:1px solid var(--ink);background:var(--ink);color:#fffdf7;cursor:pointer}
+.tools{max-width:1000px;margin:14px auto 0;padding:0 16px}
+@media(max-width:760px){#stage{grid-template-columns:1fr}.nav{gap:14px;padding:12px}}
+@media(prefers-reduced-motion:reduce){#grade a{transition:none}}
+</style></head><body>
+<header><h1>悬停变深，邻居不动</h1><p>字重变粗时字也变宽，会把旁边的链接推开。Grade 轴只加深，不改字宽。</p></header>
+<div id="stage">
+ <section class="pane"><p class="cap">Weight：邻居被推开<small>a:hover { font-weight: 700 }</small></p>
+  <nav class="nav weight" data-nav><b>Sisyphus</b><a tabindex="0">Home</a><a tabindex="0">Products</a><a tabindex="0">Resources</a></nav><p class="read">Resources 位移 <strong data-shift>0.00px</strong></p></section>
+ <section class="pane"><p class="cap">Grade：什么都不动<small>a:hover { font-variation-settings: "GRAD" 150 }</small></p>
+  <nav class="nav" id="grade" data-nav><b>Sisyphus</b><a tabindex="0">Home</a><a tabindex="0">Products</a><a tabindex="0">Resources</a></nav><p class="read">Resources 位移 <strong data-shift>0.00px</strong></p></section>
+</div>
+<div class="tools"><button id="demo" type="button">依次走一遍</button></div>
+<div class="note"><h3>可拆</h3><dl><dt><code>#grade</code></dt><dd>导航链接用带 GRAD 轴的可变字体，悬停时 font-variation-settings 从 "GRAD" 0 到 150，过渡 120ms。字变深，字宽不变，邻居不动。</dd></dl>
+<p>来源：<a href="https://x.com/gabriell_lab/status/2113978631127253395">@gabriell_lab</a>，2026-10-24。字体：Roboto Flex（SIL OFL）。不收原帖的品牌和油画背景。</p></div>
+<script>
+const navs=[...document.querySelectorAll('[data-nav]')];
+function measure(){navs.forEach(n=>{const last=n.querySelector('a:last-child'),base=+n.dataset.base;const d=last.getBoundingClientRect().left-base;n.parentElement.querySelector('[data-shift]').textContent=(Math.abs(d)<.005?0:Math.abs(d)).toFixed(2)+'px'})}
+function base(){navs.forEach(n=>n.dataset.base=n.querySelector('a:last-child').getBoundingClientRect().left)}
+document.fonts.ready.then(()=>{base();measure()});addEventListener('resize',()=>{navs.forEach(n=>n.querySelectorAll('a').forEach(a=>a.classList.remove('is-on')));base();measure()});
+navs.forEach(n=>{n.addEventListener('pointerover',()=>requestAnimationFrame(measure));n.addEventListener('pointerout',()=>requestAnimationFrame(measure));n.addEventListener('focusin',()=>requestAnimationFrame(measure));n.addEventListener('focusout',()=>requestAnimationFrame(measure))});
+function step(i){navs.forEach(n=>n.querySelectorAll('a').forEach((a,k)=>a.classList.toggle('is-on',k===i)));setTimeout(measure,180)}
+let timer;function demo(){clearTimeout(timer);let i=0;const seq=[0,1,-1];(function go(){step(seq[i]);i++;if(i<seq.length)timer=setTimeout(go,1100)})()}
+document.getElementById('demo').onclick=demo;
+if(location.search.includes('on'))document.fonts.ready.then(()=>step(0));
+</script></body></html>

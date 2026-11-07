@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cut-up Reading Poster</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Lib;src:url(fonts/libertinus-serif.woff2) format("woff2");font-display:block}
+@font-face{font-family:Lib;src:url(fonts/libertinus-serif-700.woff2) format("woff2");font-weight:700;font-display:block}
+@font-face{font-family:Hand;src:url(fonts/nothing-you-could-do.woff2) format("woff2");font-display:block}
+@font-face{font-family:Caps;src:url(fonts/reenie-beanie.woff2) format("woff2");font-display:block}
+:root{--y:#eff06c;--c:#78cfe2;--g:#a4e888;--p:#f368b4;--pen:#1a1a22;--gpen:#2a8a72;--red:#c22a3a;--strip:#f1eff6}
+*{box-sizing:border-box}html,body{margin:0;background:#a68c6e}
+#view{position:relative;width:100vw;height:75vw;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:2000px;height:1500px;transform-origin:0 0}
+#wood{position:absolute;inset:0;background:#9a8972}
+#wood svg{position:absolute;inset:0;width:100%;height:100%}
+#poster{position:absolute;left:0;top:0;width:2000px;height:1500px;clip-path:polygon(190px 155px,1848px 143px,1860px 1330px,207px 1358px);background:linear-gradient(170deg,#ede6f5,#e9e2f3 60%,#e5dff1)}
+#shadow{position:absolute;inset:0;filter:drop-shadow(0 3px 5px rgba(50,35,20,.35))}
+.s{position:absolute;background:var(--strip);padding:3px 6px 4px;font:9.4px/13.6px Lib,Georgia,serif;color:#26262c;text-align:justify;hyphens:auto;box-shadow:0 .5px 1.5px rgba(60,50,80,.22);transform-origin:0 0}
+.s u{text-decoration:underline;text-decoration-color:#3a3a50;text-underline-offset:1.5px}
+.s mark{color:inherit;padding:0 1px;border-radius:1px}
+.s .y{background:var(--y)}.s .c{background:var(--c)}.s .g{background:var(--g)}.s .pk{background:var(--p)}
+.h{position:absolute;font:15.2px/28px Hand,cursive;color:var(--pen);white-space:pre;transform-origin:0 0;letter-spacing:.1px;-webkit-text-stroke:.28px currentColor}
+.h.g{color:var(--gpen);font-size:12.8px;line-height:24px}
+.h.r{color:var(--red)}
+.h.big{font-size:16px;line-height:30px}.h.bush{font-size:13.8px;line-height:21px}.h.tight{font-size:15.6px;line-height:25px}
+.h.caps{font:19.5px/28px Caps,cursive;letter-spacing:1.6px;-webkit-text-stroke:.35px currentColor}
+.h mark{background:var(--y);color:inherit;padding:0 2px}
+#marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.a{fill:none;stroke:var(--pen);stroke-width:1.25;stroke-linecap:round}
+#desk{position:absolute;inset:0;pointer-events:none}
+.notes{background:#f6f4f9;padding:32px max(16px,calc(50vw - 400px)) 64px;font:16px/1.55 Lib,Georgia,serif;color:#333}.notes h3{margin:0 0 8px;font-size:17px}.notes dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 12px}.notes dd{margin:0}.notes code{font:13px ui-monospace,Menlo,monospace}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="view"><div id="stage">
+ <div id="wood" aria-hidden="true"><svg><filter id="gr"><feTurbulence type="fractalNoise" baseFrequency=".004 .09" numOctaves="4" seed="11"/><feColorMatrix values="0 0 0 0 .32 0 0 0 0 .22 0 0 0 0 .13 0 0 0 1.5 -.55"/></filter><rect width="100%" height="100%" filter="url(#gr)"/></svg></div>
+ <div id="shadow"><div id="poster"></div></div>
+ <div id="sheet"></div>
+ <svg id="marks" viewBox="0 0 2000 1500" aria-hidden="true"></svg>
+ <svg id="desk" viewBox="0 0 2000 1500" aria-hidden="true">
+  <!-- 桌上的文具：自绘占位 -->
+  <g filter="drop-shadow(2px 4px 4px rgba(40,25,10,.4))">
+   <path d="M-10 432Q50 450 88 520L70 600 0 620Z" fill="#ece9e6" opacity=".92"/>
+   <g transform="translate(138 662) rotate(19)"><rect x="-23" y="0" width="46" height="340" rx="9" fill="#f4f3ec"/><rect x="-25" y="0" width="50" height="70" rx="6" fill="#9fd24f"/><rect x="-15" y="-20" width="30" height="24" rx="7" fill="#9fd24f"/></g>
+   <g transform="translate(60 782) rotate(14)"><rect x="-14" y="0" width="28" height="210" rx="4" fill="#efece4"/><rect x="-14" y="0" width="28" height="60" fill="#5a3f3f"/><rect x="-14" y="170" width="28" height="30" fill="#333"/></g>
+   <g transform="translate(170 760) rotate(23)"><rect x="-17" y="0" width="34" height="370" rx="5" fill="#3c4048"/><rect x="-17" y="-20" width="34" height="28" rx="10" fill="#1a3a8c"/><rect x="-17" y="280" width="34" height="46" fill="#1a3a8c"/></g>
+   <g transform="translate(172 880) rotate(23)"><rect x="-14" y="0" width="28" height="320" rx="8" fill="#131417"/><rect x="-4" y="-38" width="8" height="40" fill="#55555b"/><rect x="-15" y="120" width="30" height="90" rx="11" fill="#2b2c30"/></g>
+   <g transform="translate(-4 820) rotate(6)"><rect x="-12" y="0" width="24" height="190" fill="#e8e6dc"/><rect x="-12" y="-46" width="24" height="46" fill="#27724a"/></g>
+   <g transform="translate(1818 622) rotate(33)"><rect x="0" y="-19" width="300" height="38" rx="9" fill="#f3f3f0"/><rect x="0" y="-16" width="46" height="32" rx="8" fill="#37a4cc"/><rect x="54" y="-19" width="16" height="38" fill="#3f9cc0"/></g>
+   <path d="M2010 752L1862 840 1890 1010 2010 948Z" fill="#ecf15a"/>
+   <path d="M1955 805L1995 880 2000 1018 1985 1030 1960 900Z" fill="#b9bcc0"/>
+  </g>
+ </svg>
+</div></div>
+<section class="notes"><h3>可拆</h3><dl>
+<dt><code>#sheet</code></dt><dd>纸条：每段是一块裁得不方正的小块（<code>clip-path</code> 加微小旋转），首行留空表示从段落中间剪下来。</dd>
+<dt><code>#highlight</code></dt><dd>四色荧光笔分工：黄标观点、青标术语、绿标对象、粉标机会；下划线标细节。</dd>
+<dt><code>#hand</code></dt><dd>手写评论穿插在纸条之间，绿色笔是第二轮追问，大写字母是分区标题。</dd>
+<dt><code>#figure</code></dt><dd>把论文的四象限图放中央，四周纸条用箭头指回图上具体位置。</dd>
+</dl></section>
+<script>
+/* 正文是同样长度的占位词：只保留原帖里划出的重点和手写评论，不转录论文全文 */
+const W='reading readers text process through their systems with support may tools across create experience meaning practice and that from over time often which these how they into more within between work through own for the of to in a as an by on is can'.split(' ');
+let seed=5;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const fill=n=>{let o='',k=0;while(o.length<n){const w=W[Math.floor(rnd()*W.length)];o+=(k++?' ':'')+w}return o};
+let K=1;const render=m=>m.replace(/~(\d+)/g,(_,n)=>fill(Math.max(3,+n*K))).replace(/\[([ycgp]):([^\]]+)\]/g,(_,c,t)=>`<mark class="${c==='p'?'pk':c}">${t}</mark>`).replace(/\[u:([^\]]+)\]/g,'<u>$1</u>');
+/* x,y,w,旋转,首行缩进,文字 —— 坐标按 2000×1500 的原图量 */
+const S=[
+[240,381,240,-1.5,0,'[y:Reading augmentation systems] ~90 [y:cognitive load, they often implicitly frame reading as information transmission, or “reading to discard.”]'],
+[222,430,258,-1.6,170,'extract- ~170'],
+[245,482,240,-1.8,0,'Reading augmentation, even in [g:scholarly] contexts, [y:should not be reduced to more efficient information transmission.]'],
+[242,624,240,.2,50,'We propose [c:creative reading] as an alternative goal: [y:reading augmentation that supports readers in creating both readings and themselves as readers.]'],
+[238,664,240,.2,130,'~180'],
+[240,748,240,0,0,'~100 [u:expand our own] [c:readerly capacities]; read slowly to [u:savor] ~40 [u:see how their meaning has changed] ~20 [u:juxtapose] ~50 [u:engage with the author]; ~10 [u:develop opinions]; ~20 [y:read creatively], ~90'],
+[245,880,240,-.2,0,'Reading becomes [u:creative] when ~100'],
+[240,968,240,-1.1,0,'~90 “[c:a reading]”: ~70'],
+[240,1024,244,-1.1,70,'A [u:reading] ~190'],
+[654,430,238,-.5,185,'When read- ~60 [c:efferent] ~90 [c:aesthetic stance] ~160'],
+[655,505,238,.1,70,'[g:Scholarly reading] often has [u:efferent] ~110 [u:aesthetic]. ~180 [u:read-ings].'],
+[654,590,240,-.2,0,'We posit that [y:augmentation of “objective” scholarly works should therefore consider reading ideals that go beyond information trans-mission] ~10 [u:transformation]. ~160'],
+[660,654,236,0,185,'Reading ~30 [u:transformation] ~230'],
+[645,800,242,0,0,'~20 [c:dialectical activity] ~60 [c:consequentialist] ~90 [u:Dialectical] [y:valuable because their good can only be discovered from within the activity], ~60 [g:Scholarly sensemaking] is similarly [u:di-alectical]: ~170'],
+[650,1009,240,0,0,'~40 [u:transformed] ~180 [c:process aesthetics] ~130 [c:flow] and [c:reflection]. [u:Flow] ~30 [u:making effort feel pleasurable, expressive, and intrinsically motivating], ~90 [u:Reflection], ~200'],
+[645,1240,190,0,0,'~100 [c:Running-shoe systems] ~90 [c:Dumbbell systems] ~60 [c:Ski systems] ~70'],
+[976,262,218,-4,120,'Like [u:running shoes], ~250'],
+[1284,163,230,-.4,120,'~120 [u:transforma-tion] ~90'],
+[1284,226,228,-.4,0,'~90 [u:dumbbells], ~20 [u:readerly capacities]. Like [u:skis], ~130 [y:more than a way of working and closer to a way of being.]'],
+[1578,172,232,-1,20,'~180 [u:scholarly sensemaking] ~120'],
+[1575,272,232,-1.3,105,': By ~100 [u:ski-like] ~20 [u:new move-ments] ~40'],
+[1596,333,240,-.4,30,'~190 [u:scholarly reading] ~30 [u:process aesthetics]. ~60 [u:transformation] ~10 [y:develop the courage, tastes, and capacities that create them as read-ers]. ~60 [p:transformative scholarly scaffolding] ~60 [u:readerly capacities] over time.'],
+[1071,611,230,-1.2,110,'delegation is useful for ~90'],
+[1071,674,230,-1.2,120,'Yet the boundary is often ~170 [y:The system may produce an outcome without creating a reading or developing the reader,] ~80'],
+[1408,606,238,-.6,0,'~50 [u:aesthetic] of [u:flow] ~30 [u:reflection], ~360 [u:transformation], [y:where systems change readers through hedonic, intrinsically moti-vating [9] experiences without the agency and] [u:reflection] [y:through which readers create themselves.] ~50 [p:algorithmic curation as reader creation] ~50'],
+[1040,906,242,0,120,'~400 [u:aesthetic experiences]” [y:while bringing that plurality into relation with others.]'],
+];
+const H=[
+['',222,520,-3,"This is me, accidentally!\nI love this paper because it puts its finger\non a vague unease I've had about much of\nmy work — and suggests a way forward:"],
+['',243,843,-1,"And in particular:"],
+['big',228,1100,-2,"I think one of the most important\ntasks for designers of reading augmentation\nsystems is to <mark>create new representations</mark>\n<mark>of “readings.”</mark> I am dissatisfied with all\nexisting ones."],
+['',230,1252,-1,"This is itself an experiment in a new\nkind of representation of a “reading.”\nI am dissatisfied with it, too."],
+['caps',660,369,0,"SOME THEORETICAL SETUP:"],
+['caps',700,407,0,"—efferent —vs.— aesthetic—"],
+['',902,662,-1,"(c.f. Thread\n      Texts!"],
+['g',735,717,0,"i.e. “readerly capacities”?"],
+['caps',665,770,0,"—consequential—vs.—dialectical—"],
+['caps',650,952,0,"—output —vs. — process —\n          aesthetics"],
+['caps',635,1205,-2,"running shoes, dumbbells, and skis"],
+['g',880,1245,-3,"i.e. necessarily efferent?\nmostly efferent?"],
+['g',888,1297,-3,"could be either\nefferent or aesthetic"],
+['g',1698,462,0,"What are these\n“readerly capacities”?\nDomain knowledge?\nSelf knowledge?\nProcess knowledge?\nTaste?"],
+['',1080,755,1,"And, often, the reader won't\nrealize the deficit, or even that\nanything has gone wrong."],
+['caps',1020,850,-1,"And also... SOCIALITY!"],
+['bush',1291,932,1,"This has been a dream since\nBush's memex, but I don't think\nthe results have been hugely com-\npelling. Is there a good example\nof a helpful trace, or “trail,”\nas Bush put it?"],
+['big tight',1044,1092,1,"I think my motivations around sociality\ndiffer somewhat from the authors. Yes,\nthe sociality shapes my interpretive\nepistemics, and indeed shapes democracy,\nbut I feel most keenly motivated by\nthe relational meaningfulness that it brings\nto my reading experience. Aesthetically, it\nhas a big impact knowing that I'll be\ndiscussing a reading with others, or giving them\nan artifact."],
+['big',1410,1048,1,"My work on reading augmentation\nhas almost entirely ignored\nsociality. I'd like to change that!\n\nI think often of Andrew Sutherland's\nremark that his favorite reading\n“tool for thought” is to pick up the\nphone and call a friend when he\nfinishes a book."],
+['r',566,172,-4,"♡ yay this paper"],
+];
+const HS=[46,50,32,36,38,104,30,48,48,70,80,62,68,118,190,98,62,52,80,84,52,116,38,80,178,142];
+const sheet=document.getElementById('sheet');
+S.forEach(([x,y,w,r,ind,t],i)=>{const d=document.createElement('div');d.className='s';if(i===0)d.id='strip';if(i===2)d.id='highlight';d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;transform:rotate(${r}deg)`;
+ sheet.append(d);
+ /* 按原图纸条的高度收缩占位词，重点句不动 */
+ const target=HS[i];K=1;for(let n=0;n<30;n++){d.innerHTML=`<span style="display:inline-block;width:${ind}px"></span>`+render(t);if(d.offsetHeight<=target)break;K*=.93}
+ /* 剪刀痕：四角各偏 0–3px；第一行缩进处切掉一块 */
+ const h=d.offsetHeight,j=()=>(rnd()*3).toFixed(1);
+ d.style.clipPath=`polygon(${ind>30?ind-8:j()}px ${j()}px,calc(100% - ${j()}px) ${j()}px,calc(100% - ${j()}px) calc(100% - ${j()}px),${j()}px calc(100% - ${j()}px),${j()}px ${ind>30?17:j()}px,${ind>30?ind-8+'px 17px':j()+'px '+j()+'px'})`;
+});
+/* 标题块 */
+const title=document.createElement('div');title.className='s';title.style.cssText='left:224px;top:186px;width:462px;height:174px;text-align:center;transform:rotate(-.6deg);padding-top:8px;clip-path:polygon(2px 3px,99.5% 0,100% 98%,60% 99%,0 100%)';
+title.innerHTML=`<b style="font:700 16.4px/20px Lib;display:block;margin-bottom:8px;white-space:nowrap">Creative Reading: Scaffolding Reading for Transformation</b><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px 6px;font-size:10px;line-height:13px">`+[1,2,3,4,5,6].map(n=>`<div><span style="font-size:11.5px">Author Name</span><br>University of Somewhere<br>City, State, USA<br>name@university.edu</div>`).join('')+`</div>`;
+sheet.append(title);
+/* 手写 */
+H.forEach(([k,x,y,r,t],i)=>{const d=document.createElement('div');d.className='h '+k;if(i===0)d.id='hand';d.style.cssText=`left:${x}px;top:${y}px;transform:rotate(${r}deg)`;d.innerHTML=t;sheet.append(d)});
+/* 四象限图 */
+const NS='http://www.w3.org/2000/svg',m=document.getElementById('marks');
+m.innerHTML=`<defs><pattern id="hatch" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)"><path d="M0 0v22" stroke="#c6333c" stroke-width="2.2"/></pattern></defs>
+<g id="figure" opacity=".86"><path d="M1048 368 1150 356 1600 352 1602 572 1500 584 1090 590 1048 540Z" fill="#f5f3f2" opacity=".96"/>
+<g font-family="Inter,Helvetica,Arial,sans-serif">
+<text x="1198" y="414" text-anchor="end" font-size="14" fill="#a24a30" font-weight="600">Scaffolding <tspan fill="#333">reading</tspan></text>
+<text x="1198" y="430" text-anchor="end" font-size="9" fill="#777">Valuing the process of reading</text><text x="1198" y="441" text-anchor="end" font-size="9" fill="#777">(dialectical activity)</text>
+<text x="1198" y="499" text-anchor="end" font-size="14" fill="#d08850" font-weight="600">Substituting <tspan fill="#333">reading</tspan></text>
+<text x="1198" y="515" text-anchor="end" font-size="9" fill="#777">Valuing the outcome of reading</text><text x="1198" y="526" text-anchor="end" font-size="9" fill="#777">(consequential activity)</text>
+<text x="1214" y="415" font-size="12.5" font-weight="600" fill="#222">Creates a reading</text><text x="1214" y="426" font-size="8" fill="#888">Scholarly sensemaking tools</text>
+<text x="1372" y="405" font-size="12.5" font-weight="600" fill="#222">Creates a reading &amp;</text><text x="1372" y="420" font-size="12.5" font-weight="600" fill="#222">creates the reader</text><text x="1372" y="431" font-size="8" fill="#888">Interactive digital narrative (IDN)</text>
+<text x="1372" y="500" font-size="12.5" font-weight="600" fill="#222">Creates the reader</text><text x="1372" y="511" font-size="8" fill="#888">Personalized feeds</text>
+<text x="1208" y="560" font-size="12.5" fill="#222" font-weight="600">for <tspan fill="#7da7cc">Transmission</tspan></text><text x="1183" y="572" font-size="8" fill="#888">Centering the task or author</text><text x="1200" y="582" font-size="8" fill="#888">(efferent stance)</text>
+<text x="1364" y="558" font-size="12.5" fill="#222" font-weight="600">for <tspan fill="#2a5fa8">Transformation</tspan></text><text x="1364" y="570" font-size="8" fill="#888">Centering the reader</text><text x="1364" y="580" font-size="8" fill="#888">(aesthetic stance)</text>
+<rect x="1178" y="503" width="316" height="39" fill="url(#hatch)" opacity=".75"/>
+<text x="1358" y="526" font-family="Caps,cursive" font-size="24" fill="#c6333c" letter-spacing="2" stroke="#c6333c" stroke-width=".4">DANGER ZONE</text>
+<path d="M1175 372V543H1498" fill="none" stroke="#111" stroke-width="2.5"/>
+<path d="M1176 458H1520" fill="none" stroke="#333" stroke-width="1.2" stroke-dasharray="5 4"/><path d="M1338 362V542" fill="none" stroke="#7da7cc" stroke-width="1" />
+<circle cx="1338" cy="415" r="26" fill="#9a93e0" opacity=".88"/><circle cx="1411" cy="458" r="21" fill="#9a93e0" opacity=".88"/>
+<text x="1338" y="412" text-anchor="middle" font-size="7.5" fill="#fff">Opportunity</text><text x="1338" y="421" text-anchor="middle" font-size="7.5" fill="#fff">space 1</text>
+<text x="1411" y="456" text-anchor="middle" font-size="7" fill="#fff">Opportunity</text><text x="1411" y="464" text-anchor="middle" font-size="7" fill="#fff">space 2</text>
+</g>
+<g transform="rotate(-13 1300 350)"><rect x="1294" y="348" width="88" height="16" fill="#f368b4"/></g><g transform="rotate(-13 1310 370)"><rect x="1312" y="366" width="108" height="16" fill="#f368b4"/></g>
+<rect x="1456" y="430" width="88" height="15" fill="#f368b4" transform="rotate(2 1456 430)"/><rect x="1496" y="447" width="72" height="15" fill="#f368b4"/><rect x="1500" y="465" width="46" height="15" fill="#f368b4"/>
+<g font-family="Caps,cursive" fill="#a51d55" stroke="#a51d55" stroke-width=".3" letter-spacing="1"><text transform="rotate(-13 1300 350)" x="1298" y="361" font-size="17">“transformative</text><text transform="rotate(-13 1310 370)" x="1314" y="379" font-size="17">scholarly scaffolding”</text><text transform="rotate(2 1456 430)" x="1460" y="442" font-size="16">“participatory</text><text x="1500" y="459" font-size="16">algorithmic</text><text x="1504" y="477" font-size="16">curation”</text></g>
+<text x="1098" y="561" font-family="Hand" font-size="17" fill="#b71f2a">also danger</text><text x="1098" y="580" font-family="Hand" font-size="17" fill="#b71f2a">zone? depends</text></g>
+<g class="ar"><path class="a" d="M1140 290C1170 320 1195 350 1207 388"/><path class="a" d="M1198 378l9 11 2-14"/>
+<path class="a" d="M1370 305C1360 330 1350 350 1345 383"/><path class="a" d="M1338 372l6 12 8-11"/>
+<path class="a" d="M1530 332C1520 355 1505 372 1484 384"/><path class="a" d="M1488 372l-5 12 13-1"/>
+<path class="a" d="M1425 322C1490 322 1560 335 1590 362"/><path class="a" d="M1580 360l10 3-3-11"/>
+<path class="a" d="M1310 600C1305 570 1290 540 1272 533"/><path class="a" d="M1280 526l-9 7 11 4"/>
+<path class="a" d="M1185 670C1220 650 1240 610 1252 560"/>
+<path class="a" d="M1500 600C1490 560 1480 510 1480 488"/><path class="a" d="M1474 498l6-11 6 11"/>
+<path class="a" d="M1112 533C1130 540 1160 530 1182 510"/><path class="a" d="M1170 512l12-3-3 12" /><path class="a" style="stroke:#c6333c" d="M1138 548l36-22"/>
+<path class="a" d="M1288 932V1040" style="stroke-width:1.4"/><path class="a" style="stroke:#2a8a72" d="M884 1290V1326"/><path class="a" style="stroke:#2a8a72" d="M1760 440V458M1755 448l5-9 5 9"/></g>`;
+/* 缩放到视口 */
+const stage=document.getElementById('stage'),fit=()=>stage.style.transform=`scale(${innerWidth/2000})`;addEventListener('resize',fit);fit();
+</script></body></html>

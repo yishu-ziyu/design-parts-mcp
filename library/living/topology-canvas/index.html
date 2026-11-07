@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>架构拓扑画布：忠实复刻</title>
+<style>
+@font-face{font-family:Figtree;src:url(fonts/figtree-latin-var.woff2) format("woff2");font-weight:300 900;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+*{box-sizing:border-box}html,body{margin:0;background:#e9e9ea;font:400 14px/1.3 Figtree,system-ui,sans-serif;color:#17171a;-webkit-font-smoothing:antialiased}
+svg.i{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.abs{position:absolute}
+#win{position:relative;width:1400px;margin:0 auto;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+/* light project view */
+body.light{--panel:#fff;--muted:#7d7d82}
+.light #win{height:818px;background:#f8f8f8;border-radius:14px}
+.lights i{position:absolute;top:12px;width:12.500px;height:12.500px;border-radius:50%}
+#side{left:10px;top:50px;width:240px;height:756px;background:#fff;border-radius:14px}
+.lab{position:absolute;font-size:11px;letter-spacing:.07em;color:#9a9a9e;left:19px}
+.nv{position:absolute;left:11px;width:217px;height:40px;border-radius:13px;display:flex;align-items:center;gap:11px;padding:0 14px 0 10px;color:#55555a;font-size:14.200px;cursor:pointer;transition:background .15s}
+.nv svg{font-size:22px}.nv:hover{background:#f4f4f4}.nv.on{background:#efefef;color:#17171a}.nv em{margin-left:auto;font-style:normal;font-size:12.500px;color:#a2a2a6}
+#new{position:absolute;left:11px;top:610px;width:217px;height:37px;border-radius:13px;color:#fff;font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(90deg,#7c5ce6 0%,#3b3a6b 42%,#3a4a8c 62%,#4f80ea 100%);box-shadow:0 1px 2px #0002}
+.crumb{left:280px;top:61px;font-size:13.600px;color:#7d7d82;display:flex;gap:7px}.crumb b{font-weight:400;color:#17171a}
+.light h1{position:absolute;left:280px;top:88px;margin:0;font-size:22px;line-height:32px;font-weight:500}
+#envp{left:1170px;top:87px;width:160px;height:33px;background:#fff;border-radius:17px;display:flex;align-items:center;padding:0 12px;gap:4px;font-size:13.200px}
+#canvas{position:absolute;overflow:hidden;background-color:var(--panel);touch-action:none}
+.light #canvas{left:280px;top:143px;width:754px;height:582px;border-radius:14px;background-image:radial-gradient(circle,#0000000a 1px,transparent 1.2px);background-size:14px 14px}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;width:1px;height:1px}
+#edges{position:absolute;left:0;top:0;overflow:visible;width:1px;height:1px;pointer-events:none}
+#edges path.e{fill:none;stroke:var(--edge);stroke-width:1.500;transition:stroke .15s,stroke-width .15s,opacity .2s}
+#edges path.e.hot{stroke:var(--hot);stroke-width:2.200}#edges path.e.off{stroke-dasharray:5 5;opacity:.45}
+#edges path.h{fill:var(--edge)}
+.light{--edge:#9a9a9c;--hot:#17171a}.dark{--edge:#9d9d9d;--hot:#fff}
+.n{position:absolute;cursor:grab;user-select:none;transition:box-shadow .15s,opacity .2s,filter .2s}
+.n:active{cursor:grabbing}.n.stopped{opacity:.5;filter:saturate(.4)}
+.n.sel{z-index:3}
+.hd{position:absolute;width:5px;height:5px;border-radius:50%;background:#555;top:50%;margin-top:-2.500px;z-index:2}
+.hd.l{left:-2.500px}.hd.r{right:-2.500px}
+.light .n{width:230px;height:104px;border-radius:12px;background:var(--t);transition:box-shadow .15s,opacity .2s}
+.light .n:hover,.light .n.sel{box-shadow:0 0 0 1.500px #0000002e,0 8px 22px -8px #0003}
+.light .n .tile{position:absolute;left:14px;top:13px;width:36px;height:36px;border-radius:9px;background:var(--tl);display:grid;place-items:center;color:var(--ic);font-size:19px}
+.light .n .a{position:absolute;left:62px;top:15px;font-size:13.500px;line-height:18px;color:#1c1c20;font-weight:500}
+.light .n .b{position:absolute;left:62px;top:34px;font-size:12.500px;line-height:17px;color:#74747a}
+.light .n .ft{position:absolute;left:10px;right:10px;bottom:10px;height:30px;border-radius:8px;background:var(--ft);display:flex;align-items:center;justify-content:space-between;padding:0 9px 0 10px;font-size:12.500px;color:#6d6d72}
+.light .n .ft span:last-child{display:flex;align-items:center;gap:6px;font-size:10.500px;color:var(--st);font-weight:500}
+.light .n .ft svg{font-size:14px;color:#66666a}
+.grn{--t:#e9f0ec;--tl:#dfe9e3;--ft:#dfe8e3;--ic:#4b6155;--st:#1f8a53}
+.pch{--t:#fbeee6;--tl:#f7e2d4;--ft:#f6e6da;--ic:#c9742d;--st:#7a6a5c}
+.blu{--t:#e6ecfb;--tl:#d9e2f8;--ft:#dde5f8;--ic:#5a79c4;--st:#1f8a53}
+.red{--t:#fbe6e6;--tl:#f7d9d9;--ft:#f6dddd;--ic:#d94a3f;--st:#1f8a53}
+.tb{position:absolute;display:flex;align-items:center}
+.tag{color:#77777c;font-size:12.100px}
+#add{height:30px;border-radius:15px;background:#111;color:#fff;font-size:12.100px;font-weight:500;padding:0 11px 0 11px;display:flex;align-items:center;gap:7px}
+#zoom{position:absolute;display:flex;align-items:center;z-index:4}
+.light #zoom{left:13px;top:528px;width:197px;height:41px;background:#f5f5f5;border-radius:14px;padding:0 13px;font-size:14px;color:#58585c}
+#zoom button{display:grid;place-items:center;font-size:18px;width:24px;height:24px;border-radius:7px}#zoom button:hover{background:#0000000d}
+#zv{width:44px;text-align:center;font-size:13.500px;font-variant-numeric:tabular-nums}
+#zoom i{width:1px;height:17px;background:#e2e2e2;margin:0 11px 0 9px}
+.hint{position:absolute;right:18px;bottom:19px;color:#88888c;font-size:12.100px}
+.card{position:absolute;background:#fff;border-radius:14px}
+#rnav .it{position:absolute;left:12px;width:291px;height:38px;border-radius:13px;display:flex;align-items:center;gap:12px;padding:0 9px 0 11px;font-size:13.200px;color:#55555a;cursor:pointer;transition:background .15s}
+#rnav .it svg{font-size:22px;color:#55555a}#rnav .it:hover{background:#f6f6f6}#rnav .it.on{background:#efefef;color:#17171a}#rnav .it.on svg{color:#17171a}
+/* popover */
+#pop{position:absolute;z-index:6;width:206px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px #0000000f,0 14px 34px -8px #0000003d;padding:6px;font-size:13px;opacity:0;translate:0 4px;pointer-events:none;transition:opacity .14s,translate .18s cubic-bezier(.2,.8,.2,1)}
+#pop.show{opacity:1;translate:0 0;pointer-events:auto}
+#pop header{display:flex;justify-content:space-between;padding:6px 8px 8px;font-weight:500}#pop header em{font-style:normal;color:#1f8a53;font-weight:400;font-size:12px}
+#pop .kv{display:none;padding:0 8px 8px;color:#77777c;font-size:12px;line-height:18px}#pop.ins .kv{display:block}
+#pop button{display:flex;align-items:center;gap:9px;width:100%;height:30px;padding:0 8px;border-radius:8px;text-align:left}#pop button:hover{background:#f3f3f3}#pop button.warn{color:#c8362b}
+#pop svg{font-size:15px}
+.dark #pop{background:#222;color:#eee;box-shadow:0 0 0 1px #ffffff1a,0 14px 34px -8px #000}.dark #pop button:hover{background:#333}.dark #pop button.warn{color:#f0716a}
+/* dark cluster view */
+body.dark{background:#0d0d0d;color:#e9e9ea}
+.dark #win{height:1050px;background:#111112}
+#rail{left:0;top:0;width:78px;height:100%;border-right:1px solid #1e1e1f}
+.ri{position:absolute;left:19px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:22px;color:#8a8a8d}.ri.on{background:#222224;color:#ddd}
+.dark .bc{left:114px;top:28px;display:flex;gap:10px;align-items:center;font-size:14.800px;color:#8d8d90}.dark .bc b{font-weight:400;color:#c9c9cb}
+.dark h1{position:absolute;left:114px;top:62px;margin:0;font-size:25px;line-height:36px;font-weight:600;letter-spacing:-.01em}
+.dark .pr{left:297px;top:64px;height:31px;padding:0 12px;border-radius:15px;background:#1e1e1f;color:#97979a;font-size:15px;display:flex;align-items:center}
+.dark .tr{top:51px;display:flex;align-items:center;gap:8px;color:#97979a;font-size:15.500px}
+.tabs{left:114px;top:118px;display:flex;gap:31px;font-size:15.500px;color:#8d8d90;height:37px}.tabs b{font-weight:400;color:#e9e9ea;position:relative}.tabs b::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#e9e9ea;border-radius:2px}
+.rule{left:114px;right:35px;top:155px;height:1px;background:#1f1f20}
+.dark #canvas{left:114px;top:179px;width:1251px;height:746px;border-radius:14px;background:#121213;background-image:radial-gradient(circle,#ffffff0c 1px,transparent 1.2px);background-size:18px 18px;box-shadow:inset 0 0 0 1px #1d1d1e}
+.dk{position:absolute;background:#1a1a1b;border-radius:14px;box-shadow:inset 0 0 0 1px #2a2a2b;display:flex;align-items:center;z-index:4}
+.dark .n{width:284px;height:166px;border-radius:14px;background:#1b1b1c;box-shadow:inset 0 0 0 1.200px var(--bd);color:#e6e6e7;font-size:14.500px}
+.dark .n:hover,.dark .n.sel{box-shadow:inset 0 0 0 1.200px var(--ho),0 10px 30px -10px #000}
+.dark .tl{position:absolute;left:18px;top:18px;width:40px;height:40px;border-radius:50%;background:var(--tl);display:grid;place-items:center;color:var(--ic);font-size:20px}
+.dark .a{position:absolute;left:71px;top:19px;font-size:15px;line-height:21px}.dark .b{position:absolute;left:71px;top:42px;font-size:14px;line-height:20px;color:#8b8b8e}
+.dark .rw{position:absolute;left:18px;right:18px;display:flex;justify-content:space-between;font-size:14px;color:#8e8e91}.dark .rw b{font-weight:400;color:#d2d2d4}.dark .rw code{font:13.500px "Geist Mono",monospace;color:#c9c9cb}
+.dark .rw span{display:flex;align-items:center;gap:5px}.dark .rw svg{font-size:13px}
+.dark .ln{position:absolute;left:18px;right:18px;height:1px;background:#2a2a2b}
+.dark .hd{width:8px;height:8px;background:#111;box-shadow:0 0 0 1.400px var(--ho);margin-top:-4px}.dark .hd.l{left:-4px}.dark .hd.r{right:-4px}
+.yel{--bd:#4a3b1d;--ho:#a57f2c;--tl:#3a2c12;--ic:#e0a53c}.olv{--bd:#3a4527;--ho:#8fa84e;--tl:#2c351b;--ic:#b5cf6c}
+.bl2{--bd:#25435f;--ho:#3e7fae;--tl:#1f3247;--ic:#8ab8e3;--in:#17334a;--bx:#131e29;--cl:#7fb6ea}
+.rd2{--bd:#5a2424;--ho:#b1433f;--tl:#3a1b1b;--ic:#ef4f43;--in:#4a1d1d;--bx:#231414;--cl:#ef6b5f}
+.dark .cl{width:284px;background:color-mix(in srgb,var(--bx) 55%,#141414)}
+.dark .box{position:absolute;left:18px;right:18px;top:78px;height:119px;border-radius:12px;background:#1a1a1b;box-shadow:inset 0 0 0 1.200px var(--bd);background:color-mix(in srgb,var(--bx) 80%,#222)}
+.dark .bx{position:absolute;top:9px;width:110px;height:65px;border-radius:9px;background:#0000004d;padding:10px 11px;font-size:12.500px;color:#8e8e91}.dark .bx b{display:block;font-weight:400;font-size:18px;color:#e6e6e7;line-height:23px;margin-bottom:3px}
+.dark .bx.x1{left:10px}.dark .bx.x2{left:128px}
+.dark .bl{position:absolute;left:0;right:0;bottom:0;height:36px;border-top:1px solid var(--bd);padding:0 14px;display:flex;align-items:center;gap:6px;font-size:12.500px;color:#9a9a9d}.dark .bl svg{font-size:13px}
+.dark .opn{position:absolute;left:18px;right:18px;bottom:17px;height:40px;border-radius:10px;background:var(--in);color:var(--cl);display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:14px}.dark .opn svg{font-size:16px}
+#srv{left:114px;top:943px;width:1251px;height:85px;border-radius:14px;background:#1a1a1b;display:grid;grid-template-columns:repeat(3,1fr)}
+#srv>div{position:relative;padding:18px 0 0 57px;font-size:15px;line-height:21px;color:#e6e6e7}#srv>div+div{border-left:1px solid #2a2a2b;margin:15px 0;padding-top:3px}
+#srv code{font:14.500px "Geist Mono",monospace;color:#8e8e91}#srv em{font-style:normal;color:#5c5c5f;margin:0 5px}#srv small{display:block;font-size:14.200px;color:#8e8e91;margin-top:7px}#srv svg{position:absolute;left:22px;top:30px;font-size:24px;color:#a8a8aa}#srv>div+div svg{top:15px}
+.foot{max-width:640px;margin:0 auto;padding:40px 24px 60px;font-size:13px;color:#555}.foot h3{font-size:13px;color:#111;margin:0 0 8px}.foot dt{margin-top:10px}.foot dd{margin:2px 0 0}.foot code{font:12px "Geist Mono",monospace}.foot a{color:inherit}.dark .foot{color:#999}.dark .foot h3{color:#eee}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="defs"></defs></svg>
+<div id="win"></div>
+<div class="foot"><h3>可拆</h3><dl>
+<dt><code>#canvas</code></dt><dd>拓扑画布：节点可拖，连线按直角带圆角重算；缩放按钮改世界坐标比例，文字和节点一起缩。</dd>
+<dt><code>#edges</code></dt><dd>直角路由：目标在右走“横竖横”，目标在左绕到节点外侧再回来；悬停或选中节点时相关连线加深。</dd>
+<dt><code>#pop</code></dt><dd>节点操作菜单：单击节点弹出查看、重启、停止；重启有过渡状态，停止后节点变灰、连线变虚线。原帖只写了这三个操作，没有拍到菜单，外观是本页推测。</dd>
+</dl><p>另一张图：<a href="?view=light">浅色项目页</a> · <a href="?view=cluster">深色集群页</a>。来源：<a href="https://x.com/openshipio/status/2104187404533838043">@openshipio</a>，两张配图。代码未公开，本页自写；品牌名、Logo、数据库商标已换成占位。</p></div>
+<script>
+const P={home:'M3 10.500 10 4l7 6.500V16a1 1 0 0 1-1 1h-3v-4.500H7V17H4a1 1 0 0 1-1-1Z',folder:'M3 6.500A1.500 1.500 0 0 1 4.500 5h3.200l1.600 1.800h6.200A1.500 1.500 0 0 1 17 8.300v6.200a1.500 1.500 0 0 1-1.500 1.500h-11A1.500 1.500 0 0 1 3 14.500ZM7.500 11.500h5',rocket:'M8 12 5.500 9.500C7 6 10.500 3.500 16.500 3.500c0 6-2.500 9.500-6 11Zm-2.500-2.500H3l2-3h3M10.500 14.500V17l3-2v-3M6 14c-1 .5-1.800 1.800-2 3 1.200-.2 2.500-1 3-2',heart:'M10 16.500 3.800 10.300a3.800 3.800 0 0 1 5.400-5.400l.8.800.8-.8a3.800 3.800 0 0 1 5.400 5.400ZM5.500 10h2.300l1.200-2 2 3.500 1.200-1.500h2.300',server:'M3.500 4.500h13a1 1 0 0 1 1 1v2.800a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1V5.500a1 1 0 0 1 1-1ZM3.500 10.700h13a1 1 0 0 1 1 1v2.800a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-2.800a1 1 0 0 1 1-1ZM6 6.900h1M6 13.100h1',mail:'M4.500 4.500h11A1.500 1.500 0 0 1 17 6v8a1.500 1.500 0 0 1-1.500 1.500h-11A1.500 1.500 0 0 1 3 14V6a1.500 1.500 0 0 1 1.500-1.500ZM6 7.500c1.200 1.800 2.500 2.500 4 2.500s2.800-.7 4-2.500',clock:'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM10 6.500V10l2.300 1.500',backup:'M15.500 8V5.500c0-1.100-2.500-2-5.500-2s-5.500.9-5.500 2v9c0 1.100 2.500 2 5 2M4.500 5.500c0 1.100 2.500 2 5.500 2s5.500-.9 5.500-2M4.500 10c0 1.100 2.500 2 5 2M15 17a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5Z',gear:'M10 12.500a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5ZM10 2.800l1.200 2 2.300-.5.700 2.300 2.200.8-.8 2.200 1.300 1.900-1.900 1.300-.1 2.400-2.400-.1L10.500 17l-1.800-1.500-2.400.4-.5-2.400-2.200-1.100.8-2.200-1.100-2 2-1.200.5-2.300 2.300.4Z',card:'M4 5h12a1.500 1.500 0 0 1 1.500 1.500v7A1.500 1.500 0 0 1 16 15H4a1.500 1.500 0 0 1-1.500-1.500v-7A1.500 1.500 0 0 1 4 5ZM2.500 8.500h15',plus:'M10 3.500v13M3.500 10h13',minus:'M3.500 10h13',refresh:'M16.500 8.500A6.700 6.700 0 0 0 5 5.500L3.500 7M3.500 3.500V7H7M3.500 11.500A6.700 6.700 0 0 0 15 14.500l1.500-1.500M16.500 16.500V13H13',expand:'M11.500 3.500h5v5M16.500 3.500 3.500 16.500M3.500 11.500v5h5',dots:'M4 10h.01M10 10h.01M16 10h.01',chev:'m5 7.500 5 5 5-5',right:'m7.500 5 5 5-5 5',up:'M6 14 14 6M7 6h7v7',branch:'M6 3.500v8.500M14.500 6.500c0 3.500-3 4-8.500 5.500M6 16.500a1.700 1.700 0 1 0 0-3.400 1.700 1.700 0 0 0 0 3.400ZM14.500 6.500a1.700 1.700 0 1 0 0-3.400 1.700 1.700 0 0 0 0 3.400Z',sun:'M10 13.500a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7ZM10 2.500V4M10 16v1.500M2.500 10H4M16 10h1.500M4.700 4.700l1 1M14.300 14.300l1 1M4.700 15.300l1-1M14.300 5.700l1-1',pie:'M9 3.500a7 7 0 1 0 7.500 7.500H9ZM12 3a5.500 5.500 0 0 1 5 5h-5Z',topo:'M10 2.500l2 4.500 5 .5-3.700 3.200 1.200 5-4.500-2.700-4.500 2.700 1.200-5L3 7.500 8 7ZM10 7.500a2.500 2.500 0 1 0 0 5 2.500 2.500 0 0 0 0-5Z',stack:'m10 2.500 7 3.500-7 3.500L3 6ZM3 10l7 3.500 7-3.500M3 14l7 3.500 7-3.500',globe:'M10 17.500a7.500 7.500 0 1 0 0-15 7.500 7.500 0 0 0 0 15ZM2.500 10h15M10 2.500c2 2 3 4.700 3 7.500s-1 5.500-3 7.500c-2-2-3-4.700-3-7.500s1-5.500 3-7.500Z',doc:'M11.500 3H6a1.500 1.500 0 0 0-1.500 1.500v11A1.500 1.500 0 0 0 6 17h8a1.500 1.500 0 0 0 1.500-1.500V7ZM11.500 3v4h4M7.500 11h5M7.500 13.500h3',wrench:'M12.500 3.500a4 4 0 0 0-3.700 5.500l-5.300 5.300a1.700 1.700 0 0 0 2.400 2.400l5.300-5.300a4 4 0 0 0 5.300-5l-2.500 2.500-2.200-.6-.6-2.200 2.500-2.500a4 4 0 0 0-1.200-.1Z',fit:'M3.500 7V5A1.500 1.500 0 0 1 5 3.500h10A1.500 1.500 0 0 1 16.500 5v2M3.500 13v2A1.500 1.500 0 0 0 5 16.500h10a1.500 1.500 0 0 0 1.500-1.500v-2M3 10h14',db:'M10 3c-3.600 0-6 1-6 2.500v9C4 16 6.400 17 10 17s6-1 6-2.500v-9C16 4 13.600 3 10 3ZM4 5.500C4 7 6.400 8 10 8s6-1 6-2.500M4 10c0 1.500 2.400 2.500 6 2.500s6-1 6-2.500',bolt:'M11 2.500 4.500 11.500H10L9 17.500 15.500 8.500H10Z',app:'M4 7.500h12M5.500 4h9A1.500 1.500 0 0 1 16 5.500v9a1.500 1.500 0 0 1-1.500 1.500h-9A1.500 1.500 0 0 1 4 14.500v-9A1.500 1.500 0 0 1 5.500 4Z',rack:'M5 4h10a1 1 0 0 1 1 1v2.500a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM5 8.500h10a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.500a1 1 0 0 1 1-1ZM10 13v3M7 16.500h6',undo:'M7.500 5 4 8.500 7.500 12M4 8.500h7.500a4.500 4.500 0 0 1 0 9H9',redo:'M12.500 5 16 8.500 12.500 12M16 8.500H8.500a4.500 4.500 0 0 0 0 9H11',grid:'M4 4h4.500v4.500H4ZM11.500 4H16v4.500h-4.500ZM4 11.500h4.500V16H4ZM11.500 11.500H16V16h-4.500Z',lock:'M6.500 9V6.500a3.500 3.500 0 0 1 6.800-1.200M5.500 9h9A1.500 1.500 0 0 1 16 10.500v5a1.500 1.500 0 0 1-1.500 1.500h-9A1.500 1.500 0 0 1 4 15.500v-5A1.500 1.500 0 0 1 5.500 9ZM10 12.500v1',map:'m3.500 5 4.300-1.500 4.400 2 4.300-1.500v11.500l-4.300 1.500-4.400-2-4.300 1.500ZM7.800 3.500V15M12.200 5.500V17',chart:'M3.500 3.500v13h13M6.500 13 9.500 9.500l2.500 2 3.500-5M6.500 16.500v-2M10 16.500v-3M13.500 16.500v-4',shield:'M10 2.800 16 5v5c0 3.700-2.500 6-6 7.200C6.500 16 4 13.700 4 10V5ZM7.500 10l2 2 3-3.500',pin:'M10 17s5-4.500 5-8.500a5 5 0 0 0-10 0c0 4 5 8.500 5 8.500ZM10 10a1.500 1.500 0 1 0 0-3 1.500 1.500 0 0 0 0 3Z',layers:'m10 3 7 3.500-7 3.500-7-3.500ZM3 10.500 10 14l7-3.500M3 14l7 3.500L17 14',play:'M6 4v12l9-6Z',stop:'M5.500 5.500h9v9h-9Z',eye:'M2.500 10s2.700-5 7.500-5 7.500 5 7.500 5-2.700 5-7.500 5-7.500-5-7.500-5ZM10 12.500a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5Z'};
+const I=(n,st='')=>`<svg class="i" viewBox="0 0 20 20" style="${n==='dots'?'stroke-width:2.800;':''}${st}"><path d="${P[n]}"/></svg>`;
+const view=new URLSearchParams(location.search).get('view')==='cluster'?'dark':'light';
+document.body.className=view;document.title=(view==='dark'?'集群拓扑':'项目拓扑')+'：忠实复刻';
+const win=document.getElementById('win');
+const nav=(items,cls,tops)=>items.map(([t,ic,x,on],i)=>`<div class="${cls}${on?' on':''}" style="top:${tops[i]}px">${I(ic)}<span>${t}</span>${x?`<em>${x}</em>`:''}</div>`).join('');
+const LIGHT=`<div class="lights"><i style="left:15px;background:#ed6a5e"></i><i style="left:36px;background:#f5bf4f"></i><i style="left:57px;background:#62c554"></i></div>
+<svg class="i abs" viewBox="0 0 20 20" style="left:89px;top:8px;font-size:20px;color:#6d6d6d"><path d="m12.500 3.500-6.500 6.500 6.500 6.500"/></svg><svg class="i abs" viewBox="0 0 20 20" style="left:121px;top:8px;font-size:20px;color:#c4c4c4"><path d="m7.500 3.500 6.500 6.500-6.500 6.500"/></svg>
+<div id="side" class="abs">
+ <span class="abs" style="left:19px;top:26px;width:24px;height:24px;border-radius:7px;border:3px solid #17171a"></span><b class="abs" style="left:52px;top:27px;font-size:16.500px;font-weight:500">Harbor</b>
+ <span class="abs" style="left:164px;top:29px;font-size:17px;color:#55555a">${I('sun')}</span><svg class="i abs" viewBox="0 0 20 20" style="left:198px;top:29px;font-size:17px;color:#55555a"><path d="M6.500 6.500 3.500 10l3 3.500M11 3.500h2.500A1 1 0 0 1 14.500 4.500v11a1 1 0 0 1-1 1H11a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1Z"/></svg>
+ <div class="abs" style="left:13px;right:13px;top:75px;height:1px;background:#eee"></div>
+ <span class="lab" style="top:88px">MAIN</span>
+ ${nav([['Home','home'],['Projects','folder','5',1],['Deployments','rocket'],['Monitoring','heart','<span style="color:#d97b2d">1</span>']],'nv',[110,153,196,239])}
+ <span class="lab" style="top:298px">INFRASTRUCTURE</span>
+ ${nav([['Servers','server'],['Emails','mail'],['Jobs','clock']],'nv',[320,363,406])}
+ <span class="lab" style="top:465px">SETTINGS</span>
+ ${nav([['Backups','backup'],['Settings','gear'],['Billing &amp; Usage','card']],'nv',[487,530,573])}
+ <div class="abs" style="left:0;right:0;top:565px;height:45px;background:linear-gradient(#fff0,#fff 80%);pointer-events:none;z-index:1"></div>
+ <button id="new" style="z-index:2">${I('plus','font-size:18px')}New Project</button>
+ <div class="abs" style="left:13px;right:13px;top:659px;height:1px;background:#eee"></div>
+ <span class="lab" style="top:671px">ACCOUNT</span>
+ <span class="abs" style="left:19px;top:699px;width:34px;height:34px;border-radius:50%;background:#efefef;display:grid;place-items:center;font-weight:500;font-size:14px">L</span>
+ <span class="abs" style="left:63px;top:699px;font-size:14px;line-height:18px;white-space:nowrap">Local User's worksp...</span><span class="abs" style="left:63px;top:717px;font-size:12.500px;line-height:17px;color:#7d7d82">2 workspaces</span>
+ <svg class="i abs" viewBox="0 0 20 20" style="left:205px;top:707px;font-size:18px;color:#55555a"><path d="m6 7.500 4-4 4 4M6 12.500l4 4 4-4"/></svg>
+</div>
+<div class="crumb abs"><span>Dashboard</span><span>/</span><span>northwind</span><span>/</span><b>Topology</b></div>
+<h1>Topology</h1>
+<div id="envp" class="abs"><span>Production</span><span class="abs" style="left:83px;top:8px;font-size:14px;color:#77777c">${I('branch')}</span><span class="abs" style="left:102px;top:8px;font-size:14px;color:#77777c;line-height:17px">main</span><span class="abs" style="left:136px;top:7px;font-size:18px;color:#444">${I('chev')}</span></div>
+<svg class="abs" width="4" height="18" style="left:1353px;top:95px"><circle cx="2" cy="2" r="1.700" fill="#333"/><circle cx="2" cy="9" r="1.700" fill="#333"/><circle cx="2" cy="16" r="1.700" fill="#333"/></svg>
+<div id="canvas"><div class="tb tag" style="left:15px;top:19px">6 services · 0 shared connections</div>
+ <button class="tb" style="left:458px;top:18px;font-size:18px;color:#55555a">${I('refresh')}</button>
+ <button id="add" class="tb" style="left:489px;top:12px">${I('plus','font-size:17px')}Add resource</button>
+ <button class="tb" style="left:620px;top:18px;font-size:19px;color:#55555a">${I('dots')}</button>
+ <button class="tb" style="left:664px;top:17px;gap:9px;font-size:13.500px;color:#55555a">${I('expand','font-size:17px')}Expand</button>
+ <div id="world"><svg id="edges"></svg></div>
+ <div id="zoom"><button data-z="-1">${I('minus')}</button><span id="zv">67%</span><button data-z="1">${I('plus')}</button><i></i><button data-z="0" style="font-size:17px">${I('fit')}</button><button style="font-size:17px;margin-left:6px">${I('topo')}</button></div>
+ <div class="hint">Drag between services to set startup order</div></div>
+<div class="card" style="left:1057px;top:143px;width:315px;height:129px">
+ <span class="abs" style="left:19px;top:19px;font-size:11px;letter-spacing:.09em;color:#9a9a9e">PROJECT</span>
+ <span class="abs" style="left:259px;top:19px;height:22px;width:38px;border-radius:11px;background:#e6f3ea;color:#2f8a56;font-size:11.500px;display:grid;place-items:center">Live</span>
+ <span class="abs" style="left:19px;top:44px;font-size:16.500px;font-weight:500">northwind</span><span class="abs" style="left:95px;top:46px;font-size:16px;color:#444">${I('up')}</span>
+ <span class="abs" style="left:19px;top:86px;font-size:14px;color:#88888c">Production</span>
+ <span class="abs" style="left:169px;top:79px;height:32px;width:110px;border-radius:9px;box-shadow:inset 0 0 0 1px #eee;font-size:14px;display:flex;align-items:center;padding-left:10px;white-space:nowrap;overflow:hidden">acme.dev<svg class="i" viewBox="0 0 20 20" style="margin-left:6px;font-size:18px"><path d="m5 7.500 5 5 5-5"/></svg></span>
+ <span class="abs" style="left:287px;top:87px;font-size:14px;color:#444">${I('up')}</span></div>
+<div class="card" id="rnav" style="left:1057px;top:288px;width:315px;height:437px">${[['Overview','pie'],['Topology','topo',0,1],['Apps &amp; Services','stack'],['Domains &amp; Routes','globe'],['Deployments','rocket'],['Monitoring','heart'],['Source &amp; Triggers','branch'],['Logs','doc'],['Backup','backup'],['Settings','wrench']].map(([t,ic,_,on],i)=>`<div class="it${on?' on':''}" style="top:${12+i*41.800}px">${I(ic)}<span>${t}</span></div>`).join('')}</div>`;
+const DARK=`<div id="rail" class="abs"><span class="abs" style="left:23px;top:27px;width:31px;height:31px;border-radius:9px;border:3px solid #eee"></span>
+ ${[['home',97],['folder',149],['server',202,1],['globe',254],['chart',307],['backup',359],['gear',927]].map(([n,y,on])=>`<span class="ri${on?' on':''}" style="top:${y}px">${I(n)}</span>`).join('')}
+ <span class="ri" style="top:985px;background:#1e1e1f;color:#ddd;font-size:15px">C</span></div>
+<div class="bc abs">${I('server','font-size:18px')}<span>Server clusters</span>${I('right','font-size:14px')}<b>Production cluster</b></div>
+<h1>Commerce API</h1><span class="pr abs">Production</span>
+<div class="tr abs" style="left:1098px">${I('server','font-size:19px')}3 servers</div><div class="abs" style="left:1207px;top:50px;width:1px;height:22px;background:#2a2a2b"></div><div class="tr abs" style="left:1231px">${I('shield','font-size:18px;color:#a9d05a')}Private network</div>
+<div class="tabs abs"><b>Topology</b><span>Deployments</span><span>Environment</span><span>Settings</span></div>
+<div class="abs" style="right:35px;top:122px;font-size:14.500px;color:#8d8d90">3 app instances / 2 database clusters</div><div class="rule abs"></div>
+<div id="canvas"><div id="world"><svg id="edges"></svg></div>
+ <div class="dk" style="left:18px;top:18px;width:238px;height:61px;padding:0 14px"><span style="width:40px;height:40px;border-radius:50%;background:#262627;display:grid;place-items:center;font-size:19px;color:#aaa">${I('rack')}</span><span style="margin-left:13px;font-size:15.500px;line-height:23px">Scale<br><span style="font-size:14.500px;color:#8e8e91">Topology editor</span></span><span style="margin-left:auto;font-size:20px;color:#aaa">${I('dots')}</span></div>
+ <div class="dk" style="left:265px;top:18px;width:275px;height:61px;padding:0 21px;gap:20px;color:#6d6d70;font-size:19px">${I('undo')}${I('redo')}<i style="width:1px;height:20px;background:#303031"></i><span style="color:#8e8e91">${I('grid')}</span><button id="add" style="position:absolute;right:10px;top:11px;height:39px;width:114px;border-radius:20px;background:#fff;color:#111;font-size:15.500px;padding:0 0 0 10px">${I('plus','font-size:18px')}Add node</button></div>
+ <div id="zoom" class="dk" style="left:18px;top:674px;width:290px;height:54px;padding:0 17px;color:#aaa;font-size:15px"><button data-z="-1" style="font-size:19px">${I('minus')}</button><span id="zv" style="width:56px;font-size:15px">80%</span><button data-z="1" style="font-size:19px">${I('plus')}</button><i style="width:1px;height:22px;background:#2f2f30;margin:0 14px"></i><button data-z="0" style="font-size:19px">${I('expand')}</button><i style="width:1px;height:22px;background:#2f2f30;margin:0 14px"></i><button style="font-size:18px">${I('lock')}</button><button style="font-size:18px;margin-left:12px">${I('map')}</button></div>
+</div>
+<div id="srv" class="abs">${[1,2,3].map(i=>`<div>${I('server')}production-eu-0${i}<em>/</em><code>10.44.0.1${i}</code><small>EU West &nbsp;/&nbsp; 8 vCPU &nbsp;/&nbsp; 32 GB memory</small></div>`).join('')}</div>`;
+win.innerHTML=view==='light'?LIGHT:DARK;
+/* graph data: x,y in world px at zoom 1 */
+const G=view==='light'?{z:.67,ox:0,oy:0,nodes:{
+ edge:{x:135,y:424,c:'pch',ic:'globe',a:'Edge proxy',b:'Public routing',f:'Configuration',s:'Configured',k:'nginx · 2 routes'},
+ api:{x:448,y:147,c:'grn',ic:'server',a:'api',b:'Application',k:'node:22 · :3000'},
+ dashboard:{x:448,y:332,c:'grn',ic:'globe',a:'dashboard',b:'Application',k:'node:22 · :3001'},
+ web:{x:448,y:516,c:'grn',ic:'globe',a:'web',b:'Application',k:'node:22 · :3002'},
+ admin:{x:448,y:701,c:'grn',ic:'app',a:'admin',b:'Application',k:'node:22 · :3003'},
+ postgres:{x:762,y:332,c:'blu',ic:'db',a:'postgres',b:'PostgreSQL',k:'v16 · :5432'},
+ redis:{x:762,y:516,c:'red',ic:'bolt',a:'redis',b:'Redis',k:'v7 · :6379'}},
+ edges:[['edge','api'],['edge','dashboard'],['edge','web'],['api','postgres'],['api','redis'],['dashboard','api',{ox:23}],['web','api',{ox:23,ly:536+0}],['admin','api',{ox:23}]],rx:42,hgap:24}
+:{z:.8,ox:0,oy:0,nodes:{
+ edge:{x:174,y:380,c:'yel',ic:'rack',a:'Edge proxy',b:'Load balancer',kind:'edge',k:'Round robin · HTTPS'},
+ a1:{x:600,y:140,c:'olv',ic:'app',a:'commerce-api-1',b:'API · Instance 1',kind:'api',k:'2 vCPU · 2 GB'},
+ a2:{x:600,y:380,c:'olv',ic:'app',a:'commerce-api-2',b:'API · Instance 2',kind:'api',k:'2 vCPU · 2 GB'},
+ a3:{x:600,y:621,c:'olv',ic:'app',a:'commerce-api-3',b:'API · Instance 3',kind:'api',k:'2 vCPU · 2 GB'},
+ orders:{x:1104,y:122,c:'bl2',ic:'db',a:'Orders',b:'PostgreSQL cluster',kind:'cl',v:[['1','Primary'],['2','Read replicas']],l:'2 replication links',m:'3 members',k:'3 members',h:318},
+ sessions:{x:1104,y:505,c:'rd2',ic:'bolt',a:'Sessions',b:'Redis cluster',kind:'cl',v:[['3','Primary shards'],['3','Replicas']],l:'3 replication links',m:'6 members',k:'6 members',h:318}},
+ edges:[['edge','a1'],['edge','a2'],['edge','a3'],['a1','orders',{rx:110}],['a2','orders',{rx:110}],['a3','orders',{rx:110}],['a1','sessions',{rx:110}],['a2','sessions',{rx:110}],['a3','sessions',{rx:110}]],rx:72,hgap:0};
+const world=document.getElementById('world'),svg=document.getElementById('edges'),canvas=document.getElementById('canvas');
+const nodeHTML=(id,n)=>{
+ if(view==='light'){return `<div class="n ${n.c}" id="n-${id}" data-id="${id}" style="left:${n.x}px;top:${n.y}px"><i class="hd l"></i><i class="hd r"></i><span class="tile">${I(n.ic)}</span><span class="a">${n.a}</span><span class="b">${n.b}</span><div class="ft"><span>${n.f||'Instances'}</span><span><b class="stt" style="font-weight:500">${n.s||'Running'}</b>${I('right')}</span></div></div>`}
+ if(n.kind==='cl'){return `<div class="n cl ${n.c}" id="n-${id}" data-id="${id}" style="left:${n.x}px;top:${n.y}px;height:${n.h}px"><i class="hd l" style="top:159px"></i><span class="tl">${I(n.ic)}</span><span class="a">${n.a}</span><span class="b">${n.b}</span><div class="box"><div class="bx x1"><b>${n.v[0][0]}</b>${n.v[0][1]}</div><div class="bx x2"><b>${n.v[1][0]}</b>${n.v[1][1]}</div><div class="bl">${I('branch')}${n.l}</div></div><div class="ln" style="top:212px"></div><div class="rw" style="top:227px"><span>${I('pin')}EU West</span><span>${I('layers')}${n.m}</span></div><div class="opn"><span>Open cluster</span>${I('up')}</div></div>`}
+ const ed=n.kind==='edge';
+ return `<div class="n ${n.c}" id="n-${id}" data-id="${id}" style="left:${n.x}px;top:${n.y}px"><i class="hd l"></i><i class="hd r"></i><span class="tl">${I(n.ic)}</span><span class="a">${n.a}</span><span class="b">${n.b}</span><div class="rw" style="top:80px">${ed?'<span>Load balancing</span><b>Round robin</b>':'<b>2 vCPU · 2 GB</b><code>:3000</code>'}</div><div class="ln" style="top:112px"></div><div class="rw" style="top:127px"><span>${I('pin')}EU West</span><span>${ed?I('shield')+'HTTPS':'Stateless'}</span></div></div>`};
+world.insertAdjacentHTML('beforeend',Object.entries(G.nodes).map(([id,n])=>nodeHTML(id,n)).join(''));
+let Z=G.z;const W=view==='light'?230:284,H=n=>n.h||(view==='light'?104:166);
+function setZ(z){Z=Math.max(.3,Math.min(1.5,z));world.style.transform=`scale(${Z})`;document.getElementById('zv').textContent=Math.round(Z*100)+'%'}
+const round=(pts,r)=>{let d=`M${pts[0][0]} ${pts[0][1]}`;for(let i=1;i<pts.length-1;i++){const [a,b,c]=[pts[i-1],pts[i],pts[i+1]];const u=Math.hypot(b[0]-a[0],b[1]-a[1]),v=Math.hypot(c[0]-b[0],c[1]-b[1]),k=Math.min(r,u/2,v/2);if(k<.5){d+=`L${b[0]} ${b[1]}`;continue}d+=`L${b[0]-(b[0]-a[0])/u*k} ${b[1]-(b[1]-a[1])/u*k}Q${b[0]} ${b[1]} ${b[0]+(c[0]-b[0])/v*k} ${b[1]+(c[1]-b[1])/v*k}`}return d+`L${pts.at(-1)[0]} ${pts.at(-1)[1]}`};
+function route(e){const [s,t,o={}]=e,a=G.nodes[s],b=G.nodes[t];const sx=a.x+W,sy=a.y+H(a)/2,tx=b.x-5,ty=b.h?b.y+159:b.y+H(b)/2;
+ if(tx>sx+8){const mx=sx+(o.rx||G.rx);return [[sx,sy],[mx,sy],[mx,ty],[tx,ty]]}
+ const ox=o.ox||23,my=o.ly??(sy+ty)/2,lx=tx-18;return [[sx,sy],[sx+ox,sy],[sx+ox,my],[lx,my],[lx,ty],[tx,ty]]}
+function draw(){svg.innerHTML=G.edges.map((e,i)=>{const p=route(e),end=p.at(-1),hot=sel&&(e[0]===sel||e[1]===sel),off=G.nodes[e[0]].st==='stopped'||G.nodes[e[1]].st==='stopped';return `<path class="e${hot?' hot':''}${off?' off':''}" d="${round(p,view==="dark"?13:9)}"/><path class="h" d="M${end[0]-8} ${end[1]-5}L${end[0]} ${end[1]}L${end[0]-8} ${end[1]+5}Z" style="${hot?'fill:var(--hot)':''}"/>`}).join('')}
+let sel=null;
+/* drag + click */
+const pop=document.createElement('div');pop.id='pop';canvas.append(pop);
+let drag=null;
+world.addEventListener('pointerdown',e=>{const el=e.target.closest('.n');if(!el)return;const n=G.nodes[el.dataset.id];drag={el,n,sx:e.clientX,sy:e.clientY,x:n.x,y:n.y,moved:false};el.setPointerCapture(e.pointerId)});
+world.addEventListener('pointermove',e=>{if(!drag)return;const dx=(e.clientX-drag.sx)/Z,dy=(e.clientY-drag.sy)/Z;if(Math.hypot(dx,dy)*Z>4)drag.moved=true;if(!drag.moved)return;closePop();drag.n.x=drag.x+dx;drag.n.y=drag.y+dy;G.edges.forEach(ed=>{if(ed[2]&&(ed[0]===drag.el.dataset.id||ed[1]===drag.el.dataset.id))delete ed[2].ly});drag.el.style.left=drag.n.x+'px';drag.el.style.top=drag.n.y+'px';draw()});
+world.addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;if(!d.moved)openPop(d.el.dataset.id)});
+function closePop(){pop.className='';if(sel){document.getElementById('n-'+sel)?.classList.remove('sel');sel=null;draw()}}
+function setStatus(id,st){const n=G.nodes[id],el=document.getElementById('n-'+id),s=el.querySelector('.stt');n.st=st;el.classList.toggle('stopped',st==='stopped');if(s)s.textContent=st==='stopped'?'Stopped':st==='restarting'?'Restarting':(n.s||'Running');draw()}
+function openPop(id){if(sel===id){closePop();return}closePop();sel=id;const n=G.nodes[id],el=document.getElementById('n-'+id);el.classList.add('sel');draw();
+ pop.innerHTML=`<header><span>${n.a}</span><em id="pst">${n.st==='stopped'?'Stopped':'Running'}</em></header><div class="kv">${n.b}<br>${n.k}</div><button data-a="inspect">${I('eye')}Inspect</button><button data-a="restart">${I('refresh')}Restart</button><button data-a="stop" class="warn">${n.st==='stopped'?I('play')+'Start':I('stop')+'Stop'}</button>`;
+ const cr=canvas.getBoundingClientRect(),r=el.getBoundingClientRect();let x=r.right-cr.left+10,y=r.top-cr.top;if(x+206>cr.width-8)x=r.left-cr.left-216;y=Math.min(y,cr.height-190);pop.style.left=x+'px';pop.style.top=Math.max(8,y)+'px';pop.classList.add('show')}
+pop.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=sel,a=b.dataset.a,pst=document.getElementById('pst');
+ if(a==='inspect')pop.classList.toggle('ins');
+ if(a==='restart'){setStatus(id,'restarting');pst.textContent='Restarting';setTimeout(()=>{setStatus(id,'running');const p=document.getElementById('pst');if(p&&sel===id)p.textContent='Running'},1200)}
+ if(a==='stop'){const stopped=G.nodes[id].st==='stopped';setStatus(id,stopped?'running':'stopped');closePop()}});
+canvas.addEventListener('pointerdown',e=>{if(!e.target.closest('.n,#pop'))closePop()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop()});
+document.getElementById('zoom').addEventListener('click',e=>{const b=e.target.closest('[data-z]');if(!b)return;const v=+b.dataset.z;setZ(v===0?G.z:Z+v*.1)});
+setZ(G.z);draw();
+</script></body></html>

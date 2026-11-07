@@ -1,0 +1,88 @@
+/* Three things a normal reorderable list does not do. */
+
+/* 1 Â· free, and not fenced. The row goes wherever the finger
+      goes with nothing clamping it â only its height decides
+      where the list opens, and that reading is clamped
+      instead, so carrying one right out of the list and back
+      is a real gesture rather than a slip off a rail. */
+const x = (e.clientX - g.px) / k;
+const y = g.oy + (e.clientY - g.py) / k;
+const target = clamp(Math.round(y / STEP), 0, order.length - 1);
+
+/* it stretches along whichever axis is moving and thins the
+   other, then leans the way it is being thrown â a row flung
+   sideways should not deform like one dropped straight down */
+setWarp({
+  x: clamp(Math.abs(dx) / dt / 2.6, 0, 0.26),
+  y: clamp(Math.abs(dy) / dt / 2.6, 0, 0.26),
+  tilt: clamp(dx / dt * 2.6, -7, 7),      // signed: a flick back rights it
+});
+transform: rotate(tilt) scale(1 + x - y * 0.55, 1 + y - x * 0.55);
+
+/* no event arrives once the finger stops, so the warp would
+   stay stuck at whatever it last was */
+calm.current = setTimeout(() => setWarp({ x: 0, y: 0, tilt: 0 }), 90);
+
+/* letting go of the position is what puts it back in line:
+   the same element springs from wherever it was carried to
+   the slot the others opened for it */
+setDrag(null);
+
+/* 2 Â· the gap heals. The rows are surfaces on a metaball
+      layer, far enough apart at rest to stay separate â but
+      while they flow up to close a hole they pass through
+      each other's reach and briefly run together. */
+.arr-blobs { filter: url(#cal-goo); }
+
+/* Solid ink, not a wash â which is also simpler: a goo filter
+   thresholds alpha, so a translucent shape would be cut away
+   rather than blurred, and the layer no longer has to carry
+   the fade on the shapes' behalf. */
+.arr-skin { background: var(--ink); }
+.arr-row  { color: rgba(255, 255, 255, 0.78); }
+
+/* 3 Â· THE PICTURE IS ALWAYS A CIRCLE, and the Corner knob
+      does not touch it. It followed the knob for a while,
+      concentric with the row â the right rule for a shape
+      that is PART of the thing containing it. A face is not:
+      it is a photograph of a person, and how a photograph of
+      a person is cut has nothing to do with how the row it
+      sits in is. The knob cuts the row; that is all it does.
+
+      32 in a 44 row, so six pixels of the pill show all the
+      way round it â the picture is a thing the row contains
+      rather than part of its edge. */
+.arr-av   { width: 32px; height: 32px; border-radius: 999px; }
+.arr-row  { padding-left: 6px; }
+
+/* There was a rank in front of every row and it is gone. A
+   list you can drag does not need one â the order IS the
+   answer, and a figure counting it off is the same
+   information written twice. It also cost the picture its
+   place at the left edge, which is the thing worth looking
+   at. */
+
+/* Anything sitting ON ink is faded through --on-ink-rgb, never
+   a hardcoded white: the fill turns light in dark mode and a
+   white label goes with it. */
+
+/* 4 Â· position and deformation cannot share a transform. The
+      position is pinned to the finger and must never ease;
+      the stretch has to ease back the moment it stops. */
+.arr-blob { transform: translateY(y); }        /* no transition */
+.arr-skin { transform: scale(sx, sy); }        /* transitioned */
+
+/* every other row's slot, with the held one taken out and the
+   hole reopened at the target */
+const rest = order.filter(x => x !== drag.id);
+const i = rest.indexOf(id);
+return i < target ? i : i + 1;
+
+/* Fully round: at 44px tall the ends are half circles, which
+   is also the shape two of them make when they fuse. */
+.arr-skin { border-radius: 999px; }
+
+/* Initials on a tint. A real photograph goes here as an
+   <img>, inlined as a data URI â the bundle has to stand
+   alone, so nothing can be linked. */
+.arr-av { width: 28px; height: 28px; border-radius: 999px; }

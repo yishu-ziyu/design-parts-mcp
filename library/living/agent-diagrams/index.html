@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>图示代替长文</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"Source Serif 4";src:url(fonts/SourceSerif4-normal.woff2) format("woff2");font-weight:200 900;font-display:block}
+:root{--win:#222;--panel:#181818;--node:#202020;--line:#6c6c6c;--text:#efefef;--mute:#9a9a9a;--label:#cfcfcf;--link:#e0ef8e;--olive:#3c3f26;--hot:#a9b54a;--bd:#333;--spring:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;margin:0}
+html{background:#111}
+body{font:16px/1.4 Inter,-apple-system,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
+#fit{position:relative;overflow:hidden;width:100%}
+#stage{position:absolute;left:0;top:0;width:1562px;height:1080px;transform-origin:0 0;overflow:hidden}
+#wall{position:absolute;inset:0;width:100%;height:100%}
+#win{position:absolute;left:66px;top:64px;width:1427px;height:938px;border-radius:20px;background:var(--win);box-shadow:0 0 0 1px rgba(255,255,255,.1),0 24px 60px rgba(0,0,0,.5)}
+/* tabs */
+#tabs{position:absolute;left:0;top:0;right:0;height:38px;background:rgba(58,60,68,.92);border-radius:20px 20px 0 0;font-size:14px;color:#c8c8c8}
+#tabs>*{position:absolute;top:0;line-height:39px;white-space:nowrap;letter-spacing:-.05px}
+.tl{width:15px;height:15px;border-radius:50%;top:12.5px!important}
+.tabact{position:absolute;left:631px;top:3px!important;width:165px;height:35px;background:var(--win);border-radius:6px 6px 0 0}
+.x{color:#bbb;font-size:17px;font-weight:300}
+.dot{width:8px;height:8px;border-radius:50%;top:15px!important}
+/* sidebar */
+#side{position:absolute;left:11px;top:51px;width:315px;bottom:14px}
+#side h1{position:absolute;left:27px;top:15px;font:600 22px/28px Inter;letter-spacing:-.42px;white-space:nowrap}
+#side .sub{position:absolute;left:27px;top:47px;font-size:15px;color:#b0b0b0;white-space:nowrap}
+#side .sub i{font-style:normal;margin-left:11px}
+#bar{position:absolute;left:27px;top:92px;width:269px;height:22px;border-radius:7px;background:#3a3a3a;overflow:hidden}
+#bar:after{content:"";position:absolute;right:0;top:0;bottom:0;width:45px;background:repeating-linear-gradient(120deg,#9a9a9a 0 1.5px,#2a2a2a 1.5px 4.5px)}
+#side .st{position:absolute;left:29px;top:130px;font-size:15px;color:#c8c8c8;white-space:nowrap}
+#side .sh{position:absolute;left:27px;top:174px;width:270px;font-size:16.5px;line-height:23px;color:#d5d5d5}
+#mini{position:absolute;left:118px;top:245px;width:89px;height:219px;border-radius:7px;background:#101010;box-shadow:0 0 0 1px #2c2c2c;overflow:hidden}
+.card{position:absolute;border:1px solid #363636;border-radius:10px;font-weight:600;font-size:16px;color:#e8e8e8}
+.card b{position:absolute;font-weight:600;white-space:nowrap}
+.card span{position:absolute;font-weight:400;font-size:13.5px;color:#b5b5b5;white-space:nowrap}
+.card svg{position:absolute}
+/* panel */
+#panel{position:absolute;left:336px;top:51px;width:1068px;height:863px;background:var(--panel);border-radius:8px;overflow:hidden}
+#phead{position:absolute;left:0;right:0;top:0;height:56px;z-index:5;background:var(--panel);font-size:16.5px;color:#efefef}
+#phead>*{position:absolute}
+#note{position:absolute;left:0;right:0;top:56px;bottom:0;overflow:auto;scrollbar-width:none;padding:0 56px 90px}
+#note::-webkit-scrollbar{display:none}
+#note h1{font:600 27px/36px Inter;letter-spacing:-.6px;margin-top:47px}
+#note h2{font:600 23px/32px Inter;letter-spacing:-.48px;margin-top:0}
+#note p{font-size:18px;line-height:29px;margin-top:6px;letter-spacing:-.22px}
+#note h2+p{margin-top:9px}
+#note a{display:inline-block;color:var(--link);font-size:18px;letter-spacing:-.22px;line-height:29px;margin-top:14px;text-underline-offset:3px}
+#note a:focus-visible,#note button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+section{margin-top:0}
+/* 图 */
+.dg{position:relative;margin-left:-56px;width:1068px}
+.dg svg.e{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.e path{fill:none;stroke:var(--line);stroke-width:1.2;stroke-linecap:round}
+.e path.d{stroke-dasharray:4 4}
+.n{position:absolute;background:var(--node);border-radius:20px;display:flex;align-items:center;justify-content:center;font:500 15.5px/18px Inter;color:#e6e6e6;text-align:center;transition:left .7s var(--spring),top .7s var(--spring),opacity .4s,background .35s,color .35s}
+.n.dia{background:none}
+.n.dia:before{content:"";position:absolute;inset:0;background:var(--node);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.n.dia span{position:relative}
+.n.cyl{background:none;border-radius:0}
+.n.cyl:before{content:"";position:absolute;inset:0;background:var(--node);border-radius:50%/11px}
+.n.cyl:after{content:"";position:absolute;left:0;right:0;top:0;height:22px;border-radius:50%;background:#262626;box-shadow:inset 0 0 0 .5px #2e2e2e}
+.n.cyl>*{position:relative}
+.rich{justify-content:flex-start;text-align:left;padding-left:14px;align-items:flex-start;padding-top:8px;border-radius:18px}
+.rich svg{flex:none;margin:3px 9px 0 0;color:#b9b9b9}
+.rich strong{display:block;font:600 16px/19px "Source Serif 4",Georgia,serif;font-variation-settings:"opsz" 14;letter-spacing:-.05px;color:#efefef}
+.rich small{display:block;font:400 13.5px/17px Inter;color:#a8a8a8}
+.rich.ol{background:var(--olive)}
+.rich.hot{background:var(--hot)}
+.rich.hot strong,.rich.hot small,.rich.hot svg{color:#1a1b0a}
+.rich.dim{opacity:.55}
+.rich.gtint{background:#232a24}.rich.btint{background:#2b2720}
+.cyl.ol:before{background:#2d3022}.cyl.ol:after{background:#34382a}
+.rich.cyl.dim{opacity:1}.rich.cyl.dim:before{background:#1f2a24}.rich.cyl.dim:after{background:#1a221e}.rich.cyl{background:none;padding-left:26px}
+.cyl.green:before{background:#22291f}
+.lb{position:absolute;transform:translate(-50%,-50%);font:400 15px/18px Inter;color:var(--label);text-align:center;white-space:nowrap;background:var(--panel);padding:0 5px;transition:left .7s var(--spring),top .7s var(--spring),opacity .4s}
+.lb.small{font-size:13.5px;color:#b5b5b5}
+.lb.seq{white-space:normal;width:200px;background:none;font-size:15.5px;color:#c8c8c8;line-height:18.5px}
+.gp{position:absolute;border:1px solid #2c2c2c;border-radius:40px;transition:all .7s var(--spring)}
+.gp.lit{border-color:#7e7e7e}
+.gp i{position:absolute;left:0;right:0;font-style:normal;text-align:center;font-size:13.5px;color:#c0c0c0}
+.tool{position:absolute;display:flex;gap:5px;opacity:0;transition:opacity .18s}
+.dg:hover .tool,.tool:focus-within,.tool.show{opacity:1}
+.tool button{all:unset;width:32px;height:30px;border:1px solid #2e2e2e;border-radius:7px;display:grid;place-items:center;color:#9b9b9b;cursor:pointer}
+.dghead{position:absolute;left:0;right:0;text-align:center;font-size:16.5px;color:#c8c8c8}
+.dghead svg{vertical-align:-1px;margin-right:6px}
+.dghead em{font-style:normal;margin-left:3px}
+/* 分步条 */
+#walkwrap{position:relative;margin-left:-56px;width:1068px;transition:height .6s var(--spring)}
+#cam{position:absolute;inset:0;overflow:hidden}
+#cam .dg{position:absolute;left:0;top:0;height:100%;margin:0}
+#strip{position:absolute;left:56px;right:56px;bottom:0;height:70px;border-top:1px solid #333;background:var(--panel);z-index:2}
+#strip b,#strip span{position:absolute;left:14px;font-weight:400;font-size:15.5px;line-height:20px;white-space:nowrap}
+#strip b{top:11px;color:#e8e8e8}#strip span{top:31px;color:#c0c0c0}
+#pips{position:absolute;right:145px;top:26px;display:flex;gap:15px;align-items:center}
+#pips i{width:7px;height:7px;border-radius:50%;background:#464646;transition:width .3s,background .3s}
+#pips i.done{background:#8b9b47}
+#pips i.on{width:16px;background:var(--link);border-radius:4px}
+#num{position:absolute;right:85px;top:15px;font-size:15.5px;color:#d0d0d0}
+.nav{all:unset;position:absolute;top:15px;width:24px;height:24px;display:grid;place-items:center;color:#cfcfcf;cursor:pointer}
+.nav:disabled{color:#555;cursor:default}
+/* 格式条 */
+#fmt{position:absolute;left:705px;top:911px;width:280px;height:36px;background:#1e1e1e;border:1px solid #333;border-radius:7px;display:flex;align-items:center;justify-content:space-around;color:#7c7c7c;font:400 13px/1 Inter;z-index:9;padding:0 6px;clip-path:inset(0 0 9px 0);opacity:0;transition:opacity .25s}
+#fmt.show{opacity:1}
+#cursor{display:none}
+.notes{max-width:1000px;margin:0 auto;padding:30px 16px 44px;color:#cfcfcf;line-height:1.6;font-size:14px}
+.notes h3{font-size:15px;margin-bottom:8px;color:#fff}
+.notes dt{margin-top:10px}.notes dd{margin:2px 0 0;color:#9d9d9d}
+.notes code{font:12.5px ui-monospace,Menlo,monospace;color:var(--link)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="fit"><div id="stage">
+<svg id="wall" viewBox="0 0 1562 1080" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f7a99"/><stop offset=".09" stop-color="#7c8ea8"/><stop offset=".2" stop-color="#b98d9c"/><stop offset=".37" stop-color="#6f88a3"/><stop offset=".43" stop-color="#3b5874"/><stop offset=".46" stop-color="#b87f8b"/><stop offset=".62" stop-color="#b98590"/><stop offset=".8" stop-color="#8e7f97"/><stop offset="1" stop-color="#55678a"/></linearGradient>
+    <filter id="b3" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <filter id="bl" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="30"/></filter>
+  </defs>
+  <rect width="1562" height="1080" fill="url(#sky)"/>
+  <g filter="url(#b3)"><ellipse cx="540" cy="8" rx="150" ry="16" fill="#e48b68"/><ellipse cx="795" cy="12" rx="110" ry="14" fill="#f19a6c"/><ellipse cx="1190" cy="16" rx="210" ry="18" fill="#d68a78"/><ellipse cx="1050" cy="44" rx="160" ry="10" fill="#e6a79a"/><ellipse cx="300" cy="48" rx="170" ry="12" fill="#d39aa0"/><ellipse cx="60" cy="210" rx="60" ry="42" fill="#d59aa0"/><ellipse cx="1540" cy="200" rx="50" ry="60" fill="#c78d95"/></g>
+  <path d="M0 470 28 452 66 468V492H0ZM1493 445 1530 470 1562 460V560H1493Z" fill="#2f4661" filter="url(#b1)"/>
+  <path d="M0 586 18 578 52 584 72 590V598H0Z" fill="#20252f" filter="url(#b1)"/>
+  <path d="M1516 322C1540 300 1562 296 1562 296V720H1520C1500 640 1500 560 1525 520 1540 460 1500 390 1516 322Z" fill="#1d2432" filter="url(#b1)"/>
+  <rect x="0" y="960" width="1562" height="120" fill="#6e7fa3" opacity=".6" filter="url(#bl)"/>
+  <path d="M1270 1080C1300 1030 1400 1006 1470 990 1520 960 1562 930 1562 900V1080Z" fill="#3a3b42" filter="url(#b1)"/>
+</svg>
+<div id="win">
+  <div id="tabs">
+    <div class="tl" style="left:12px;background:#ff5f57"></div><div class="tl" style="left:36px;background:#febc2e"></div><div class="tl" style="left:60px;background:#28c840"></div>
+    <svg style="left:105px;top:11px" width="16" height="16" viewBox="0 0 16 16" stroke="#ddd" stroke-width="1.7" stroke-linecap="round"><path d="M8 1v14M1 8h14M3 3l10 10M13 3 3 13"/></svg>
+    <span style="left:135px">Verify Codex ...</span><span class="x" style="left:239px">×</span>
+    <span style="left:304px">Switch sideb...</span><i class="dot" style="left:410px;background:#4a8ff0"></i>
+    <span style="left:473px">Rethink toast...</span><i class="dot" style="left:579px;background:#7a7a7a"></i>
+    <div class="tabact"></div>
+    <span style="left:642px;color:#f0f0f0">Polish diagra...</span><i class="dot" style="left:748px;background:#e9e36a"></i><span class="x" style="left:772px">×</span>
+    <span style="left:811px">Improve diff v...</span><svg style="left:915px;top:13px" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#4fae78" stroke-width="1.1"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M4 6.7 6 8.5 9 4.8"/></svg>
+    <span style="left:981px">Explore neste...</span><span class="x" style="left:1085px">×</span>
+    <span style="left:1150px;width:95px;overflow:hidden;-webkit-mask:linear-gradient(90deg,#000 80%,transparent)">Design reposi...</span><span class="x" style="left:1265px;font-size:21px">+</span>
+    <svg style="left:1351px;top:13px" width="14" height="13" viewBox="0 0 14 13" fill="none" stroke="#dcb95a" stroke-width="1.2"><rect x=".6" y=".6" width="12.8" height="9" rx="1.5"/><path d="M4 12h6"/></svg>
+    <svg style="left:1387px;top:13px" width="14" height="13" viewBox="0 0 14 13" fill="none" stroke="#c8c8c8" stroke-width="1.2"><path d="M1 3h5M9 3h4M1 10h2M7 10h6"/><circle cx="7.5" cy="3" r="1.5"/><circle cx="5" cy="10" r="1.5"/></svg>
+  </div>
+  <aside id="side">
+    <h1>Polish diagrams and s...</h1>
+    <svg style="position:absolute;left:288px;top:19px" width="4" height="16" fill="#9a9a9a"><circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/></svg>
+    <div class="sub">intent-hq/monorepo<i>small-sheep</i></div>
+    <div id="bar"></div>
+    <div class="st">↑ 555 in · 82 out · 187.6K cached</div>
+    <div class="sh">Shipped in cloudlands-fe v2.174.0 (alpha).</div>
+    <div id="mini"><svg width="89" height="219" viewBox="0 0 89 219"><text x="6" y="14" font-family="Georgia,serif" font-size="6.5" font-weight="700" fill="#ccc">Nested group boundaries</text><g fill="#777"><rect x="6" y="19" width="70" height="1.5"/><rect x="6" y="23" width="62" height="1.5"/><rect x="6" y="27" width="34" height="1.5"/></g><g fill="none" stroke="#6a6a6a" stroke-width=".7"><path d="M45 62V180H67V62H45ZM26 76H62V94H26ZM30 104H58M44 118v60M30 136H60M30 160H60"/></g></svg></div>
+    <div class="card" style="left:27px;top:544px;width:129px;height:121px"><svg style="left:18px;top:19px" width="38" height="24"><rect x="0" width="22" height="23" rx="6" fill="#b79ee8"/><rect x="16" width="22" height="23" rx="6" fill="#ea9c5f"/><path d="M11 6v11M6 11.5h10" stroke="#fff" stroke-width="1.5"/></svg><span style="left:60px;top:21px;font-size:14px">+225</span><b style="left:19px;top:85px">Agents</b></div>
+    <div class="card" style="left:169px;top:544px;width:129px;height:121px;overflow:hidden"><svg style="left:24px;top:26px" width="12" height="10" stroke="#aaa"><path d="M1 1h10M1 5h10M1 9h7"/></svg><span style="left:50px;top:21px">Spec, MCP, Shell</span><b style="left:19px;top:85px">Context</b></div>
+    <div class="card" style="left:27px;top:679px;width:129px;height:121px"><b style="left:19px;top:84px">Chan...</b><svg style="left:97px;top:86px" width="15" height="16" fill="none" stroke="#8e4bd2" stroke-width="1.5"><circle cx="3" cy="3" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="3" cy="13" r="2"/><path d="M3 5v6M5 3c0 5 2 8 5 8"/></svg></div>
+    <div class="card" style="left:169px;top:679px;width:129px;height:121px"><b style="left:19px;top:84px">Files</b><svg style="left:95px;top:87px" width="15" height="15" fill="none" stroke="#bbb" stroke-width="1.2"><path d="M12 8v5.5H1.5V3H7M9 1.5h4.5V6M13.5 1.5 7 8"/></svg></div>
+    <div class="card" style="left:27px;top:813px;width:129px;height:51px"><b style="left:14px;top:14px">Brow...</b><svg style="left:91px;top:19px" width="12" height="11" fill="none" stroke="#aaa"><rect x=".5" y=".5" width="11" height="9" rx="1"/><path d="M.5 3.5h11"/></svg></div>
+    <div class="card" style="left:169px;top:813px;width:129px;height:51px"><b style="left:14px;top:14px">Shells</b><svg style="left:97px;top:18px" width="11" height="13" fill="none" stroke="#aaa"><path d="M1 1.5 10 6.5 1 11.5Z"/></svg></div>
+  </aside>
+  <main id="panel">
+    <div id="phead">
+      <i style="left:16px;top:13px;width:32px;height:30px;border-radius:8px;background:#222"></i><svg style="left:25px;top:22px" width="16" height="13" stroke="#cfcfcf" stroke-width="1.2"><path d="M2 1.5h12M2 6.5h12M2 11.5h9"/></svg>
+      <span style="left:56px;top:17px">Diagram examples — review gallery</span>
+      <svg style="left:962px;top:20px" width="4" height="16" fill="#e0e0e0"><circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/></svg>
+      <i style="left:985px;top:18px;width:1px;height:20px;background:#3a3a3a"></i>
+      <svg style="left:999px;top:20px" width="15" height="15" stroke="#e0e0e0" stroke-width="1.3"><path d="M7.5 1v13M1 7.5h13"/></svg>
+      <svg style="left:1032px;top:21px" width="13" height="13" stroke="#e0e0e0" stroke-width="1.3"><path d="M1 1l11 11M12 1 1 12"/></svg>
+    </div>
+    <article id="note" tabindex="0">
+      <h1>Diagram examples</h1>
+      <p>24 examples copied from the current sandbox fixtures at frontend revision 0d983fce. This note uses the real note renderer. It is a review gallery, not a verification report.</p>
+      <p style="margin-top:14px">Compare wide and narrow note panels. Step through the interactive examples forward and backward. Labels and routes must remain visible, the frame must settle without repeated resizing, and clear connections should avoid unnecessary bends.</p>
+      <p style="margin-top:14px">Known reports to inspect: the small jog in the nested-review no route, clipped return paths in Architecture and groups, and clipping or repeated sizing in Cycle and fan-out.</p>
+      <section id="s1"><h2 style="margin-top:21px">1. Flow and decisions</h2><p>Branches, edge labels, and a return path.</p><a href="#s1">Open matching sandbox example</a><div class="dg" id="flow" style="height:400px"></div></section>
+      <section id="s2"><h2 style="margin-top:27px">2. Simple sequence exchange</h2><p>A focused request and response with a wrapping message label.</p><a href="#s2">Open matching sandbox example</a><div class="dg" id="seq" style="height:340px"></div></section>
+      <section id="s3"><h2 style="margin-top:20px">3. Sequence alternative branches</h2><p>Focused success and failure branches with preserved message order.</p><a href="#s3">Open matching sandbox example</a></section>
+      <section id="s10"><h2 style="margin-top:62px">10. Nested review routing</h2><p>A release review fans out, converges, loops, and crosses nested boundaries.</p><p style="margin-top:14px">Check: Parallel labels stay distinct, reciprocal and self routes remain visible, and each boundary owns its content.</p><a href="#s10">Open matching sandbox example</a><div class="dg" id="nested" style="height:610px"></div></section>
+      <section id="s11"><h2 style="margin-top:0">11. Cycle and fan-out</h2><p>One hub, four targets, and a feedback cycle.</p><a href="#s11">Open matching sandbox example</a></section>
+      <section id="s13"><h2 style="margin-top:62px">13. Architecture and groups</h2><p>Grouped services and event flow.</p><a href="#s13">Open matching sandbox example</a>
+        <div id="walkwrap" style="height:649px;margin-top:0">
+          <div class="dghead" id="wh" style="top:50px;transition:opacity .3s"><svg width="11" height="7" fill="none" stroke="#bbb" stroke-width="1.2"><path d="M1 1l4.5 4.5L10 1"/></svg>Architecture diagram <em>(3 states)</em></div>
+          <div id="cam"><div class="dg" id="walk"></div></div>
+          <div class="tool show" style="left:969px;top:85px;flex-direction:column;gap:35px;z-index:3"><button aria-label="More" id="wm">⋯</button><button aria-label="Fit"><svg width="11" height="11" fill="none" stroke="#9b9b9b"><path d="M0 4h4V0M11 4H7V0M0 7h4v4M11 7H7v4"/></svg></button></div>
+          <div id="strip"><b id="stT"></b><span id="stS"></span><div id="pips"><i></i><i></i><i></i></div><div id="num"></div>
+            <button class="nav" id="prev" style="right:53px" aria-label="Previous"><svg width="8" height="12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7 1 2 6l5 5"/></svg></button>
+            <button class="nav" id="next" style="right:18px" aria-label="Next"><svg width="8" height="12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1 1l5 5-5 5"/></svg></button></div>
+        </div>
+      </section>
+      <section id="s14"><h2 style="margin-top:62px">14. Interactive sequence</h2><p>Three selectable requests, reductions, and render steps.</p></section>
+      <section id="s17"><h2 style="margin-top:62px">17. Cycle and fan-out flowchart</h2><p>Decision paths and a direct capture branch.</p><a href="#s17">Open matching sandbox example</a>
+        <div class="dg" id="fan" style="height:688px"><div class="dghead" style="top:36px"><svg width="11" height="7" fill="none" stroke="#bbb" stroke-width="1.2"><path d="M1 1l4.5 4.5L10 1"/></svg>Flowchart diagram</div><div class="tool show" style="left:964px;top:112px"><button aria-label="Fit"><svg width="11" height="11" fill="none" stroke="#9b9b9b"><path d="M0 4h4V0M11 4H7V0M0 7h4v4M11 7H7v4"/></svg></button></div></div>
+      </section>
+      <section id="s18"><h2 style="margin-top:10px">18. Preview network</h2><p>Local server and hot reload flow.</p><a href="#s18">Open matching sandbox example</a></section>
+    </article>
+  </main>
+  <div id="fmt"><b>B</b><i>I</i><u>U</u><s>S</s><span>&lt;/&gt;</span><span>⚭</span><span>▭</span><span>➢</span></div>
+</div>
+</div></div>
+<div class="notes"><h3>可拆</h3><dl>
+  <dt><code>#flow</code></dt><dd>节点和线都是带圆角的折线，线上的文字把线打断，不压线。</dd>
+  <dt><code>#seq</code></dt><dd>顺序图：两列虚线生命线，消息标签换行后箭头依然穿过两端。</dd>
+  <dt><code>#nested</code></dt><dd>嵌套分组：外框和内框只用极淡的描边，线可以穿过分组边界。</dd>
+  <dt><code>#walk</code></dt><dd>分步架构图：上一步下一步，节点滑到新位置，当前节点点亮，底部说明换文字。</dd>
+  <dt><code>#fan</code></dt><dd>带类型的流程图：衬线名称加小字类型，线往回绕时走外圈。</dd>
+</dl></div>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const OFF=402;           // 帧坐标 → 面板坐标
+const ICON={user:'<circle cx="7" cy="4.5" r="3"/><path d="M1.5 13c.5-3 2.5-4.5 5.5-4.5s5 1.5 5.5 4.5"/>',mon:'<rect x="1" y="2" width="12" height="8" rx="1.5"/><path d="M4.5 12.5h5"/>',srv:'<rect x="1.5" y="1.5" width="11" height="4.5" rx="1"/><rect x="1.5" y="8" width="11" height="4.5" rx="1"/>',db:'<ellipse cx="7" cy="3" rx="5" ry="2"/><path d="M2 3v8c0 1.1 2.2 2 5 2s5-.9 5-2V3M2 7c0 1.1 2.2 2 5 2s5-.9 5-2"/>',msg:'<path d="M1.5 2h11v8H5l-3.5 2.5Z"/>',play:'<path d="M3 1.5 12 7l-9 5.5Z"/>',gear:'<circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.3"/><path d="M7 0v2M7 12v2M0 7h2M12 7h2"/>',git:'<circle cx="3" cy="3" r="1.8"/><circle cx="11" cy="3" r="1.8"/><circle cx="3" cy="11" r="1.8"/><path d="M3 5v4M11 5c0 3-3 3-6 4"/>',box:'<rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/>'};
+const svgIcon=k=>`<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.1">${ICON[k]}</svg>`;
+// 带圆角折线
+function route(p,r=8){let d=`M${p[0][0]} ${p[0][1]}`;for(let i=1;i<p.length-1;i++){const [a,b,c]=[p[i-1],p[i],p[i+1]];const l1=Math.hypot(b[0]-a[0],b[1]-a[1]),l2=Math.hypot(c[0]-b[0],c[1]-b[1]),q=Math.min(r,l1/2,l2/2);const s=[b[0]-(b[0]-a[0])/l1*q,b[1]-(b[1]-a[1])/l1*q],e=[b[0]+(c[0]-b[0])/l2*q,b[1]+(c[1]-b[1])/l2*q];d+=`L${s[0]} ${s[1]}Q${b[0]} ${b[1]} ${e[0]} ${e[1]}`}const z=p[p.length-1];return d+`L${z[0]} ${z[1]}`}
+function head(p){const a=p[p.length-2],b=p[p.length-1],t=Math.atan2(b[1]-a[1],b[0]-a[0]),L=5.5,w=.62;return `M${b[0]-L*Math.cos(t-w)} ${b[1]-L*Math.sin(t-w)}L${b[0]} ${b[1]}L${b[0]-L*Math.cos(t+w)} ${b[1]-L*Math.sin(t+w)}`}
+function edges(list){return list.map(e=>{const pts=e.p.map(q=>[q[0]-OFF,q[1]-e.y0]);return `<path class="${e.d?'d':''}" d="${route(pts)}"/>`+(e.noHead?'':`<path d="${head(pts)}"/>`)}).join('')}
+function node(n,y0){const x=n.x-OFF,y=n.y-y0;const k=n.k||'';const body=n.sub?`${svgIcon(n.ic)}<div><strong>${n.t}</strong><small>${n.sub}</small></div>`:(k.includes('dia')?`<span>${n.t}</span>`:n.t);return `<div class="n ${k}${n.sub?' rich':''}" data-id="${n.id||''}" style="left:${x}px;top:${y}px;width:${n.w}px;height:${n.h}px;${n.r?`border-radius:${n.r}px`:''}">${body}</div>`}
+function label(l,y0){return `<div class="lb ${l.k||''}" style="left:${l.x-OFF}px;top:${l.y-y0}px">${l.t}</div>`}
+function paint(el,y0,N,E,L,G=[]){const svg=`<svg class="e">${edges(E.map(e=>({...e,y0})))}</svg>`;el.insertAdjacentHTML('afterbegin',G.map(g=>`<div class="gp ${g.k||''}" style="left:${g.x-OFF}px;top:${g.y-y0}px;width:${g.w}px;height:${g.h}px;border-radius:${g.r||40}px"><i style="top:${g.lt||30}px">${g.t}</i></div>`).join('')+svg+N.map(n=>node(n,y0)).join('')+L.map(l=>label(l,y0)).join(''))}
+
+// 1 流程与判断（坐标取自原帧）
+paint($('#flow'),636,[
+ {x:605,y:842,w:95,h:48,r:24,t:'Request'},{x:749,y:812,w:108,h:108,k:'dia',t:'Valid?'},
+ {x:935,y:761,w:203,h:61,r:22,t:'Process request'},{x:1186,y:770,w:79,h:42,r:21,t:'Ready'},{x:953,y:860,w:167,h:60,t:'Repair input'}
+],[
+ {p:[[702,866],[742,866]]},{p:[[860,866],[890,866]],noHead:1},{p:[[922,866],[946,866]]},
+ {p:[[803,810],[803,784]],noHead:1},{p:[[803,750],[803,724],[1037,724],[1037,753]]},
+ {p:[[1037,922],[1037,958],[803,958],[803,928]]},{p:[[1140,791],[1180,791]]}
+],[{x:803,y:766,t:'Yes'},{x:905,y:865,t:'No'}]);
+// 2 顺序图
+paint($('#seq'),546,[{x:753,y:620,w:159,h:74,t:'Client'},{x:959,y:620,w:159,h:74,t:'API'}],[
+ {p:[[832,695],[832,832]],d:1,noHead:1},{p:[[1038,695],[1038,832]],d:1,noHead:1},
+ {p:[[833,758],[1034,758]]},{p:[[1037,822],[838,822]],d:1}
+],[{x:935,y:732,t:'Submit account recovery request',k:'seq'},{x:935,y:796,t:'Recovery request accepted',k:'seq'}]);
+// 10 嵌套
+paint($('#nested'),258,[
+ {x:475,y:544,w:102,h:60,r:18,t:'Item'},{x:710,y:516,w:116,h:116,k:'dia',t:'Ready?'},{x:1035,y:544,w:136,h:60,r:18,t:'Decision'},{x:880,y:650,w:129,h:60,r:18,t:'Context'},{x:1311,y:538,w:111,h:74,k:'cyl',t:'<span>Log</span>'}
+],[
+ {p:[[578,564],[612,564]],noHead:1},{p:[[640,564],[708,564]]},
+ {p:[[526,544],[526,464],[586,464]],d:1,noHead:1},{p:[[630,464],[759,464],[759,514]],d:1},
+ {p:[[820,565],[855,565],[855,535],[914,535]],noHead:1},{p:[[948,535],[1007,535],[1007,563],[1029,563]]},
+ {p:[[820,582],[942,582]],noHead:1},{p:[[976,582],[1029,582]]},
+ {p:[[945,650],[945,612],[892,612]],noHead:1},{p:[[842,612],[798,612]]},
+ {p:[[757,625],[757,673],[780,673]],noHead:1},{p:[[818,673],[874,673]]},
+ {p:[[1173,552],[1207,552],[1207,570],[1178,570]]},
+ {p:[[1173,581],[1242,581]],noHead:1},{p:[[1282,581],[1305,581]]},
+ {p:[[1010,687],[1092,687],[1092,648]],noHead:1},{p:[[1092,620],[1092,610]]}
+],[{x:607,y:463,t:'meta'},{x:625,y:564,t:'in'},{x:931,y:534,t:'yes'},{x:959,y:582,t:'no'},{x:867,y:611,t:'retry'},{x:799,y:672,t:'add'},{x:1262,y:581,t:'save'},{x:1092,y:632,t:'done'}],[
+ {x:448,y:334,w:751,h:431,t:'',r:40},{x:681,y:424,w:356,h:314,t:'',r:34}]);
+$('#nested').insertAdjacentHTML('beforeend',`<div class="lb" style="left:${823-OFF}px;top:${374-258}px;background:none;color:#c4c4c4">Review</div><div class="lb" style="left:${858-OFF}px;top:${463-258}px;background:none;color:#c4c4c4">Checks</div><div class="tool" style="left:${1300-OFF}px;top:0"><button aria-label="Edit"><svg width="12" height="12" fill="none" stroke="#9b9b9b"><path d="M1 11l1-3 6-6 2 2-6 6Z"/></svg></button><button aria-label="Expand"><svg width="11" height="11" fill="none" stroke="#9b9b9b"><path d="M0 3V0h3M8 0h3v3M0 8v3h3M11 8v3H8"/></svg></button><button aria-label="More">⋯</button></div>`);
+// 17 流程
+paint($('#fan'),170,[
+ {x:845,y:289,w:175,h:48,t:'Open workbench',sub:'start',ic:'play'},{x:835,y:392,w:195,h:48,t:'Select a named case',sub:'process',ic:'gear'},
+ {x:858,y:496,w:149,h:48,t:'Source valid?',sub:'decision',ic:'git'},{x:733,y:611,w:169,h:48,t:'Inspect diagram',sub:'process',ic:'gear',k:'gtint'},
+ {x:935,y:611,w:198,h:48,t:'Inspect error source',sub:'process',ic:'gear',k:'btint'},{x:843,y:715,w:178,h:48,t:'Capture evidence',sub:'end',ic:'box'}
+],[
+ {p:[[933,338],[933,386]]},{p:[[933,441],[933,488]]},{p:[[909,545],[909,577],[880,577]],noHead:1},{p:[[846,577],[818,577],[818,604]]},
+ {p:[[957,545],[957,577],[984,577]],noHead:1},{p:[[1016,577],[1043,577],[1043,604]]},
+ {p:[[733,635],[628,635],[628,416],[678,416]],noHead:1},{p:[[784,416],[830,416]]},
+ {p:[[1031,416],[1243,416],[1243,738],[1194,738]],noHead:1},{p:[[1074,738],[1028,738]]},{p:[[902,635],[935,635]],noHead:1},
+ {p:[[818,660],[818,687],[895,687],[895,708]]}
+],[{x:863,y:577,t:'yes'},{x:1000,y:577,t:'no'},{x:731,y:416,t:'try another case'},{x:1132,y:738,t:'fan out to direct capture',k:'seq'}]);
+$('#fan .lb.seq').style.width='130px';
+
+// 13 分步架构
+const walk=$('#walk');
+const NODES={
+ user:{t:'Workspace user',sub:'actor',ic:'user',w:167,h:50},
+ ui:{t:'Diagram workbench<br>renderer',sub:'ui_component',ic:'mon',w:198,h:68},
+ d:{t:'Intent daemon',sub:'service',ic:'srv',w:160,h:50},
+ db:{t:'Persistent notes',sub:'db',ic:'db',w:188,h:103,k:'cyl'},
+ ev:{t:'Workspace events',sub:'queue',ic:'msg',w:183,h:50}
+};
+const STATES=[
+ {t:'1. Start in the workbench',s:'Inspect fixtures without app sagas.',h:649,y0:274,
+  pos:{user:[852,546],ui:[837,649],d:[849,780],db:[841,900],ev:[843,1050]},cls:{user:'dim',ui:'ol'},hide:['d','db','ev'],
+  g:[{x:802,y:468,w:267,h:282,t:'Browser-only preview',k:'lit',lt:16},{x:805,y:800,w:260,h:300,t:'',o:0}],
+  e:[{p:[[935,598],[935,612]],noHead:1},{p:[[935,630],[935,644]]}],l:[{x:935,y:621,t:'explores',k:'small'}]},
+ {t:'2. Follow the data',s:'Bindings connect nodes to real context.',h:716,y0:172,
+  pos:{user:[848,226],ui:[835,313],d:[853,503],db:[836,610],ev:[843,800]},cls:{user:'',ui:'hot',d:'ol',db:'ol'},hide:['ev'],
+  g:[{x:790,y:110,w:280,h:290,t:'',k:'',o:0},{x:804,y:430,w:252,h:305,t:'Production boundary',k:'lit',lt:16}],
+  e:[{p:[[932,276],[932,284]],noHead:1},{p:[[932,296],[932,308]]},{p:[[932,382],[932,404]],noHead:1},{p:[[1000,415],[1020,415],[1020,472],[932,472],[932,498]]},{p:[[932,554],[932,568]],noHead:1},{p:[[932,588],[932,604]]}],
+  l:[{x:932,y:290,t:'explores',k:'small'},{x:932,y:415,t:'requests state',k:'small'},{x:932,y:578,t:'reads and writes',k:'small'}]},
+ {t:'3. Close the loop',s:'Events refresh the visible explanation.',h:816,y0:172,
+  pos:{user:[870,222],ui:[855,324],d:[874,520],db:[860,622],ev:[862,778]},cls:{user:'',ui:'ol',d:'dim',db:'dim',ev:'dim'},hide:[],
+  g:[{x:820,y:100,w:268,h:310,t:'Browser-only preview',k:'',lt:60},{x:826,y:442,w:256,h:419,t:'Production boundary',k:'',lt:16}],
+  e:[{p:[[954,271],[954,284]],noHead:1},{p:[[954,306],[954,318]]},{p:[[1055,357],[1117,357],[1117,398]],noHead:1},{p:[[1117,428],[1117,545],[1040,545]]},{p:[[954,571],[954,584]],noHead:1},{p:[[954,606],[954,616]]},{p:[[954,726],[954,745]],d:1,noHead:1},{p:[[862,802],[755,802],[755,740]],d:1,noHead:1}],
+  l:[{x:954,y:296,t:'explores',k:'small'},{x:1117,y:413,t:'requests state',k:'small'},{x:954,y:595,t:'reads and writes',k:'small'}]}
+];
+walk.innerHTML=`<div class="gp" id="g0"><i></i></div><div class="gp" id="g1"><i></i></div><svg class="e" id="wE"></svg><div id="wL"></div>`+Object.keys(NODES).map(k=>{const n=NODES[k];return `<div class="n rich" data-k="${k}" style="width:${n.w}px;height:${n.h}px">${svgIcon(n.ic)}<div><strong>${n.t}</strong><small>${n.sub}</small></div></div>`}).join('');
+const nEl=k=>walk.querySelector(`[data-k=${k}]`);
+nEl('db').classList.add('cyl');nEl('db').style.paddingTop='36px';
+let step=0;const note=$('#note');
+function setStep(i,first){
+  step=i;const S=STATES[i],y0=S.y0;
+  $('#walkwrap').style.height=S.h+'px';
+  Object.keys(NODES).forEach(k=>{const el=nEl(k),[x,y]=S.pos[k];el.style.left=(x-OFF)+'px';el.style.top=(y-y0)+'px';el.style.opacity=S.hide.includes(k)?0:(S.cls[k]==='dim'&&k!=='db'?.55:1);
+    el.classList.remove('ol','hot','dim','green');const c=S.cls[k];if(c&&!(k==='ui'&&c==='dim'))el.classList.add(c);
+    if(k==='db')el.style.paddingTop='36px'});
+  S.g.forEach((g,n)=>{const el=$('#g'+n);el.style.cssText=`left:${g.x-OFF}px;top:${g.y-y0}px;width:${g.w}px;height:${g.h}px;opacity:${g.o===0?0:1}`;el.className='gp '+(g.k||'');const t=el.querySelector('i');t.textContent=g.t;t.style.top=(g.lt||16)+'px'});
+  const eS=$('#wE'),lS=$('#wL');
+  const draw=()=>{eS.innerHTML=edges(S.e.map(e=>({...e,y0})));lS.innerHTML=S.l.map(l=>label(l,y0)).join('');eS.style.opacity=lS.style.opacity=1};
+  if(first||matchMedia('(prefers-reduced-motion: reduce)').matches)draw();else{eS.style.opacity=lS.style.opacity=0;setTimeout(draw,330)}
+  $('#wh').style.opacity=$('#wm').style.opacity=i?0:1;
+  if(!first){const top=$('#walkwrap').offsetTop+S.h-note.clientHeight+10;note.scrollTo({top,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
+  $('#stT').textContent=S.t;$('#stS').textContent=S.s;$('#num').textContent=(i+1)+'/3';
+  document.querySelectorAll('#pips i').forEach((p,n)=>{p.className=n===i?'on':(n<i?'done':'')});
+  $('#prev').disabled=i===0;$('#next').disabled=i===2;
+}
+$('#wE').style.transition=$('#wL').style.transition='opacity .4s';
+$('#prev').onclick=()=>step&&setStep(step-1);$('#next').onclick=()=>step<2&&setStep(step+1);
+setStep(0,true);
+
+// 格式条：滚动后才出现
+note.addEventListener('scroll',()=>$('#fmt').classList.toggle('show',note.scrollTop>$('#s10').offsetTop-200));
+// 适配窗口
+function fit(){const s=Math.min(1,innerWidth/1562);$('#stage').style.transform=`scale(${s})`;$('#fit').style.height=1080*s+'px'}addEventListener('resize',fit);fit();
+// 关键帧参数 ?sec=s2&at=448&step=2：让这一节标题中线落在原帧的 at 处
+const q=new URLSearchParams(location.search);
+if(q.get('step'))setStep(+q.get('step')-1,true);
+if(q.get('sec')){document.documentElement.classList.add('q');const st=document.createElement('style');st.textContent='*{transition:none!important}';document.head.append(st);if(q.get('step'))setStep(+q.get('step')-1,true);
+  requestAnimationFrame(()=>{const el=q.get('el')?$(q.get('el')):$('#'+q.get('sec')+' h2');const r=el.getBoundingClientRect(),s=$('#stage').getBoundingClientRect();const k=s.width/1562;const y=(r.top+r.height/2-s.top)/k;note.scrollTop+=(y-(+q.get('at')));})}
+})();
+</script>
+</body>
+</html>

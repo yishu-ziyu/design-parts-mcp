@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Archive Spec Poster</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Int;src:url(fonts/inter.woff2) format('woff2');font-weight:100 900}
+@font-face{font-family:JB;src:url(fonts/jb.woff2) format('woff2');font-weight:100 800}
+@font-face{font-family:JB0;src:url(fonts/inter.woff2) format('woff2');font-weight:100 900;unicode-range:U+30}
+:root{--bg:#141414;--fg:#d6d3cd}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#efeeea;--fg:#2a2a28}}
+:root[data-theme="light"]{--bg:#efeeea;--fg:#2a2a28}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 Int,system-ui,sans-serif}
+#wall{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:1720px;margin:0 auto;padding:16px}
+@media (max-width:900px){#wall{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){#wall{grid-template-columns:1fr}}
+svg.p{display:block;width:100%;height:auto;background:#000}
+.note{max-width:960px;margin:0 auto;padding:32px 16px 80px}.note h3{font-size:20px;margin:0 0 12px}.note dt{margin-top:10px}.note dd{margin:2px 0 0;opacity:.85}.note code{font:13px JB,monospace}.note a{color:inherit}
+text{font-family:Int,sans-serif}.m{font-family:JB0,JB,monospace;white-space:pre}
+.g{fill:#787670}
+</style></head><body>
+<main id="wall"></main>
+<div class="note"><h3>可拆</h3><dl>
+<dt><code>#rider</code></dt><dd>整张底色 + 一块亮色窗口 + 深色剪影压在窗口上，剪影描一圈底色细线。窗口里的等宽字被剪影挡掉一半，古今两层才连在一起。</dd>
+<dt><code>#golden</code></dt><dd>黄金分割构造线：每个方块边长是上一个的 0.618，线色 #8a8a86、1.5 单位，贴着构造线放灰色等宽小字。</dd>
+<dt><code>#vitruvian</code></dt><dd>外圆 + 内方 + 比例格，把二进制字放进身体两侧，用右对齐和左对齐贴着身体轮廓走。本页这一整组是原帖截图。</dd>
+<dt><code>#stipple</code></dt><dd>橙色块带白色斑点，再叠一圈黑色点线描边，像蓝图上的套印。本页这一整块是原帖截图，不是滤镜生成。</dd>
+<dt><code>#seal</code></dt><dd>双椭圆印章：上弧等宽字，下弧无衬线字，中间竖琴线稿，四角放年份和类别。</dd>
+</dl><p>来源：<a href="https://x.com/ayushsoni_io/status/2093284574243824100">@ayushsoni_io</a>，2026-08-28。原帖是四张静态海报。插画是原帖截图裁切（含原作素材，只留本机），文字和窗口是页面里的真元素，原帖品牌名换成占位名 Nomark。</p></div>
+<script>
+'use strict';
+const W=1601,H=2000,OR='#ff7038',PU='#3d3160',CR='#ddd6ca',PA='#fbf8f4',BK='#1a1a1a',DK='#191917';
+const svg=(id,bg,body)=>`<svg class="p" id="${id}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${id}"><rect width="${W}" height="${H}" fill="${bg}"/>${body}</svg>`;
+const T=(s,x,y,z,o={})=>`<text x="${x}" y="${y}" font-size="${z}" fill="${o.c||DK}" ${o.m?'class="m"':''} font-weight="${o.w||(o.m?370:300)}" letter-spacing="${o.t??(o.m?0:-.022*z)}" text-anchor="${o.a||'start'}" ${o.x||''}>${s}</text>`;
+const LS=(a,x,y,lh,z,o)=>a.map((s,i)=>T(s,x,y+i*lh,z,o)).join('');
+const P=(d,o={})=>`<path d="${d}" fill="${o.f||'none'}" stroke="${o.s||'none'}" stroke-width="${o.w||1.5}" stroke-linejoin="round" stroke-linecap="round" ${o.x||''}/>`;
+
+/* 把折线点串变成平滑曲线（Catmull-Rom） */
+function smooth(str,close=true,k=.2){const n=str.match(/-?\d+(\.\d+)?/g).map(Number),a=[];for(let i=0;i<n.length;i+=2)a.push([n[i],n[i+1]]);const N=a.length,g=i=>close?a[(i+N)%N]:a[Math.max(0,Math.min(N-1,i))];let d=`M${a[0]}`;for(let i=0;i<(close?N:N-1);i++){const p0=g(i-1),p1=g(i),p2=g(i+1),p3=g(i+2);d+=`C${p1[0]+(p2[0]-p0[0])*k} ${p1[1]+(p2[1]-p0[1])*k} ${p2[0]-(p3[0]-p1[0])*k} ${p2[1]-(p3[1]-p1[1])*k} ${p2[0]} ${p2[1]}`}return d+(close?'Z':'')}
+/* 回纹：一个方块回纹，复用到左右两侧 */
+function meander(){const a=(dx,dy,flip)=>`<g transform="translate(${dx} ${dy})" ${flip||''}>${P('M0 2H140V183H0M0 43H85V142H30V90M263 2H195V230H0M245 43V230',{s:'#74726b',w:2})}</g>`;
+ const b=(dy)=>P(`M0 ${dy}H262M37 ${dy+40}H262M37 ${dy+40}V${dy+183}H210V${dy+40}M100 ${dy+88}V${dy+140}H155V${dy+88}M0 ${dy+228}H262`,{s:'#74726b',w:2});
+ const r=(dx,dy)=>`<g transform="translate(${dx} ${dy})">${P('M264 2H12V230H264M264 43H62V177H230V43M108 177V85H175V130M0 2V230',{s:'#74726b',w:2})}</g>`;
+ const rb=(dy)=>P(`M1337 ${dy}H1420V${dy+228}H1337M1470 ${dy}H1601M1470 ${dy+40}V${dy+183}H1601M1518 ${dy+80}H1601M1518 ${dy+80}V${dy+132}H1601M1470 ${dy+228}H1601`,{s:'#74726b',w:2});
+ return a(0,645)+b(972)+a(0,1295)+r(1337,645)+rb(972)+r(1337,1295)}
+function p1(){const b=`<rect x="265" y="640" width="1072" height="890" fill="${OR}"/>${P('M1130 697H288V1507H1313V697H1258',{s:PU,w:3.5})}${[343,400,457].map(x=>`<circle cx="${x}" cy="750" r="18" fill="none" stroke="${PU}" stroke-width="3.5"/>`).join('')}<rect x="288" y="820" width="1025" height="88" fill="${PU}"/>
+ ${T('[TITLE MODEL]',345,883,47,{m:1,c:'#fbf8f4'})}${T('CODE',1135,714,46,{m:1,c:PU})}${T('STATUS',470,973,47,{m:1,c:PU})}${T('SELECT',230,1085,47,{m:1,c:PU})}${T('UP/DOWN ▼ KEY',338,1368,46,{m:1,c:PU})}${T('DISPATCH : ACTION KEY',338,1406,46,{m:1,c:PU})}`;
+ const mk=(x)=>`<g transform="translate(${x} 862)" fill="none" stroke="${DK}" stroke-width="3.6"><rect x="1.8" y="1.8" width="52" height="42"/><path d="M12 34V12H44V34H22V22H34"/></g>`;
+ const badge=`${P('M1173 765H1474L1502 793V975L1474 1003H1173L1145 975V793Z',{f:'#c5baa0',s:DK,w:3})}${T('ASSIGNED',1323,842,50,{m:1,a:'middle'})}${[1196,1262,1328,1394].map(mk).join('')}${T('AGENT 05',1323,966,50,{m:1,a:'middle'})}`;
+ return svg('rider',CR,LS(['Spin up as many agents as','the job needs. They work in','parallel, not in line.'],62,171,106,99.5)+meander()+b+'<image href="source-assets/rider.png" x="136.75" y="510.87" width="1328.47" height="1149.71"/>'+badge+LS(['AGENTS, WORKING WHILE','YOU SLEEP'],52,1877,58,44,{m:1}))}
+
+/* 黄金分割构造线 */
+function p2(){const LN='#8a8a86',l={s:LN,w:1.6};
+ const arcs=P('M590 445A660 660 0 0 0 -70 1105A415 415 0 0 0 335 1520A255 255 0 0 0 590 1268A152 152 0 0 0 437 1105A102 102 0 0 0 335 1203A65 65 0 0 0 400 1268A37 37 0 0 0 437 1230',l);
+ return svg('golden',PA,T('{1}',57,110,52,{m:1,w:300,t:-6})+LS(['AGENTS DISPATCHED:','6 ACTIVE'],57,203,68,44,{m:1})+P('M0 445H1601M0 1520H1601M590 445V1520M0 1105H590M335 1105V1520M335 1268H590M437 1105V1268M335 1203H437M400 1203V1268',l)+arcs+[[1075,480,'[03:41:07]'],[1321,480,'AGENT_04'],[1535,480,'START'],[1075,509,'TASK_0093'],[1264,509,'[03:41:09]'],[1467,509,'TEST'],[1568,509,'SUCCESS'],[1075,538,'PASSED'],[1210,538,'(12/12)'],[1357,538,'[03:41:12]'],[1552,538,'MERGE'],[1246,567,'[03:41:13]'],[1450,567,'BACKLOG:'],[611,1406,'WHILE'],[726,1406,'BACKLOG.LENGTH'],[995,1406,'>'],[611,1435,'O:'],[686,1435,'DISPATCH(NEXT_TASK)'],[611,1464,'AWAIT'],[807,1464,'VERIFICATION'],[611,1493,'LOCK_IN(RESULT)']].map(([x,y,t])=>T(t,x,y,23,{m:1,c:'#787670',t:2.4})).join('')
+ +'<image href="source-assets/column.png" x="594.88" y="351.65" width="466.92" height="887.92"/>'
+ +`<ellipse cx="1150" cy="982" rx="325" ry="459" fill="${PA}" stroke="${OR}" stroke-width="5"/>`+P('M1450 797L1519 728M1475 995H1601M1442 1185L1519 1262',{s:OR,w:5})
+ +'<image href="source-assets/oval-inner.png" x="825.41" y="524.55" width="652.51" height="917.23"/>'
+ +T('NOMARK',1150,678,37,{c:OR,w:700,a:'middle',t:-.5})
+ +`<rect x="1026" y="1226" width="252" height="66" rx="33" fill="${PA}" stroke="${OR}" stroke-width="4"/>`+T('AGNT 0106',1150,1272,37,{m:1,c:OR,w:600,a:'middle',t:-.4})
+ +LS(['Your own crew of AI','engineers'],57,1770,135,150,{}))}
+
+/* 维特鲁威比例格 */
+function p3(){
+ return svg('vitruvian',BK,T('MULTI-AGENT HARNESS',60,81,42.2,{m:1,w:320,c:'#f4f1ea'})+T('6 ACTIVE',866,81,42.2,{m:1,w:320,c:'#f4f1ea'})+T('AGENTS',1543,81,42.2,{m:1,w:320,c:'#f4f1ea',a:'end'})
+ +'<image href="source-assets/vitruvian.png" x="0.00" y="165.08" width="1601.00" height="1434.94"/>'
+ +LS(['The harness that turns','any model into','production-grade output'],66,1695,110,97,{c:'#f6f3ec'}))}
+
+/* 印章和斑点色块 */
+function p4(){
+ const seal=`<g id="seal"><rect x="578" y="1080" width="963" height="864" fill="${DK}"/><g fill="none" stroke="#fff" stroke-width="2.3"><ellipse cx="1060" cy="1510" rx="395" ry="272"/><ellipse cx="1060" cy="1510" rx="342" ry="222"/><path d="M697 1555C685 1450 730 1370 830 1320M1297 1320C1390 1370 1440 1450 1428 1555"/></g>
+ ${T('Nomark',1060,1173,48,{c:'#fff',a:'middle'})}${T('EST.2026',628,1202,35,{m:1,w:320,c:'#fff'})}${T('AI AGENTS',1492,1202,35,{m:1,w:320,c:'#fff',a:'end'})}${T('EST.2026',628,1811,35,{m:1,w:320,c:'#fff'})}${T('AI AGENTS',1492,1811,35,{m:1,w:320,c:'#fff',a:'end'})}${T('Cloud native execution',1060,1878,43,{c:'#fff',a:'middle'})}${T('NO.001',828,1526,34,{m:1,w:320,c:'#fff',a:'middle'})}${T('NOMARK',1285,1526,34,{m:1,w:320,c:'#fff',a:'middle'})}
+ <defs><path id="sa" d="M730 1510A330 245 0 0 1 1390 1510"/><path id="sb" d="M684 1510A376 258 0 0 0 1436 1510"/></defs>
+ <text font-size="33" font-weight="320" fill="#fff" class="m" letter-spacing="1" text-anchor="middle"><textPath href="#sa" startOffset="50%">MULTI AGENT HARNESS</textPath></text><text font-size="39" fill="#fff" font-weight="300" letter-spacing="-.4" text-anchor="middle"><textPath href="#sb" startOffset="50%">ORCHESTRATION SYSTEM · EST. AUTOPILOT</textPath></text>
+ <image href="source-assets/lyre.png" x="899.65" y="1309.91" width="315.51" height="405.38"/></g>`;
+ 
+ return svg('stipple',PU,'<image href="source-assets/helmet.jpg" x="0.00" y="68.38" width="1440.80" height="1388.05"/>'+seal)}
+const q=new URLSearchParams(location.search).get('p');
+const all=[p1,p2,p3,p4];
+document.fonts.ready.then(()=>Promise.all(['300 20px Int','700 20px Int','400 20px JB','600 20px JB','400 20px JB0','600 20px JB0'].map(f=>document.fonts.load(f)))).then(()=>{document.getElementById('wall').innerHTML=all.map(f=>f()).join('');document.body.dataset.ready='1'});
+</script></body></html>

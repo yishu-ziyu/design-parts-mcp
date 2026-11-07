@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Month Memories</title>
+<style>
+@font-face{font-family:Pop;src:url(fonts/poppins.woff2) format("woff2");font-weight:800;font-display:block}
+@font-face{font-family:Mono;src:url(fonts/mono.woff2) format("woff2");font-display:block}
+@font-face{font-family:JP;src:url(fonts/jp.woff2) format("woff2");font-weight:100 900;font-display:block}
+html,body{margin:0;background:#000}
+#wrap{position:relative;margin:0 auto;overflow:hidden;background:#000}
+/* 全部用录屏的 904×1968 坐标，整体缩放 */
+#s{position:absolute;left:0;top:0;width:904px;height:1968px;transform-origin:0 0;background:#000;overflow:hidden;font-family:-apple-system,"SF Pro Text",system-ui,JP,sans-serif;color:#fff;user-select:none}
+.t{position:absolute;left:0;width:904px;text-align:center;font-family:Pop,sans-serif;font-weight:800;line-height:1;white-space:nowrap}
+#intro{position:absolute;inset:0}
+#i26{top:522px;font-size:43px;color:#d1d1d1}
+#iOct{top:560px;font-size:72px;letter-spacing:-.5px}
+#i10{top:610px;font-size:246px;letter-spacing:-6px;background:linear-gradient(180deg,#f7cba6 0%,#f4b083 32%,#ee8d5b 60%,#ec8552 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.card{position:absolute;left:0;top:0;border-radius:24px;background-size:100% 100%;will-change:transform}
+/* 海报 */
+#po{position:absolute;left:81px;top:229px;width:743px;height:1320px;border-radius:44px;overflow:hidden;transform-origin:50% 50%;background:url(source-assets/poster.jpg) 0 0/100% 100%}
+#po .t{width:743px;text-shadow:0 3px 16px rgba(10,20,50,.3)}
+#p26{top:402px;font-size:37px;letter-spacing:3px}
+#pOct{top:442px;font-size:84px;letter-spacing:-1px}
+#p10{top:538px;font-size:334px;letter-spacing:-8px;left:6px}
+.st{position:absolute;transform-origin:50% 50%;will-change:transform,opacity}
+#logo{position:absolute;left:26px;top:1250px;font:600 33px/42px Pop,sans-serif;white-space:nowrap;text-shadow:0 1px 5px rgba(0,0,0,.25)}
+#logo i{display:inline-block;width:42px;height:42px;background:#fff;border-radius:50%;vertical-align:-8px;margin-right:12px}
+#date{position:absolute;left:497px;top:1234px;font:700 39px/46px Mono,monospace;color:#c56a2c;letter-spacing:3px;white-space:nowrap}
+#pen{position:absolute;left:631px;top:1132px;width:104px;height:104px;border:3px solid rgba(255,255,255,.92);border-radius:50%;background:rgba(0,0,0,.2)}
+#pen:after{content:"";position:absolute;left:30px;top:47px;width:42px;height:6px;background:#fff;border-radius:3px;transform:rotate(-48deg)}
+/* 状态栏 */
+#clock{position:absolute;left:72px;top:74px;font-size:35.5px;font-weight:500;letter-spacing:.3px}
+#bell{position:absolute;left:176px;top:78px}
+#rec{position:absolute;left:248px;top:50px;width:392px;height:88px;border-radius:44px;background:#000;border:2.4px solid #471515}
+#rec i{position:absolute;left:30px;top:29px;width:26px;height:26px;border-radius:50%;background:#ea5344}
+#sig{position:absolute;left:670px;top:80px}
+#batt{position:absolute;left:775px;top:80px;width:54px;height:29px;border-radius:9px;background:#fff;color:#111;font:700 24px/29px -apple-system,system-ui,sans-serif;text-align:center;overflow:hidden}
+#batt:after{content:"";position:absolute;right:0;top:0;width:16px;height:29px;background:#6c6c6c}
+#batt b{position:relative;z-index:1;font-weight:700}
+#nub{position:absolute;left:830px;top:89px;width:4px;height:11px;border-radius:0 3px 3px 0;background:#6c6c6c}
+/* 底部 */
+#hint{position:absolute;left:350px;top:1705px;font-size:22px;color:#b0b0b0;white-space:nowrap;font-family:JP,sans-serif;font-weight:500;letter-spacing:.6px}
+#hint svg{vertical-align:-3px;margin-right:18px}
+#barBg{position:absolute;left:162px;top:1820px;width:580px;height:17px;border-radius:9px;background:#2a2a2a;overflow:hidden}
+#fill{height:100%;border-radius:9px;background:linear-gradient(90deg,#f6c3a0,#f08a5c 50%,#e8703f)}
+#skip{position:absolute;left:760px;top:1779px;width:99px;height:99px;border-radius:50%;background:#2b2b2b;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#close{position:absolute;left:741px;top:1826px;font:500 27px/32px JP,sans-serif;color:#b9b9b9;background:none;border:0;padding:0;cursor:pointer;letter-spacing:1px}
+/* 结束后的分享区 */
+#end{position:absolute;left:0;top:0;width:904px;height:1968px;pointer-events:none}
+#banner{position:absolute;left:54px;top:1484px;width:797px;height:121px;border-radius:30px;background:linear-gradient(90deg,#fdfdfb,#faf1e8);color:#222;font-family:JP,sans-serif}
+#banner b{position:absolute;left:113px;top:60px;font-size:26px;font-weight:700;color:#222;white-space:nowrap}
+#banner span{position:absolute;left:113px;top:27px;font-size:24px;color:#888;font-weight:500;white-space:nowrap}
+#banner i{position:absolute;left:33px;top:33px;width:54px;height:54px;border-radius:50%;background:#f6c739}
+#banner u{position:absolute;right:30px;top:49px;width:16px;height:16px;border-right:3px solid #999;border-top:3px solid #999;transform:rotate(45deg)}
+.sh{position:absolute;top:1633px;width:121px;height:121px;border-radius:50%;background:#1b1b1b;display:flex;align-items:center;justify-content:center}
+.lb{position:absolute;top:1770px;width:180px;text-align:center;font:500 22px/26px JP,sans-serif;color:#b5b5b5}
+#notes{font:14px/1.6 ui-sans-serif,system-ui,sans-serif;color:#ccc;max-width:560px;margin:0 auto;padding:32px 20px 60px}
+#notes h3{font-size:15px;margin:0 0 10px}#notes dt{margin-top:8px}#notes dd{margin:0}#notes code{font-size:13px;color:#f4b083}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="s">
+  <div id="intro">
+    <div class="t" id="i26">2026</div><div class="t" id="iOct">OCTOBER</div><div class="t" id="i10">10</div>
+  </div>
+  <div id="cards"></div>
+  <div id="po">
+    <div id="date">'26 10 31</div>
+    <div id="stickers"></div>
+    <div class="t" id="p26">2026</div><div class="t" id="pOct">OCTOBER</div><div class="t" id="p10">10</div>
+    <div id="logo"><i></i>Moments</div>
+    <div id="pen"></div>
+  </div>
+  <div id="clock">14:34</div>
+  <svg id="bell" width="32" height="34" viewBox="0 0 32 34" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 11a8 8 0 0 1 14-3M24.500 14c0 7 3 9 3 11H8M5 25c2-2 3-5 3-10M13 29a3.500 3.500 0 0 0 6 0M4 4l26 27"/></svg>
+  <div id="rec"><i></i></div>
+  <svg id="sig" width="94" height="30" viewBox="0 0 94 30" fill="#fff"><rect x="2" y="19" width="8" height="10" rx="2"/><rect x="13" y="13" width="8" height="16" rx="2"/><rect x="24" y="7" width="8" height="22" rx="2"/><rect x="35" y="1" width="8" height="28" rx="2"/><path d="M73 29l-6-7a9 9 0 0 1 12 0zM60 15a19 19 0 0 1 26 0l-4 4a13 13 0 0 0-18 0zM54 9a27 27 0 0 1 38 0l-4 4a21 21 0 0 0-30 0z"/></svg>
+  <div id="batt"><b>64</b></div><i id="nub"></i>
+  <div id="ui">
+    <div id="hint"><svg width="34" height="20" viewBox="0 0 34 20" fill="#b0b0b0"><path d="M0 0l17 10L0 20zM17 0l17 10-17 10z"/></svg>長押しで早送り</div>
+    <div id="barBg"><div id="fill"></div></div>
+    <button id="skip" aria-label="跳到结尾"><svg width="40" height="34" viewBox="0 0 40 34" fill="#fff"><path d="M1 2l26 15L1 32zM30 2h8v30h-8z"/></svg></button>
+  </div>
+  <div id="end">
+    <div id="banner"><i></i><span>アプリ チャレンジ開催中</span><b>保存して投稿で参加する</b><u></u></div>
+    <div class="sh" style="left:37px"><i style="width:60px;height:60px;border-radius:15px;border:5px solid #d9a0e0;box-sizing:border-box"></i></div><div class="lb" style="left:7px">ストーリー</div>
+    <div class="sh" style="left:215px;border-radius:26px;background:#58c464"><i style="width:80px;height:58px;border-radius:29px;background:#fff"></i></div><div class="lb" style="left:185px">チャット</div>
+    <div class="sh" style="left:392px;background:#fff"><i style="width:50px;height:50px;border-radius:6px;background:#222"></i></div><div class="lb" style="left:362px">ポスト</div>
+    <div class="sh" style="left:569px"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#e8e8e8" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4v26M11 19l11 11 11-11M6 40h32"/></svg></div><div class="lb" style="left:539px">保存</div>
+    <div class="sh" style="left:747px"><svg width="46" height="10" viewBox="0 0 46 10" fill="#e8e8e8"><circle cx="5" cy="5" r="4.500"/><circle cx="23" cy="5" r="4.500"/><circle cx="41" cy="5" r="4.500"/></svg></div><div class="lb" style="left:717px">その他</div>
+  </div>
+  <button id="close">閉じる</button>
+</div></div>
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#cards</code></dt><dd>照片一张接一张从上方落进画面，每张带一点倾斜；前一张压暗留在下面，节奏越往后越快。</dd>
+    <dt><code>#fill</code></dt><dd>进度条按“已落下几张”走，不按时间走。</dd>
+    <dt><code>#po</code></dt><dd>回顾结束时换成海报，先放大过冲再回到原位。</dd>
+    <dt><code>#stickers</code></dt><dd>白边贴纸一张张闪白落定，把海报铺满。</dd>
+    <dt><code>#skip</code></dt><dd>按住屏幕快进，点按钮跳到结尾，点“閉じる”重播。</dd>
+  </dl>
+</section>
+<script src="geom.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),G=window.MM,clamp=(v,a=0,b=1)=>v<a?a:v>b?b:v,ss=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)},mix=(a,b,t)=>a+(b-a)*t;
+const s=$('s'),wrap=$('wrap');
+function fit(){const h=Math.min(innerHeight,innerWidth*1968/904),k=h/1968;wrap.style.width=904*k+'px';wrap.style.height=h+'px';s.style.transform=`scale(${k})`}fit();addEventListener('resize',fit);
+/* 落点时刻，从录屏逐帧读出 */
+const ARR=[1.2,1.6,2,2.4,2.7,3.1,3.5,3.9,4,4.1,4.2,4.3,4.4,4.5,4.6,4.7,4.8,4.95,5.1];
+const cardsEl=$('cards');
+const CARDS=G.cards.map((c,i)=>{const e=document.createElement('div');e.className='card';e.style.width=c.w+'px';e.style.height=c.h+'px';e.style.backgroundImage=`url(source-assets/card${String(c.n).padStart(2,'0')}.jpg)`;cardsEl.appendChild(e);return{...c,e,at:ARR[i]}});
+/* 贴纸：名字、开始闪白的时刻，读自 6.95–8.15 秒的帧 */
+const POP={driver:6.98,jacket:7.03,chair:7.13,girl:7.28,tent:7.33,washer:7.48,drink:7.6,seats:7.68,cake:7.73,fire:7.83,table:8.02};
+const st=$('stickers');
+const STK=G.stickers.map(o=>{const im=new Image();im.src=`source-assets/st-${o.n}.png`;im.className='st';Object.assign(im.style,{left:o.x+'px',top:o.y+'px',width:o.w+'px',height:o.h+'px'});st.appendChild(im);return{...o,e:im,t0:POP[o.n]}});
+/* 海报缩放：[时刻, 比例, 透明度] 用录屏每帧的卡片宽度算出 */
+const PK=[[6.5,.9,0],[6.55,.93,.08],[6.6,.975,.3],[6.65,1.016,.72],[6.7,1.037,.97],[6.75,1.032,1],[6.85,1.014,1],[7,.998,1],[7.25,1,1],[8.02,1,1],[8.12,.954,1]];
+const pk=(t,i)=>{if(t<=PK[0][0])return PK[0][i];for(let k=1;k<PK.length;k++)if(t<=PK[k][0]){const a=PK[k-1],b=PK[k];return mix(a[i],b[i],(t-a[0])/(b[0]-a[0]))}return PK[PK.length-1][i]};
+const easeOut=t=>1-Math.pow(1-clamp(t),3);
+const END=8.19,HOLD=11.5;
+function frame(t){
+  /* 片头标题 */
+  const q=ss(.08,.42,t);const fade=1-ss(6.52,6.7,t);
+  $('intro').style.opacity=fade;
+  $('i10').style.opacity=q;$('i10').style.transform=`translateY(${(1-q)*34}px) scale(${mix(1.06,1,q)})`;
+  /* 卡片 */
+  let top=-1;CARDS.forEach((c,i)=>{if(t>=c.at-.12)top=i});
+  CARDS.forEach((c,i)=>{
+    const d=top-i;
+    if(i>top||d>2||t>=6.72){c.e.style.display='none';return}
+    c.e.style.display='block';
+    const fly=easeOut((t-(c.at-.12))/.13);
+    const y=c.cy+(1-fly)*-(c.cy+c.h*.2);
+    const k=fly<1?mix(1.05,1,fly):1;
+    c.e.style.transform=`translate(${c.cx-c.w/2}px,${y-c.h/2}px) rotate(${c.th}deg) scale(${k})`;
+    c.e.style.opacity=(d===0?1:d===1?.42:.16)*(t>6.5?1-ss(6.5,6.72,t):1);
+  });
+  /* 进度条按已落下的张数走 */
+  let done=0;ARR.forEach(a=>{if(t>=a)done++});
+  const nxt=ARR[done],prv=done?ARR[done-1]:1.05,f=nxt?clamp((t-prv)/(nxt-prv)):0;
+  $('fill').style.width=(100*clamp((done+f)/19))+'%';
+  $('ui').style.opacity=1-ss(6.55,6.76,t);$('ui').style.pointerEvents=t>6.6?'none':'auto';
+  $('close').style.opacity=ss(6.58,6.8,t);
+  /* 海报 */
+  const po=$('po'),k=pk(t,1),op=pk(t,2);
+  po.style.display=t<6.5?'none':'block';
+  po.style.opacity=op;
+  const dy=t>8.02?mix(0,-72,clamp((t-8.02)/.1)):0;
+  po.style.transform=`translateY(${dy}px) scale(${k})`;
+  for(const o of STK){
+    if(t<o.t0){o.e.style.display='none';continue}
+    o.e.style.display='block';
+    const p=clamp((t-o.t0)/.1),e=easeOut(p);
+    o.e.style.transform=`scale(${mix(1.16,1,e)})`;
+    o.e.style.opacity=mix(.72,1,e);
+    o.e.style.filter=p<1?`brightness(${mix(1.9,1,e)}) saturate(${mix(.1,1,e)})`:'none';
+  }
+  $('pen').style.opacity=ss(8.03,8.12,t);
+  /* 分享区 */
+  const en=ss(8.02,8.12,t);$('end').style.opacity=en;$('end').style.transform=`translateY(${(1-en)*30}px)`;
+}
+window.__seek=t=>frame(+t);
+const qs=new URLSearchParams(location.search);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let clock=0,last=0,speed=1;
+function start(){
+  if(qs.has('t')){frame(+qs.get('t'));document.body.dataset.ready='1';return}
+  if(reduce){frame(8.19);document.body.dataset.ready='1';return}
+  const step=n=>{const dt=last?(n-last)/1000:0;last=n;clock+=dt*speed;if(clock>HOLD)clock=0;frame(Math.min(clock,END));requestAnimationFrame(step)};
+  requestAnimationFrame(step);document.body.dataset.ready='1';
+}
+// 原版提示“长按快进”，这里按住屏幕时 3 倍速
+wrap.addEventListener('pointerdown',()=>{speed=3});addEventListener('pointerup',()=>{speed=1});
+$('skip').addEventListener('click',e=>{e.stopPropagation();clock=Math.max(clock,6.5)});
+$('close').addEventListener('click',e=>{e.stopPropagation();clock=0});
+Promise.all(['800 72px Pop','700 39px Mono','500 22px JP'].map(f=>document.fonts.load(f,'0あ'))).then(start,start);
+})();
+</script>
+</body>
+</html>

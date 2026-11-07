@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thinking process</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Inter;src:url(fonts/Inter-normal.woff2) format('woff2');font-weight:100 900;font-display:block}
+*{box-sizing:border-box}html,body{margin:0;background:#eee;color:#222;font:400 13px/1.3 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:734px;height:628px;margin:0 auto;overflow:hidden;background:#eee}
+#trace{position:absolute;left:0;top:0;width:100%;transition:transform .5s cubic-bezier(.3,.8,.3,1)}
+#lines{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+#lines path{fill:none;stroke:#d2d2d2;stroke-width:1.15;transition:opacity .4s}
+#lines .sub{stroke:#dfdfdf}#lines .dots{stroke:#d6d6d6;stroke-dasharray:1.6 2.4}
+.row{position:absolute;left:125px;height:32px;margin-top:-16px;display:flex;align-items:center;white-space:nowrap;opacity:0;filter:blur(3px);transition:opacity .45s ease,filter .45s ease,color .5s}
+.row.in{opacity:1;filter:none}
+.row.done{color:#6b6b6b}.row.sub.done,.row.dead{color:#a8a8a8}.row.on{color:#1f1f1f}.row.sub.on{color:#6b6b6b}
+.shim{background:linear-gradient(100deg,currentColor 30%,#b4b4b4 50%,currentColor 70%);background-size:260% 100%;background-position:120% 0;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:sh 1.7s linear infinite}
+@keyframes sh{to{background-position:-60% 0}}
+.time{color:#a9a9a9;margin-left:8px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.small{margin-left:9px;color:#a8a8a8;font-size:11.5px}
+.node{position:absolute;width:0;height:0;transition:opacity .35s}
+.node>*{position:absolute;transform:translate(-50%,-50%)}
+.dot{width:7px;height:7px;border-radius:50%;background:#bdbdbd;transition:background .4s}.subdot{width:5.5px;height:5.5px;border-radius:50%;background:#dcdcdc}
+.ring{width:9px;height:9px;border-radius:50%;border:1.2px solid #a5a5a5;background:#eee}
+.act{width:6.5px;height:6.5px;border-radius:50%;background:#1f1f1f}
+.spin{width:16px;height:16px;animation:rot 1s linear infinite}@keyframes rot{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+.spin circle{fill:none;stroke:#1f1f1f;stroke-width:1.25;stroke-linecap:round;stroke-dasharray:21 40}
+.blue{width:9px;height:9px;border-radius:50%;background:#7fa4ee;transition:all .4s cubic-bezier(.3,1.5,.5,1)}
+#pills{position:absolute;left:124px;display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(3px);transition:opacity .5s,transform .5s}
+#pills.in{opacity:1;transform:none}
+.pill{display:inline-flex;align-items:center;gap:6px;height:24.5px;padding:0 9px 0 7px;border-radius:13px;background:#fff;color:#6b6b6b;font-size:12px;box-shadow:0 0 0 .6px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03)}
+.ts{font:700 9.5px/1 Inter;color:#5c8eae;letter-spacing:.01em}.more{color:#a8a8a8;margin-left:4px;font-size:12px}
+#head{position:absolute;left:125px;cursor:pointer}
+#chev{position:absolute;left:94.5px;transform:translate(-50%,-50%);transition:transform .25s}
+#stage.closed .row:not(#head),#stage.closed #pills,#stage.closed #lines,#stage.closed .node:not(#chevn){opacity:0!important;pointer-events:none}
+#stage.closed #chev{transform:translate(-50%,-50%) rotate(-90deg)}
+.note{max-width:734px;margin:26px auto 60px;padding:0 24px;color:#444;font-size:14px;line-height:1.6;font-family:system-ui,-apple-system,"PingFang SC",sans-serif}h3{font-weight:500;font-size:17px;margin:18px 0 6px}dl{margin:0}dt code{font-size:13px}dd{margin:2px 0 12px}
+@media(prefers-reduced-motion:reduce){.shim{animation:none;-webkit-text-fill-color:currentColor;background:none}.spin{animation:none}.row,#pills,#trace{transition:none;filter:none}}
+</style></head><body>
+<div id="stage"><div id="trace">
+ <svg id="lines" width="734" height="600"></svg>
+ <div id="chevn"><svg id="chev" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 3.8 5.500 7.200 9 3.800" stroke="#8f8f8f" stroke-width="1.100" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+ <div id="head" class="row in" role="button" tabindex="0" aria-label="Collapse thinking"><span id="hl"></span><span id="ht" class="time"></span></div>
+ <div id="pills"><span class="pill"><span class="ts">TS</span>router.ts</span><span class="pill"><span class="ts">TS</span>auth.ts</span><span class="pill"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="#5c9dbd" stroke-width=".8"><ellipse cx="6.500" cy="6.500" rx="5.800" ry="2.300"/><ellipse cx="6.500" cy="6.500" rx="5.800" ry="2.300" transform="rotate(60 6.500 6.500)"/><ellipse cx="6.500" cy="6.500" rx="5.800" ry="2.300" transform="rotate(120 6.500 6.500)"/><circle cx="6.500" cy="6.500" r="1" fill="#5c9dbd" stroke="none"/></svg>Button.tsx</span><span class="pill"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#6b6b6b" stroke-width=".9"><circle cx="6" cy="6" r="5"/><ellipse cx="6" cy="6" rx="2.200" ry="5"/><path d="M1 6h10"/></svg>Routing – Next.js docs</span><span class="more">+3 more</span></div>
+</div></div>
+<div class="note" id="notes"><h3>可拆</h3><dl>
+<dt><code>#trace</code></dt><dd>按时间表逐行追加的思考记录。同一步有进行中和完成两句文案，整列随高度增长保持垂直居中。</dd>
+<dt><code>#lines</code></dt><dd>记录的竖线和分叉：虚线分出去的是走不通的路，实线分出去的两步在下方并回主线的空心圆。</dd>
+<dt><code>#pills</code></dt><dd>搜索结果的文件药丸：白底满圆角，只露四个，其余写 +3 more。</dd>
+</dl></div>
+<script>
+// 时间单位：秒。on 到 off 之间是进行中，off 之后是完成。
+const S=[
+{y:32,k:'search',on:.55,off:2.8,a:'Searching the codebase',d:'Searched the codebase'},
+{y:96,k:'dot',on:2.8,off:3.9,a:'Reading 5 of 7 files',d:'Read 7 files about routing and auth'},
+{y:128,k:'dead',on:3.9,off:5.7,a:'Checking if middleware can handle the session',d:"Dead end: middleware can't read the request body"},
+{y:160,k:'dot',on:5.7,off:7.8,a:'Mapping how the modules depend on each other',d:'Mapped 12 module dependencies'},
+{y:192,k:'sub',on:7.8,off:8.8,a:'Running the auth tests in parallel',d:'Ran 42 auth tests'},
+{y:224,k:'sub',on:8.8,off:9.8,a:'Sorting out the 4 that touch the session',d:'4 tests touch session.ts'},
+{y:256,k:'ring',on:10.4,off:11.8,a:'Merging the test results',d:'Merged the test results'},
+{y:288,k:'dot',on:11.8,off:12.8,a:'Spotting shallow modules worth deepening',d:'Found 4 shallow modules'},
+{y:320,k:'dot',on:12.8,off:13.9,a:'Drafting the refactor plan',d:'Drafted a 3-step refactor plan'},
+{y:352,k:'end',on:13.9,off:14.8,a:'Finished thinking',d:'Finished thinking'}];
+const X=94.5,XS=112.6,END=17,REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=i=>document.getElementById(i),trace=$('trace'),lines=$('lines');
+const SEARCH='<svg style="position:absolute;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#6f6f6f" stroke-width="1.100" stroke-linecap="round"><circle cx="5.200" cy="5.200" r="3.800"/><path d="m8 8 2.800 2.800"/></svg>';
+const SPIN='<svg class="spin" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.200"/></svg>';
+const SUBSPIN='<svg class="spin" style="width:10px;height:10px" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" style="stroke:#8a8a8a;stroke-width:1.700"/></svg><i class="subdot" style="background:#8a8a8a"></i>';
+const CHECK='<svg style="position:absolute;transform:translate(-50%,-50%)" width="13" height="13" viewBox="0 0 13 13"><circle cx="6.500" cy="6.500" r="6.500" fill="#4f7fe6"/><path d="M3.800 6.700 5.700 8.500 9.200 4.800" fill="none" stroke="#fff" stroke-width="1.300" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+for(const s of S){s.el=document.createElement('div');s.el.className='row';s.el.style.top=s.y+'px';trace.append(s.el);s.n=document.createElement('div');s.n.className='node';s.n.style.top=s.y+'px';s.n.style.left=(s.k==='sub'||s.k==='dead'?XS:X)+'px';trace.append(s.n)}
+$('head').style.top='0px';$('chevn').style.cssText='position:absolute;top:0;left:0';$('pills').style.top='60.5px';$('pills').style.marginTop='-12.25px';
+function nodeHtml(s,st){const sub=s.k==='sub'||s.k==='dead';
+ if(s.k==='end')return st==='on'?'<i class="blue"></i>':CHECK;
+ if(s.k==='search')return st==='on'?SEARCH+SPIN.replace('class="spin"','class="spin" style="width:17px;height:17px"'):SEARCH;
+ if(st==='on')return sub?SUBSPIN:SPIN+'<i class="act"></i>';
+ if(s.k==='dead')return '<svg style="position:absolute;transform:translate(-50%,-50%)" width="8" height="8" viewBox="0 0 8 8" stroke="#bdbdbd" stroke-width="1.100" stroke-linecap="round"><path d="M1.500 1.500l5 5M6.500 1.500l-5 5"/></svg>';
+ if(s.k==='sub')return '<i class="subdot"></i>';if(s.k==='ring')return '<i class="ring"></i>';return '<i class="dot"></i>'}
+let last='';
+function render(t){
+ const st=S.map(s=>t<s.on?'':t<s.off?'on':'done');const fin=t>=13.9;
+ const key=st.join()+Math.floor(t);if(key===last)return;last=key;
+ $('hl').textContent=fin?'Thought for 14s':'Thinking';$('hl').className=fin?'':'shim';$('head').style.color=fin?'#6b6b6b':'#1f1f1f';
+ $('ht').textContent=fin?'':Math.floor(t)+'s';
+ S.forEach((s,i)=>{const v=st[i];if(s.state===v)return;s.state=v;
+  if(!v){s.el.className='row';s.n.innerHTML='';return}
+  const cls=s.k==='sub'||s.k==='dead'?' sub':'';
+  s.el.className='row in '+v+cls+(v==='done'&&s.k==='dead'?' dead':'');
+  const txt=v==='on'?s.a:s.d;
+  if(s.k==='end'){s.el.style.color='#1f1f1f';s.el.innerHTML=txt+(v==='done'?'<span class="small">4 modules to deepen · 3 steps</span>':'')}
+  else s.el.innerHTML='<span class="'+(v==='on'?'shim':'')+'">'+txt+'</span>';
+  s.n.innerHTML=nodeHtml(s,v)});
+ $('pills').classList.toggle('in',t>=S[0].on);
+ // 竖线和分叉：只画已经出现的行
+ let d='',sub='',dots='';const Y=i=>S[i].y;
+ const vis=st.map(Boolean);const main=[0,1,3,6,7,8,9];
+ for(let m=0;m<main.length-1;m++){const a=main[m],b=main[m+1];
+  if(!vis[b]){ if(vis[a]&&(a===3)&&vis[4]) d+=`M${X} ${Y(a)+7}V${Y(5)+14}`; continue }
+  d+=`M${X} ${Y(a)+(a===0?9:6)}V${Y(b)-6}`}
+ if(vis[2])dots+=`M${X} ${Y(1)+6}C${X+4} ${Y(1)+8} ${XS} ${Y(1)+10} ${XS} ${Y(2)-7}`;
+ if(vis[4]){sub+=`M${X} ${Y(3)+6}C${X+6} ${Y(3)+7} ${XS} ${Y(3)+9} ${XS} ${Y(3)+18}V${Y(4)-5}`;
+  if(vis[5])sub+=`M${XS} ${Y(4)+5}V${Y(5)-5}`;
+  if(vis[6])sub+=`M${XS} ${Y(5)+5}V${Y(6)-21}C${XS} ${Y(6)-13} ${X+8} ${Y(6)-10} ${X+3} ${Y(6)-5}`}
+ lines.innerHTML=`<path d="${d}"/><path class="sub" d="${sub}"/><path class="dots" d="${dots}"/>`;
+ // 整列垂直居中
+ const h=S.filter((s,i)=>vis[i]).map(s=>s.y).pop()||0;trace.style.transform=`translateY(${317.4-h/2}px)`;
+}
+$('head').onclick=()=>$('stage').classList.toggle('closed');
+$('head').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('head').click()}};
+const fit=()=>{const z=Math.min(1,innerWidth/734);$('stage').style.zoom=z};addEventListener('resize',fit);fit();
+const q=new URLSearchParams(location.search);
+if(q.has('t'))render(+q.get('t'));
+else if(REDUCE)render(16);
+else{let t0=performance.now();(function l(n){let t=(n-t0)/1000;if(t>END){t0=n;t=0;S.forEach(s=>s.state=undefined)}render(t);requestAnimationFrame(l)})(t0)}
+</script></body></html>

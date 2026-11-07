@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scene Footer</title>
+<style>
+@font-face{font-family:IV;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900;font-display:block}
+*{box-sizing:border-box}html,body{margin:0;background:#101010;color:#ddd;font:14px/1.6 IV,system-ui,sans-serif}
+#stage{position:relative;width:100vw;max-width:calc(100vh*1440/992);aspect-ratio:1440/992;margin:0 auto;overflow:hidden;container-type:inline-size;background:#ded8c9}
+#scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#links{position:absolute;inset:0;font-family:IV,system-ui,sans-serif;color:#17181a;font-size:0}
+#links .col{position:absolute;top:0}
+#links h4{position:absolute;margin:0;white-space:nowrap;font-size:1.12cqw;font-weight:600;letter-spacing:.008em;line-height:1;top:7.87cqw;transform:translateY(-50%)}
+#links .sol h4,#links .res h4,#links .com h4{font-weight:500}
+#links a{position:absolute;left:0;white-space:nowrap;color:inherit;text-decoration:none;font-size:.81cqw;font-weight:400;letter-spacing:.012em;line-height:1;transform:translateY(-50%);transition:opacity .18s;background:linear-gradient(currentColor,currentColor) 0 100%/0 1px no-repeat}
+#links a:hover{background-size:100% 1px}
+#brand{position:absolute;left:5.85cqw;top:7.3cqw;display:flex;align-items:center;gap:.82cqw;transform:translateY(-50%)}
+#brand svg{width:2.32cqw;height:2.32cqw;display:block}
+#brand b{font-weight:500;font-size:1.72cqw;letter-spacing:.012em;line-height:1}
+.soc{position:absolute;left:6.28cqw;width:1.42cqw;height:1.42cqw;transform:translateY(-50%);color:#17181a;display:block}
+.soc svg{width:100%;height:100%;display:block}
+section.notes{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+h3{font-weight:600;margin:0 0 12px}dt code{color:#8ca4e8}dd{margin:0 0 12px;color:#aaa}
+@media (prefers-reduced-motion:reduce){#scene{display:none}#stage{background:url(source-assets/scene-still.jpg) center/cover}#links a{transition:none}}
+</style></head><body>
+<footer id="stage">
+<video id="scene" src="source-assets/scene.mp4" poster="source-assets/scene-still.jpg" autoplay muted loop playsinline aria-hidden="true"></video>
+<nav id="links" aria-label="页脚导航">
+ <div id="brand"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><path d="M17 1.5 20 14 32.5 17 20 20 17 32.5 14 20 1.5 17 14 14z"/><path d="M7 11a12 12 0 0 1 4-4M23 7a12 12 0 0 1 4 4M27 23a12 12 0 0 1-4 4M11 27a12 12 0 0 1-4-4"/></svg><b>Brandname</b></div>
+ <a class="soc" href="#" aria-label="社交占位一" style="top:12.05cqw;left:6.28cqw"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="1.5" y="1.5" width="17" height="17" rx="4.4"/><circle cx="10" cy="10" r="3.9"/><circle cx="15" cy="5" r=".8" fill="currentColor" stroke="none"/></svg></a>
+ <a class="soc" href="#" aria-label="社交占位二" style="top:15.72cqw;left:6.28cqw"><svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="7" width="4" height="12"/><circle cx="4" cy="3" r="2.3"/><path d="M8.6 7h3.7v1.8c.8-1.2 2-2 3.6-2 2.7 0 4 1.7 4 4.7V19h-4v-6.700c0-1.500-.5-2.500-1.800-2.500-1.200 0-1.600.9-1.600 2.400V19h-3.900z"/></svg></a>
+ <a class="soc" href="#" aria-label="社交占位三" style="top:19.2cqw;left:6.28cqw"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M2.300 2.500 14 18h3.700L6 2.500zM17 2.500 3 18"/></svg></a>
+ <div class="col nav" style="left:23.08cqw"><h4>Navigation</h4></div>
+ <div class="col sol" style="left:36.3cqw"><h4>Solutions</h4></div>
+ <div class="col res" style="left:52.25cqw"><h4>Resources</h4></div>
+ <div class="col com" style="left:66.35cqw"><h4>Company</h4></div>
+</nav>
+</footer>
+<section class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#scene</code></dt><dd>整幅铜版画作背景，只有船、水面、云和树梢在缓慢动。</dd>
+<dt><code>#links</code></dt><dd>四列细字压在天空留白处，不加底板也读得清。</dd>
+<dt><code>#brand</code></dt><dd>品牌位和三枚社交图标竖排在左上。</dd>
+</dl>
+</section>
+<script>
+const T={nav:[['Features','Testimonials','FAQ','Pricing','Integrations'],10.0],
+sol:[['Customer self-service','Ideation & feedback','Customer engagement','Support & success','Product','Marketing','SaaS','Consumer products','Online training'],10.25],
+res:[['Community','Customers stories','Blog','Help center','Developer hub','Webinars','Glossary','Books','Newsletter','System status'],10.25],
+com:[['Terms of service','Privacy policy','Data processing agreement'],10.25]};
+for(const k in T){const c=document.querySelector('.col.'+k);T[k][0].forEach((s,i)=>{const a=document.createElement('a');a.href='#';a.textContent=s;a.style.top=(T[k][1]+i*2.156)+'cqw';c.appendChild(a)})}
+const v=document.getElementById('scene'),q=new URLSearchParams(location.search).get('t');
+async function ready(){await document.fonts.load('500 16px IV');window.__ready=true}
+if(q!==null){v.removeAttribute('autoplay');v.pause();v.addEventListener('seeked',ready,{once:true});v.addEventListener('loadeddata',()=>{v.currentTime=+q},{once:true});if(v.readyState>=2)v.currentTime=+q;}
+else ready();
+</script>
+</body></html>

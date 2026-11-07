@@ -1,6 +1,6 @@
 # flycam — 可见相机穿行（真 three.js 版）
 
-来源：https://x.com/KMkota0/status/2097648429727904197 （5s 屏录，逐帧拷贝在 `_source/km-tweet.mp4`）。溯源（2026-09-13 完成）：原片是 **mo1**（mo1.app，three.js **WebGPU** 栈，作者 @KMkota0）在首届 Three.js Conf Paris 的演示；完整链条见 [../../km-camera-rig.md](../../km-camera-rig.md)。
+来源：https://x.com/KMkota0/status/2097648429727904197 （5s 屏录，逐帧拷贝在 `_source/km-tweet.mp4`）。溯源（2026-09-13 完成）：原片是 **mo1**（mo1.app，three.js **WebGPU** 栈，作者 @KMkota0）在首届 Three.js Conf Paris 的演示；完整链条见 [../../km-camera-rig.md](../../原料/笔记/km-camera-rig.md)。
 
 调性一句话：左窗格里那台黄视锥相机是主角，右窗格只是它的眼睛——相机沿虚线航线在合成上空走位，走位本身就是表演。
 
@@ -81,7 +81,7 @@ v1 的求职内容整体移除。CSS 3D 那一脉的标本留在 [nightflight](.
 
 ## 可拆
 
-- `#panes` 双窗格单 renderer（scissor 两遍）：接 [../../km-camera-rig.md](../../km-camera-rig.md) 说的「左编辑视图 + 右成片 + 底时间轴」骨架，换任何 three 场景都能用。
+- `#panes` 双窗格单 renderer（scissor 两遍）：接 [../../km-camera-rig.md](../../原料/笔记/km-camera-rig.md) 说的「左编辑视图 + 右成片 + 底时间轴」骨架，换任何 three 场景都能用。
 - `#camrig` POV 铸镜头：`POSES + SEGS + panEase()` 三件是全部；换世界只改 `POSES` 与 `CONTENT` 两组坐标。
 - `#rig` CameraHelper 视锥 + 虚线航线 + 八面体点火 + 站号 Sprite：左窗格覆盖层整组（`overlay.visible` 逐遍开关）可以直接搬走。
 - `#timeline` 双向时间轴：播放/拖拽/菱形跳关键帧/`?demo=progress` 定帧/reduced-motion 分支，v1 起没改过骨架。

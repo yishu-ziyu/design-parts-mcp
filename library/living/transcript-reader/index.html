@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>转录稿阅读器：忠实复刻</title>
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter.woff2) format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:Newsreader;src:url(fonts/newsreader.woff2) format("woff2");font-weight:200 800;font-display:block}
+:root{--bg:#fffcf2;--tx:#100f0f;--ts:#878580;--toc:#6f6e69;--tocdim:#c4c1b6;--tocon:#100f0f;--dash:#af3029;--cur:#ecf2e8;--hl:#fff3bc;--btn:#e9e6da;--ctl:#8a8880;--tog:#b7b5ac;--togk:#fffcf2;--font:Inter,-apple-system,sans-serif;--fs:14.5px;--lh:24px;--pop:#fffcf2}
+.dark{--bg:#1a1627;--tx:#d2d0e6;--ts:#6e6a86;--toc:#7f7b99;--tocdim:#6e6a86;--tocon:#f0eefa;--dash:#eb6f92;--cur:#49485b;--hl:#49485b;--btn:#2a263c;--ctl:#a3a0bb;--tog:#5d5a78;--togk:#f0eefa;--pop:#231f33}
+.serif{--font:Newsreader,Georgia,serif;--fs:16px}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;font-family:Inter,system-ui,sans-serif}
+body{display:grid;justify-items:center;padding:16px 0 40px}
+#fit{position:relative}
+#rim{position:absolute;left:0;top:0;width:1234px;height:962px;transform-origin:0 0;background:#1b1917;border-radius:26px;overflow:hidden}
+#win{position:absolute;left:22px;top:22px;width:1189px;height:918px;border-radius:16px;overflow:hidden;background:var(--bg)}
+/* 浏览器外壳 */
+#tabs{position:absolute;inset:0 0 auto;height:36px;background:#e6e6e6;font-size:11.200px;color:#1f1f1f}
+#tabs i.l{position:absolute;top:11.500px;width:14px;height:14px;border-radius:50%;background:#a9a9a9}
+.tab{position:absolute;top:5px;height:31px;width:217px;display:flex;align-items:center;padding:0 10px 2px 8px;white-space:nowrap;border-radius:10px 10px 0 0}
+.tab.on{background:#fff}
+.tab b{width:14px;height:10px;border-radius:3px;background:#e6263f;flex:none;margin:0 7px}
+.tab.o b{background:#8d78e8;width:11px;height:14px;margin:0 9px;clip-path:polygon(50% 0,100% 30%,85% 100%,20% 100%,0 40%)}
+.tab .n{flex:1;overflow:hidden;-webkit-mask:linear-gradient(90deg,#000 80%,transparent);mask:linear-gradient(90deg,#000 80%,transparent)}
+.tab svg{flex:none;margin-left:7px}
+.sep{position:absolute;top:13px;width:1px;height:18px;background:#b9b9b9}
+#addr{position:absolute;left:0;right:0;top:36px;height:43px;background:#fff}
+#addr>svg,#addr>span.ic{position:absolute;top:13px}
+#pill{position:absolute;left:113px;top:7px;width:881px;height:30px;border-radius:15px;background:#f0eeef;font-size:13px;line-height:30px;padding-left:32px;color:#1f1f1f}
+#pill i{position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff}
+#pill svg{position:absolute;top:7px}
+/* 页面 */
+#page{position:absolute;inset:79px 0 0;overflow:hidden;background:var(--bg);color:var(--tx)}
+#scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain}
+#scroll::-webkit-scrollbar{display:none}
+#doc{position:relative;margin-left:var(--docx);width:var(--docw);padding-bottom:520px;transition:margin .35s cubic-bezier(.3,.9,.3,1),width .35s cubic-bezier(.3,.9,.3,1)}
+#head{padding-top:39px}
+#head h1{font:650 22.600px/29px Inter,sans-serif;letter-spacing:0;margin:0 0 13px;color:var(--tx)}
+#head p{margin:0 0 25px;font-size:14px;line-height:20px;color:var(--ts)}#head p b{font-weight:500;color:var(--tx)}
+#stick{z-index:5;background:var(--bg)}
+.pin #stick{position:sticky;top:0;padding-top:12px}
+#player{position:relative;width:100%;aspect-ratio:647/365;background:#000;overflow:hidden;cursor:pointer;border-radius:2px}
+#player img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#speed{position:absolute;left:50%;top:50%;width:66.400%;height:60%;translate:-50% -50%;background:#fff;color:#111;border-radius:11px;opacity:0;pointer-events:none;transition:opacity .18s;cursor:default;font-family:Inter}
+#speed.on{opacity:1;pointer-events:auto}
+#speed:before{content:"";position:absolute;left:45%;top:8px;width:10%;height:3px;border-radius:2px;background:#d9d9d9}
+#speed strong{position:absolute;left:0;right:0;top:15%;text-align:center;font-size:25px;font-weight:600}
+#speed .sl{position:absolute;left:18%;right:18%;top:51%;height:2px;background:#9a9a9a;border-radius:1px}
+#speed .sl u{position:absolute;left:0;top:0;height:2px;background:#111}
+#speed .sl s{position:absolute;top:-7px;width:15px;height:15px;margin-left:-7px;border-radius:50%;background:#111}
+#speed .m{position:absolute;top:44%;font-size:14px;width:20px;height:20px;border-radius:50%;background:#f0f0f0;text-align:center;line-height:19px;color:#444;cursor:pointer}
+#speed .ps{position:absolute;left:0;right:0;bottom:7%;display:flex;justify-content:center;gap:7px}
+#speed .ps span{font-size:11.500px;font-weight:600;background:#f0f0f0;border-radius:13px;padding:7px 12px;cursor:pointer;color:#333}
+#row{height:0;overflow:visible;position:relative}
+.tgl{display:flex;align-items:center;height:20px;font-size:12px;color:var(--ctl);gap:0;white-space:nowrap}
+.tgl label{display:flex;align-items:center;margin-right:11px;cursor:pointer}
+.tgl s{display:block;width:25px;height:13px;border-radius:7px;background:var(--tog);margin-left:7px;position:relative;text-decoration:none;opacity:.8}
+.tgl s:after{content:"";position:absolute;right:2px;top:2px;width:9px;height:9px;border-radius:50%;background:var(--togk)}
+.tgl .off{opacity:.55}.tgl .off s:after{right:auto;left:2px}
+#row .tgl{position:absolute;left:0;top:10px;opacity:0;transition:opacity .15s}
+#row:before{content:"";position:absolute;left:0;right:0;top:0;height:32px;background:linear-gradient(var(--bg) 50%,transparent);pointer-events:none}
+.ctls #row:before{height:50px;background:linear-gradient(var(--bg) 76%,transparent)}
+.ctls #row .tgl{opacity:1}
+#rim:not(.pin) #row:before{display:none}
+#toprow{position:absolute;top:11px;left:calc(var(--docx));display:none;z-index:6;opacity:0;transition:opacity .15s}
+#toprow:before{content:"";position:absolute;left:-4px;right:-200px;top:-11px;height:40px;background:linear-gradient(var(--bg) 70%,transparent);z-index:-1}
+.ctls #toprow{opacity:1}
+#list{padding-top:70px}
+#list .tt{font:650 19px/26px Inter,sans-serif;margin:0 0 7px;letter-spacing:-.15px;color:var(--tx)}
+#list h2{font:650 var(--hs,18px)/24px var(--hf,Inter),sans-serif;margin:37.200px 0 15.200px;letter-spacing:0;color:var(--tx)}
+#list h2.first{margin-top:0}
+.serif #list{--hs:20px;--hf:Newsreader}
+.ln{position:relative;display:grid;grid-template-columns:var(--tsw) 1fr;font:400 var(--fs)/var(--lh) var(--font);margin:0 0 15.200px;color:var(--tx);letter-spacing:0}
+.ts{font:400 12.800px/var(--lh) Inter,sans-serif;color:var(--ts);width:fit-content;height:fit-content;cursor:ns-resize;font-variant-numeric:tabular-nums;user-select:none;position:relative;z-index:1}
+.ln.on .ts{color:var(--tx)}
+.pl{position:absolute;left:0;height:2px;background:var(--dash);pointer-events:none;display:none;transition:top .25s linear}
+.ln.on .pl{display:block}
+.tx{cursor:text;padding-right:9px}
+#rim:not(.serif):not(.pan) .tx{padding-right:3px}
+.pen .tx{cursor:crosshair}
+.tx span.c{transition:background .15s;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.hal .tx span.on{background:var(--cur)}
+.tx span.h,.hal .tx span.h.on{background:var(--hl)}
+::highlight(hover){text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+#list.scrub,#list.scrub *{cursor:ns-resize!important;user-select:none}
+/* 左侧目录 */
+#toc{position:absolute;left:0;top:0;width:var(--tocw);bottom:0;overflow-y:auto;scrollbar-width:none;font-size:12px;line-height:14px;color:var(--toc);z-index:6;transition:width .35s cubic-bezier(.3,.9,.3,1);padding:41px 0 200px 25px}
+#toc::-webkit-scrollbar{display:none}
+#toc a{display:block;position:relative;cursor:pointer;padding:0 8px 9.300px 15px;transition:color .3s}
+#toc a.ti{padding-left:0;}
+#toc a.lb{padding-left:0}
+#toc a.ti{color:var(--tocdim);margin-bottom:0}
+#toc.dim a{color:var(--tocdim)}
+#toc.dim a.ti{color:color-mix(in srgb,var(--tocdim) 75%,var(--bg))}
+#toc a:hover,#toc.dim a:hover{color:var(--tocon)}
+#toc a.vw,#toc.dim a.vw,#toc a.on,#toc.dim a.on{color:var(--tocon)}
+#toc a.on:before{content:"";position:absolute;left:-3px;top:6px;width:11px;height:2px;background:var(--dash)}
+/* 右上工具 */
+#tools{position:absolute;right:19px;top:14px;width:124px;height:24px;display:flex;justify-content:space-between;color:var(--ctl);z-index:7;opacity:0;transition:opacity .15s}
+.ctls #tools,.seto #tools{opacity:1}
+#tools button{all:unset;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;cursor:pointer;margin:-1px -6px}
+#tools button.on{background:var(--btn);color:var(--tx)}
+#set{position:absolute;right:19px;top:54px;width:150px;font-size:12.300px;color:var(--ctl);display:none;z-index:8}
+#set.on{display:block}
+#set .g{display:grid;grid-template-columns:1fr 1fr;height:25px;border:1px solid var(--btn);border-radius:6px;margin-bottom:7px}
+#set .g b{display:grid;place-items:center;cursor:pointer;font-weight:400;color:var(--ctl)}
+#set .g b+b{border-left:1px solid var(--btn)}
+#set .s{position:relative;display:flex;align-items:center;height:25px;border:1px solid var(--btn);border-radius:6px;margin-bottom:7px;padding:0 8px 0 8px;cursor:pointer;gap:9px;color:var(--ctl)}
+#set .s em{font-style:normal;flex:1}
+#set .s:after{content:"";width:6px;height:10px;background:currentColor;opacity:.75;clip-path:polygon(50% 0,100% 35%,0 35%,50% 0,50% 100%,100% 65%,0 65%,50% 100%)}
+#set .nc:after{display:none}
+#set hr{border:0;height:9px;margin:0}
+#menu{position:absolute;right:19px;width:150px;background:var(--pop);border-radius:9px;box-shadow:0 4px 18px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06);padding:5px;font-size:12.300px;color:var(--tx);display:none;z-index:9}
+#menu.on{display:block}
+#menu div{height:22.400px;line-height:22.400px;padding-left:18px;border-radius:5px;cursor:pointer;position:relative}
+#menu div.ck:before{content:"✓";position:absolute;left:5px;font-size:11px}
+#menu div:hover{background:color-mix(in srgb,var(--tx) 26%,transparent)}
+/* 摘录面板 */
+#panel{position:absolute;right:11px;top:14px;bottom:10px;width:382px;background:#fff;color:#1c1c1c;border-radius:10px;box-shadow:0 0 0 1px rgba(40,30,0,.05);font-size:12.700px;transform:translateX(calc(100% + 16px));transition:transform .35s cubic-bezier(.3,.9,.3,1);z-index:8;overflow:hidden}
+.pan #panel{transform:none}
+#panel .a{position:absolute;left:11px;top:10px;color:#555;line-height:14px}
+#panel .ic{position:absolute;top:9px;width:16px;height:16px;color:#666;cursor:pointer;display:grid;place-items:center}
+#panel .ic.act{color:#7b5fdc}
+#panel h3{position:absolute;left:11px;right:18px;top:36px;margin:0;font:600 13.800px/16.200px Inter,sans-serif;color:#111}
+#panel .pp{position:absolute;left:11px;top:80px;color:#555;font-size:12.900px}
+.prop{position:absolute;left:11px;right:7px;height:17px;display:grid;grid-template-columns:20px 80px 1fr;align-items:center;color:#555;font-size:12.500px}
+.prop span{white-space:nowrap;overflow:hidden;color:#1c1c1c}
+.prop u{text-decoration:none;display:grid;place-items:center start}
+#panel hr{position:absolute;left:0;right:0;top:243px;margin:0;border:0;border-top:1px solid #efefef}
+#md{position:absolute;left:11px;right:0;top:244px;bottom:85px;padding:0 12px 16px 0;overflow-y:auto;scrollbar-width:none;font-size:12.100px;line-height:14px;color:#222}
+#md::-webkit-scrollbar{display:none}
+#md p{margin:0 0 14px}
+#mdt{position:absolute;right:3px;width:5px;height:20px;border-radius:3px;background:#7c7c7c;top:520px}
+#panel .f{position:absolute;left:9px;right:10px;bottom:48px;height:27px;display:grid;grid-template-columns:92px 1fr;gap:10px}
+#panel .f div{border:1px solid #ececec;border-radius:5px;line-height:25px;padding-left:9px;color:#2a2a2a;position:relative}
+#panel .f .sel:after{content:"";position:absolute;right:7px;top:7px;width:7px;height:11px;background:#555;clip-path:polygon(50% 0,100% 35%,0 35%,50% 0,50% 100%,100% 65%,0 65%,50% 100%)}
+#add{position:absolute;left:9px;right:9px;bottom:10px;height:27px;border-radius:5px;background:#8f74e0;color:#fff;border:0;font:500 12.500px Inter,sans-serif;cursor:pointer}
+#add:after{content:"";position:absolute;right:23px;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.3)}
+#add svg{position:absolute;right:7px;top:9px}
+/* 回到当前位置 */
+#now{position:absolute;left:50%;bottom:21px;translate:-50% 0;background:var(--bg);border:1px solid color-mix(in srgb,var(--tx) 10%,transparent);color:var(--ts);font-size:12.300px;height:26px;line-height:24px;border-radius:13px;padding:0 10px;opacity:0;pointer-events:none;transition:opacity .15s;cursor:pointer;z-index:6}
+#now.on{opacity:1;pointer-events:auto}
+#bar{position:absolute;right:2px;width:6px;border-radius:3px;background:color-mix(in srgb,var(--tx) 38%,transparent);opacity:0;transition:opacity .25s;z-index:7;pointer-events:none}
+.pan #bar{display:none}
+#notes{width:min(740px,calc(100vw - 32px));margin-top:28px;font-size:13px;line-height:1.65;color:#555}
+#notes h3{font-size:13px;margin:0 0 8px;color:#111}#notes dl{margin:0;display:grid;grid-template-columns:90px 1fr;gap:6px 12px}#notes dd{margin:0}#notes code{color:#111}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<div id="fit"><div id="rim"><div id="win">
+ <div id="tabs"><i class="l" style="left:11px"></i><i class="l" style="left:32px"></i><i class="l" style="left:53px"></i>
+  <div class="tab" data-tab="0" style="left:79px"><b></b><span class="n">Tokyo Architect's 7 Level Compact</span><svg class="spk" width="13" height="13" viewBox="0 0 24 24" fill="#333"><path d="M4 9v6h4l5 4V5L8 9zM16 8.500a5 5 0 0 1 0 7" stroke="#333" stroke-width="2" fill-opacity="1"/></svg><svg width="9" height="9" viewBox="0 0 10 10" stroke="#222" stroke-width="1.500"><path d="M1 1l8 8M9 1l-8 8"/></svg></div>
+  <i class="sep" style="left:520px"></i>
+  <div class="tab" data-tab="1" style="left:300px"><b></b><span class="n">An AI state of the union: We've</span><svg class="spk" width="13" height="13" viewBox="0 0 24 24" fill="#333"><path d="M4 9v6h4l5 4V5L8 9zM16 8.500a5 5 0 0 1 0 7" stroke="#333" stroke-width="2"/></svg><svg width="9" height="9" viewBox="0 0 10 10" stroke="#222" stroke-width="1.500"><path d="M1 1l8 8M9 1l-8 8"/></svg></div>
+  <div class="tab o" style="left:521px"><b></b><span class="n">Reader Web Clipper</span><svg width="9" height="9" viewBox="0 0 10 10" stroke="#222" stroke-width="1.500"><path d="M1 1l8 8M9 1l-8 8"/></svg></div>
+  <i class="sep" style="left:741px"></i>
+  <svg style="position:absolute;left:751px;top:13px" width="11" height="11" viewBox="0 0 11 11" stroke="#333" stroke-width="1.300"><path d="M5.500 0v11M0 5.500h11"/></svg>
+ </div>
+ <div id="addr">
+  <svg style="left:14px" width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#222" stroke-width="1.500"><path d="M13 7H2M7 2L2 7l5 5"/></svg>
+  <svg id="fwd" style="left:47px" width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#9c9c9c" stroke-width="1.500"><path d="M1 7h11M7 2l5 5-5 5"/></svg>
+  <svg style="left:81px" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.400"><path d="M20 12a8 8 0 1 1-2.500-5.800L20 8.500M20 2.500v6h-6"/></svg>
+  <div id="pill"><i></i><svg style="left:8px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2"><path d="M3 8h11M19 8h2M3 16h2M10 16h11"/><circle cx="16.500" cy="8" r="2.500"/><circle cx="7.500" cy="16" r="2.500"/></svg><span id="url"></span>
+   <svg style="left:821px;top:8px" width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="#222" stroke-width="1.300"><path d="M6 1H2.500A1.500 1.500 0 0 0 1 2.500v7A1.500 1.500 0 0 0 2.500 11h11A1.500 1.500 0 0 0 15 9.500V7M5 13.500h6M11 1v5.500M8.500 4.200L11 6.700l2.500-2.500"/></svg>
+   <svg style="left:851px;top:7px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.900"><path d="M12 3l2.800 5.800 6.200.9-4.500 4.400 1 6.300L12 17.500 6.500 20.400l1-6.300L3 9.700l6.200-.9z"/></svg></div>
+  <svg style="left:1011px" width="14" height="16" viewBox="0 0 14 16"><path d="M7 0l5 3 2 6-4 7H5L1 12 2 5z" fill="#8d78e8"/></svg>
+  <svg style="left:1045px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2"><path d="M9 4.500a2.500 2.500 0 0 1 5 0V7h6v5.500h-2a2.500 2.500 0 0 0 0 5h2V21H4v-5h1.500a2.500 2.500 0 0 0 0-5H4V7h5z"/></svg>
+  <i style="position:absolute;left:1077px;top:13px;width:1px;height:17px;background:#d4d4d4"></i>
+  <svg style="left:1095px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.300"><path d="M3 6h13M3 12h9M3 18h7M15 18V10l6-2"/><circle cx="12.500" cy="18" r="2.500" fill="#222"/></svg>
+  <span class="ic" style="left:1127px;top:12px;width:19px;height:19px;border-radius:50%;background:#f3c9a4;display:block"></span>
+  <svg style="left:1167px" width="4" height="14" viewBox="0 0 4 14" fill="#222"><circle cx="2" cy="2" r="1.500"/><circle cx="2" cy="7" r="1.500"/><circle cx="2" cy="12" r="1.500"/></svg>
+ </div>
+ <div id="page">
+  <div id="scroll"><div id="doc">
+   <div id="head"><h1 id="h1"></h1><p id="by"></p></div>
+   <div id="stick"><div id="player"><img id="pf" alt=""><div id="speed"><strong id="spv">1.00x</strong><span class="m" id="spm" style="left:9%">−</span><div class="sl"><u id="spu"></u><s id="sps"></s></div><span class="m" id="spp" style="right:9%">+</span><div class="ps"></div></div></div>
+    <div id="row"><div class="tgl"></div></div></div>
+   <div id="list"></div></div>
+  </div>
+  <div id="toprow" class="tgl"></div>
+  <nav id="toc"></nav>
+  <div id="tools"><button id="t-pen" aria-label="Highlighter" title="Highlighter"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.700"><path d="M4 21c4 0 5-1 7-3l9-10a2 2 0 0 0-3-3L8 13c-2 2-3 4-3 6"/><path d="M8 13l4 4"/></svg></button><button id="t-clip" aria-label="Clip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800"><path d="M20 11.500l-8.500 8.500a5 5 0 0 1-7-7L13 4.500a3.300 3.300 0 0 1 4.700 4.700L9.500 17.500a1.700 1.700 0 0 1-2.400-2.400L15 7.300"/></svg></button><button id="t-aa" aria-label="Reader settings" style="font:500 12.500px Inter;letter-spacing:.5px">Aa</button><button id="btn-pan" aria-label="Toggle notes"><svg width="13" height="16" viewBox="0 0 14 16"><path d="M7 0l5 3 2 6-4 7H5L1 12 2 5z" fill="currentColor"/></svg></button></div>
+  <div id="set"><div class="g"><b id="s-small">−</b><b id="s-big">+</b></div><div class="g"><b id="s-nar">→←</b><b id="s-wid">↔</b></div><div class="g"><b id="s-lhm"><svg width="14" height="9" viewBox="0 0 14 9" stroke="currentColor"><path d="M0 1h14M0 4.500h14M0 8h14"/></svg></b><b id="s-lhp"><svg width="14" height="11" viewBox="0 0 14 11" stroke="currentColor"><path d="M0 1h14M0 5.500h14M0 10h14"/></svg></b></div><hr>
+   <div class="s" data-m="theme"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800"><path id="ic-theme" d="M20 15A8.500 8.500 0 0 1 9 4a8.500 8.500 0 1 0 11 11z"/></svg><em id="v-theme">Auto</em></div>
+   <div class="s" data-m="pal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800"><path d="M12 3a9 9 0 1 0 0 18c1.500 0 2-1 2-2s-1-1.500-1-3 1-2 2.500-2H19a2 2 0 0 0 2-2c0-5-4-9-9-9z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="7.500" r="1"/></svg><em id="v-pal">Flexoki</em></div>
+   <div class="s" data-m="font"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800"><path d="M5 5h14M12 5v15M9 20h6"/></svg><em id="v-font">Sans-serif</em></div><hr>
+   <div class="s nc" style="padding-left:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><em>Settings</em></div></div>
+  <div id="menu"></div>
+  <div id="now">Current position</div><i id="bar"></i>
+  <aside id="panel"><div class="a">Video</div>
+   <span class="ic" style="left:217px"><svg width="9" height="13" viewBox="0 0 9 13" fill="none" stroke="currentColor" stroke-width="1.200"><path d="M1 4.500l3.500-3.500L8 4.500M1 8.500L4.500 12 8 8.500"/></svg></span>
+   <span class="ic" style="left:244px"><svg width="12" height="3" viewBox="0 0 12 3" fill="currentColor"><circle cx="1.500" cy="1.500" r="1.200"/><circle cx="6" cy="1.500" r="1.200"/><circle cx="10.500" cy="1.500" r="1.200"/></svg></span>
+   <span class="ic" id="p-pen" style="left:272px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.700"><path d="M4 21c4 0 5-1 7-3l9-10a2 2 0 0 0-3-3L8 13c-2 2-3 4-3 6"/><path d="M8 13l4 4"/></svg></span>
+   <span class="ic act" style="left:300px"><svg width="15" height="14" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.900"><path d="M12 5C10 3 7 2 2 2v16c5 0 8 1 10 3 2-2 5-3 10-3V2c-5 0-8 1-10 3zM12 5v16"/></svg></span>
+   <span class="ic" style="left:328px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M3.300 7l2.600 1.500M18.100 15.500l2.600 1.500M20.700 7l-2.600 1.500M5.900 15.500L3.300 17"/></svg></span>
+   <span class="ic" id="close" style="left:355px"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.300"><path d="M1 1l8 8M9 1l-8 8"/></svg></span>
+   <h3 id="p-title"></h3>
+   <div class="pp">Properties <svg width="9" height="6" viewBox="0 0 9 6" fill="none" stroke="#555" stroke-width="1.300" style="margin-left:2px;vertical-align:1px"><path d="M.5 1l4 4 4-4"/></svg></div>
+   <div id="props"></div><hr>
+   <div id="md"></div><i id="mdt"></i>
+   <div class="f"><div class="sel">Log</div><div>Clippings</div></div><button id="add">Add to Notes<svg width="10" height="7" viewBox="0 0 10 7" fill="none" stroke="#fff" stroke-width="1.500"><path d="M1 1l4 4 4-4"/></svg></button></aside>
+ </div>
+</div></div></div>
+<section id="notes"><h3>可拆</h3><dl>
+<dt><code>#list</code></dt><dd>转录稿：时间戳一列、正文一列；一条红线按播放进度在当前段里往下走，当前这一小句铺绿底；鼠标放在时间戳列上下拖就是拖进度；放在正文上，附近一段字出现下划线，点一下跳到那里</dd>
+<dt><code>#player</code></dt><dd>置顶视频：滚动时贴在顶部，正文从它下面穿过并在交界处淡出；可以关掉置顶</dd>
+<dt><code>#toc</code></dt><dd>左侧章节：正在播放的章节带红色短线，屏幕上正在看的章节变黑，其他章节变淡</dd>
+<dt><code>#tools</code></dt><dd>右上工具：荧光笔、Aa 里调字号、栏宽、行距、明暗、配色和字体</dd>
+<dt><code>#panel</code></dt><dd>右侧摘录面板：滑出后正文让位变窄；划过的高亮同步写成 ==文字== 进到摘录正文</dd>
+<dt><code>#now</code></dt><dd>手动滚走后底部出现回到当前位置的胶囊</dd>
+</dl></section>
+<script>
+/* 文字全部照视频暂停帧逐字录入（含原转录稿的错字）。帧里没露出来的段落没有录入，所以时间戳之间有跳跃。 */
+const S2=s=>{const p=s.split(':').map(Number);return p.reduce((a,b)=>a*60+b,0)};
+const A={title:"Tokyo Architect's 7 Level Compact Home, 59sqm/635sqft",by:'NEVER TOO SMALL',date:'May 15, 2025',url:'video.example/watch?v=x9M7ghTPaaU',tsw:58,frames:['a10','a11','a12','a13','a14','a15','a16','a17','a18','a00','a02','a04','a06','a07'],tocW:241,tab:0,
+ toc:['Introduction','Location','Floor Plan','Entrance','Office','Storage','Bookshelf','Kitchen','Living and Dining Room','Bedroom','Bathroom','Balcony','Conclusion'],
+ lines:[['#','Introduction'],['0:04','I designed this house as my office and home.'],['0:09','My wife and I live here together.'],['0:12','My office is on the first floor.'],['0:15','The building was built by stacking seven platforms. Each platform offset from the other.'],['0:21','We designed different spaces on each floor, and added large windows for natural light.'],['0:29','We both like concrete, so we decided to build the house using mainly concrete.'],['0:36','We had a lot of books, so we wanted a place to store them all.'],['0:45','We both like to talk about our day, so we designed the house in a way that allows us to talk wherever we are.'],['0:55','It also gives a sense of what the other person is doing.'],
+ ['#','Office'],['4:21',"I'm surrounded by my books and plants."],['4:28','I love the light that comes in at unique angles throughout the day.'],['4:35',"It's a very comfortable and nice place to work."],['4:41','The beams on the floor doubles as a bench.'],['4:44',"When clients come for a meeting, I put cushions on the beam so it's nice to sit."],['4:51','The lights above are from my favorite makers.'],['4:55','I hang them here as samples for my clients to see.'],
+ ['#','Storage'],['5:04',"Behind the office is a storage area, we store our clothes and things we don't often use here."],['5:13',"It's 4.5 meters wide and 1.6 meters deep, and feels like a walk-in closet."],['5:20',"It's made of inexpensive wooden boards."],['5:26','Next to the genkan, there is a small step onto a platform.'],
+ ['#','Bookshelf'],['5:32',"I like to read books here and display the projects I'm currently working on."],['5:37','The stand is made from some spare cedar wood and an IKEA towel rack I had lying around.'],['5:44',"The bookshelf covers the entire wall, it's about 6 meters from the bottom to the top."],['5:55',"I love books and have always had a small collection, but since I started this design job 10 to 20 years ago, I've collected so much more."],['6:08','The first floor is for architecture books I use for work.'],['6:13','The second floor and above is for manga, novels, and other non-work-related books.'],
+ ['#','Kitchen'],['6:24','The stairs are made from concrete.'],['6:29','We designed the shape to make the heavy concrete look light by tapering the ends to a thin triangle.'],['6:43','The kitchen is located between the first and second floors.'],['6:49','As the first floor is the office and the second floor is the living room we wanted the kitchen to be in the middle. This allows easy access from both areas.'],['7:04','The kitchen is about 3.3m long, which is quite large for a small house.'],['7:13','The upper part is open storage and the countertop is made from a thin steel sheet.'],['7:21','They both make the kitchen feel light.']]};
+const B={title:"An AI state of the union: We've passed the inflection point & dark factories are coming",by:"Lenny's Podcast",date:'April 2, 2026',url:'video.example/watch?v=wc8FBhQtdsA&t=1239s',tsw:69,frames:[...Array(24)].map((_,i)=>'b'+String(i).padStart(2,'0')),tocW:241,tab:1,
+ toc:['Introduction to Simon Willison','The November 2025 inflection point',"What's possible now with AI coding",'Vibe coding vs. agentic engineering','The dark-factory pattern','Where bottlenecks have shifted','Where human brains will continue to be valuable','Defending of software engineers','Why experienced engineers get better results','Advice for avoiding the permanent underclass','Leaning into AI to amplify your skills',"Why Simon says he's working harder than ever",'The market for pre-2022 human-written code','Prediction: 50% of engineers writing 95% AI code by the end of 2026','The impact of cheap code',"Simon's AI stack",'Using AI for research','The pelican-riding-a-bicycle benchmark','The inherent ridiculousness of AI','Hoarding things you know how to do','Red/green TDD pattern for better AI code','Starting projects with good templates','The lethal trifecta and prompt injection','Why 97% effectiveness is a failing grade','The normalization of deviance','OpenClaw: the security nightmare everyone is looking past',"What's next for Simon",'Zero-deliverable consulting','Good news about Kakapo parrots'],
+ lines:[['#','Introduction to Simon Willison'],['0:00',"A lot of people woke up in January and February and started realizing, oh wow, I can churn out 10,000 lines of code in a day. It used to be you'd ask Chat GP for some code and it would spit out some code and you have to run it and test it."],['0:11','The coding agents, they take that step for you. An open question for me is how many other knowledge work fields are actually prone to these agent loops.'],
+ ['#','The lethal trifecta and prompt injection'],['1:16:45',"That it's not necessarily reflective of what's actually happening. But I want to just talk about this cuz I had a whole episode actually on prompt injection and red teaming and and all these things and just how impossible it is to solve this problem uh no matter how many guardrails you put into it. So you have this prediction that we're going to have a massive disaster at some point. You call it the challenger disaster of AI sometime. Talk about just like why this is so dangerous, this lethal trifecta and what you think is coming."],['1:17:13',"So this is um so prompt injection is the class of vulnerabilities in applications we build on top of LLM. So this is not a problem with the models or at least it's not a vulnerability in the models. It's a vulnerability that the software that we build. And the classic example has always been um I build software that translates um like English into French."],
+ ['1:19:45',"That doesn't work. And then the other problem with coining terms is just because you were the first to define a term doesn't mean you actually get to define what it means in people's heads."],['1:19:55','Turns out people will define a term based on their initial assumption. If they hear a term, like if I say to you, "Oh, there\'s this problem called prompt injection." The natural human instinct is to guess what it means. And if that guess sounds good, stick with it. A lot of people when you say prompt injection, they say, "Oh, I know what that means.'],['1:20:13','It\'s injecting prompts." Right? It\'s when you type a prompt into an LLM, you\'re injecting that prompt. And if you can trick it into saying something impolite, that that\'s what\'s going on there. That\'s not what it was supposed to mean. That\'s jailbreaking. That\'s a different kind of thing. But it turns out I don\'t get to define it just because I defined it. So the lethal trifecta was my second attempt at this.'],['1:20:33',"And you'll notice that the lethal trifecta, you cannot guess what it is."],['1:20:38',"If I say to you, there's a thing called the lethal trifecta, you can't go, it's obviously one, two, it's three things, but what are those things? And that means I get to control what it means because you have to go and look it up when you hear what it is. And the lethal trifecta is a subset of prompt injection, which I hope helps people understand why this is such a big problem. It's, and it relates to the email example earlier on, you have a lethal trifecta."],['1:21:00',"Anytime your agent has three things, it's got access to private information. there's information that you've exposed to it like your private inbox that that is is private in some way. It's exposed to malicious instruction. So there's a way somebody attacking you can get their text into your system like sending you an email."],['1:21:20',"And the third leg is exfiltration or some mechanism that the agent can send data back to that attacker like forwarding an email. So if you've got a system where you've got private emails, anyone can email you instructions and it can email them back. That's a that's that's the classic lethal trifecta."],['1:21:36',"That's a huge security problem. The only way to fix it is to cut off one of those three legs. So, normally the leg that the leg that's easiest to cut off is the Xfiltration one. If you can stop your agent from sending the data back to the attacker, then the attacker can try and mess around, but at least they can't steal your data. So, people hearing this might feel like, why can't you just tell the AI, hey, don't do anything where if someone steals your data, don't listen to people trying to trick you."],
+ ['#','Why 97% effectiveness is a failing grade'],['1:22:00',"And it turns out, and I'd love you to take here, is just it's very hard to put enough of these guardrails in place where somebody can't figure out a way to trick it. That is exactly the problem."],['1:22:11',"The problem is you can get to like 97% effectiveness on those filters. I think that's a failing grade. That means that three out of 100 of these attacks will steal all of your information because fundamentally the way we prompt these things is using text in any human language, right? You can say you could filter out ignore previous instructions in English. What if somebody says it in Spanish? Right? There is no filter. It's like the classic sort of allow list versus deny list thing."],['1:22:36',"You cannot deny every one of these attacks because I can always invent a new sequence of characters that might trick the model in in some way. So what you have to do instead is say okay fundamentally these things we cannot prevent. If there's malicious instructions consider that anyone who can talk to your agent can make it do any of the things it's allowed to do. And then you have to think, okay, well, let's make sure that the blast radius on that is limited. The things that it's allowed to do can't cause too much damage."],['1:23:05',"This is why I use clawed code for web so much because I'm often having it go and read random web pages and some of maybe those have nasty attacks in them. All it can really do if it's running on anthropic servers is waste. It could like mine Bitcoin on their servers or something or maybe leak some of my private data somewhere else, but I don't put my private data into that environment. But I've got 25 years worth of security engineering experience to help me make those decisions."],['1:23:31',"This is not helpful for the vast majority of people who fall for fishing emails, which is most of us. This is like an equivalent of fishing except it's the the agent is the thing being fished. And that's terrifying. So you mentioned the Challenger disaster. The reason I think about the Challenger disaster is there's this fantastic paper that came out of the the space shuttle Challenger disaster called the normalization of deviance."],['1:23:57',"This was a piece of research in the 80s that said that what happened with the Challenger disaster is lots of people knew that those little O-rings were unreliable, but they kept on launching space shuttles and everything was fine. And so every single time you get away with launching a space shuttle without the O-rings failing, you institutionally feel more confident in what you're doing."],['1:24:18',"The problem we've been having with prompt injection is that we've been working increasingly unreliably with these system um and we've been using these systems in increasingly unsafe ways and so far there hasn't been a headline grabbing story of a prompt injection that's that's where an attacker has stolen a million dollars which means that we keep on taking this normalization of deviance in the field of AI around how we're using these tools."],['1:25:40',"Every time a new system card comes out with a like a clawed model, there'll be a thing that says our internal content injection score jump detection jumped from 70% to 85%. And again, until it's 100%, I don't think it's a meaning. I think it just gives people a false sense of security that this problem won't bite them. And even if they did hit 100%, I'd want to I'd want more than just a score."],['1:26:02',"I want proof. I want here is the computer science that we have come up with and put in place that means these attacks no longer a problem and I cannot imagine what that proof would look like myself and maybe I'm just short on imagination but yeah it's fundamentally these are instru these are machines where you give them a sequence of text and they do something dividing that sequence of text into this bit tells you what to do and this bit is the thing that you do stuff to it's very fuzzy it's very difficult to imagine how you can completely solve that."],['1:26:32','Yeah.']],
+ /* 摘录正文里露出来、但正文没有录入的段落 */
+ md:[['0:11',"The coding agents, they take that step for you. An open question for me is how many other knowledge work fields are actually prone to these agent loops."],['0:19','Now that we have this power, people almost underestimate what they do with it.'],['0:22','Today, probably 95% of the code that I produce, I didn\'t type it myself. I write so much of my code on my phone. It\'s wild. I can get good work done walking the dog along the beach. My New Year\'s resolutions. Every previous year, I\'ve always told myself, "This year, I\'m going to focus more. I\'m going to take on less things. This year, my ambition was take on more stuff and be more ambitious."'],['0:43',"Such an interesting contradiction. AI is supposed to make us more productive. It feels like the people that are most AI are working harder than they've ever worked."],['0:50',"Using coding agents well is taking every inch of my 25 years of experience as a software engineer. I can fire up four agents in parallel and have them work on four different problems. By 11:00 a.m., I am wiped out."],
+ ['','space is inherently funny.'],['1:00:01',"Like it is ridiculous. The fact that you could trick Chachi PT into telling you how to make napal by saying that your your grandmother worked at the Napal factory and you missed her and all of that kind of so silly. And yeah, I like leaning into that. The fact that we have these incredibly expensive, power- hungry, supposedly the most advanced computers of all time, and if you ask them to draw a pelican on a bicycle, it looks like a 5-year-old drew it. That's really funny to me. And I I am enjoying that. I'm enjoying sort of embracing the inherent inherent ridiculousness of what we're trying to achieve with these things."],['1:00:33',"I love that. And honestly, YouTube will show the pelicans cuz the progress is made, by the way, is just like absurd. Like it started so bad and now it's really good. And it's shockingly hard to make a bicycle. It turns out that's I mean, if you try and draw a bicycle right now on a piece of paper because the remembering the triangles of the frame is actually really difficult. Most people can't draw bicycles."],['###','Hoarding things you know how to do'],['1:00:52','Okay.'],['1:00:52',"Uh I'm going to get us back on track. I want to talk through a couple other agentic engineering patterns. you recommend? Uh, another is hoarding things you know how to do. What's that all about?"],['1:01:02','Yeah, this is um, again, this is sort of a lifelong piece of career advice.'],['1:01:06',"Something that I'm enjoying with the the book that"]]};
+const P=new URLSearchParams(location.search);
+let set=P.get('doc')||(P.get('panel')==='1'||P.get('dark')==='1'?'b':'a');
+let D=set==='a'?A:B;
+const $=s=>document.querySelector(s),root=document.documentElement,rim=$('#rim'),scroll=$('#scroll'),list=$('#list'),toc=$('#toc');
+let st={pan:P.get('panel')==='1',dark:P.get('dark')==='1',pin:P.get('pin')!=='0',auto:P.get('auto')!=='0',hal:P.get('hal')!=='0',serif:P.get('serif')==='1'||P.get('dark')==='1',pen:P.get('pen')==='1',ctls:P.get('ctls')==='1',set:P.get('set')==='1',away:false,fs:15,lh:24,wx:0};
+/* 用字符偏移存高亮，正文和摘录共用 */
+let hls=[];
+const REDUCE=matchMedia('(prefers-reduced-motion:reduce)').matches;
+let LN=[],cur=-1,T=0,playing=!REDUCE&&!P.has('paused'),rate=1;
+function chunks(t){const out=[];let s=0;const re=/[.?!,]["”]?\s+/g;let m;while(m=re.exec(t)){const e=m.index+m[0].length;if(e-s>=38||(/[.?!]/.test(m[0])&&e-s>=26)){out.push([s,e]);s=e}}if(s<t.length){if(t.length-s<16&&out.length)out[out.length-1][1]=t.length;else out.push([s,t.length])}return out}
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function renderLine(i){const L=LN[i],t=L.text;const cuts=new Set([0,t.length]);L.ch.forEach(c=>{cuts.add(c[0]);cuts.add(c[1])});const hs=hls.filter(h=>h.i===i);hs.forEach(h=>{cuts.add(h.a);cuts.add(h.b)});const pts=[...cuts].sort((a,b)=>a-b);let html='';for(let k=0;k<pts.length-1;k++){const a=pts[k],b=pts[k+1];const ci=L.ch.findIndex(c=>a>=c[0]&&a<c[1]);const isH=hs.some(h=>a>=h.a&&b<=h.b);html+=`<span class="c${isH?' h':''}" data-a="${a}" data-c="${ci}">${esc(t.slice(a,b))}</span>`}L.tx.innerHTML=html}
+function build(){
+ D=set==='a'?A:B;$('#h1').textContent=D.title;$('#by').innerHTML=`<b>${esc(D.by)}</b> · ${D.date} · video.example`;$('#url').textContent=D.url;$('#p-title').textContent=D.title;
+ const id=D.url.split('v=')[1].split('&')[0];
+ $('#props').innerHTML=[['time','2026-04-02T05:31'],['source','https://www.video.example/watch?v='+id],['image','https://i.vimg.example/vi/'+id+'/maxresdefault.jpg'],['created','2026-04-10',1],['tags','videos']].map((r,i)=>`<div class="prop" style="top:${107+i*27}px"><u><svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="#666" stroke-width="1.200">${r[2]?'<rect x="1" y="1" width="11" height="9.500" rx="1.500"/><path d="M1 4h11"/>':'<path d="M0 1h13M0 5.500h13M0 10h9"/>'}</svg></u>${r[0]}<span>${r[1]}</span></div>`).join('');
+ let h='<div class="tt">Transcript</div>';LN=[];D.lines.forEach((r,k)=>{if(r[0]==='#'){h+=`<h2 data-h="${esc(r[1])}"${k===0?' class="first"':''}>${esc(r[1])}</h2>`}else{const i=LN.length;LN.push({ts:r[0],s:S2(r[0]),text:r[1],ch:chunks(r[1])});h+=`<div class="ln" data-i="${i}"><span class="ts">${r[0]}</span><span class="tx"></span><i class="pl"></i></div>`}});
+ list.innerHTML=h;const els=[...list.querySelectorAll('.ln')];LN.forEach((L,i)=>{L.el=els[i];L.tx=els[i].querySelector('.tx');L.tsE=els[i].querySelector('.ts');L.pl=els[i].querySelector('.pl');let n=els[i];while(n=n.previousElementSibling)if(n.tagName==='H2'){L.sec=n.dataset.h;break}L.dur=Math.max(3,Math.min((LN[i+1]?0:1e9)+1e9,L.text.length/15))});
+ LN.forEach((L,i)=>{const nx=LN[i+1];L.dur=nx?Math.min(nx.s-L.s,Math.max(3,L.text.length/15)):Math.max(3,L.text.length/15);renderLine(i)});
+ const tail=D.title.length>42?3:2;
+ toc.innerHTML=`<a class="ti" style="padding-bottom:9.300px">${esc(D.title)}</a><a class="lb">Transcript</a>`+D.toc.map(t=>`<a data-t="${esc(t)}">${esc(t)}</a>`).join('');
+ [...toc.querySelectorAll('a[data-t]')].forEach(a=>a.onclick=()=>{const h=[...list.querySelectorAll('h2')].find(h=>h.dataset.h===a.dataset.t);if(h){st.away=true;scroll.scrollTo({top:h.offsetTop-stickH()-30,behavior:REDUCE?'auto':'smooth'})}});
+ document.querySelectorAll('.tab[data-tab]').forEach(t=>{const on=+t.dataset.tab===D.tab;t.classList.toggle('on',on);t.querySelector('.spk').style.display=(+t.dataset.tab===D.tab)?'':'none'});
+ $('#fwd').setAttribute('stroke',set==='a'?'#222':'#9c9c9c');
+ loadFrames();md()}
+const stickH=()=>st.pin?$('#stick').offsetHeight:0;
+/* 摘录：高亮写成 ==文字== */
+function mdText(L,i){const t=L.text,hs=hls.filter(h=>h.i===i).sort((a,b)=>a.a-b.a);let o='',p=0;hs.forEach(h=>{o+=esc(t.slice(p,h.a))+'=='+esc(t.slice(h.a,h.b))+'==';p=h.b});return o+esc(t.slice(p))}
+function md(){const items=[];const src=set==='b'?D.md:[];src.forEach((r,k)=>items.push({s:r[0]&&r[0]!=='###'?S2(r[0]):null,r,k}));
+ let html='';if(set==='b'){html+=`<p>![](https://www.video.example/watch?v=wc8FBhQtdsA)</p><p>## Transcript</p><p>### Introduction to Simon Willison</p>`;html+=`<p>**0:00** · ${esc(LN[0].text)}</p>`;src.forEach(r=>{if(r[0]==='###')html+=`<p>### ${esc(r[1])}</p>`;else if(r[0]==='')html+=`<p data-m="mid">${esc(r[1])}</p>`;else html+=`<p>**${r[0]}** · ${esc(r[1])}</p>`});LN.forEach((L,i)=>{if(L.s>=S2('1:19:55')&&L.s<=S2('1:21:36'))html+=`<p>**${L.ts}** · ${mdText(L,i)}</p>`})}else{html+=`<p>## Transcript</p>`;LN.forEach((L,i)=>html+=`<p>**${L.ts}** · ${mdText(L,i)}</p>`)}
+ $('#md').innerHTML=html}
+function mdThumb(){const m=$('#md'),r=m.scrollTop/Math.max(1,m.scrollHeight-m.clientHeight);$('#mdt').style.top=(248+r*(m.clientHeight-28))+'px'}
+$('#md').addEventListener('scroll',mdThumb);
+/* 视频：真实录屏的逐帧截图，4 帧/秒循环 */
+let frames=[],fi=0;const pf=$('#pf');
+function loadFrames(){const key=(st.dark&&set==='b')?[...Array(24)].map((_,i)=>'c'+String(i).padStart(2,'0')):D.frames;frames=key.map(n=>`source-assets/frames/${n}.jpg`);frames.forEach(u=>{const i=new Image();i.src=u});fi=+(P.get('frame')||0)%frames.length;pf.src=frames[fi]}
+let last=performance.now(),acc=0;
+function tick(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(playing){acc+=dt*rate;if(acc>=.25){acc=0;fi=(fi+1)%frames.length;pf.src=frames[fi]}setT(T+dt*rate)}requestAnimationFrame(tick)}
+/* 当前行和进度 */
+function lineAt(t){let i=0;for(let k=0;k<LN.length;k++)if(LN[k].s<=t)i=k;return i}
+function setT(t,opt={}){T=t;let i=lineAt(T);let L=LN[i];if(T>L.s+L.dur&&LN[i+1]){T=LN[i+1].s;i++;L=LN[i]}if(!LN[i+1]&&T>L.s+L.dur){T=LN[0].s;i=0;L=LN[0]}
+ const f=Math.max(0,Math.min(1,(T-L.s)/L.dur));const changed=i!==cur;
+ if(changed){if(LN[cur]){LN[cur].el.classList.remove('on');LN[cur].tx.querySelectorAll('.on').forEach(e=>e.classList.remove('on'))}cur=i;L.el.classList.add('on');L.pl.style.width=L.tsE.offsetWidth+'px';secs()}
+ L.pl.style.top=f*(L.el.offsetHeight-2)+'px';
+ const pos=f*L.text.length;const ci=L.ch.findIndex(c=>pos>=c[0]&&pos<c[1]);L.tx.querySelectorAll('span.c').forEach(e=>e.classList.toggle('on',+e.dataset.c===(ci<0?L.ch.length-1:ci)));
+ if(changed&&!opt.noscroll)follow(opt.instant)}
+function follow(instant){if(!st.auto||st.away||drag)return;const L=LN[cur];const y=L.el.offsetTop-stickH()-78;scroll.scrollTo({top:y,behavior:(REDUCE||instant)?'auto':'smooth'})}
+/* 目录：红线跟播放，黑字跟屏幕 */
+function secs(){const as=[...toc.querySelectorAll('a[data-t]')];const h=$('#page').offsetHeight,top=stickH();const vis=new Set();LN.forEach(L=>{const r=L.el.getBoundingClientRect(),pr=$('#page').getBoundingClientRect();const k=rim.getBoundingClientRect().width/1234;const y=(r.top-pr.top)/k;if(y+L.el.offsetHeight>top&&y<h*.8)vis.add(L.sec)});as.forEach(a=>{a.classList.toggle('on',LN[cur]&&a.dataset.t===LN[cur].sec);a.classList.toggle('vw',vis.has(a.dataset.t))});
+ const a=toc.querySelector('a.on');if(a&&!tocFixed&&!tocHover){const y=a.offsetTop-toc.clientHeight*.62;toc.scrollTo({top:y,behavior:'auto'})}}
+let tocFixed=false,tocHover=false;
+toc.addEventListener('pointerenter',()=>{tocHover=true;toc.classList.remove('dim');clearTimeout(dimT)});toc.addEventListener('pointerleave',()=>{tocHover=false;armDim()});
+let dimT;function armDim(){clearTimeout(dimT);if(P.has('tocon'))return;dimT=setTimeout(()=>toc.classList.add('dim'),5000)}
+/* 时间戳列：按住上下拖就是拖进度 */
+let drag=null;
+list.addEventListener('pointerdown',e=>{const ts=e.target.closest('.ts');if(!ts)return;e.preventDefault();drag={};list.classList.add('scrub');scrub(e)});
+function scrub(e){const k=rim.getBoundingClientRect().width/1234;const rs=LN.map(L=>L.el.getBoundingClientRect());let i=rs.findIndex(r=>e.clientY<r.bottom);if(i<0)i=LN.length-1;const r=rs[i];const f=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));setT(LN[i].s+f*LN[i].dur*.999,{noscroll:true})}
+addEventListener('pointermove',e=>{if(drag){scrub(e);return}hover(e)});
+addEventListener('pointerup',e=>{if(drag){drag=null;list.classList.remove('scrub')}});
+/* 正文：附近一段字加下划线，点一下跳到那里；开着荧光笔时划词变高亮 */
+const hHL=(window.Highlight&&CSS.highlights)?new Highlight():null;if(hHL)CSS.highlights.set('hover',hHL);
+function offsetIn(tx,node,off){const sp=node.parentElement.closest('span.c');return sp?+sp.dataset.a+off:null}
+function caret(e){const r=document.caretRangeFromPoint&&document.caretRangeFromPoint(e.clientX,e.clientY);if(!r||!r.startContainer||r.startContainer.nodeType!==3)return null;const tx=r.startContainer.parentElement.closest('.tx');if(!tx)return null;return {tx,o:offsetIn(tx,r.startContainer,r.startOffset),i:+tx.parentElement.dataset.i}}
+function rangeFor(tx,a,b){const r=document.createRange();const sp=[...tx.querySelectorAll('span.c')];let set1=false;for(const s of sp){const sa=+s.dataset.a,n=s.firstChild,len=n.length;if(!set1&&a<sa+len){r.setStart(n,a-sa);set1=true}if(set1&&b<=sa+len){r.setEnd(n,b-sa);return r}}return null}
+function hover(e){if(!hHL)return;hHL.clear();if(!e.target.closest||!e.target.closest('.tx')||!getSelection().isCollapsed)return;const c=caret(e);if(!c||c.o==null)return;const t=LN[c.i].text;let a=Math.max(0,c.o-20),b=Math.min(t.length,c.o+22);while(a>0&&t[a-1]!==' ')a--;while(b<t.length&&t[b]!==' ')b++;const r=rangeFor(c.tx,a,b);if(r)hHL.add(r)}
+list.addEventListener('click',e=>{if(!e.target.closest('.tx'))return;if(!getSelection().isCollapsed)return;if(st.pen)return;const c=caret(e);if(!c||c.o==null)return;const L=LN[c.i];setT(L.s+c.o/L.text.length*L.dur*.999,{noscroll:true})});
+list.addEventListener('pointerup',()=>{const s=getSelection();if(!st.pen||s.isCollapsed)return;const a=s.anchorNode.parentElement.closest('.tx'),b=s.focusNode.parentElement.closest('.tx');if(!a||a!==b)return;let x=offsetIn(a,s.anchorNode,s.anchorOffset),y=offsetIn(a,s.focusNode,s.focusOffset);if(x>y)[x,y]=[y,x];const i=+a.parentElement.dataset.i;hls.push({i,a:x,b:y});s.removeAllRanges();renderLine(i);if(i===cur){const c=cur;cur=-1;const t=T;setT(t,{noscroll:true})}md()});
+/* 手动滚动就脱离跟随，胶囊出现 */
+function away(on){st.away=on;$('#now').classList.toggle('on',on)}
+scroll.addEventListener('wheel',()=>{away(true)},{passive:true});
+$('#now').onclick=()=>{away(false);follow()};
+let barT;scroll.addEventListener('scroll',()=>{secs();const b=$('#bar'),h=scroll.clientHeight,H=scroll.scrollHeight;b.style.height=Math.max(40,h*h/H)+'px';b.style.top=(scroll.scrollTop/(H-h)*(h-Math.max(40,h*h/H)))+'px';b.style.opacity=1;clearTimeout(barT);barT=setTimeout(()=>b.style.opacity=0,900);toprow()},{passive:true});
+function toprow(){const r=$('#toprow');r.style.display=(!st.pin&&scroll.scrollTop>$('#stick').offsetTop+$('#stick').offsetHeight)?'flex':'none'}
+/* 开关和设置 */
+function toggles(){const html=[['Pin player','pin'],['Auto-scroll','auto'],['Highlight active line','hal']].map(([n,k])=>`<label data-k="${k}" class="${st[k]?'':'off'}">${n}<s></s></label>`).join('');document.querySelectorAll('.tgl').forEach(t=>{t.innerHTML=html;t.querySelectorAll('label').forEach(l=>l.onclick=()=>{st[l.dataset.k]=!st[l.dataset.k];if(l.dataset.k==='auto')away(false);apply();follow()})})}
+function apply(){const w=st.pan?{docx:195,docw:562,tocw:160}:{docx:271+st.wx,docw:647-2*st.wx,tocw:241};root.style.setProperty('--docx',w.docx+'px');root.style.setProperty('--docw',w.docw+'px');root.style.setProperty('--tocw',w.tocw+'px');root.style.setProperty('--tsw',D.tsw+'px');
+ const c=rim.classList;c.toggle('pan',st.pan);c.toggle('dark',st.dark);c.toggle('serif',st.serif);c.toggle('pin',st.pin);c.toggle('hal',st.hal);c.toggle('pen',st.pen);c.toggle('ctls',st.ctls);c.toggle('seto',st.set);
+ root.classList.toggle('dark',st.dark);root.classList.toggle('serif',st.serif);
+ $('#tools').style.display=st.pan?'none':'';$('#set').classList.toggle('on',st.set&&!st.pan);$('#t-aa').classList.toggle('on',st.set);$('#t-pen').classList.toggle('on',st.pen);$('#p-pen').classList.toggle('act',st.pen);
+ $('#v-theme').textContent=st.dark?'Dark':(st.theme||'Auto');$('#v-pal').textContent=st.dark?'Rosé Pine':'Flexoki';$('#v-font').textContent=st.serif?'Serif':'Sans-serif';
+ $('#ic-theme').setAttribute('d',st.dark?'M20 15A8.500 8.500 0 0 1 9 4a8.500 8.500 0 1 0 11 11z':'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2');
+ root.style.setProperty('--lh',st.lh+'px');if(st.fs!==15)root.style.setProperty('--fs',st.fs+'px');else root.style.removeProperty('--fs');toggles();toprow();secs()}
+const MENUS={theme:[['Auto',()=>{st.dark=false;st.theme='Auto'}],['Light',()=>{st.dark=false;st.theme='Light'}],['Dark',()=>{st.dark=true}]],pal:[['Flexoki',()=>{st.dark=false}],['Rosé Pine',()=>{st.dark=true}]],font:[['Sans-serif',()=>{st.serif=false}],['Serif',()=>{st.serif=true}]]};
+document.querySelectorAll('#set .s[data-m]').forEach(el=>el.onclick=e=>{e.stopPropagation();const m=$('#menu'),k=el.dataset.m,cv=el.querySelector('em').textContent;m.innerHTML=MENUS[k].map((r,i)=>`<div data-i="${i}" class="${r[0]===cv?'ck':''}">${r[0]}</div>`).join('');m.style.top=el.offsetTop+$('#set').offsetTop-2+'px';m.classList.add('on');m.querySelectorAll('div').forEach(d=>d.onclick=()=>{MENUS[k][+d.dataset.i][1]();m.classList.remove('on');const wasDark=rim.classList.contains('dark');apply();if(wasDark!==st.dark)loadFrames()})});
+addEventListener('click',e=>{if(!e.target.closest('#menu'))$('#menu').classList.remove('on')});
+$('#t-aa').onclick=()=>{st.set=!st.set;apply()};$('#t-pen').onclick=$('#p-pen').onclick=()=>{st.pen=!st.pen;apply()};
+$('#s-big').onclick=()=>{st.fs=Math.min(20,st.fs+1);apply()};$('#s-small').onclick=()=>{st.fs=Math.max(12,st.fs-1);apply()};$('#s-nar').onclick=()=>{st.wx=Math.min(120,st.wx+30);apply()};$('#s-wid').onclick=()=>{st.wx=Math.max(0,st.wx-30);apply()};$('#s-lhp').onclick=()=>{st.lh=Math.min(32,st.lh+2);apply()};$('#s-lhm').onclick=()=>{st.lh=Math.max(20,st.lh-2);apply()};
+$('#btn-pan').onclick=()=>{st.pan=true;apply()};$('#close').onclick=()=>{st.pan=false;apply()};
+$('#player').addEventListener('click',e=>{if(e.target.closest('#speed'))return;playing=!playing});
+/* 控制条：指针在页面里移动时显示，停 2 秒收起（看帧推断，原版的触发条件未核实） */
+let ctlT;$('#page').addEventListener('pointermove',e=>{if(P.has('ctls'))return;rim.classList.add('ctls');clearTimeout(ctlT);ctlT=setTimeout(()=>{rim.classList.toggle('ctls',st.ctls)},2000)});
+/* 倍速卡：按 s 打开，原版怎么呼出没有拍到 */
+function setRate(r){rate=r;$('#spv').textContent=r.toFixed(2)+'x';const p=(r-.75)/(3-.75)*100;$('#spu').style.width=p+'%';$('#sps').style.left=p+'%'}
+$('#speed .ps').innerHTML=[1,1.25,1.5,1.75,2,3].map(v=>`<span data-v="${v}">${v}x</span>`).join('');document.querySelectorAll('#speed .ps span').forEach(s=>s.onclick=()=>setRate(+s.dataset.v));$('#spm').onclick=()=>setRate(Math.max(.75,rate-.25));$('#spp').onclick=()=>setRate(Math.min(3,rate+.25));setRate(1);
+addEventListener('keydown',e=>{if(e.key==='s')$('#speed').classList.toggle('on')});if(P.has('speed'))$('#speed').classList.add('on');
+const fit=()=>{const k=Math.min(1234,innerWidth-16)/1234;rim.style.transform=`scale(${k})`;const f=$('#fit');f.style.width=1234*k+'px';f.style.height=962*k+'px'};fit();addEventListener('resize',fit);
+/* 启动：查询参数用来还原对照用的画面 */
+(P.get('hl')||'').split(';').filter(Boolean).forEach(x=>{const[i,a,b]=x.split(',').map(Number);hls.push({i,a,b})});
+build();apply();
+document.fonts.ready.then(()=>{
+ const i=+(P.get('i')||(set==='a'?LN.findIndex(l=>l.ts==='6:08'):LN.findIndex(l=>l.ts==='1:20:38'))),f=+(P.get('f')||.05);
+ setT(LN[i].s+f*LN[i].dur,{noscroll:true});
+ if(P.has('top')){const[li,y]=P.get('top').split(',').map(Number);scroll.scrollTop=LN[li].el.offsetTop-y;st.away=false}
+ else if(P.has('sy'))scroll.scrollTop=+P.get('sy');
+ else follow(true);
+ if(P.has('md')){const m=$('#md'),q=P.get('md');m.scrollTop=q==='mid'?m.querySelector('[data-m=mid]').offsetTop:q[0]==='@'?[...m.children].find(e=>e.textContent.startsWith('**'+q.slice(1))).offsetTop:+q}mdThumb();
+ if(P.has('tocat')){const[n,y]=P.get('tocat').split('|');const a=[...toc.querySelectorAll('a[data-t]')].find(a=>a.dataset.t.startsWith(n));tocFixed=true;toc.scrollTop=a.offsetTop-(+y-101)}
+ if(P.has('tocdim')||P.has('paused'))toc.classList.toggle('dim',P.get('tocdim')!=='0');else armDim();
+ if(P.get('now')==='1')away(true);
+ secs();
+ requestAnimationFrame(tick);
+});
+</script></body></html>

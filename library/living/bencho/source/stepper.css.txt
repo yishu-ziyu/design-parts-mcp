@@ -1,0 +1,19 @@
+/* Tap for one, hold to sweep. A stepper is precise and
+   slow, a slider is fast and vague, and almost every product
+   picks one and makes the other job painful. This is both on
+   the same control, chosen by how long you hold â so the
+   coarse move never costs you the fine one. */
+const press = (dir) => (e) => {
+  origin = { x: e.clientX, v };
+  timer = setTimeout(() => setSweeping(true), 260);
+};
+
+const lift = () => {
+  clearTimeout(timer);
+  if (!sweeping) setV((n) => n + dir);   // it was a tap
+  setSweeping(false);
+};
+
+/* the sweep is proportional to how wide the control is, so it
+   feels the same at any size */
+setV(origin.v + ((e.clientX - origin.x) / railWidth) * 100);

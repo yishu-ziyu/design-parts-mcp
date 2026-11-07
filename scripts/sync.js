@@ -13,8 +13,8 @@ const DST = path.join(REPO_ROOT, "library");
 
 const REQUIRED_NOTES = ["bento", "triage", "spine"];
 
-// 复刻页带别人的素材，只留本机（用户决定，2026-11-05）。
-// 只有这份名单里的笔记进快照，新笔记默认不公开；名单内笔记的复刻产物也不拷。
+// 公开快照默认收录活库全部带 index.html 的笔记（用户决定，2026-11-07）。
+// 名单见 public-notes.json；复刻产物仍不拷：replica.html / part.json / source-assets / replica-*。
 const PUBLIC_NOTES = new Set(
   JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "scripts", "public-notes.json"), "utf8"))
 );
@@ -34,7 +34,8 @@ const FORBIDDEN = [
 function sanitize(text) {
   const esc = HOME_PREFIX.replace(/\//g, "\\/");
   return text
-    .replace(new RegExp(esc + "[^\"`\\s)\\]},;。｜|]*", "g"), "<local-path>")
+    .replace(new RegExp("file://" + esc + "[^\"'`\\s)\\]}>]*", "g"), "file://<local-path>")
+    .replace(new RegExp(esc + "[^\"'`\\s)\\]}>]*", "g"), "<local-path>")
     .replace(new RegExp(OWNER_NAME, "gi"), "user")
     .replace(new RegExp(OWNER_NAME_CN, "g"), "user")
     .replace(/red-herring-and-gun/g, "user-project")
@@ -57,6 +58,32 @@ function copySanitized(srcFile, dstFile, label) {
   return true;
 }
 
+
+const SKIP = new Set(["CONTRACT.md", "lessons.md", "_source", "replica.html", "part.json", "source-assets"]);
+function shouldSkipName(name) {
+  return SKIP.has(name) || name.startsWith("replica-");
+}
+
+const TEXT_EXT = new Set([".md", ".html", ".css", ".js", ".mjs", ".json", ".svg", ".txt"]);
+
+function copyTreeSanitized(srcDir, dstDir, label) {
+  fs.mkdirSync(dstDir, { recursive: true });
+  for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+    if (shouldSkipName(entry.name)) continue;
+    const src = path.join(srcDir, entry.name);
+    const dst = path.join(dstDir, entry.name);
+    if (entry.isDirectory()) {
+      copyTreeSanitized(src, dst, `${label}/${entry.name}`);
+      continue;
+    }
+    if (TEXT_EXT.has(path.extname(entry.name).toLowerCase())) {
+      copySanitized(src, dst, `${label}/${entry.name}`);
+    } else {
+      fs.copyFileSync(src, dst);
+    }
+  }
+}
+
 function main() {
   const srcEnv = process.env.DESIGN_NOTES_PATH;
   const source = resolveRoot(srcEnv ?? path.join(os.homedir(), "Documents", "design-notes"));
@@ -72,7 +99,6 @@ function main() {
   // 重建 living/
   fs.rmSync(path.join(DST, "living"), { recursive: true, force: true });
   // 笔记目录里可分离的私有/过程文件：不入快照
-  const SKIP = new Set(["CONTRACT.md", "lessons.md", "_source", "replica.html", "part.json", "source-assets"]);
   let copied = 0;
   let readmes = 0;
   let assets = 0;
@@ -81,19 +107,17 @@ function main() {
     const dstNote = path.join(DST, "living", note);
     fs.mkdirSync(dstNote, { recursive: true });
     for (const entry of fs.readdirSync(srcNote, { withFileTypes: true })) {
-      if (SKIP.has(entry.name)) continue;
+      if (shouldSkipName(entry.name)) continue;
       const src = path.join(srcNote, entry.name);
       const dst = path.join(dstNote, entry.name);
       if (entry.isDirectory()) {
-        // 资源目录（vendor/、fonts/ 等）整体拷入，保证 file:// 直开零网络
-        // 复刻页的关键帧以 replica- 开头，只留本机
-        fs.cpSync(src, dst, { recursive: true, filter: (f) => !path.basename(f).startsWith("replica-") });
+        // 资源目录整体拷入；文本清洗，复刻产物跳过
+        copyTreeSanitized(src, dst, `living/${note}/${entry.name}`);
         assets++;
         continue;
       }
       if (entry.name === "index.html") {
-        fs.copyFileSync(src, dst);
-        copied++;
+        if (copySanitized(src, dst, `living/${note}/index.html`)) copied++;
         continue;
       }
       if (entry.name === "README.md") {
@@ -101,7 +125,6 @@ function main() {
         continue;
       }
       // 其他散文件（图片、额外 html）：按扩展名判断——文本走 sanitize，二进制直接拷
-      const TEXT_EXT = new Set([".md", ".html", ".css", ".js", ".mjs", ".json", ".svg", ".txt"]);
       const isText = TEXT_EXT.has(path.extname(entry.name).toLowerCase());
       if (isText) {
         if (copySanitized(src, dst, `living/${note}/${entry.name}`)) assets++;
@@ -120,7 +143,7 @@ function main() {
   // 索引也只收公开笔记的公开页面，复刻条目不进快照
   const isPublic = (p) => {
     const [note, page] = p.replace(/^living\//, "").split("#")[0].split("/");
-    return PUBLIC_NOTES.has(note) && page !== "replica.html";
+    return PUBLIC_NOTES.has(note) && page !== "replica.html" && !page.startsWith("replica-");
   };
   const rows = [];
   for (const inv of parsed.inventions.filter((i) => isPublic(i.path))) {

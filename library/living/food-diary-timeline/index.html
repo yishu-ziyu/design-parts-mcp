@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>饮食手账：忠实复刻</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Outfit";src:url(fonts/outfit.woff2) format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"Nunito";src:url(fonts/nunito.woff2) format("woff2");font-weight:200 1000;font-display:block}
+:root{--ink:#161B26;--blue:#3C4F9E;--mute:#6C7280;--bg:#F0F2F8;--seg:#E2E5ED;--spring:cubic-bezier(.22,1.2,.36,1)}
+*{box-sizing:border-box}html,body{margin:0;background:#E7E9EF;color:var(--ink);font:500 14px/1.3 Nunito,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;align-items:center}button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+#frame{position:relative;width:453px;height:984px;background:var(--bg);overflow:hidden;flex:none;user-select:none}
+.h{font-family:Outfit,Nunito,sans-serif}
+/* 状态栏 */
+#sb{position:absolute;z-index:60;left:0;right:0;top:0;height:64px;pointer-events:none}
+#clock{position:absolute;left:39px;top:22px;font:600 20px/22px Outfit}#loc{position:absolute;left:88px;top:24px}
+#isl{position:absolute;left:134px;top:13px;width:178px;height:42px;border-radius:21px;background:#000}#isl i{position:absolute;left:18px;top:14px;width:13px;height:13px;border-radius:50%;background:#E5402A}
+#sig{position:absolute;right:30px;top:24px;display:flex;align-items:center;gap:6px;font:600 16px/18px Outfit}
+.dots{display:grid;grid-template-columns:repeat(4,4px);grid-template-rows:6px 6px;gap:2px}.dots b{background:#111;border-radius:1px}.dots b:nth-child(4),.dots b:nth-child(8){opacity:.25}
+.bat{width:37px;height:18px;border-radius:6px;background:#222;color:#fff;font:600 11px/18px Outfit;text-align:center;position:relative}.bat:after{content:"";position:absolute;right:-3px;top:6px;width:2px;height:6px;background:#888;border-radius:1px}
+/* 主页 */
+#home{position:absolute;inset:0}
+.logo{position:absolute;left:28px;top:104px;width:46px;height:42px;border-radius:9px;background:#DDE2F2;overflow:hidden}
+.brand{position:absolute;left:87px;top:96px;font:700 30px/38px Outfit;letter-spacing:-.5px}.brand i{font-style:normal;color:var(--blue)}.tag{position:absolute;left:87px;top:135px;font:500 14px/18px Nunito;color:#555C69}
+.rnd{position:absolute;top:104px;width:42px;height:42px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 2px 6px rgba(40,50,80,.05);transition:scale .12s}.rnd:active{scale:.94}
+#tabs{position:absolute;left:28px;right:28px;top:172px;height:50px;border-radius:16px;background:var(--seg);display:flex;align-items:center;padding:3px}
+.tab{height:44px;flex:0 0 49px;display:grid;place-items:center;color:#6B7280;border-radius:13px;position:relative;z-index:1;transition:flex-basis .32s var(--spring),color .2s}.tab.on{flex:1 1 auto;color:var(--blue);background:#fff;box-shadow:0 1px 3px rgba(40,50,80,.08);display:flex;justify-content:center;gap:9px;font:500 16px Nunito}.tab span{display:none}.tab.on span{display:inline}
+#fil{position:absolute;left:28px;top:241px;display:flex;gap:9px;white-space:nowrap}
+.pill{height:37px;padding:0 14px;display:flex;align-items:center;gap:7px;border-radius:19px;background:var(--seg);font:600 15.5px Nunito;color:#2B3140;transition:background .2s,color .2s,scale .12s}.pill:active{scale:.96}.pill.on{background:var(--blue);color:#fff}
+#tl{position:absolute;left:0;right:0;top:306px;bottom:0;overflow:hidden}
+.mon{position:absolute;left:28px;top:2px;font:600 24px/32px Outfit;letter-spacing:-.1px}.cnt{position:absolute;left:28px;top:35px;font:500 13.5px/18px Nunito;color:#555C69}
+#spark{position:absolute;right:28px;top:40px;display:flex;gap:3px;align-items:center}#spark i{width:3px;height:3px;border-radius:50%;background:#CBD0DC}#spark i.b{width:4.500px;height:10px;border-radius:2px;background:var(--blue)}
+#rail{position:absolute;left:32px;top:72px;bottom:0;width:1.500px;background:#BFC6DD}#rail:before{content:"";position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--blue)}
+.day{position:absolute;left:46px;top:60px;font:500 19px/26px Nunito;letter-spacing:.1px}.badge{position:absolute;left:240px;top:62px;height:24px;padding:0 10px;border-radius:12px;background:#fff;font:500 14px/24px Nunito;color:#383E4C}
+.tc{position:absolute;left:47px;width:378px;border-radius:24px;background:#F9FAFD;box-shadow:0 2px 12px rgba(50,60,100,.04);transition:translate .55s var(--spring),scale .55s var(--spring)}
+.tc:before{content:"";position:absolute;left:-15px;top:55px;width:15px;height:1px;background:#BFC6DD}
+.tc .im{position:absolute;left:12px;top:22px;width:110px;height:165px}.tc h4{position:absolute;left:124px;top:19px;margin:0;font:500 20px/26px Outfit;white-space:nowrap;width:240px;overflow:hidden;text-overflow:ellipsis}
+.ln{position:absolute;left:124px;display:flex;align-items:center;gap:6px;font:500 14px/20px Nunito;color:#343A47;white-space:nowrap;width:240px;overflow:hidden}.ln.t{color:var(--blue);font-weight:500}.ln svg{flex:none}
+.nt{position:absolute;left:124px;width:236px;height:48px;padding:5px 12px 5px 32px;border-radius:8px;background:#EDEFF6;font:600 13.5px/19px Nunito;color:#2F3542;box-shadow:0 1px 4px rgba(40,50,80,.04)}.nt svg{position:absolute;left:11px;top:9px}
+#nav{position:absolute;z-index:30;left:20px;top:888px;width:329px;height:79px;border-radius:40px;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 6px 24px rgba(40,50,90,.1);display:flex;padding:5px}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:500 14px/18px Nunito;color:#505665;border-radius:34px}.ni.on{background:#DDE2EF;color:var(--blue);flex:0 0 80px}
+#fab{position:absolute;z-index:30;left:363px;top:888px;width:72px;height:72px;border-radius:50%;background:var(--blue);display:grid;place-items:center;box-shadow:0 8px 20px rgba(60,79,158,.3);transition:scale .15s}#fab:active{scale:.93}
+/* 抽屉 */
+#dim{position:absolute;z-index:40;inset:0;background:rgba(26,28,36,.28);opacity:0;pointer-events:none;transition:opacity .34s}
+#sheet{position:absolute;z-index:45;left:8px;right:8px;top:175px;height:820px;border-radius:29px 29px 0 0;background:linear-gradient(180deg,#FBFBFE,#FAFAFE);box-shadow:0 -6px 30px rgba(20,24,40,.1);transform:translateY(830px);transition:transform .5s cubic-bezier(.2,1.05,.3,1);will-change:transform}
+body.drawer #dim{opacity:1;pointer-events:auto}body.drawer #sheet{transform:none}
+.gr{position:absolute;left:50%;top:6px;width:60px;height:4.500px;margin-left:-30px;border-radius:3px;background:#C9CBD2}
+#sheet h3{position:absolute;left:19px;top:22px;margin:0;font:600 20px/26px Outfit}.sub{position:absolute;left:19px;top:48px;font:500 12.5px/18px Nunito;color:#858A96}
+.cell{position:absolute;width:186px;height:272px}.cell .plate{position:absolute;left:28px;top:-2px;width:130px;height:130px;transition:translate .5s var(--spring),scale .5s var(--spring),opacity .25s,filter .25s}.cell.off .plate{opacity:.3;filter:grayscale(.8);scale:.92}
+.chk{position:absolute;right:10px;top:4px;width:24px;height:24px;border-radius:50%;background:var(--blue);display:grid;place-items:center;box-shadow:0 1px 3px rgba(60,79,158,.3);transition:background .15s,box-shadow .15s,scale .18s var(--spring)}.cell.off .chk{background:#fff;box-shadow:inset 0 0 0 1.500px #C9CCD6}.cell.off .chk svg{opacity:0}.chk:active{scale:.88}
+.seg{position:absolute;left:0;top:152px;width:159px;height:25px;border-radius:13px;background:#EEF0F4;display:flex;align-items:center;padding:0 2px;font:500 11px Nunito;color:#747A87}.seg button{flex:1;height:22px;border-radius:11px;font:500 11px Nunito;color:inherit;transition:background .2s}.seg button.on{background:#fff;color:#262B37;box-shadow:0 1px 3px rgba(30,40,70,.1)}
+.nm{position:absolute;left:0;top:186px;width:186px;height:34px;border-radius:17px;background:#F2F3F7;font:500 12.5px/34px Nunito;color:#8A8F9B;padding-left:16px}
+.ai{position:absolute;left:0;top:229px;height:20px;padding:0 10px 0 7px;border-radius:10px;background:#F2F3F8;display:flex;align-items:center;gap:4px;font:600 11px Nunito;color:#30364A}
+#cut{position:absolute;left:19px;right:19px;top:633px;height:51px;border-radius:26px;background:#F1F2F6;display:flex;align-items:center;justify-content:center;gap:8px;font:500 14px Nunito;color:#2A2F3B;transition:scale .12s}#cut:active{scale:.98}
+#keep{position:absolute;left:19px;right:19px;top:704px;height:55px;border-radius:28px;background:var(--blue);color:#fff;font:500 15px Nunito;box-shadow:0 10px 22px rgba(60,79,158,.25);transition:scale .12s}#keep:active{scale:.98}
+.dis{position:absolute;left:0;right:0;top:772px;text-align:center;font:500 12px Nunito;color:#747A87}.sw{position:absolute;left:0;right:0;top:797px;text-align:center;font:500 11.500px Nunito;color:#9A9FAB}
+/* 飞行与提示 */
+.cell .ring{display:none}.plate img,.pl img,.im img,.fly img,#rimg img{display:block;width:100%;height:100%;-webkit-user-drag:none;pointer-events:none}
+.fly{position:absolute;z-index:50;width:118px;height:118px;pointer-events:none;will-change:transform}
+#toast{position:absolute;z-index:35;left:16px;right:16px;top:810px;height:50px;border-radius:14px;background:rgba(236,239,245,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px;padding:0 10px;font:600 14px Nunito;box-shadow:0 4px 14px rgba(40,50,90,.08);opacity:0;translate:0 10px;transition:opacity .25s,translate .25s}#toast.on{opacity:1;translate:0 0}#toast i{width:34px;height:34px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none}#toast.done i{background:#4E7A52}
+/* 翻滚场景 */
+#play{position:absolute;inset:0;z-index:32;background:#EEF0F5;visibility:hidden;opacity:0;transition:opacity .35s,visibility .35s}body.play #play{visibility:visible;opacity:1}
+#stage{position:absolute;left:0;top:0;width:453px;height:502px;overflow:hidden;background:#D6C8B3;touch-action:none}#stage img.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pl{position:absolute;left:0;top:0;width:110px;height:110px;margin:-55px 0 0 -55px;filter:drop-shadow(0 6px 8px rgba(40,30,20,.3));cursor:grab;will-change:transform}
+.pl.big{width:122px;height:122px;margin:-61px 0 0 -61px}
+.gb{position:absolute;display:flex;align-items:center;justify-content:center;gap:5px;height:36px;border-radius:18px;background:rgba(240,240,242,.7);font:600 11.5px Nunito;color:#4A4F5B;transition:scale .12s}.gb:active{scale:.95}.gb.blue{background:var(--blue);color:#fff}
+.gc{position:absolute;width:36px;height:36px;border-radius:50%;background:rgba(240,240,242,.72);display:grid;place-items:center}
+#mh{position:absolute;left:23px;top:515px;font:600 24.5px/34px Outfit;display:flex;gap:6px;align-items:center;letter-spacing:-.1px}#ul{position:absolute;left:23px;top:555px;width:58px;height:3px;border-radius:2px;background:var(--blue)}
+.meta{position:absolute;left:23px;top:575px;display:flex;gap:14px;font:500 12px Nunito;color:#646B7A}.meta span{display:flex;gap:4px;align-items:center}
+.who{position:absolute;left:23px;top:611px;display:flex;align-items:center;gap:14px;font:italic 500 13px Nunito;color:#747A87}
+.how{position:absolute;left:23px;right:23px;top:653px;height:46px;border-radius:23px;background:#fff;font:italic 500 12.5px/46px Nunito;color:#7A7F8C;padding:0 18px}
+.share{position:absolute;left:23px;top:877px;width:335px;height:58px;border-radius:29px;background:#1A1E28;color:#fff;font:600 13.500px Nunito;display:flex;align-items:center;justify-content:center;gap:8px;transition:scale .12s}.share:active{scale:.98}.plus{position:absolute;left:378px;top:884px;width:44px;height:44px;border-radius:50%;background:#F5F6FA;font:400 24px/42px Nunito;text-align:center}
+#ramen{position:absolute;z-index:44;left:7px;right:7px;top:525px;height:459px;border-radius:32px;background:#FAFAFE;box-shadow:0 -6px 30px rgba(30,30,40,.15);transform:translateY(470px);transition:transform .46s cubic-bezier(.2,1.1,.3,1)}#ramen.on{transform:none}
+#pdim{position:absolute;z-index:43;inset:0;background:rgba(30,30,40,.22);opacity:0;pointer-events:none;transition:opacity .3s}#pdim.on{opacity:1;pointer-events:auto}
+.rt{position:absolute;left:23px;top:22px;font:600 23px/30px Outfit;display:flex;gap:8px;align-items:center}
+.rs{position:absolute;left:23px;top:62px;width:148px;height:26px;border-radius:13px;background:#EEF0F5;display:flex;padding:2px;font:500 11px Nunito;color:#747A87}.rs span{flex:1;display:grid;place-items:center;border-radius:12px}.rs .on{background:#fff;color:#222;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.stars{position:absolute;left:28px;top:107px;display:flex;gap:14px}.stars button{width:20px;height:20px;transition:scale .18s var(--spring)}.stars button:active{scale:.8}
+.rl{position:absolute;left:25px;display:flex;align-items:center;gap:10px;font:500 11.5px Nunito;color:#30364A}
+.tags{position:absolute;left:23px;top:248px;width:410px;display:flex;flex-wrap:wrap;gap:8px 8px}.tags button{height:25px;padding:0 12px;border-radius:13px;background:#EEF0F5;font:500 11.5px Nunito;color:#30364A;transition:background .15s,color .15s}.tags button.on{background:var(--blue);color:#fff}
+#tail{width:100%;max-width:453px;padding:24px 16px 60px;font:400 13px/1.6 Nunito;color:#333}#tail h3{font:600 15px Outfit;margin:0 0 8px}#tail dt{margin-top:8px}#tail dd{margin:0}#tail code{font:500 12.500px ui-monospace,monospace}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<div id="frame">
+ <div id="sb"><div id="clock">1:53</div><div id="isl"><i></i></div><div id="sig"><span class="dots"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></span>5G<span class="bat">37</span></div></div>
+ <div id="home">
+  <div class="logo"><svg width="46" height="42" viewBox="0 0 46 42"><rect x="4" y="9" width="4" height="3" fill="#232A4A"/><rect x="4" y="16" width="4" height="3" fill="#232A4A"/><rect x="4" y="23" width="4" height="3" fill="#232A4A"/><circle cx="26" cy="21" r="15" fill="#1F2A55"/><circle cx="26" cy="21" r="11.500" fill="#4262B8"/><circle cx="26" cy="21" r="10.500" fill="none" stroke="#14193A" stroke-width="1.200"/></svg></div>
+  <div class="brand h">TableBook<i>.</i></div><div class="tag">Little feasts, remembered</div>
+  <button class="rnd" style="left:333px" aria-label="Search"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#111" stroke-width="1.800" stroke-linecap="round"><circle cx="8" cy="8" r="5.700"/><path d="m12.500 12.500 4 4"/></svg></button>
+  <button class="rnd" style="left:384px" aria-label="Settings"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#111" stroke-width="1.700"><path d="M10 2.500 12 4l2.500-.3 1 2.300 2 1.600-.8 2.400.8 2.400-2 1.600-1 2.300-2.500-.3-2 1.500-2-1.500-2.500.3-1-2.300-2-1.600.8-2.400L2.500 7.600l2-1.600 1-2.300L8 4Z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.700"/></svg></button>
+  <div id="tabs">
+   <button class="tab" data-v="moment" aria-label="Moment"><svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round"><rect x="3" y="9" width="15" height="9" rx="2"/><path d="M4.500 6.500h12M6 3.800h9"/></svg><span>Moment</span></button>
+   <button class="tab" data-v="month" aria-label="Month"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.500"><rect x="2.500" y="3.500" width="15" height="14" rx="2"/><path d="M2.500 8h15M6.500 1.500v4M13.500 1.500v4"/></svg><span>Month</span></button>
+   <button class="tab on" data-v="list" aria-label="List"><svg width="19" height="16" viewBox="0 0 19 16" fill="currentColor"><path d="M0 2.500A2.500 2.500 0 0 1 2.500 0h14A2.500 2.500 0 0 1 19 2.500v11a2.500 2.500 0 0 1-2.500 2.500h-14A2.500 2.500 0 0 1 0 13.500Zm2.500.5v2h2V3Zm4 0v2h10V3Zm-4 4v2h2V7Zm4 0v2h10V7Zm-4 4v2h2v-2Zm4 0v2h10v-2Z" fill-rule="evenodd"/></svg><span>List</span></button>
+   <button class="tab" data-v="places" aria-label="Places"><svg width="18" height="20" viewBox="0 0 18 20" fill="none" stroke="currentColor" stroke-width="1.500"><path d="M9 18.500c3-3.200 6.500-6.500 6.500-10.500a6.500 6.500 0 0 0-13 0c0 4 3.500 7.300 6.500 10.500Z"/><circle cx="9" cy="8" r="2"/></svg><span>Places</span></button>
+   <button class="tab" data-v="people" aria-label="People"><svg width="24" height="18" viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.500"><circle cx="8.500" cy="5" r="3.700"/><path d="M1.500 17c.5-3.700 3.500-6 7-6s6.500 2.300 7 6M15 1.500a3.700 3.700 0 0 1 0 7.200M18 11.200c2.500.8 4 3 4.400 5.800"/></svg><span>People</span></button>
+  </div>
+  <div id="fil">
+   <button class="pill on"><svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor"><rect width="6.500" height="6.500" rx="1.500"/><rect x="8.500" width="6.500" height="6.500" rx="1.500"/><rect y="8.500" width="6.500" height="6.500" rx="1.500"/><rect x="8.500" y="8.500" width="6.500" height="6.500" rx="1.500"/></svg>All</button>
+   <button class="pill"><svg width="15" height="17" viewBox="0 0 15 17" fill="none" stroke="currentColor" stroke-width="1.400" stroke-linecap="round"><path d="M2 1v5a2 2 0 0 0 4 0V1M4 1v15M11.500 16V1c-1.800 1-2.500 3-2.500 6h2.500"/></svg>Food</button>
+   <button class="pill"><svg width="19" height="16" viewBox="0 0 19 16" fill="none" stroke="currentColor" stroke-width="1.400"><path d="M2 5h12v5a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4ZM14 6.500h1.500a2 2 0 0 1 0 4H14M5 3s-.5-.8 0-1.500M9 3s-.5-.8 0-1.500"/></svg>Drinks</button>
+   <button class="pill"><svg width="17" height="16" viewBox="0 0 17 16" fill="none" stroke="currentColor" stroke-width="1.400"><rect x="1.500" y="4.500" width="14" height="10" rx="2"/><path d="M5.500 4.500V3A1.500 1.500 0 0 1 7 1.500h3A1.500 1.500 0 0 1 11.500 3v1.500"/></svg>Others</button>
+   <button class="pill"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.400"><path d="M2 2.500h12v7.500L10 14H2Z"/><path d="M5 6h6M5 9h4"/></svg>Notes</button>
+  </div>
+  <div id="tl">
+   <div class="mon h">October 2026</div><div class="cnt">6 saves · 4 moments</div><div id="spark"></div>
+   <div id="rail"></div><div class="day">Saturday, 17 October</div><div class="badge">3 saves</div>
+   <div class="tc" style="top:105px;height:215px"><div class="im" data-art="coffee"></div><h4>Mont Blanc (Library Cafe...</h4>
+    <div class="ln t" style="top:50px"><svg width="17" height="15" viewBox="0 0 19 16" fill="none" stroke="currentColor" stroke-width="1.400"><path d="M2 5h12v5a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4ZM14 6.500h1.500a2 2 0 0 1 0 4H14M5 3s-.5-.8 0-1.500M9 3s-.5-.8 0-1.500"/></svg>Drink</div>
+    <div class="ln" style="top:74px"><svg width="17" height="15" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.700"><rect x="3" y="9" width="15" height="9" rx="2"/><path d="M4.500 6.500h12M6 3.800h9"/></svg>17 October · Maple Road Utar...</div>
+    <div class="ln" style="top:100px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.300"><circle cx="8" cy="8" r="6.500"/><path d="M8 4v4l2.500 1.500"/></svg>16.02</div>
+    <div class="ln" style="top:122px"><svg width="16" height="16" viewBox="0 0 18 20" fill="none" stroke="currentColor" stroke-width="1.500"><path d="M9 18.500c3-3.200 6.500-6.500 6.500-10.500a6.500 6.500 0 0 0-13 0c0 4 3.500 7.300 6.500 10.500Z"/><circle cx="9" cy="8" r="2"/></svg>Maple Road Utara II No. 12</div>
+    <div class="nt" style="top:148px;height:50px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#444" stroke-width="1.300"><path d="M2 2.500h12v7.500L10 14H2Z"/><path d="M5 6h6M5 9h4"/></svg>First time trying the mont blanc, surprisingly lovely, p...</div></div>
+   <div class="tc" style="top:334px;height:193px"><div class="im" data-art="donut"></div><h4>Corner Donut</h4>
+    <div class="ln t" style="top:50px"><svg width="15" height="16" viewBox="0 0 15 17" fill="none" stroke="currentColor" stroke-width="1.400" stroke-linecap="round"><path d="M2 1v5a2 2 0 0 0 4 0V1M4 1v15M11.500 16V1c-1.800 1-2.500 3-2.500 6h2.500"/></svg>Food</div>
+    <div class="ln" style="top:72px"><svg width="17" height="15" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.700"><rect x="3" y="9" width="15" height="9" rx="2"/><path d="M4.500 6.500h12M6 3.800h9"/></svg>17 October · Birch Lane II No. 37</div>
+    <div class="ln" style="top:95px;width:250px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.300"><circle cx="8" cy="8" r="6.500"/><path d="M8 4v4l2.500 1.500"/></svg>15.25 <svg style="margin-left:8px" width="16" height="16" viewBox="0 0 18 20" fill="none" stroke="currentColor" stroke-width="1.500"><path d="M9 18.500c3-3.200 6.500-6.500 6.500-10.500a6.500 6.500 0 0 0-13 0c0 4 3.500 7.300 6.500 10.500Z"/><circle cx="9" cy="8" r="2"/></svg>Birch Lane II No. 37</div>
+    <div class="nt" style="top:128px;height:50px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#444" stroke-width="1.300"><path d="M2 2.500h12v7.500L10 14H2Z"/><path d="M5 6h6M5 9h4"/></svg>Lost count of the repeat orders, mostly because...</div></div>
+   <div class="tc" style="top:542px;height:200px"><div class="im" data-art="chicken" style="top:34px"></div><h4>Pecel Rice Stall</h4><div class="ln" style="top:96px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.300"><circle cx="8" cy="8" r="6.500"/><path d="M8 4v4l2.500 1.500"/></svg>13.28 &nbsp;Somewhere</div></div>
+  </div>
+  <div id="nav">
+   <button class="ni on"><svg width="24" height="22" viewBox="0 0 24 22" fill="currentColor"><path d="M12 1 23 10v1h-2.500v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-9H1v-1Z"/></svg>Table</button>
+   <button class="ni"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round"><path d="M9 2.500h6.500a4 4 0 0 1 4 4V12a8 8 0 0 1-8 8H6.500a4 4 0 0 1-4-4V9A6.500 6.500 0 0 1 9 2.500Z"/><path d="M12 19c-.5-6 3-8 7.500-8"/></svg>Collections</button>
+   <button class="ni"><svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.500" stroke-linejoin="round"><path d="M3 2.500h9L22 12l-9 8.500L3 11Z"/><circle cx="8" cy="7" r="1.500"/></svg>Tags</button>
+   <button class="ni"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.500"><circle cx="11" cy="11" r="9.500"/><circle cx="11" cy="8.500" r="3"/><path d="M4.500 17.500c1.500-3 4-4 6.500-4s5 1 6.500 4"/></svg>You</button>
+  </div>
+  <button id="fab" aria-label="Add a table photo"><svg width="27" height="24" viewBox="0 0 27 24" fill="none" stroke="#fff" stroke-width="1.900" stroke-linejoin="round"><path d="M9.500 3 11 1h5l1.500 2H23a2.500 2.500 0 0 1 2.500 2.500V20a2.500 2.500 0 0 1-2.500 2.500H4A2.500 2.500 0 0 1 1.500 20V5.500A2.500 2.500 0 0 1 4 3Z"/><circle cx="13.500" cy="12.500" r="4.500"/></svg></button>
+  <div id="toast"><i></i><span id="tt">Adding 1 of 4 saves...</span></div>
+ </div>
+ <div id="dim"></div>
+ <div id="sheet"><div class="gr"></div><h3>Nice table.</h3><div class="sub">Tap anything you don't want to keep.</div><div id="cells"></div>
+  <button id="cut"><svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="#3C4F9E" stroke-width="1.500"><circle cx="3.700" cy="3.700" r="2.400"/><circle cx="3.700" cy="13.300" r="2.400"/><path d="M5.500 5.200 15.500 14M5.500 11.800 15.500 3"/></svg>Cut it out myself</button>
+  <button id="keep">Keep 4 saves</button><div class="dis">Discard</div><div class="sw">Swipe down anytime — you're done</div></div>
+ <div id="play"><div id="stage"><img class="bg" src="source-assets/stage-bg.webp" alt="" draggable="false"></div>
+  <button class="gc" style="left:26px;top:72px" id="pb" aria-label="Back"><svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="#555" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1 2 6l5 5"/></svg></button>
+  <button class="gb blue" style="left:205px;top:72px;width:72px"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2h7l7 7-6 6-8-8Z"/></svg>Labels</button>
+  <button class="gb blue" style="left:282px;top:72px;width:66px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.500"><path d="M8 1v14M1 8h14M4 4l8 8M12 4l-8 8"/></svg>Play</button>
+  <button class="gb" style="left:366px;top:72px;width:64px"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M8.500 1 11 3.500 4 10.500H1.500V8Z"/></svg>Edit</button>
+  <button class="gb" id="tumble" style="left:235px;top:118px;width:122px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.500"><path d="M8 1v14M1 8h14M4 4l8 8M12 4l-8 8"/></svg>Tumble &nbsp;<svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="currentColor" stroke-width="1.200"><path d="m1 1 3 3 3-3"/></svg></button>
+  <button class="gc" style="left:365px;top:118px"><svg width="15" height="15" viewBox="0 0 20 20" fill="#222"><path fill-rule="evenodd" d="M8.500 1h3l.5 2.300 1.600.7 2-1.300 2.100 2.100-1.300 2 .7 1.600 2.300.5v3l-2.300.5-.7 1.600 1.300 2-2.100 2.100-2-1.300-1.600.7-.5 2.300h-3l-.5-2.300-1.600-.7-2 1.300-2.100-2.100 1.300-2-.7-1.600L.5 11.500v-3l2.300-.5.7-1.600-1.300-2 2.100-2.100 2 1.300 1.600-.7ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg></button>
+  <button class="gc" id="again" style="left:408px;top:118px" aria-label="Tumble again"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#222" stroke-width="1.500" stroke-linecap="round"><path d="M3 5.500A6 6 0 1 1 2 8.500M3 1.500v4h4"/></svg></button>
+  <div id="mh">August 10 · City Market <svg width="11" height="11" viewBox="0 0 12 12" fill="#555"><path d="M8.500 1 11 3.500 4 10.500H1.500V8Z"/></svg></div><div id="ul"></div>
+  <div class="meta"><span><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.300"><circle cx="8" cy="8" r="6.500"/><path d="M8 4v4l2.500 1.500"/></svg>Today · 4:05 PM</span><span><svg width="11" height="12" viewBox="0 0 18 20" fill="currentColor"><path d="M9 19c3-3.200 7-6.500 7-11A7 7 0 0 0 2 8c0 4.500 4 7.800 7 11Zm0-8.500a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5Z"/></svg>City Market</span><span>4 food</span></div>
+  <div class="who"><svg width="16" height="14" viewBox="0 0 24 18" fill="#666"><circle cx="8.500" cy="5" r="4.500"/><path d="M0 18c.5-4.500 3.500-7 8.500-7s8 2.500 8.500 7Z"/><path d="M19 5v6M16 8h6" stroke="#666" stroke-width="2"/></svg>Who was with you?</div>
+  <div class="how">How was it? Type or talk...</div>
+  <button class="share"><svg width="13" height="13" viewBox="0 0 16 16" fill="#fff"><circle cx="13" cy="3" r="2.500"/><circle cx="13" cy="13" r="2.500"/><circle cx="3" cy="8" r="2.500"/><path d="m3 8 10-5M3 8l10 5" stroke="#fff" stroke-width="1.300"/></svg>Share this moment</button><div class="plus">+</div>
+  <div id="pdim"></div>
+  <div id="ramen"><div class="gr" style="background:#D5D6DC"></div><div class="rt">Ramen <svg width="13" height="13" viewBox="0 0 12 12" fill="#555"><path d="M8.500 1 11 3.500 4 10.500H1.500V8Z"/></svg></div>
+   <div id="rimg" style="position:absolute;right:20px;top:24px;width:96px;height:96px;filter:drop-shadow(0 6px 8px rgba(30,30,40,.3))"></div>
+   <div class="rs"><span class="on">Food</span><span>Drinks</span><span>Others</span></div><div class="stars" id="stars"></div>
+   <svg style="position:absolute;left:272px;top:108px" width="20" height="18" viewBox="0 0 20 18" fill="none" stroke="#444" stroke-width="1.500"><path d="M10 17S1 11.500 1 5.500A4.500 4.500 0 0 1 10 3.500a4.500 4.500 0 0 1 9 2C19 11.500 10 17 10 17Z"/></svg>
+   <div class="rl" style="top:150px;left:23px"><svg width="14" height="14" viewBox="0 0 21 21" fill="#333"><rect x="3" y="9" width="15" height="9" rx="2"/><path d="M4.500 6.500h12M6 3.800h9" stroke="#333" stroke-width="1.700"/></svg>August 10 · City Market &nbsp;›</div>
+   <div class="rl" style="top:179px;left:23px"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#555" stroke-width="1.300"><rect x="1.500" y="1.500" width="11" height="11" rx="2"/></svg>Add to collection &nbsp;›</div>
+   <div style="position:absolute;left:23px;right:23px;top:208px;height:1px;background:#E7E8EE"></div>
+   <div class="rl" style="top:225px;left:23px;color:#6C7280"><svg width="15" height="14" viewBox="0 0 24 22" fill="none" stroke="#666" stroke-width="1.700"><path d="M3 2.500h9L22 12l-9 8.500L3 11Z"/></svg>Tags</div><div class="rl" style="top:225px;left:auto;right:28px;color:#6C7280">All tags &nbsp;›</div>
+   <div class="tags" id="tg"></div>
+   <div class="rl" style="top:328px;left:23px;font-style:italic;color:#767B88">How was it? Type or talk...</div>
+   <div style="position:absolute;right:18px;top:316px;width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.08);display:grid;place-items:center"><svg width="11" height="16" viewBox="0 0 11 16" fill="#222"><rect x="3" y="0" width="5" height="10" rx="2.500"/><path d="M.8 7a4.700 4.700 0 0 0 9.400 0M5.500 12v4" stroke="#222" stroke-width="1.300" fill="none"/></svg></div>
+  </div>
+ </div>
+</div>
+<section id="tail"><h3>可拆</h3><dl>
+ <dt><code>#sheet</code></dt><dd>底部抽屉确认识别结果：点菜取消，按钮数字跟着变，确认后抠图飞进主页。</dd>
+ <dt><code>#tabs</code></dt><dd>分段控件：选中段撑开并显示文字，其余段只留图标。</dd>
+ <dt><code>#tl</code></dt><dd>按日期串起的时间线：左侧细线，每张卡片引出一条横线。</dd>
+ <dt><code>#stage</code></dt><dd>翻滚小玩法：圆形餐盘的简单物理，可拖可甩，点开详情抽屉。</dd>
+</dl></section>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let seed=7;const R=(a=1,b)=>{seed=(seed*16807)%2147483647;const r=seed/2147483647;return b===undefined?r*a:a+r*(b-a)};
+/* ---------- 餐点：原帖视频和配图的截图（只留本机） ---------- */
+const art=(k,v='sticker')=>`<img src="source-assets/${v}-${k}.webp" alt="" draggable="false">`;
+const LIST={coffee:['list-coffee','left:18px;top:24px;width:96px;height:146px'],donut:['list-donut','left:13px;top:39px;width:103px;height:106px'],chicken:['sticker-chicken','left:18px;top:30px;width:110px;height:110px']};
+$$('[data-art]').forEach(e=>{const[f,st]=LIST[e.dataset.art];e.style.cssText=st;e.innerHTML=`<img src="source-assets/${f}.webp" alt="" draggable="false">`});
+$('#spark').innerHTML=Array.from({length:30},(_,i)=>`<i class="${[9,10,16].includes(i)?'b':''}"></i>`).join('');
+/* ---------- 抽屉 ---------- */
+const DISH=[['ramen',0,'Ramen'],['rice',0,''],['noodle',0,'Spaghetti'],['chicken',0,'Fried Chicken']];
+$('#cells').innerHTML=DISH.map(([k,o,ai],i)=>`<div class="cell" data-i="${i}" style="left:${19+(i%2)*203}px;top:${(i<2?90:362)}px"><div class="plate">${art(k,"plate")}</div><button class="chk" aria-label="Keep"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" stroke="#fff" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round"><path d="m1.500 5.500 3 3 6-7"/></svg></button><div class="seg"><button class="${o?'':'on'}">Food</button><button>Drinks</button><button class="${o?'on':''}">Others</button></div><div class="nm">Name it (optional)</div>${ai?`<div class="ai"><svg width="11" height="11" viewBox="0 0 12 12" fill="#3C4F9E"><path d="M5 1l1 3 3 1-3 1-1 3-1-3-3-1 3-1Z"/><circle cx="10" cy="2" r="1"/><circle cx="10" cy="9" r="1"/></svg>${ai}</div>`:''}</div>`).join('');
+function keepCount(){const n=$$('.cell:not(.off)').length;$('#keep').textContent=n?`Keep ${n} save${n>1?'s':''}`:'Keep nothing'}
+$('#cells').addEventListener('click',e=>{const c=e.target.closest('.cell');if(!c)return;const sb=e.target.closest('.seg button');if(sb){[...sb.parentNode.children].forEach(b=>b.classList.toggle('on',b===sb));return}if(e.target.closest('.plate,.chk')){c.classList.toggle('off');keepCount()}});
+function drawer(on){document.body.classList.toggle('drawer',on)}
+$('#fab').onclick=()=>drawer(true);$('#dim').onclick=()=>drawer(false);$('.dis').onclick=()=>drawer(false);
+let dy=null;const sh=$('#sheet');$('.gr').parentNode.addEventListener('pointerdown',e=>{if(e.target.closest('button,.cell'))return;dy=e.clientY;sh.setPointerCapture(e.pointerId);sh.style.transition='none'});
+sh.addEventListener('pointermove',e=>{if(dy===null)return;sh.style.transform=`translateY(${Math.max(0,e.clientY-dy)}px)`});
+sh.addEventListener('pointerup',e=>{if(dy===null)return;const m=e.clientY-dy;dy=null;sh.style.transition='';sh.style.transform='';if(m>120)drawer(false)});
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+$('#keep').onclick=async()=>{const on=$$('.cell:not(.off)');const fr=$('#frame').getBoundingClientRect();const toast=$('#toast');
+ drawer(false);toast.classList.remove('done');toast.classList.add('on');toast.querySelector('i').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M8 1v3M8 12v3M1 8h3M12 8h3M3 3l2 2M11 11l2 2M13 3l-2 2M5 11l-2 2"/></svg>';
+ const anims=on.map((c,i)=>{const p=c.querySelector('.plate').getBoundingClientRect();const f=document.createElement('div');f.className='fly';f.innerHTML=c.querySelector('.plate').innerHTML;f.style.left=(p.left-fr.left)+'px';f.style.top=(p.top-fr.top)+'px';$('#frame').appendChild(f);
+  if(reduce){f.remove();return null}
+  const x=(90+i*70)-(p.left-fr.left),y=420-(p.top-fr.top);
+  const a=f.animate([{transform:'none'},{transform:`translate(${x*.4}px,${y*.5-70}px) scale(.82) rotate(${(i%2?8:-8)}deg)`,offset:.5},{transform:`translate(${x}px,${y}px) scale(.42) rotate(${(i%2?14:-14)}deg)`,opacity:.9}],{duration:620,delay:120*i,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});
+  a.onfinish=()=>{f.remove();$('#tt').textContent=`Adding ${Math.min(i+2,on.length)} of ${on.length} saves...`};return a});
+ $('#tt').textContent=`Adding 1 of ${on.length} saves...`;
+ await new Promise(r=>setTimeout(r,reduce?300:760+120*on.length));
+ toast.classList.add('done');toast.querySelector('i').innerHTML='<svg width="14" height="12" viewBox="0 0 12 10" fill="none" stroke="#fff" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><path d="m1.500 5.500 3 3 6-7"/></svg>';$('#tt').textContent=`${on.length} saves added`;
+ await new Promise(r=>setTimeout(r,1300));toast.classList.remove('on');openPlay(true)};
+/* ---------- 分段 ---------- */
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;$$('.tab').forEach(t=>t.classList.toggle('on',t===b))});
+$('#fil').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b)return;$$('.pill').forEach(t=>t.classList.toggle('on',t===b))});
+/* ---------- 翻滚：圆形刚体，重力 + 碰撞，能拖能甩 ---------- */
+const stage=$('#stage'),PL=[['chicken',122],['noodle',110],['rice',110],['ramen',110]].map(([k,d])=>{const e=document.createElement('div');e.className='pl'+(d>110?' big':'');e.innerHTML=art(k);stage.appendChild(e);return{k,e,r:d/2-2,x:0,y:0,vx:0,vy:0,a:0,va:0,drag:false}});
+const G=.45,W=453,H=502;let running=false;
+function drawP(){PL.forEach(p=>p.e.style.transform=`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${p.a.toFixed(2)}rad)`)}
+function step(){let moving=false;PL.forEach(p=>{if(p.drag)return;p.vy+=G;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.vx*=.995;p.va*=.985;
+  if(p.y+p.r>H-8){p.y=H-8-p.r;p.vy*=-.42;p.vx*=.9;p.va=p.vx/p.r}if(p.x-p.r<0){p.x=p.r;p.vx*=-.5}if(p.x+p.r>W){p.x=W-p.r;p.vx*=-.5}});
+ for(let k=0;k<3;k++)for(let i=0;i<PL.length;i++)for(let j=i+1;j<PL.length;j++){const a=PL[i],b=PL[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),m=a.r+b.r;if(d&&d<m){const nx=dx/d,ny=dy/d,o=(m-d)/2;if(!a.drag){a.x-=nx*o;a.y-=ny*o}if(!b.drag){b.x+=nx*o;b.y+=ny*o}const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const im=-(1.3)*rv/2;a.vx-=im*nx;a.vy-=im*ny;b.vx+=im*nx;b.vy+=im*ny;a.va-=rv*.003;b.va+=rv*.003}}}
+ PL.forEach(p=>{if(Math.abs(p.vx)+Math.abs(p.vy)>.25||p.drag)moving=true});drawP();if(moving&&running)requestAnimationFrame(step);else running=false}
+function kick(){if(!running&&!reduce){running=true;requestAnimationFrame(step)}}
+function settle(){const pos=[[173,421],[356,411],[138,306],[55,408]];PL.forEach((p,i)=>{p.x=pos[i][0];p.y=pos[i][1];p.vx=p.vy=p.va=0;p.a=0});drawP()}
+function tumble(){if(reduce){settle();return}PL.forEach((p,i)=>{p.x=70+i*100+R(-20,20);p.y=-70-i*130;p.vx=R(-3,3);p.vy=R(0,3);p.va=R(-.05,.05)});kick()}
+function openPlay(fall){document.body.classList.add('play');fall?tumble():settle()}
+$('#again').onclick=tumble;$('#tumble').onclick=tumble;$('#pb').onclick=()=>document.body.classList.remove('play');
+let dr=null,lx,ly,moved=0;
+stage.addEventListener('pointerdown',e=>{const pe=e.target.closest('.pl');if(!pe)return;dr=PL.find(p=>p.e===pe);dr.drag=true;moved=0;lx=e.clientX;ly=e.clientY;stage.setPointerCapture(e.pointerId);kick()});
+stage.addEventListener('pointermove',e=>{if(!dr)return;const dx=e.clientX-lx,dy=e.clientY-ly;moved+=Math.abs(dx)+Math.abs(dy);dr.x+=dx;dr.y+=dy;dr.vx=dx;dr.vy=dy;lx=e.clientX;ly=e.clientY;if(reduce)drawP()});
+stage.addEventListener('pointerup',()=>{if(!dr)return;const p=dr;p.drag=false;dr=null;if(moved<6)openSheet(p);kick()});
+function openSheet(p){$('#rimg').innerHTML=p.e.innerHTML;$('#pdim').classList.add('on');$('#ramen').classList.add('on')}
+$('#pdim').onclick=()=>{$('#pdim').classList.remove('on');$('#ramen').classList.remove('on')};
+$('#stars').innerHTML=Array.from({length:5},(_,i)=>`<button data-i="${i}" aria-label="${i+1} stars"><svg viewBox="0 0 20 20" width="20" height="20"><path d="M10 1.500 12.700 7l6 .9-4.300 4.200 1 6L10 15.300 4.600 18.100l1-6L1.300 7.900l6-.9Z" fill="none" stroke="#6C7280" stroke-width="1.300"/></svg></button>`).join('');
+function rate(n){$$('#stars path').forEach((s,i)=>{s.setAttribute('fill',i<n?'#3C4F9E':'none');s.setAttribute('stroke',i<n?'#3C4F9E':'#6C7280')})}
+$('#stars').onclick=e=>{const b=e.target.closest('button');if(b)rate(+b.dataset.i+1)};
+$('#tg').innerHTML=['Ramen','Soup','Egg','Rice','Choco','Chicken'].map(t=>`<button>+ &nbsp;${t}</button>`).join('')+'<button style="background:none;color:#555">+ &nbsp;Tag</button>';
+$('#tg').onclick=e=>{if(e.target.tagName==='BUTTON')e.target.classList.toggle('on')};
+/* ---------- 演示入口 ---------- */
+const v=new URLSearchParams(location.search).get('view');
+if(v==='drawer')drawer(true);if(v==='tumble')openPlay(false);if(v==='ramen'){openPlay(false);rate(4);openSheet(PL[3])}
+if(v==='fall'){openPlay(true)}
+</script></body></html>

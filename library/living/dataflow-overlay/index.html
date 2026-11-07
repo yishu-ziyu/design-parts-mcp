@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dataflow Overlay</title><link rel="icon" href="data:,">
+<style>
+:root{--bg:#070708;--line:#6e6e6e;--txt:#a4a4a4;--hi:#fff;--data:#5b9ae6;--call:#c6b8f2;--ctx:#45d6b8;--row:28px;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt)}
+#tree{position:relative;font:11.67px/28px var(--mono);min-width:760px;height:var(--h);overflow:hidden}
+#title{position:absolute;left:13px;top:52px;font:13.4px/20px var(--sans);color:#8f8f8f;letter-spacing:.1px}
+.r{position:absolute;left:0;right:0;height:var(--row);white-space:pre;pointer-events:none}
+.t{position:absolute;top:0;pointer-events:auto;cursor:default;transition:color .12s}
+.t i{font-style:italic}.t .m{color:inherit}
+.it{font-style:italic}
+.r.owner .t{color:var(--hi)}
+.r.d .t{color:var(--data)}.r.c .t{color:var(--call)}.r.x .t{color:var(--ctx)}
+.r.d .sub,.r.c .sub,.r.x .sub{color:var(--txt)}
+.chev{position:absolute;left:21px;top:10px;width:10px;height:8px;opacity:0;pointer-events:auto;cursor:pointer;background:none;border:0;padding:0;color:#9a9a9a}
+.r.hov .chev{opacity:1}.chev svg{display:block}
+#g{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#g .l{stroke:var(--line);stroke-width:1;fill:none;shape-rendering:geometricPrecision}
+.n{fill:var(--bg);stroke:#8d8d8d;stroke-width:1;transition:fill .12s,stroke .12s}
+.n.solid{fill:#a6a6a6;stroke:#a6a6a6}
+.n.white{fill:#fff;stroke:#fff}
+.n.bright{stroke:#fff}
+.n.ctx{fill:var(--ctx);stroke:var(--ctx)}
+.n.ring{fill:var(--data);stroke:var(--data)}
+.halo{fill:none;stroke:var(--data);stroke-width:1.2;opacity:0}
+.halo.on{opacity:1}
+.e{fill:none;stroke-width:1;opacity:0;transition:opacity .18s}
+.e.on{opacity:1}
+.e.data{stroke:var(--data)}
+.e.call{stroke:var(--call);stroke-dasharray:3 2.4}
+.e.store{stroke:var(--ctx);stroke-dasharray:1.4 2}
+.lbl{position:absolute;font:11.67px/14px var(--mono);opacity:0;transition:opacity .18s;pointer-events:none;transform:translate(-50%,-50%);white-space:pre}
+.lbl.on{opacity:1}.lbl.data{color:var(--data)}.lbl.call{color:var(--call)}
+#ctx{position:absolute;left:88px;right:0;width:664px;background:rgba(58,190,160,.075);border:1px solid var(--ctx);border-right:0;opacity:0;transition:opacity .15s;pointer-events:none}
+#ctx.on{opacity:1}
+.cl{stroke:var(--ctx);stroke-width:1;fill:none;opacity:0;transition:opacity .15s}.cl.on{opacity:1}
+#tip{position:fixed;background:#2a2a2b;color:#e4e4e4;font:9.3px/12px var(--sans);padding:1px 4.5px 1.5px;border-radius:2px;box-shadow:0 0 0 .5px #444;opacity:0;pointer-events:none;white-space:pre;z-index:5;transition:opacity .08s}
+#tip.on{opacity:1}
+.notes{font:13px/1.6 var(--sans);color:#8a8a8a;padding:48px 13px 80px;max-width:720px;border-top:1px solid #1a1a1b}
+.notes h3{font:600 13px/1.4 var(--sans);color:#ccc;margin:0 0 10px}.notes dl{margin:0;display:grid;grid-template-columns:150px 1fr;gap:6px 14px}.notes dd{margin:0}.notes code{font:12px var(--mono);color:#bbb}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="tree"><div style="position:absolute;left:0;right:0;top:0;height:31px;background:#0b0b0c"></div><div id="title">Tree / Parent</div><div id="ctx"></div><svg id="g" aria-hidden="true"></svg></div>
+<div id="tip"></div>
+<section class="notes"><h3>可拆</h3><dl>
+<dt><code>#tree</code></dt><dd>单色等宽树：节点形状区分类型（实心函数组件、空心元素、方框边界、菱形 memo），行距 28px，缩进 21.5px。</dd>
+<dt><code>#g</code></dt><dd>悬停一行时，在树左侧画贝塞尔曲线：蓝实线是数据，紫虚线是回调，绿点线是外部 store 订阅，曲线上写变量名。</dd>
+<dt><code>#ctx</code></dt><dd>悬停 Context 或其消费者时，把 Provider 的子树用青绿框罩住，并横线直连消费者。</dd>
+<dt><code>#tip</code></dt><dd>停留 800ms 后，鼠标下方出现完整字段名。</dd>
+</dl></section>
+<script>
+/* [id, depth, kind, label, sub, opts]  kind: o空心 f函数 s方框 d菱形 a实心 attr属性(无节点) */
+const R=[
+['strict',0,'o','StrictMode','',{it:1}],
+['app',1,'f','ƒ DemoApp'],
+['useState',1,'attr','ƒ useState',' query · "rea"'],
+['setQuery',1,'attr','ƒ setQuery'],
+['useReducer',1,'attr','ƒ useReducer',' todos'],
+['dispatch',1,'attr','ƒ dispatch'],
+['visible',1,'attr','visibleTodos'],
+['useSync',1,'attr','ƒ useSyncExternalStore',' snapshot'],
+['provider',2,'a','ThemeContext.Provider'],
+['eb',3,'s','ErrorBoundary'],
+['frame',4,'d','Frame'],
+['div',5,'o','div'],
+['aside',6,'o','aside'],
+['susp',7,'o','Suspense'],
+['prof',8,'o','Profiler','',{it:1}],
+['stats',9,'f','ƒ Stats'],
+['count',9,'attr','props.count'],
+['useCtx',9,'attr','ƒ useContext',' ThemeContext'],
+['section',10,'o','section'],
+['strong',11,'o','strong'],
+['sc',11,'attr','props.children'],
+['scol',11,'attr','props.style.color'],
+['main',6,'o','main'],
+['act',7,'a','Activity',' visible'],
+['eb2',8,'s','ErrorBoundary'],
+['feed',9,'f','ƒ Feed'],
+['items',9,'attr','props.items'],
+['fToggle',9,'attr','ƒ props.onToggle'],
+['ul',10,'o','ul'],
+['post',11,'f','ƒ Post'],
+['item',11,'attr','props.item'],
+['pToggle',11,'attr','ƒ props.onToggle'],
+['li',12,'o','li'],
+['title',12,'attr','props.children',' item.title'],
+['click',12,'attr','ƒ props.onClick'],
+['post2',11,'d','Post'],
+['li2',12,'o','li'],
+['frag',7,'o','Fragment','',{it:1}],
+['b1',8,'o','button'],
+['add2',8,'attr','ƒ props.onClick',' add to cart'],
+['b2',8,'o','button'],
+['clear',8,'attr','ƒ props.onClick',' clear query'],
+['store',0,'a','cartStore',' external',{root:1}],
+['gs',0,'attr','ƒ getSnapshot'],
+['sub',0,'attr','ƒ subscribe'],
+['add',0,'attr','ƒ add'],
+];
+const X0=59,DX=21.5,ROW=28,Y0=99,NS='http://www.w3.org/2000/svg';
+const idx={};R.forEach((r,i)=>idx[r[0]]=i);
+const nx=d=>X0+DX*d, ry=i=>Y0+ROW*i;
+const tree=document.getElementById('tree'),g=document.getElementById('g'),ctx=document.getElementById('ctx'),tip=document.getElementById('tip');
+tree.style.setProperty('--h',(ry(R.length-1)+22)+'px');
+const el=(n,a,p=g)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+/* 父子关系：节点行的父亲是上方最近的更浅节点 */
+const parent={};const stack=[];
+R.forEach((r,i)=>{if(r[2]==='attr')return;while(stack.length&&stack.at(-1)[1]>=r[1])stack.pop();if(stack.length&&!r[5]?.root)parent[i]=stack.at(-1)[0];if(r[5]?.root)stack.length=0;stack.push([i,r[1]])});
+const kids={};for(const c in parent)(kids[parent[c]]=kids[parent[c]]||[]).push(+c);
+/* 连线 */
+for(const p in kids){const px=nx(R[p][1]),last=kids[p].at(-1);
+ el('path',{class:'l',d:`M${px} ${ry(+p)+3.5}V${ry(last)-0}`,'data-p':p});
+ kids[p].forEach(c=>el('path',{class:'l',d:`M${px} ${ry(c)}H${nx(R[c][1])-3.5}`,'data-p':p}));}
+/* 青绿覆盖线 */
+const pv=idx.provider,pe=idx.clear;
+const clV=el('path',{class:'cl',d:`M${nx(2)} ${ry(pv)}V${ry(idx.clear)+14}`});
+const clA=el('path',{class:'cl',d:`M${nx(2)} ${ry(idx.stats)}H${nx(9)-4}`});
+const clB=el('path',{class:'cl',d:`M${nx(2)} ${ry(idx.useCtx)}H${nx(9)+8}`});
+ctx.style.top=(ry(pv)-14)+'px';ctx.style.height=(ry(idx.clear)+14-(ry(pv)-14))+'px';
+/* 节点与文字 */
+const nodes={},rows={};
+R.forEach((r,i)=>{const [id,d,k,lab,sub,o]=r,x=nx(d),y=ry(i);
+ if(k!=='attr'){let n;
+  if(k==='s')n=el('rect',{x:x-3,y:y-3,width:6,height:6,class:'n'});
+  else if(k==='d')n=el('path',{d:`M${x} ${y-3.6}L${x+3.6} ${y}L${x} ${y+3.6}L${x-3.6} ${y}Z`,class:'n solid'});
+  else n=el('circle',{cx:x,cy:y,r:k==='o'?3.3:3.6,class:'n'+(k==='o'?'':' solid')});
+  nodes[id]=n; if(k==='f')nodes[id+'H']=el('circle',{cx:x,cy:y,r:6,class:'halo'});}
+ const row=document.createElement('div');row.className='r';row.style.top=(y-14)+'px';row.dataset.id=id;
+ const t=document.createElement('span');t.className='t'+(o?.it?' it':'');t.style.left=(x+(lab[0]==='ƒ'?9.5:8.5))+'px';
+ t.textContent=lab;
+ if(lab[0]==='ƒ')t.innerHTML=lab.replace('ƒ ','ƒ&nbsp;');
+ if(sub){const s=document.createElement('span');s.className='sub';s.textContent=sub;t.appendChild(s)}
+ row.appendChild(t);
+ if(kids[i]||['attrH'].includes(id)){const b=document.createElement('button');b.className='chev';b.setAttribute('aria-label','collapse');b.innerHTML='<svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>';row.appendChild(b)}
+ tree.appendChild(row);rows[id]=row;
+});
+/* 流 */
+const px=id=>{const r=R[idx[id]],f=r[3][0]==='ƒ';return nx(r[1])+(r[2]==='attr'?(f?6.5:5.5):-5)};
+const E=[
+ ['e1','useState','visible','data','query'],['e2','useReducer','visible','data','todos'],['e3','visible','items','data','visibleTodos'],
+ ['e4','items','item','data','item'],['e5','item','title','data','render'],['e6','useSync','count','data','snapshot.count'],['e7','gs','useSync','data',''],
+ ['e8','clear','setQuery','call','call'],['e9','click','pToggle','call','call'],['e10','pToggle','fToggle','call','call'],['e11','fToggle','dispatch','call','action'],
+ ['e12','add2','add','call','call'],['e13','useState','setQuery','call',''],['e14','useReducer','dispatch','call',''],
+ ['e15','useSync','sub','store',''],['e16','useSync','gs','store',''],['e17','store','sub','call',''],['e18','store','add','call',''],
+];
+const curves={},ARROW=new Set(['e5','e13','e14','e17','e18','e7']);
+/* k：短线两端水平出入的控制距离，逐条从视频量出；lane：长线往左多绕的距离 */
+const KS={e1:29,e2:24,e4:64,e5:83,e9:53,e10:40,e13:16,e14:14,e15:18,e16:12,e17:12,e18:22,e7:14};
+const LANE={e3:0,e6:0,e8:34,e11:30,e15:6,e16:12};
+function path(a,b,id){const x1=px(a),y1=ry(idx[a]),x2=px(b),y2=ry(idx[b]);const dy=Math.abs(y2-y1);
+ if(id==='e12'){const c=[x1,y1,x1-120,y1+2,x2-60,y2-110,x2-16,y2-36];return [`M${x1} ${y1}C${c[2]} ${c[3]} ${c[4]} ${c[5]} ${c[6]} ${c[7]}Q${x2-12} ${y2-4} ${x2} ${y2}`,[c[0],c[1],c[2],c[3],c[4],c[5],c[6],c[7]]]}
+ if(dy<=170){const k=KS[id]??Math.min(.58*dy,74);return [`M${x1} ${y1}C${x1-k} ${y1} ${x2-k} ${y2} ${x2} ${y2}`,[x1,y1,x1-k,y1,x2-k,y2,x2,y2]]}
+ /* 长线：上端贴树左侧往下走，到下端才横向进入 */
+ const top=y1<y2?[x1,y1]:[x2,y2],bot=y1<y2?[x2,y2]:[x1,y1],L=LANE[id]||0,dx=bot[0]-top[0];
+ const P=[top[0],top[1],top[0]-10-L,top[1]+dy*.5,bot[0]-Math.max(dx,0)*.82-L*.2,bot[1],bot[0],bot[1]];
+ return [`M${P[0]} ${P[1]}C${P[2]} ${P[3]} ${P[4]} ${P[5]} ${P[6]} ${P[7]}`,P]}
+const bez=(p,t)=>{const u=1-t;return [u*u*u*p[0]+3*u*u*t*p[2]+3*u*t*t*p[4]+t*t*t*p[6],u*u*u*p[1]+3*u*u*t*p[3]+3*u*t*t*p[5]+t*t*t*p[7]]};
+E.forEach(([id,a,b,k,l])=>{const [d,pts]=path(a,b,id);const gp=el('g',{});const pe=el('path',{d,class:'e '+k},gp);
+ const end=[pts[6],pts[7]],ah=!ARROW.has(id)?null:el('path',{d:`M${end[0]-3.2} ${end[1]-2.6}L${end[0]} ${end[1]}L${end[0]-3.2} ${end[1]+2.6}`,class:'e '+k,style:'stroke-dasharray:none'},gp);
+ const lb=document.createElement('div');lb.className='lbl '+k;lb.textContent=l;const m=bez(pts,.5);
+ let lx=m[0],ly=m[1];if(id==='e1'){lx=px('useState')-5;ly=ry(idx.useState)+42}if(id==='e4'){lx=px('items')-8;ly=ry(idx.items)+38}if(id==='e5'){lx=px('item')-16;ly=ry(idx.item)+22}
+ if(id==='e9'||id==='e10'){lx=px('fToggle')+14;ly=ry(idx.fToggle)+42}
+ if(id==='e6'){lx=nx(2)+32;ly=ry(idx.frame)+0}
+ lb.style.left=lx+'px';lb.style.top=ly+'px';tree.appendChild(lb);curves[id]={pe,ah,lb,l}});
+/* 悬停某行亮哪些流、哪些行变亮 */
+const FEED=['e3','e4','e5','e9','e10','e11','e1','e2'];
+const G={
+ useState:{e:['e1','e13','e8','e3'],lab:['e1'],own:['app']},setQuery:{e:['e13','e8'],own:['app','b2']},
+ useReducer:{e:['e2','e14','e11','e3'],lab:['e2'],own:['app']},dispatch:{e:['e14','e11','e2','e3'],lab:['e11'],own:['app','feed']},
+ visible:{e:['e1','e2','e3'],lab:['e3'],own:['app','feed']},useSync:{e:['e6','e15','e16','e7'],lab:['e6'],own:['app','stats','store']},
+ count:{e:['e6'],lab:['e6'],own:['stats','app']},
+ items:{e:FEED,lab:['e4'],own:['feed','post','li']},fToggle:{e:FEED,lab:['e10'],own:['feed','post','li']},
+ item:{e:FEED,lab:['e4','e5'],own:['feed','post','li']},pToggle:{e:FEED,lab:['e9'],own:['feed','post','li']},
+ title:{e:FEED,lab:['e5'],own:['feed','post','li']},click:{e:FEED,lab:['e9'],own:['feed','post','li']},
+ clear:{e:['e8','e13'],lab:[],own:['b2','app']},add2:{e:['e12','e18','e17'],lab:[],own:['b1','store']},
+ gs:{e:['e7','e16','e15'],own:['store','app']},sub:{e:['e15','e16','e7','e12','e17','e18'],own:['store','b1','app']},add:{e:['e12','e18','e17','e15'],own:['store','b1']},
+};
+const CTX=new Set(['provider','stats','useCtx']);
+let cur=null;
+function clear(){document.querySelectorAll('.e.on,.lbl.on,.cl.on,.halo.on,#ctx.on').forEach(e=>e.classList.remove('on'));
+ document.querySelectorAll('.r').forEach(r=>r.classList.remove('owner','d','c','x','hov'));
+ for(const k in nodes){const n=nodes[k];n.classList.remove('white','bright','ctx')}}
+function own(id){rows[id].classList.add('owner');const n=nodes[id];if(!n)return;if(n.classList.contains('solid'))n.classList.add('white');else n.classList.add('bright')}
+function show(id){clear();cur=id;rows[CTX.has(id)?'provider':id].classList.add('hov');
+ if(CTX.has(id)){ctx.classList.add('on');[clV,clA,clB].forEach(e=>e.classList.add('on'));rows.provider.classList.add('x');nodes.provider.classList.add('ctx');own('stats');return}
+ if(id==='store'){rows.store.classList.add('x');nodes.store.classList.add('ctx');['e15','e16','e17','e18','e7'].forEach(k=>{curves[k].pe.classList.add('on');curves[k].ah?.classList.add('on')});return}
+ const c=G[id];
+ if(!c){const r=R[idx[id]];if(r[2]==='f'&&nodes[id+'H']){nodes[id+'H'].classList.add('on');rows[id].classList.add('d');nodes[id].classList.add('white');const k=kids[idx[id]]||[];k.forEach(i=>{if(R[i][2]==='o')own(R[i][0])})}else{own(id)}return}
+ c.e.forEach(k=>{curves[k].pe.classList.add('on');curves[k].ah?.classList.add('on')});
+ (c.lab||[]).forEach(k=>curves[k].lb.classList.add('on'));
+ (c.own||[]).forEach(own);
+ const kind=E.find(e=>c.e.includes(e[0])&&(e[1]===id||e[2]===id))?.[3];
+ rows[id].classList.add(kind==='call'||R[idx[id]][3].includes('Toggle')||R[idx[id]][3].includes('onClick')?'c':'d');
+ if(id==='sub'){rows.sub.classList.remove('d');rows.sub.classList.add('c');rows.store.classList.add('x');nodes.store.classList.add('ctx')}
+}
+let tipT;
+tree.addEventListener('mousemove',ev=>{const t=ev.target.closest('.t');const row=t&&t.parentElement;
+ /* Stats 行是全行触发：原视频里鼠标在行内任意横向位置都显示 Context */
+ let id=row?.dataset.id;
+ if(!id){const b=tree.getBoundingClientRect();const i=Math.round((ev.clientY-b.top-Y0)/ROW);const r=R[i];if(r&&r[0]==='stats'&&ev.clientX-b.left>nx(2))id='stats'}
+ if(!id){if(cur){clear();cur=null}tip.classList.remove('on');clearTimeout(tipT);return}
+ if(id!==cur)show(id);
+ clearTimeout(tipT);tip.classList.remove('on');
+ const r=R[idx[id]];const name=r[3].replace('ƒ ','');
+ if(r[2]==='attr'&&t){tipT=setTimeout(()=>{tip.textContent=name;tip.style.left=ev.clientX-2+'px';tip.style.top=ev.clientY+15+'px';tip.classList.add('on')},800)}
+});
+tree.addEventListener('mouseleave',()=>{clear();cur=null;tip.classList.remove('on');clearTimeout(tipT)});
+/* 折叠 */
+const hidden=new Set();
+function layoutCollapse(){/* 折叠只隐藏子树，不重排，保留行位以便曲线锚点稳定 */
+ R.forEach((r,i)=>{let p=parent[i],h=false;
+  if(r[2]==='attr'){for(let j=i-1;j>=0;j--)if(R[j][2]!=='attr'&&R[j][1]<=r[1]){if(hidden.has(j))h=true;p=parent[j];break}}
+  while(p!==undefined&&!h){if(hidden.has(p))h=true;p=parent[p]}
+  rows[r[0]].style.visibility=h?'hidden':'';if(nodes[r[0]])nodes[r[0]].style.visibility=h?'hidden':''});
+ g.querySelectorAll('[data-p]').forEach(e=>{const p=+e.dataset.p;let q=p,h=hidden.has(p);while(!h&&parent[q]!==undefined){q=parent[q];h=hidden.has(q)}e.style.visibility=h?'hidden':''});}
+tree.addEventListener('click',ev=>{const b=ev.target.closest('.chev');if(!b)return;const i=idx[b.parentElement.dataset.id];hidden.has(i)?hidden.delete(i):hidden.add(i);b.style.transform=hidden.has(i)?'rotate(-90deg)':'';layoutCollapse()});
+</script></body></html>

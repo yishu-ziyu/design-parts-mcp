@@ -1,0 +1,12 @@
+/* The shape slot keeps whichever shape you last chose, so
+   the bar learns your habit instead of resetting to a default
+   every time. The small thing these get wrong most often. */
+const [shape, setShape] = useState(SHAPES[0]);
+const pick = (s) => { setShape(s); setTool("shape"); };
+
+/* a corner wedge, the universal "there is more here" */
+.notch::after {
+  border-left: 5px solid transparent;
+  border-bottom: 5px solid var(--ink);
+  opacity: 0.4;
+}

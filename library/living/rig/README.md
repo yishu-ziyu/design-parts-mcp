@@ -1,6 +1,6 @@
 # rig — 镜头摇动 · 只剩相机的编辑视图
 
-来源：判断记在 [../../km-camera-rig.md](../../km-camera-rig.md)（2026-09-13 记录 KM 的镜头摇动演示，已溯源到编辑器 mo1 / three.js WebGPU / Three.js Conf Paris）；页面整块从 [../nightflight/index.html](../nightflight/index.html) 的左窗格提取，不引入它的纸/黄铜卡片色。
+来源：判断记在 [../../km-camera-rig.md](../../原料/笔记/km-camera-rig.md)（2026-09-13 记录 KM 的镜头摇动演示，已溯源到编辑器 mo1 / three.js WebGPU / Three.js Conf Paris）；页面整块从 [../nightflight/index.html](../nightflight/index.html) 的左窗格提取，不引入它的纸/黄铜卡片色。
 
 调性一句话：打开只有镜头在摇——一台相机的编辑视图（视锥、虚线航线、路径点点火），没有渲染窗格。
 
@@ -28,7 +28,7 @@
 
 ## 与 flycam / nightflight 的关系：本体 vs 投影
 
-[../../km-camera-rig.md](../../km-camera-rig.md) 的判断：**左边比右边重要**。rig 视图是设计本体；右窗格只是它的投影，内容可以整体替换（旅行板、证据墙、观星台都成立且都次要）。
+[../../km-camera-rig.md](../../原料/笔记/km-camera-rig.md) 的判断：**左边比右边重要**。rig 视图是设计本体；右窗格只是它的投影，内容可以整体替换（旅行板、证据墙、观星台都成立且都次要）。
 
 - [flycam](../flycam/index.html)：两窗格版本 1（物件拼贴墙 + 求职内容）；
 - [nightflight](../nightflight/index.html)：两窗格版本 2（深夜观测台 + 暖纸黄铜）；

@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>piano-film</title><link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#000;color:#ddd;font:13px/1.6 -apple-system,system-ui,sans-serif}button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+#film{display:block;width:100%;max-width:1483px;margin:0 auto;background:#000;aspect-ratio:2/1}
+.ctl{max-width:1483px;margin:0 auto;display:flex;gap:12px;align-items:center;padding:8px 12px;font-variant-numeric:tabular-nums;color:#bbb}
+.ctl input{flex:1;accent-color:#fff}#pp{width:44px;height:28px;border:1px solid #444;border-radius:4px}
+#split{display:flex;gap:4px}#split button{height:28px;padding:0 10px;border:1px solid #444;border-radius:4px}#split button.on{background:#eee;color:#111}
+.lab{background:#f1ede1;color:#1b1a16;padding:44px 16px 72px}.lab>*{max-width:900px;margin-inline:auto}.lab h2{margin:0 auto 12px;font:600 14px/20px inherit}
+#crayon{display:block;width:100%;aspect-ratio:900/560;background:#f1ede1}
+.tool{display:flex;gap:10px;align-items:center;margin-top:8px;color:#5b584d}.tool button{height:30px;padding:0 12px;border:1px solid #b9b4a5;border-radius:4px;background:#fbfaf5}
+h3.k{margin:48px auto 8px;font:600 14px/20px inherit}dl{margin:0 auto;color:#5b584d}dt{margin-top:8px}dd{margin:0}code{font:12px ui-monospace,monospace;color:#1b1a16}
+</style></head><body>
+<canvas id="film" role="img" aria-label="The same choreography, crayon 2D on the left and 3D on the right"></canvas>
+<div class="ctl"><button id="pp" aria-label="Play or pause">▶</button><input id="scrub" type="range" min="0" max="214" value="0" aria-label="Frame"><span id="time">0.0 / 71.7s</span><div id="split" role="group" aria-label="View"><button data-v="both" class="on">2D + 3D</button><button data-v="l">2D</button><button data-v="r">3D</button></div></div>
+<div class="lab">
+<h2>代码画的蜡笔</h2>
+<canvas id="crayon" role="img" aria-label="A crayon robot walks along piano keys, each key sinks under its feet, paw prints appear on the score"></canvas>
+<div class="tool"><button id="walk">暂停</button><span>每秒换 6 次笔触，脚下的琴键下沉，每一步在乐谱上记一个爪印。</span></div>
+<h3 class="k">可拆</h3><dl>
+<dt><code>#film</code></dt><dd>215 张截图按 3 帧每秒播放，左右两半共用同一条时间线。</dd>
+<dt><code>#split</code></dt><dd>同一帧裁出左半或右半看。</dd>
+<dt><code>#crayon</code></dt><dd>用短笔触填色，换随机种子让线条抖动；角色位置决定琴键和乐谱状态。</dd>
+</dl></div>
+<script src="player.js"></script>
+<script>
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pp=document.getElementById('pp'),sc=document.getElementById('scrub'),time=document.getElementById('time');let view='both';
+const P=Player({canvas:document.getElementById('film'),n:215,fps:3,draw:(c,m,cv)=>{if(view==='both')c.drawImage(m,0,0);else{const w=m.naturalWidth/2,h=m.naturalHeight;c.fillStyle='#000';c.fillRect(0,0,cv.width,cv.height);c.drawImage(m,view==='l'?0:w,0,w,h,(cv.width-h)/2+0,0,h,h)}},onframe:i=>{sc.value=i;time.textContent=(i/3).toFixed(1)+' / 71.7s'},onstate:s=>pp.textContent=s?'❚❚':'▶'});
+pp.onclick=()=>P.toggle();sc.oninput=()=>{P.pause();P.seek(+sc.value)};
+document.getElementById('split').onclick=e=>{const b=e.target.closest('button');if(!b)return;view=b.dataset.v;[...b.parentNode.children].forEach(x=>x.classList.toggle('on',x===b));P.redraw()};
+const q=new URLSearchParams(location.search);if(q.get('f'))P.seek(+q.get('f'));else if(!REDUCE)P.play();
+/* crayon scene */
+const cv=document.getElementById('crayon'),x=cv.getContext('2d');cv.width=1800;cv.height=1120;x.scale(2,2);
+function R(s){return()=>(s=Math.imul(s,1597334677)+11|0,(s>>>0)/4294967296)}
+function crayon(ctx,px,py,w,h,col,seed,dens=1,ang=-1.0){const r=R(seed);ctx.save();ctx.beginPath();ctx.rect(px,py,w,h);ctx.clip();ctx.fillStyle=col.base;ctx.fillRect(px,py,w,h);ctx.lineCap='round';
+ const n=w*h/8*dens;for(let i=0;i<n;i++){const a=px+r()*w,b=py+r()*h,l=5+r()*13,t=ang+(r()-.5)*.28;ctx.strokeStyle=r()>.3?col.ink:col.hi;ctx.globalAlpha=.25+r()*.55;ctx.lineWidth=.35+r()*.8;ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(a+Math.cos(t)*l,b+Math.sin(t)*l);ctx.stroke()}ctx.restore()}
+const BL={base:'#7f9abd',ink:'#42669a',hi:'#eef0ea'},OR={base:'#e6865f',ink:'#c1502a',hi:'#f0ae8a'},PA={base:'#ece6d3',ink:'#ddd5bd',hi:'#f6f2e4'};
+const off=[0,1,2].map(i=>{const c=document.createElement('canvas');c.width=1800;c.height=1120;const g=c.getContext('2d');g.scale(2,2);crayon(g,0,0,900,560,BL,40+i,.9);crayon(g,210,50,510,250,PA,60+i,.5,0);
+ g.strokeStyle='rgba(70,70,60,.5)';g.lineWidth=.7;for(const y of [90,158,226])for(let k=0;k<5;k++){g.beginPath();g.moveTo(232,y+k*7);g.lineTo(700,y+k*7);g.stroke()}
+ g.fillStyle='rgba(120,115,95,.55)';g.fillRect(462,50,6,250);return c});
+const KW=30,KN=30,KY=380,KH=88;const prints=[];let tick=0,playing=!REDUCE,last=0;
+function robotSprite(seed){const c=document.createElement('canvas');c.width=520;c.height=440;const g=c.getContext('2d');g.scale(2,2);
+ crayon(g,0,70,260,28,OR,seed+3);crayon(g,30,14,200,146,OR,seed);for(const a of [34,84,134,184])crayon(g,a,158,42,50,OR,seed+a);
+ g.strokeStyle='#3b2319';g.lineWidth=7;g.lineJoin='miter';for(const a of [78,158]){g.beginPath();g.moveTo(a,84);g.lineTo(a+16,66);g.lineTo(a+32,84);g.stroke()}return c}
+const sprites=[11,22,33].map(robotSprite);
+function paw(g,a,b,o=1){g.fillStyle=`rgba(30,28,24,${o})`;g.beginPath();g.ellipse(a,b+2,3.1,2.6,0,0,7);g.fill();for(const[dx,dy]of[[-3.6,-1.6],[-1.2,-3.6],[1.4,-3.6],[3.8,-1.6]]){g.beginPath();g.arc(a+dx,b+dy,1.1,0,7);g.fill()}}
+function draw(t){const u=t/1000,s=Math.floor(u*6)%3,rx=70+(.5-.5*Math.cos(u*.42))*520,step=Math.floor(rx/KW);
+ x.drawImage(off[s],0,0,900,560);
+ const feet=[34,84,134,184].map((a,i)=>rx+a+21-(0)).map(v=>Math.floor((v-KX0)/KW));
+ for(let i=0;i<KN;i++){const px=KX0+i*KW,dn=feet.includes(i)?5:0;x.fillStyle='#f5f1e5';x.fillRect(px,KY+dn,KW-1,KH-dn);x.strokeStyle='rgba(60,60,50,.55)';x.lineWidth=.8;x.strokeRect(px+.4,KY+dn,KW-1.8,KH-dn)}
+ for(let i=0;i<KN-1;i++){if([0,1,3,4,5].includes(i%7)){x.fillStyle='#17161a';x.fillRect(KX0+i*KW+KW-8,KY,16,52)}}
+ x.fillStyle='rgba(90,80,70,.5)';x.fillRect(KX0,KY+KH-4,KN*KW,4);
+ prints.forEach((p,i)=>paw(x,p[0],p[1],.9));
+ const bob=(Math.floor(u*6)%2)*2;x.drawImage(sprites[s],rx,KY-168+bob+26,260,220)}
+const KX0=0;
+function loop(t){if(playing){if(t-last>165){tick++;last=t;const i=Math.floor(t/1000/.9);if(i!==prints.seen){prints.seen=i;prints.push([236+(prints.length*17)%460,84+7*(prints.length%5)+68*(Math.floor(prints.length/27)%3)]);if(prints.length>81)prints.length=0}draw(t)}}requestAnimationFrame(loop)}
+draw(3800);requestAnimationFrame(loop);
+const wb=document.getElementById('walk');wb.onclick=()=>{playing=!playing;wb.textContent=playing?'暂停':'播放'};if(REDUCE)wb.textContent='播放';
+</script></body></html>

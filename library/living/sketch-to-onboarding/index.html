@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>草图到引导页</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--pur:#6054f4;--lil:#e7e4fb;--ink:#000;--mute:#8a8a8e;--row:#f6f6f6;--row-off:#fbfbfb}
+*{box-sizing:border-box;margin:0}
+html{background:#ececee}
+body{font:13px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;padding:24px 16px}
+.stage{display:flex;gap:28px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+/* —— 草图 —— */
+#sketch{width:min(980px,100%);background:#fff;display:block}
+/* —— 手机 —— */
+#phone{position:relative;flex:none;width:360px;height:782px;overflow:hidden;background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.08)}
+#phone.dim{background:#c9c9c9}
+.status{position:absolute;inset:0 0 auto 0;height:56px;z-index:30;pointer-events:none}
+.status .time{position:absolute;left:0;width:133px;top:18px;text-align:center;font:600 16px/22px -apple-system,"SF Pro Text",sans-serif;letter-spacing:-.1px}
+.status .island{position:absolute;left:124px;top:12.5px;width:112px;height:32.5px;border-radius:17px;background:#000}
+.status svg{position:absolute;left:256px;top:21px}
+/* 日程页 */
+#home{position:absolute;inset:0;background:#fff;transition:transform .42s cubic-bezier(.32,.72,0,1),border-radius .42s;transform-origin:50% 0}
+#home h1{position:absolute;left:15px;top:61px;font:700 18.5px/24px -apple-system,sans-serif;letter-spacing:-.1px}
+#home .wk{position:absolute;left:15px;top:87px;font:600 11.5px/16px -apple-system,sans-serif;color:var(--pur)}
+#home .wk i{font-style:normal;color:#8a8a8e;font-weight:400;margin-left:4px}
+.tool{position:absolute;top:68px;width:32px;height:32px;border-radius:50%;background:#f7f7f7;display:grid;place-items:center}
+.days{position:absolute;left:36px;right:6px;top:114px;display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font:500 9.5px/14px -apple-system,sans-serif;color:#8a8a8e}
+.days b{display:block;font:500 12px/21px -apple-system,sans-serif;margin-top:3px}
+.days .now{color:var(--pur);font-weight:700}
+.days .now b{width:21px;height:21px;border-radius:50%;background:var(--pur);color:#fff;margin:3px auto 0;font-weight:700}
+.mon{position:absolute;left:10px;width:20px;top:121px;text-align:center;font:700 12px/14px -apple-system,sans-serif}
+.mon small{display:block;font-size:8px;line-height:10px;font-weight:500}
+.band{position:absolute;left:0;right:0;top:159px;height:22.5px;background:var(--pur);color:#fff;font:500 8.5px/22.5px -apple-system,sans-serif;text-align:center}
+.pds{position:absolute;left:0;top:196px;width:40px;text-align:center}
+.pds div{height:58.2px;font:600 11.5px/19px -apple-system,sans-serif}
+.pds small{display:block;font:400 8.8px/11.6px -apple-system,sans-serif;letter-spacing:.2px;color:#8a8a8e}
+/* 玻璃菜单 */
+#menu{position:absolute;left:36px;top:65.5px;width:224px;height:224.5px;border-radius:30px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 0 0 .5px rgba(0,0,0,.2),0 14px 34px rgba(0,0,0,.12);transform-origin:90% 0;transition:opacity .22s,transform .3s cubic-bezier(.32,.72,0,1);z-index:6}
+#menu.gone{opacity:0;transform:scale(.72);pointer-events:none}
+#menu button{all:unset;position:absolute;left:0;right:0;height:37px;display:flex;align-items:center;gap:0;font:400 15px/20px -apple-system,sans-serif;cursor:pointer;padding-left:28px;color:#111}
+#menu button svg{width:17px;height:17px;margin-right:12px;flex:none;color:var(--pur)}
+#menu hr{position:absolute;left:21px;right:21px;top:55.5px;border:0;border-top:.5px solid rgba(0,0,0,.14)}
+/* 引导页 */
+#sheet{position:absolute;left:0;right:0;top:55.5px;height:726.5px;background:#fff;border-radius:39px;transform:translateY(100%);transition:transform .5s cubic-bezier(.32,.72,0,1);z-index:10;overflow:hidden}
+#phone.open #sheet{transform:none}
+#phone.open #home{filter:brightness(.79)}
+#phone.open #menu{filter:brightness(.79)}
+#phone.instant *{transition:none!important}
+#close{all:unset;position:absolute;left:14px;top:14px;width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.05);display:grid;place-items:center;cursor:pointer}
+#sheet h2{position:absolute;left:0;right:0;top:23px;text-align:center;font:600 15px/22px -apple-system,sans-serif;letter-spacing:-.1px}
+#hero{position:absolute;left:0;right:0;top:80px;height:150px;overflow:hidden}
+.tile{position:absolute;left:0;top:19.5px;width:97.5px;height:97.5px;border-radius:25px;will-change:transform;background:linear-gradient(#fbfbfb,#f3f3f4);box-shadow:inset 0 0 0 1px #fff,0 16px 28px rgba(40,30,80,.12),0 2px 6px rgba(0,0,0,.05)}
+.tile svg{display:block;width:100%;height:100%;border-radius:inherit}
+#arrow{position:absolute;left:105.5px;top:35.5px;width:77px;height:65px;z-index:3;will-change:transform}
+#arrow svg{position:absolute;inset:0;overflow:visible}
+#steps{position:absolute;left:24px;right:24px;top:243.5px}
+.step{position:relative;height:46px;margin-bottom:9.5px;border-radius:14px;background:var(--row-off);color:#8e8e93;display:flex;align-items:center;padding-left:12px;font:400 13.2px/18px -apple-system,sans-serif;transition:background .28s,color .28s}
+.step b{width:25px;height:25px;border-radius:50%;background:#efeff0;color:#8e8e93;display:grid;place-items:center;font:600 12.5px/1 -apple-system,sans-serif;margin-right:11px;flex:none;transition:background .28s,color .28s}
+.step.on{background:var(--row);color:#000}
+.step.on b{background:var(--lil);color:var(--pur)}
+#go{all:unset;position:absolute;left:26.5px;top:638.5px;width:307px;height:48.5px;border-radius:25px;background:var(--pur);box-shadow:inset 0 0 0 .5px rgba(50,35,180,.55),inset 0 1px 0 rgba(255,255,255,.12);color:#fff;text-align:center;font:500 15px/48.5px -apple-system,sans-serif;cursor:pointer}
+#go:active{filter:brightness(.92)}
+/* —— 可拆 —— */
+.notes{max-width:980px;margin:36px auto 12px;line-height:1.6}
+.notes h3{font-size:15px;margin-bottom:8px}
+.notes dt{margin-top:10px}.notes dd{margin:2px 0 0;color:#555}
+.notes code{font:12px ui-monospace,Menlo,monospace}
+.replay{all:unset;display:block;margin:14px auto 0;padding:6px 14px;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.1);cursor:pointer;font-size:12px}
+.replay:focus-visible,#go:focus-visible,#close:focus-visible,#menu button:focus-visible{outline:2px solid var(--pur);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){#sheet,#menu,#home,.tile,#arrow{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg id="sketch" viewBox="0 0 2000 1379" role="img" aria-label="手绘分镜：箭头不动，图标依次从右入场、左移退场">
+    <defs>
+      <pattern id="dot" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.4" fill="#d9d9d9"/></pattern>
+      <filter id="hand" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="9"/></filter>
+      <filter id="hand2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="9"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
+    </defs>
+    <rect width="2000" height="1379" fill="#fff"/>
+    <rect y="142" width="2000" height="1237" fill="url(#dot)"/>
+    <!-- 笔记软件顶栏：只保留轮廓 -->
+    <g font-family="-apple-system,sans-serif" fill="#111">
+      <text x="42" y="36" font-size="25">21:28   Sun Aug 23</text>
+      <text x="110" y="100" font-size="29" font-weight="600">Untitled 2</text>
+      <g fill="#fff" stroke="#ececec" stroke-width="1.5"><circle cx="52" cy="89" r="37"/><rect x="716" y="53" width="566" height="72" rx="36"/><circle cx="1582" cy="89" r="37"/><rect x="1638" y="53" width="252" height="72" rx="36"/><circle cx="1947" cy="89" r="37"/><rect x="32" y="1274" width="236" height="72" rx="36"/><rect x="1788" y="1274" width="180" height="72" rx="36"/></g>
+      <path d="M62 74 44 89l18 15" fill="none" stroke="#111" stroke-width="4"/>
+      <g fill="none" stroke="#222" stroke-width="3"><circle cx="757" cy="89" r="17"/><rect x="834" y="74" width="40" height="30" rx="5"/><rect x="934" y="72" width="28" height="28" rx="6"/><rect x="946" y="82" width="28" height="24" rx="5"/><rect x="1032" y="74" width="34" height="30" rx="4"/><rect x="1126" y="76" width="40" height="28" rx="3"/><path d="M1228 104l26-30"/><rect x="1566" y="76" width="32" height="28" rx="4"/><path d="M1662 90h22a10 10 0 0 1 0 20M1662 90l10-10M1662 90l10 10" stroke="#aaa"/><path d="M1763 72v24M1750 84h-4v22h34V84h-4"/><path d="M1836 90h0M1852 90h0M1868 90h0" stroke-linecap="round" stroke-width="5"/><rect x="1932" y="74" width="30" height="30" rx="5"/></g>
+      <text x="67" y="1320" font-size="29">39%</text>
+    </g>
+    <g fill="none" stroke="#2a2a2a" stroke-width="2.6" filter="url(#hand)" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M80 298H152V277L205 326 152 378V356H80Z"/>
+      <path d="M230 322C330 316 450 318 565 310M548 300l18 10-16 8"/>
+      <rect x="578" y="262" width="116" height="118" rx="30"/><rect x="598" y="290" width="74" height="56"/>
+      <path d="M715 325C770 330 860 328 938 322M916 314l24 9-22 11"/>
+      <path d="M958 256C1000 240 1070 240 1092 258 1104 290 1104 350 1098 380 1060 398 1000 398 968 380 962 340 968 290 958 256ZM960 292C1000 290 1060 290 1100 286"/>
+      <path d="M1135 325C1200 328 1280 328 1350 322M1330 310l20 14-18 14"/>
+      <path d="M1400 240C1450 225 1520 228 1548 248 1560 290 1560 350 1548 385 1510 405 1440 405 1400 385 1390 330 1390 280 1400 240Z"/><ellipse cx="1467" cy="325" rx="40" ry="44"/><path d="M1430 290l8-28 14 22M1485 285c0-20 18-22 22-6"/>
+      <path d="M155 515C210 510 280 512 330 510 332 600 330 700 332 775 280 780 220 788 165 792 160 690 158 600 155 515Z"/>
+      <path d="M80 594H112V586L133 606 112 626V618H80ZM142 606h42M170 598l14 8-12 8M345 595h-55M302 586l-14 9 13 9"/>
+      <rect x="348" y="574" width="40" height="40" rx="8"/><ellipse cx="368" cy="597" rx="10" ry="12"/>
+      <path d="M240 806c6 14 8 26 10 38M238 830l12 14 14-16"/>
+      <path d="M168 900H330C332 980 328 1090 320 1150L178 1162C178 1080 170 980 168 900Z"/>
+      <path d="M202 958H226V950L242 972 226 990V984H202ZM232 950C250 944 268 950 272 962 276 980 270 990 252 992 236 992 228 980 232 950Z"/><circle cx="255" cy="974" r="12"/>
+      <path d="M368 1010c26-2 50-2 72-2M424 998l16 10-16 22"/>
+      <path d="M570 870C640 866 720 862 780 860 784 950 786 1050 784 1140L574 1158C574 1060 570 960 570 870Z"/>
+      <path d="M614 948H646V938L670 962 646 984V974H614Z"/><rect x="660" y="928" width="54" height="60" rx="12"/>
+      <path d="M876 992c30-2 62-4 94-4M950 972l20 14-16 18"/>
+      <path d="M1042 866C1050 850 1130 842 1210 846 1216 940 1214 1040 1214 1114L1064 1132 1048 1120C1046 1040 1042 950 1042 866Z"/>
+      <path d="M1068 930H1092V922L1112 942 1092 958V950H1068Z"/><rect x="1102" y="914" width="58" height="68" rx="12"/>
+      <path d="M1268 966c20-2 44-4 66-2M1320 954l14 10-14 12"/>
+      <path d="M1396 840C1460 836 1520 830 1568 828 1572 930 1576 1020 1576 1100L1404 1108C1400 1020 1396 930 1396 840Z"/>
+      <path d="M1424 922H1450V914L1468 932 1450 948V942H1424Z"/><rect x="1456" y="902" width="46" height="58" rx="10"/><circle cx="1478" cy="934" r="12"/>
+      <path d="M1618 960c20-4 44-6 66-6M1668 944l14 10-16 12M1716 954h6M1740 954h6M1764 952h26M1780 948l10 6-8 6"/>
+    </g>
+    <g font-family="'Kaiti SC','STKaiti','KaiTi',serif" fill="#e2646d" filter="url(#hand2)">
+      <text x="578" y="195" font-size="29">别的课表</text><text x="604" y="238" font-size="29">图标</text>
+      <text x="978" y="205" font-size="31">日历图标</text>
+      <text x="1414" y="198" font-size="34">满绩 课表</text>
+      <text x="208" y="494" font-size="25">Phase 0</text>
+      <text x="388" y="502" font-size="30">开屏图标与箭头</text><text x="388" y="541" font-size="30">从屏幕左右两侧</text><text x="424" y="580" font-size="30">进入</text>
+      <text x="88" y="878" font-size="26">形成 P1</text><text x="204" y="890" font-size="26">Phase 1</text>
+      <text x="370" y="893" font-size="30">箭头保持不动</text><text x="370" y="935" font-size="30">图标左移出屏幕</text>
+      <text x="604" y="848" font-size="31">Phase 2</text>
+      <text x="824" y="836" font-size="30">别的课表图标</text><text x="815" y="885" font-size="30">停留一下后左移</text><text x="845" y="928" font-size="30">退场</text>
+      <text x="848" y="1062" font-size="28">日历图标</text><text x="856" y="1108" font-size="28">左移入场</text>
+      <text x="1082" y="826" font-size="31">Phase 3</text>
+      <text x="1254" y="828" font-size="27">依此类推</text><text x="1244" y="875" font-size="27">满绩课表</text><text x="1246" y="915" font-size="27">图标入场</text>
+      <text x="1424" y="826" font-size="30">Phase 4</text>
+      <text x="670" y="938" font-size="20">别的</text><text x="668" y="958" font-size="20">课表</text><text x="668" y="980" font-size="20">图标</text>
+      <text x="1112" y="940" font-size="20">日历</text><text x="1112" y="972" font-size="20">图标</text>
+      <text x="636" y="1252" font-size="62">全程 箭头除了入场</text><text x="750" y="1320" font-size="52">保持不动</text>
+      <path d="M618 1288C760 1272 920 1260 1052 1252M744 1344c70-4 140-8 212-22" fill="none" stroke="#e2646d" stroke-width="2.4"/>
+    </g>
+    <text x="1820" y="984" font-family="'Kaiti SC','STKaiti',serif" font-size="56" fill="#333" filter="url(#hand2)">重复播放</text>
+    <g filter="url(#hand2)">
+      <ellipse cx="84" cy="985" rx="80" ry="74" fill="none" stroke="#7dd98a" stroke-width="2.2"/>
+      <text x="40" y="1096" font-family="'Kaiti SC','STKaiti',serif" font-size="36" fill="#7dd98a">灵感</text><text x="46" y="1144" font-family="'Kaiti SC','STKaiti',serif" font-size="36" fill="#7dd98a">来源</text>
+    </g>
+    <rect x="33" y="934" width="108" height="88" rx="8" fill="#000"/><rect x="52" y="934" width="89" height="88" rx="16" fill="#fff"/><path d="M34 966h10v-8l14 20-14 20v-8H34Z" fill="#8b8b8b"/><text x="66" y="994" font-family="-apple-system,sans-serif" font-size="40" fill="#e97a5a">iOS</text>
+    <text x="1200" y="1000" font-size="0">分镜</text>
+  </svg>
+
+  <div>
+    <div id="phone" class="dim">
+      <div class="status">
+        <div class="time">21:29</div><div class="island"></div>
+        <svg width="76" height="14" viewBox="0 0 76 14"><g fill="#a7a7a7"><circle cx="2" cy="9.5" r="1.3"/><circle cx="7" cy="9.5" r="1.3"/><circle cx="12" cy="9.5" r="1.3"/><circle cx="17" cy="9.5" r="1.3"/></g><path d="M25 5.2C31 0 37 0 41 5.2L38.8 7.4C35 4 31 4 27.2 7.4ZM28.8 9C31.4 6.8 34.6 6.8 37.2 9L35 11.2C33.8 10.2 32.2 10.2 31 11.2ZM33 11.6 34.2 12.8 33 14 31.8 12.8Z"/><rect x="47" y="1" width="23" height="12" rx="4"/><rect x="71" y="5" width="1.6" height="4" rx=".8"/></svg>
+      </div>
+      <div id="home">
+        <h1>2026 年 8 月 23 日</h1>
+        <div class="wk">第 1 周<i>周日 ⌄</i></div>
+        <div class="tool" style="left:229px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#000" stroke-width="1.4" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></div>
+        <div class="tool" style="left:270px"><svg width="17" height="20" viewBox="0 0 17 20" fill="none" stroke="#000" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 13V1.5M5 5l3.5-3.5L12 5M4.5 8H3a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 3 18h11a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 14 8h-1.5"/></svg></div>
+        <div class="tool" style="left:313px"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#000" stroke-width="1.4"><circle cx="9" cy="9" r="2.6"/><path d="M7.6 1.5h2.8l.4 2.1 1.5.7 1.9-1 1.9 2-1.1 1.8.6 1.5 2 .5v2.8l-2 .4-.7 1.5 1 1.9-1.9 1.9-1.8-1.1-1.5.6-.5 2.1H7.7l-.5-2.1-1.5-.6-1.8 1.1-2-1.9 1.1-1.9-.7-1.5-2-.4V7.6l2-.5.6-1.5-1-1.8 1.9-2 1.9 1 1.5-.7z" transform="translate(.6 .4) scale(.92)"/></svg></div>
+        <div class="mon">8<small>月</small></div>
+        <div class="days">
+          <div>周一<b>17</b></div><div>周二<b>18</b></div><div>周三<b>19</b></div><div>周四<b>20</b></div><div>周五<b>21</b></div><div>周六<b>22</b></div><div class="now">周日<b>23</b></div>
+        </div>
+        <div class="band">当前暂无课程安排</div>
+        <div class="pds" id="pds"></div>
+      </div>
+      <div id="menu">
+        <button style="top:9.5px" data-k="new"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.5H3.5v13h10V9M6 2h4v2H6zM6 8h3M6 11h4M11 6l4-4"/></svg>新建课程</button>
+        <hr>
+        <button style="top:66px" data-k="ai"><svg viewBox="0 0 18 18" fill="currentColor"><path d="M10 5c.5 3.8 1.7 5 5.5 5.5C11.7 11 10.5 12.2 10 16c-.5-3.8-1.7-5-5.5-5.5C8.3 10 9.5 8.8 10 5ZM4.5 1.5C4.8 3.3 5.2 3.7 7 4 5.2 4.3 4.8 4.7 4.5 6.5 4.2 4.7 3.8 4.3 2 4c1.8-.3 2.2-.7 2.5-2.5Z"/></svg>AI 识别导入</button>
+        <button style="top:103.5px" data-k="edu"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="9" r="7"/><path d="M12 6 10.3 10.3 6 12l1.7-4.3Z" fill="currentColor"/></svg>从教务系统导入</button>
+        <button style="top:141px" data-k="apple" id="openApple"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M16 8V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h6"/><path d="M1 6h15" stroke-width="2.6"/><circle cx="14" cy="14" r="3.5" fill="currentColor" stroke="none"/><path d="M14 12.3v3.4M12.3 14h3.4" stroke="#fff" stroke-width="1"/></svg>从 Apple 日历迁移</button>
+        <button style="top:178.5px" data-k="file"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M4 1.5h6l4 4v11H4zM10 1.5v4h4M9 8v5.5M6.8 11.3 9 13.5l2.2-2.2"/></svg>从课表文件导入</button>
+      </div>
+      <section id="sheet" aria-label="从 Apple 日历迁移">
+        <button id="close" aria-label="关闭"><svg width="17" height="17" viewBox="0 0 17 17" stroke="#000" stroke-width="1.7" stroke-linecap="round"><path d="M1.5 1.5l14 14M15.5 1.5l-14 14"/></svg></button>
+        <h2>从 Apple 日历迁移</h2>
+        <div id="hero">
+          <div id="arrow"><svg viewBox="0 0 77 65" fill="rgba(219,214,250,.87)" stroke="rgba(130,120,220,.42)" stroke-width=".7"><path d="M5 19H38V3.5C38 .8 40.8-.6 43 1.2L75.5 30.5C77.2 32 77.2 33.4 75.5 35L43 63.8C40.8 65.6 38 64.2 38 61.5V46.5H5C2.2 46.5 0 44.3 0 41.5V24C0 21.2 2.2 19 5 19Z"/></svg></div>
+        </div>
+        <div id="steps">
+          <div class="step on"><b>1</b>从原课表 App 导出到 Apple 日历</div>
+          <div class="step"><b>2</b>选择课程所在的日历</div>
+          <div class="step"><b>3</b>确认课程并完成迁移</div>
+        </div>
+        <button id="go">开始迁移</button>
+      </section>
+    </div>
+    <button class="replay" id="replay">重播</button>
+  </div>
+</div>
+
+<div class="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#hero</code></dt><dd>箭头钉住不动，图标从右入场、停留、左移退场；箭头是玻璃，退场图标从它下面穿过。</dd>
+    <dt><code>#steps</code></dt><dd>三步说明跟图标同时切换高亮，序号圆点和行底色一起变。</dd>
+    <dt><code>#menu</code></dt><dd>日程页顶部的玻璃弹出菜单，模糊背后的紫色横条。</dd>
+    <dt><code>#sheet</code></dt><dd>整页从底部升起的引导页，顶部露出灰色状态栏。</dd>
+    <dt><code>#sketch</code></dt><dd>原帖给智能体的手绘分镜：把动画写成 Phase 0–4。</dd>
+  </dl>
+</div>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const phone=$('#phone'),home=$('#home'),menu=$('#menu'),hero=$('#hero'),arrow=$('#arrow'),steps=[...document.querySelectorAll('.step')];
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // 节次
+  const times=[['08:20','09:05'],['09:15','10:00'],['10:20','11:05'],['11:15','12:00'],['13:30','14:15'],['14:25','15:10'],['15:30','16:15'],['16:25','17:10'],['17:20','18:05'],['18:30','19:15']];
+  $('#pds').innerHTML=times.map((t,i)=>`<div>${i+1}<small>${t[0]}</small><small>${t[1]}</small></div>`).join('')+'<div>11</div>';
+  // 三枚图标：自绘
+  const dots=()=>{let s='';const rows=[[2,3,4,5,6],[0,1,2,3,4,5,6],[0,1,2,3,4,5,6],[0,1,2,3,4]];rows.forEach((r,y)=>r.forEach(x=>{const red=y===2&&x===4;s+=`<circle cx="${16+x*10.6}" cy="${40+y*13.2}" r="${red?5:2.1}" fill="${red?'#fb3640':'#000'}"/>`}));return s};
+  const ICONS={
+   mascot:`<svg viewBox="0 0 97.5 97.5"><path d="M48.7 18C42 18 37 20 33 22.5L21 13.5C19.5 12.5 18 13.5 18 15.5L19.5 34C13 40 11 47 13 53 11 60 15 67 22 69 24 77 34 84 48.7 84S73.5 77 75.5 69C82.5 67 86.5 60 84.5 53 86.5 47 84.5 40 78 34L79.5 15.5C79.5 13.5 78 12.5 76.5 13.5L64.5 22.5C60.5 20 55.5 18 48.7 18Z" fill="#6054f4"/><circle cx="34" cy="48" r="9.5" fill="#e6e3fc"/><circle cx="63" cy="48" r="9.5" fill="#e6e3fc"/><path d="M34 41.5c.8 4.8 1.7 5.7 6.5 6.5-4.8.8-5.7 1.7-6.5 6.5-.8-4.8-1.7-5.7-6.5-6.5 4.8-.8 5.7-1.7 6.5-6.5ZM63 41.5c.8 4.8 1.7 5.7 6.5 6.5-4.8.8-5.7 1.7-6.5 6.5-.8-4.8-1.7-5.7-6.5-6.5 4.8-.8 5.7-1.7 6.5-6.5Z" fill="#6054f4"/><path d="M46 62h5l-2.5 3.5Z" fill="#fff"/></svg>`,
+   grid:`<svg viewBox="0 0 97.5 97.5"><rect x="17" y="20" width="63.5" height="57" rx="9" fill="#f3f1fe" stroke="#6054f4" stroke-width="3"/><path d="M15.5 33V29a10.5 10.5 0 0 1 10.5-10.5h45.5A10.5 10.5 0 0 1 82 29v4Z" fill="#6054f4"/>${[[1,2,3],[0,1,2,3],[0,1,2]].map((r,y)=>r.map(x=>`<rect x="${29+x*11}" y="${40.5+y*10.5}" width="5.5" height="5" rx="1.300" fill="#6054f4"/>`).join('')).join('')}</svg>`,
+   cal:`<svg viewBox="0 0 97.5 97.5"><defs><linearGradient id="cb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fafafa"/><stop offset="1" stop-color="#efefef"/></linearGradient></defs><rect width="97.5" height="97.5" fill="url(#cb)"/><path d="M0 24.5a24.5 24.5 0 0 1 24.5-24.5h48.5a24.5 24.5 0 0 1 24.5 24.5Z" fill="#fb3640"/>${dots()}<rect x=".5" y=".5" width="96.5" height="96.5" rx="24.5" fill="none" stroke="#fff" stroke-width="1"/></svg>`
+  };
+  // 播放顺序：首轮吉祥物配第一步，之后 日历网格→红色日历→吉祥物 循环
+  const SEQ=[['grid',0],['cal',1],['mascot',2]];
+  const X_REST=164,DIST=270;
+  let cur=null,timers=[],run=0;
+  const tile=k=>{const d=document.createElement('div');d.className='tile';d.innerHTML=ICONS[k];hero.insertBefore(d,arrow);return d};
+  const later=(f,ms)=>timers.push(setTimeout(f,ms));
+  const setStep=i=>steps.forEach((s,n)=>s.classList.toggle('on',n===i));
+  const place=(el,x)=>{el.style.transition='none';el.style.transform=`translateX(${x}px)`;el.offsetWidth};
+  const EASE='cubic-bezier(.16,.84,.24,1)';
+  function go(el,x,ms){el.style.transition=`transform ${ms}ms ${EASE}`;el.style.transform=`translateX(${x}px)`}
+  function clear(){run++;timers.forEach(clearTimeout);timers=[];hero.querySelectorAll('.tile').forEach(t=>t.remove());cur=null}
+  function intro(){
+    clear();setStep(0);cur=tile('mascot');
+    if(reduce){place(cur,X_REST);place(arrow,0);return}
+    place(cur,360+20);place(arrow,-105.5-90);
+    later(()=>{go(cur,X_REST,1500);go(arrow,0,1500)},120);
+    later(()=>next(0),3300);
+  }
+  function next(i){
+    const [k,st]=SEQ[i%3],out=cur,inn=tile(k);
+    place(inn,X_REST+DIST);
+    setStep(st);
+    go(out,X_REST-DIST,950);go(inn,X_REST,950);
+    later(()=>out.remove(),1000);
+    cur=inn;
+    later(()=>next(i+1),3500);
+  }
+  function openSheet(){phone.classList.add('open','dim');menu.classList.add('gone');intro()}
+  function closeSheet(){phone.classList.remove('open');clear();later(()=>phone.classList.remove('dim'),480)}
+  function reset(auto){clear();phone.classList.remove('open','dim');menu.classList.remove('gone');if(auto&&!reduce)later(openSheet,1700)}
+  $('#openApple').onclick=openSheet;$('#close').onclick=closeSheet;$('#replay').onclick=()=>reset(true);
+  // 关键帧参数：?s=home|mascot|grid|cal|mid
+  const s=new URLSearchParams(location.search).get('s');
+  if(s){
+    clear();phone.classList.add('instant');
+    if(s==='home'){return}
+    phone.classList.add('open','dim');menu.classList.add('gone');place(arrow,0);
+    if(s==='mid'){const a=tile('grid'),b=tile('cal');place(a,X_REST-175);place(b,X_REST+95);setStep(1);return}
+    const k={mascot:['mascot',0],grid:['grid',0],cal:['cal',1],end:['mascot',2]}[s];cur=tile(k[0]);place(cur,X_REST);setStep(k[1]);return;
+  }
+  reset(true);
+})();
+</script>
+</body>
+</html>

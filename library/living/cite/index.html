@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cite — 停在这句，片子出现</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --ink: #282828;
+    --mark: #2a24d0;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --sans: Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+
+  header.mast { max-width: 760px; margin: 0 auto; padding: 48px 24px 10px; text-align: center; }
+  header.mast .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  header.mast h1 { font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; margin: 8px 0; }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1080px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bar-row h2 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--sans); padding: 8px 12px;
+    border: 1px solid var(--note-ink); background: var(--note-ink); color: var(--cream); cursor: pointer;
+  }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--note-ink);
+    min-height: 780px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 56px 24px 88px;
+    overflow: hidden;
+  }
+
+  #sheet {
+    position: relative;
+    width: min(640px, 90%);
+    margin: 0 auto;
+    color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    font-size: 18.5px;
+    line-height: 1.55;
+  }
+  #sheet p { margin: 0 0 1.35em; }
+  #sheet p:last-child { margin-bottom: 0; }
+
+  #mark {
+    position: relative;
+    display: inline;
+    margin: 0;
+    padding: 0 0 5px;
+    border: 0;
+    background: none;
+    color: var(--mark);
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    border-radius: 0;
+  }
+  #mark svg {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    width: 100%; height: 9px;
+    overflow: visible;
+    pointer-events: none;
+  }
+  #mark path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.65;
+    stroke-linecap: round;
+  }
+  #mark:focus { outline: none; }
+  #mark:focus-visible { outline: 2px solid var(--mark); outline-offset: 3px; }
+
+  #clip-slot {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: calc(100% + 18px);
+    opacity: 0;
+    pointer-events: none;
+    isolation: isolate;
+    transition: opacity 220ms var(--ease);
+  }
+  #clip-slot.is-on {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .glow {
+    position: absolute;
+    inset: -8% -9%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .glow video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(36px) saturate(1.15);
+    opacity: .52;
+  }
+  .pic {
+    position: relative;
+    z-index: 1;
+  }
+  .pic video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    background: #1a1814;
+  }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: start; }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+    #stage { min-height: 640px; padding: 40px 16px 64px; }
+    #sheet { font-size: 16.5px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 18px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .nums { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: ui-monospace, Menlo, monospace; font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; font-size: 12.5px; color: var(--muted); }
+  a { color: inherit; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .92em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #clip-slot { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · x.com/raunofreiberg</div>
+  <h1>停在这句，片子出现</h1>
+  <p class="sub">蓝双下划线。片子贴在段上。四周渗光。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-replay">收到起点</button>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="sheet">
+      <div id="clip-slot" aria-hidden="true">
+        <div class="glow"><video id="bloom" muted loop playsinline preload="auto" tabindex="-1"></video></div>
+        <div class="pic"><video id="clip" muted loop playsinline preload="auto" poster="assets/poster.jpg"></video></div>
+      </div>
+      <p>The shop still runs a <button type="button" id="mark" aria-expanded="false" aria-controls="clip">proof press from 1959<svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M1.2 3.1 C 28 1.5, 64 4.6, 98.6 2.7"/><path d="M0.6 7.5 C 31 6.1, 69 9.2, 99.4 7.0"/></svg></button>. The cylinder is heavy and the rail is oiled. Each sheet has to be walked through by hand. You hear the roller before you see the type.</p>
+      <p>Galley trays sit to the left, sorted by size. The first pull is always too light. The second is the one you keep.</p>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原帖第一屏</h3>
+      <p>白纸。两段衬线字停在偏下的位置，上面一大块空着。一句蓝字，底下两道略弯的线。指针停在这句上，片子在段的上方淡入，四周渗出一层跟画面同色的光。移开，片子淡出。正文不动。</p>
+      <p>原帖 10.25s、2580×2072、60fps。Rauno 写 Video player with soul，片子是 Xerox Alto 的档案。档案有版权，本页换成工房里的打样机。发明是那句蓝线：它就是播放器。</p>
+    </div>
+    <figure>
+      <img src="assets/source-closed.jpg" alt="原帖：两段字，一句蓝双下划线" />
+      <figcaption><strong>图 1.</strong> 收起。两段字。蓝双下划线。上面留白。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>下划线是播放器。停在蓝字上，或停在已经出现的片子上，<code>#clip-slot</code> 用 220ms 淡入。移出这两块，同样时长淡出。片子循环，静音。正文位置不变，上面那块白是留给它的。</p>
+    <p>渗光是同一段片子放大、模糊、垫在后面。颜色跟着画面走，不用另调一盒阴影。</p>
+    <p>工作室首页的视频块仍走 <a href="../tubik/index.html">tubik</a>。阅读器工具栏仍走 <a href="../pageflow/index.html">pageflow</a>。</p>
+  </div>
+
+  <figure>
+    <img src="assets/source-open.jpg" alt="原帖：片子出现在段上方，四周渗光" />
+    <figcaption><strong>图 2.</strong> 打开。片子贴在句上。光从边上渗出来。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/source-fade.jpg" alt="原帖：片子刚开始淡入" />
+    <figcaption><strong>图 3.</strong> 淡入第一帧。尺寸已经是满的，透明度在升。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>原则：</b>两段字够用就停，上面留白给片子。蓝线自己说明能停。动效只做这一次显隐，220ms。
+  </aside>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>原件</td><td>10.25s，2580×2072，60fps。淡入约 150–200ms</td></tr>
+      <tr><td>栏宽</td><td>640px。字 18.5px / 1.55。墨 #282828</td></tr>
+      <tr><td>蓝字</td><td>#2a24d0。两道线，略弯，高 9px</td></tr>
+      <tr><td>片子</td><td>栏宽的 84%，3:2。贴在段上 18px</td></tr>
+      <tr><td>淡入</td><td>220ms <code>cubic-bezier(0.23, 1, 0.32, 1)</code>。只动透明度</td></tr>
+      <tr><td>渗光</td><td>同一片子，放大 118%，模糊 36px，透明度 .52</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#mark</code></dt>
+    <dd>蓝双下划线。停在上面，片子才出现。</dd>
+    <dt><code>#clip</code></dt>
+    <dd>贴在段上方。220ms 淡入。循环，静音。</dd>
+    <dt><code>#bloom</code></dt>
+    <dd>同一片子放大模糊，垫在后面。颜色跟着画面走。</dd>
+  </dl>
+</section>
+<footer class="colophon">
+  <p>来源：<a href="https://x.com/raunofreiberg/status/2037627143530729594">@raunofreiberg</a> · <a href="https://historyofsoftware.org/">History of Software Design</a> · 片子为原件 · <a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+  const slot = document.getElementById("clip-slot")
+  const clip = document.getElementById("clip")
+  const bloom = document.getElementById("bloom")
+  const mark = document.getElementById("mark")
+  const replay = document.getElementById("t-replay")
+  const src = "assets/clip.mp4"
+  clip.src = src
+  bloom.src = src
+
+  let open = false
+  let closeTimer = 0
+
+  function setOpen(next) {
+    if (next === open) return
+    open = next
+    slot.classList.toggle("is-on", open)
+    slot.setAttribute("aria-hidden", open ? "false" : "true")
+    mark.setAttribute("aria-expanded", open ? "true" : "false")
+    window.clearTimeout(closeTimer)
+    if (open) {
+      const t = clip.currentTime
+      bloom.currentTime = t
+      const play = function (el) { const p = el.play(); if (p && p.catch) p.catch(function () {}) }
+      play(clip)
+      play(bloom)
+    } else {
+      closeTimer = window.setTimeout(function () {
+        if (!open) { clip.pause(); bloom.pause() }
+      }, reduce ? 0 : 240)
+    }
+  }
+
+  function inside(node, target) {
+    return node === target || node.contains(target)
+  }
+
+  if (fine) {
+    mark.addEventListener("pointerenter", function () { setOpen(true) })
+    mark.addEventListener("pointerleave", function (e) {
+      if (inside(slot, e.relatedTarget)) return
+      setOpen(false)
+    })
+    slot.addEventListener("pointerenter", function () { setOpen(true) })
+    slot.addEventListener("pointerleave", function (e) {
+      if (inside(mark, e.relatedTarget)) return
+      setOpen(false)
+    })
+  } else {
+    mark.addEventListener("click", function (e) {
+      e.preventDefault()
+      setOpen(!open)
+    })
+    document.addEventListener("pointerdown", function (e) {
+      if (!open) return
+      if (inside(mark, e.target) || inside(slot, e.target)) return
+      setOpen(false)
+    })
+  }
+
+  mark.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      setOpen(!open)
+    }
+    if (e.key === "Escape") setOpen(false)
+  })
+
+  replay.addEventListener("click", function () {
+    clip.pause(); bloom.pause()
+    clip.currentTime = 0
+    bloom.currentTime = 0
+    setOpen(false)
+  })
+
+  clip.addEventListener("timeupdate", function () {
+    if (!open) return
+    if (Math.abs(bloom.currentTime - clip.currentTime) > 0.12) {
+      bloom.currentTime = clip.currentTime
+    }
+  })
+})()
+</script>
+</body>
+</html>

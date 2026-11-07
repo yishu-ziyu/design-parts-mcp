@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Map Essay</title>
+<style>
+@font-face{font-family:"Courier Prime";src:url(fonts/courier-prime-400.woff2) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"Courier Prime";src:url(fonts/courier-prime-700.woff2) format("woff2");font-weight:700;font-display:block}
+@font-face{font-family:"EB Garamond";src:url(fonts/EBGaramond-latin-var.woff2) format("woff2");font-weight:400 800;font-display:block}
+:root{--s:1px;--paper:#e3e3e3;--ink:#1c1c1c}
+*{box-sizing:border-box;margin:0}
+html,body{background:#000}
+#view{height:100vh;display:grid;place-items:center;overflow:hidden}
+#stage{position:relative;width:calc(var(--s)*655);height:calc(var(--s)*1164);background:var(--paper);color:var(--ink);overflow:hidden;font-family:"Courier Prime",monospace;cursor:pointer}
+#stage img{position:absolute;inset:0;width:100%;height:100%;display:none}
+.t{position:absolute;left:0;right:0;text-align:center;white-space:pre;transform:translateY(-50%)}
+.layer{position:absolute;inset:0;display:none}.layer.on{display:block}
+#grain{position:absolute;inset:0;opacity:.09;mix-blend-mode:multiply;pointer-events:none}
+#invert{background:#111;color:#f1f1f1}
+.big{font-family:"EB Garamond",serif;font-weight:400}
+#foot{max-width:720px;margin:0 auto;padding:64px 24px 80px;background:#000;color:#bbb;font:14px/1.6 system-ui}
+#foot h3{color:#fff;font-size:15px}#foot dt{margin-top:12px}#foot code{color:#fff}#foot dd{margin:2px 0 0}
+</style></head><body>
+<div id="view"><div id="stage" role="img" aria-label="Video ensayo tipográfico sobre el cuento Del rigor en la ciencia">
+  <img id="frame" alt="">
+  <section class="layer" id="title"></section>
+  <section class="layer" id="imperio"></section>
+  <section class="layer" id="doc"></section>
+  <section class="layer" id="invert"></section>
+  <section class="layer" id="final"></section>
+  <section class="layer" id="stamp"></section>
+  <svg id="grain" width="100%" height="100%"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .55 0 0 0 0 .55 0 0 0 0 .55 0 0 0 2.4 -1.1"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+</div></div>
+<section id="foot">
+<h3>可拆</h3>
+<dl>
+<dt><code>#title</code></dt><dd>扉页一块块硬切出现，字距拉得很开，和正文的小号打字机字形成强烈落差。</dd>
+<dt><code>#doc</code></dt><dd>整页文献只占版心一小块，其余留白；大字母和单词压在文献上，再硬切消失。</dd>
+<dt><code>#invert</code></dt><dd>全黑反相一拍，只留一个词，文献隐约透出来。</dd>
+<dt><code>#final</code></dt><dd>打字机逐字打出结尾，文本变长时整段往上走。</dd>
+</dl>
+</section>
+<script>
+(()=>{
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,qs=new URLSearchParams(location.search);
+const $=id=>document.getElementById(id);
+const fit=()=>document.documentElement.style.setProperty('--s',Math.min(innerHeight/1164,innerWidth/655)+'px');addEventListener('resize',fit);fit();
+const S=v=>`calc(var(--s)*${v})`;
+function T(y,txt,fs,o={}){const e=document.createElement('div');e.className='t'+(o.cls?' '+o.cls:'');e.style.cssText=`top:${S(y)};font-size:${S(fs)};letter-spacing:${o.ls||0}em;font-weight:${o.w||400};${o.left!=null?`left:${S(o.left)};right:auto;text-align:left;`:''}${o.lh?`line-height:${S(o.lh)};`:''}${o.css||''}`;e.textContent=txt;if(o.step!=null)e.dataset.step=o.step;return e}
+// 扉页（坐标系 655×1164，全部量自原帖 3.0 秒的帧）
+const title=$('title');[
+ [168,'CON PRIVILEGIO · PRIMERA IMPRESIÓN',7.6,{ls:.13,step:0}],
+ [199,'EST MODUS IN REBUS,',11,{ls:.17,step:0}],[214,'SUNT CERTI DENIQUE FINES.',11,{ls:.17,step:0}],
+ [231,'HORAT. SAT. I.',6.8,{ls:.13,w:700,step:0}],
+ [331,'DEL RIGOR',47,{ls:.27,step:1}],[376,'EN LA',13.5,{ls:.16,step:2}],[421,'CIENCIA',52,{ls:.55,step:3}],
+ [507,'LIBRO CUARTO',29.5,{ls:.12,step:3}],[594,'VIAJES DE VARONES PRUDENTES',15,{ls:.11,step:2}],[631,'POR',7.5,{ls:.13,w:700,step:2}],[662,'SUÁREZ MIRANDA',12.5,{ls:.13,step:2}],
+ [738,'En que se trata del Arte de la Cartografía y de la Perfección que\nalcanzó en el Imperio; de los Mapas Desmesurados y los Colegios\nde Cartógrafos; y de las Ruinas del Mapa, habitadas por Animales\ny por Mendigos, en los desiertos del Oeste.',10.8,{lh:13,ls:.03,step:2}],
+ [811,'[XLV]',13,{ls:.08,step:2}],[953,'En Lérida,',10,{ls:.05,step:2}],[967,'1658.',8,{ls:.08,step:2}],
+ [995,'Con licencia de los Colegios de Cartógrafos',7.2,{ls:.06,w:700,step:2}],[1007,'Texto de Jorge Luis Borges, El hacedor, 1960.',7.2,{ls:.06,w:700,step:2}]
+].forEach(a=>title.append(T(a[0],a[1],a[2],a[3])));
+[465,544].forEach(y=>{const r=document.createElement('div');r.dataset.step=3;r.style.cssText=`position:absolute;left:50%;top:${S(y)};width:${S(70)};height:${S(1.3)};margin-left:${S(-35)};background:#222`;title.append(r)});
+const seal=document.createElement('img');seal.src='source-assets/seal.png';seal.dataset.step=2;seal.alt='';seal.style.cssText=`display:block;inset:auto;left:50%;top:${S(842)};width:${S(70)};height:${S(70)};margin-left:${S(-35)};`;title.append(seal);
+// 放大的 IMPERIO
+const imp=$('imperio');const p1='e la Cartografía logró tal Perfección que el mapa de una sola\nuna Provincia.';
+imp.append(T(40,'IMPERIO',27,{ls:.13,w:700,left:336,cls:'x'}),T(133,p1,19.6,{ls:.03,w:700,lh:18,left:0}),T(445,'MAPA',27,{ls:.13,w:700,left:366}),T(540,'[ilegible]',27,{ls:.13,w:700,left:328}),T(726,'DE CARTÓGRAFOS',27,{ls:.1,w:700,left:0,css:'display:none'}));
+imp.querySelectorAll('.t').forEach(e=>e.style.filter=`blur(${S(.55)})`);
+// 文献页
+const doc=$('doc');const para=(y,t)=>{const e=T(y,t,6.15,{ls:.02,w:700,lh:6.4,left:113});return e};
+doc.append(T(330,'DEL RIGOR EN LA CIENCIA',9,{ls:.08,w:700}),T(352,'Libro Cuarto, Cap. XLV, Lérida, 1658.',6.2,{ls:.02,w:700}),
+ T(427,'IMPERIO',9,{ls:.1,w:700}),para(452,'En aquel Imperio, el Arte de la Cartografía logró tal Perfección que el mapa de una sola Provincia ocupaba toda una Ciudad,\ny el mapa del Imperio, toda una Provincia.'),
+ T(539,'MAPA',9,{ls:.1,w:700}),T(565,'[ilegible]',8,{ls:.07,w:700}),T(616,'COLEGIOS DE CARTÓGRAFOS',9,{ls:.08,w:700}),
+ para(642,'Con el tiempo, esos Mapas Desmesurados no satisficieron y los Colegios de Cartógrafos levantaron un Mapa del Imperio, que tenía\nel tamaño del Imperio y coincidía puntualmente con él.'),
+ T(729,'MAPA',9,{ls:.1,w:700}),T(755,'[ilegible]',8,{ls:.07,w:700}),T(805,'GENERACIONES SIGUIENTES',9,{ls:.08,w:700}),
+ para(832,'Menos Adictas al Estudio de la Cartografía, las Generaciones Siguientes entendieron que ese dilatado Mapa era Inútil\ny no sin Impiedad lo entregaron a las Inclemencias del Sol y de los Inviernos.'));
+[428,541,618,731,807].forEach((y,i)=>{doc.append(T(y,'0'+(i+1),4.5,{w:700,left:63}),T(y,'0'+(i+1),4.5,{w:700,left:571}))});
+const over=document.createElement('div');over.id='over';over.className='t big';over.style.cssText=`top:${S(580)};font-size:${S(180)};letter-spacing:.34em;text-indent:.34em;line-height:1`;doc.append(over);
+const inv=$('invert');inv.append(T(576,'INVIERNOS',91,{ls:.08,cls:'big'}));
+const dim=doc.cloneNode(true);dim.id='';dim.className='';dim.style.cssText='position:absolute;inset:0;opacity:.09;color:#fff';dim.querySelector('.big').remove();dim.style.transform='';inv.prepend(dim);
+const finalTxt='En los desiertos del\nOeste perduran\ndespedazadas Ruinas del\nMapa, habitadas por\nAnimales y por Mendigos;\nen todo el País no hay\notra reliquia de las\nDisciplinas';
+const fin=document.createElement('div');fin.style.cssText=`position:absolute;left:${S(55)};font-size:${S(30.2)};line-height:${S(36)};white-space:pre;font-weight:400;letter-spacing:0`;$('final').append(fin);
+const st=$('stamp');const sw=document.createElement('div');sw.style.cssText=`position:absolute;inset:0;transform:rotate(3.4deg);transform-origin:50% 48%`;
+sw.append(T(484,'RIGOR SUÁREZ MIRANDA',20.5,{ls:.07}),T(556,'VIAJES DE',20,{ls:.03}),T(574,'VARONES PRUDENTES',20,{ls:.04}),T(604,'LIBRO CUARTO',21.5,{ls:.05,css:'text-decoration:underline;text-underline-offset:.28em;text-decoration-thickness:.09em'}),T(632,'( 1658 )',20,{ls:.1}));st.append(sw);
+// 时间线：每 0.75 秒一拍。hq=原帖帧；其余是 DOM 版式
+const TICK=.75,N=77;
+const dom={};
+const put=(k,v)=>dom[k]=v;
+put(0,{l:'blank'});put(1,{l:'title',step:0});put(2,{l:'title',step:2});put(3,{l:'title',step:3});put(4,{l:'title',step:3});
+put(27,{l:'imperio',y:0});put(28,{l:'imperio',y:0});put(29,{l:'imperio',y:-146});
+put(46,{l:'doc',over:'I I',fsz:345,sp:'-.02em',y:30});put(47,{l:'doc',over:'I I I',fsz:280,sp:'.42em'});put(48,{l:'doc'});put(49,{l:'doc'});put(50,{l:'doc'});
+put(52,{l:'doc',over:'INÚTIL',v:1,fsz:190,sp:'.18em'});put(53,{l:'doc'});put(57,{l:'doc'});put(58,{l:'doc',over:'SOL',fsz:80,sp:'.06em',y:-55,oy:0});
+put(59,{l:'invert'});put(60,{l:'invert'});
+put(70,{l:'doc'});
+put(71,{l:'final',a:.695,b:.695,top:412,fs:30.2});put(72,{l:'final',a:.695,b:.825,top:412,fs:32});put(73,{l:'final',a:.88,b:.9,top:277,fs:36.2});put(74,{l:'final',a:.9,b:1,top:277,fs:36.2});
+put(75,{l:'stamp'});put(76,{l:'stamp'});
+const frame=$('frame'),layers=['title','imperio','doc','invert','final','stamp'];
+const src=k=>'source-assets/m'+String(Math.round(k*TICK*100)).padStart(5,'0')+'.jpg';
+// 预加载，硬切时不闪
+for(let k=0;k<N;k++)if(!dom[k]){const i=new Image();i.src=src(k)}
+function show(k,f){const d=dom[k];frame.style.display=d?'none':'block';if(!d)frame.src=src(k);
+ $('grain').style.display=d?'block':'none';$('grain').style.opacity=d&&d.l==='final'?.75:d&&d.l==='invert'?.28:.3;$('grain').style.mixBlendMode=d&&d.l==='invert'?'screen':'multiply';
+ layers.forEach(n=>$(n).classList.toggle('on',!!d&&d.l===n));
+ if(!d)return;
+ $('stage').style.background=d.l==='invert'?'#111':'var(--paper)';
+ if(d.l==='title')title.querySelectorAll('[data-step]').forEach(e=>e.style.visibility=+e.dataset.step<=d.step?'visible':'hidden');
+ if(d.l==='imperio')imp.style.transform=`translateY(${S(d.y)})`;
+ if(d.l==='doc'){over.textContent=d.over||'';over.style.display=d.over?'block':'none';over.style.fontSize=S(d.fsz||180);over.style.letterSpacing=d.sp||'.34em';over.style.textIndent=d.sp||'.34em';over.style.transform=d.v?'translateY(-50%) rotate(-90deg)':'translateY(-50%)';const dy=d.y||0;doc.style.transform=`translateY(${S(dy)})`;over.style.top=S(580-dy)}
+ if(d.l==='final'){const u=d.a+(d.b-d.a)*f;fin.textContent=finalTxt.slice(0,Math.round(finalTxt.length*u));fin.style.top=S(d.top);fin.style.fontSize=S(d.fs);fin.style.lineHeight=S(d.fs*1.19)}
+ document.body.dataset.scene=d.l}
+let t=parseFloat(qs.get('t')||(reduce?'3':'0')),playing=!reduce&&!qs.has('t'),last=performance.now();
+function tick(now){if(playing){t+=Math.max(0,now-last)/1000;if(t>=N*TICK)t=0}last=now;const k=Math.max(0,Math.min(N-1,Math.floor(t/TICK+1e-6)));show(k,t/TICK-k);requestAnimationFrame(tick)}
+$('stage').addEventListener('click',()=>{if(reduce){t=(Math.floor(t/TICK)+1)*TICK;if(t>=N*TICK)t=0}else playing=!playing});
+addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();playing=!playing}if(e.key==='ArrowRight'){t+=TICK;playing=false}if(e.key==='ArrowLeft'){t=Math.max(0,t-TICK);playing=false}});
+requestAnimationFrame(tick);
+})();
+</script></body></html>

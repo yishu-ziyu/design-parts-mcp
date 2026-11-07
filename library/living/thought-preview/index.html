@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>发送前确认理解：忠实复刻</title>
+<style>
+@font-face{font-family:Inter;src:url(fonts/InterVariable-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#1a1a1a;--mute:#8a8a8a;--line:#e7e7e7;--bg:#f6f6f6;--term-bg:#fbdcc8;--term:#d9541e;--val-bg:#dde7fb;--val:#2a5bc4;--ok-bg:#def0e0;--ok:#2d8a4a;--spring:cubic-bezier(.22,1.1,.36,1)}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:400 12.900px/21px Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:724px;height:544px;margin:0 auto;overflow:hidden;background:var(--bg);border-top:1px solid #d9d9d9}
+#thread{position:absolute;left:129px;width:470.500px;bottom:88px;display:flex;flex-direction:column;gap:16px;transition:bottom .4s var(--spring)}
+.u{align-self:flex-end;max-width:442px;padding:8.500px 12px 9.500px;background:#fff;border-radius:8px;box-shadow:0 0 0 1px #ececec;font:400 12.900px/19px Inter;white-space:pre-wrap}
+.a{font:400 12.900px/20.700px Inter;margin-right:-7px}.a .hl{padding:1px 4px;margin:0}
+.a b{font-weight:600}
+.hl{border-radius:5px;padding:1px 4px;font-weight:450;white-space:pre}
+.hl.term{background:var(--term-bg);color:var(--term)}.hl.val{background:var(--val-bg);color:var(--val)}.hl.ok{background:var(--ok-bg);color:var(--ok)}
+.hl.plain{background:none;padding:1px 4px}
+.hl i{font-style:normal;display:inline-block}
+.hl.wave{animation:bgin .45s ease both}.hl.wave i{animation:hop .34s cubic-bezier(.3,.6,.3,1) both;animation-delay:calc(var(--i)*18ms)}
+@keyframes hop{0%{translate:0 0}40%{translate:0 -3px}100%{translate:0 0}}
+@keyframes bgin{from{background-color:transparent}}
+.fly{animation:rise .42s var(--spring) both}@keyframes rise{from{opacity:.25;translate:0 40px}to{opacity:1;translate:0 0}}
+/* 输入卡 */
+#box{position:absolute;left:129px;width:470.500px;bottom:71px;background:#fff;border-radius:20px;box-shadow:0 0 0 1px #dcdcdc,0 12px 44px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.03);overflow:hidden;transition:box-shadow .3s}
+#drawer{height:0;overflow:hidden;transition:height .42s var(--spring)}
+#dw{padding:13px 16px 0;position:relative}
+#inputwrap{border-top:1px solid transparent;transition:border-color .2s}
+#box.open #inputwrap{border-color:#ececec}
+#input{min-height:41px;padding:11px 16px 9px;font:400 12.900px/21px Inter;outline:0;white-space:pre-wrap;word-break:break-word;caret-color:#111;letter-spacing:.002em}
+#input:empty:before{content:"Describe a change to the UI";color:#a3a3a3}
+#tools{height:47px;position:relative;display:flex;align-items:center;padding:0 16px 9px;color:#444}
+#tools button{border:0;background:none;padding:0;color:inherit;cursor:pointer;display:flex;align-items:center}
+#plus{margin-right:15px}#auto{margin-left:auto;font:400 12.900px Inter;color:#6d6d6d;gap:7px;margin-right:19px}
+#mic{margin-right:14px}
+#send{width:30px;height:30px;border-radius:50%;background:#8f8f8f!important;color:#fff!important;justify-content:center;transition:background .2s,scale .12s}
+#box.has #send{background:#141414!important}#send:active{scale:.92}
+/* 抽屉内容 */
+#qrow{display:flex;justify-content:space-between;font:400 12.900px/20px Inter;color:#6d6d6d;margin-bottom:10px}#qrow b{font-weight:550;color:var(--ink)}#qrow small{font-size:12px;color:#9a9a9a;line-height:20px}
+#title{display:none;font:450 12.900px/20px Inter;color:var(--ink);margin-bottom:10px}
+#yn{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}
+#yn button{height:30px;border-radius:9px;border:0;background:#fff;box-shadow:inset 0 0 0 1px #e4e4e4;font:400 12.900px Inter;color:#6d6d6d;cursor:pointer;transition:background .12s,color .12s}
+#yn button:hover,#yn button.press{background:#e4e3e1;color:#333;box-shadow:none}
+#prev{position:relative;height:243px;border-radius:10px;background:#f8f8f8;box-shadow:inset 0 0 0 1px #e8e8e8;overflow:hidden}
+#view{position:absolute;left:0;right:0;top:0;bottom:0;transition:opacity .16s,scale .2s}
+#view.chg{opacity:0;scale:.985}
+.nav{position:absolute;top:50%;width:28px;height:28px;margin-top:-14px;border-radius:50%;border:0;background:#fff;box-shadow:0 0 0 1px #e4e4e4;color:#444;cursor:pointer;display:grid;place-items:center;padding:0;z-index:2}
+.nav.l{left:10px}.nav.r{right:10px}
+#row{display:flex;align-items:center;height:37px;margin-top:0;gap:4px}
+.n{height:21px;min-width:20px;padding:0 3px;border-radius:5px;background:var(--val-bg);color:var(--val);font:450 12.900px/21px Inter;border:0;text-align:center;cursor:ew-resize;touch-action:none;user-select:none}
+#token{margin-left:auto;display:flex;align-items:center;gap:6px;border:0;background:none;color:#444;font:400 12.800px Inter;cursor:pointer;padding:0 4px 0 6px}
+#token svg.c{transition:rotate .2s}
+.ex #token svg.c{rotate:180deg}
+#scale{display:none;gap:4px;flex:1}.ex #scale{display:flex}.ex .n{display:none}
+.tok{flex:1;border-radius:7px;height:20px;background:#f0f0f0;border:0;color:#333;font:450 12.500px Inter;cursor:pointer;padding:0;white-space:nowrap;transition:background .1s}
+.tok small{font:400 10.500px Inter;color:#a2a2a2;margin-left:3px}
+.tok:hover{background:#e3e3e3}.tok.on{background:var(--val-bg);color:var(--val)}.tok.on small{color:#7f9bd8}
+#key{position:absolute;display:none;width:34px;height:34px;border-radius:8px;background:rgba(70,70,70,.85);color:#fff;align-items:center;justify-content:center;z-index:5;left:50%;bottom:48px}
+#box.res #qrow,#box.res #yn{display:none}#box.res #title{display:block}#box.res .nav{display:none}
+/* 小面板：1 倍布局，整体缩放到预览里 */
+.host{position:absolute;left:50%;top:12px;transform-origin:top center}
+.host.sec{top:50%}
+.panel{--pad:24px;background:repeating-linear-gradient(-45deg,#a9b8f4 0 2.600px,#e9ecfd 2.600px 6.200px);box-shadow:0 0 0 1.500px #8c9fee;padding:var(--pad);width:calc(188px + var(--pad)*2);transition:padding .25s var(--spring),width .25s var(--spring)}
+.pi{background:#fff;width:188px;padding:0 13px;color:#222;font:400 11px/14px Inter}
+.pi h6{margin:0;font:600 11.500px/14px Inter;display:flex;justify-content:space-between;padding:13px 0 9px}.pi h6 em{font:400 10.500px Inter;color:#9a9a9a}
+.lr{display:flex;align-items:center;height:28px;padding:0 6px;gap:8px;margin-bottom:6px;border-radius:7px}.lr:before{content:"";flex:none;width:13px;height:13px;border-radius:2px;background:#d3d3d3}.lr span{margin-left:auto;color:#a6a6a6;font-size:10px}.lr.on{background:#f0f0f0}
+.add{height:28px;border-radius:6px;border:1px dashed #d4d4d4;text-align:center;line-height:26px;color:#666;margin:6px 0 14px}
+.sep{height:1px;background:#eee;margin:0 -13px}
+.fd{display:flex;gap:7px;margin-bottom:8px}.fd div{flex:1;height:23px;background:#f2f2f2;border-radius:5px;display:flex;justify-content:space-between;padding:0 8px;line-height:23px;font-weight:500}.fd i{font-style:normal;color:#a0a0a0;font-weight:400}
+.seg{display:flex;background:#f2f2f2;border-radius:5px;padding:2px;height:23px;margin-bottom:8px}.seg span{flex:1;text-align:center;line-height:19px;color:#777;font-size:10px}.seg .on{background:#fff;border-radius:3px;color:#222;box-shadow:0 0 1px #0003}
+.sl{display:flex;justify-content:space-between;font-size:10.500px}.sl b{font-weight:600}.tr{height:2.500px;background:#ddd;margin:7px 0 12px;position:relative}.tr u{position:absolute;left:0;top:0;height:2.500px;background:#777}.tr s{position:absolute;top:-4.500px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #555}
+footer{width:724px;max-width:100%;margin:0 auto;padding:28px 16px 60px;color:#555;font:400 13.500px/21px Inter}footer h3{font-size:14px;color:#111;margin:0 0 8px}footer dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 12px}footer dd{margin:0}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="stage">
+ <div id="thread" aria-live="polite">
+  <div class="u">could the input detect spacing when you
+say 12px of padding on the panel</div>
+  <div class="a">It does now. Numbers next to “padding” get a <span class="hl plain" style="color:var(--val)">blue</span> highlight, and the drawer shows the part with the padding hatched. You can edit the number in the drawer or drag sideways on it to scrub, and the message text updates with it.</div>
+  <div class="u">love it. when a highlight appears let's make the letters do a quick wave and fade the background in</div>
+  <div class="a">Added. Each letter hops up 3px in a quick wave while the background fades in. You can keep typing through it without the caret moving.</div>
+  <div class="u">the bold text should match the weight of the slash menu chips</div>
+  <div class="a">Matched. Highlights are now weight 500, the same as the chips.</div>
+ </div>
+ <div id="box">
+  <div id="drawer"><div id="dw">
+    <div id="qrow"><span>Are you talking about the <b id="gname">Right panel</b>?</span><small id="count">1 of 4</small></div>
+    <div id="title">Right panel</div>
+    <div id="yn"><button id="yes">Yes</button><button id="no">No</button></div>
+    <div id="prev"><div id="view"></div>
+     <button class="nav l" id="pv" aria-label="Previous guess"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.500 2 3.500 6l4 4" stroke="currentColor" stroke-width="1.300" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+     <button class="nav r" id="nx" aria-label="Next guess"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.500 2l4 4-4 4" stroke="currentColor" stroke-width="1.300" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div id="row"><span id="nums" style="display:flex;gap:4px"></span><div id="scale"></div>
+      <button id="token" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.500 12.500 7 7 12.500 1.500 7Z" stroke="currentColor" stroke-width="1.100" stroke-linejoin="round"/></svg><span id="tname">space/xl</span><svg class="c" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.500 5 6.500 8 3.500" stroke="currentColor" stroke-width="1.200" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+  </div></div>
+  <div id="inputwrap"><div id="input" contenteditable="plaintext-only" role="textbox" aria-label="Message" spellcheck="false"></div></div>
+  <div id="tools">
+   <button id="plus" aria-label="Attach"><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.500 1.500v12M1.500 7.500h12" stroke="currentColor" stroke-width="1.300" stroke-linecap="round"/></svg></button>
+   <button aria-label="Commands"><svg width="10" height="15" viewBox="0 0 10 15" fill="none"><path d="M8.500 1.500 1.500 13.500" stroke="currentColor" stroke-width="1.200" stroke-linecap="round"/></svg></button>
+   <button id="auto">Auto<svg width="11" height="11" viewBox="0 0 10 10" fill="none"><path d="M1.500 3 5 6.700 8.500 3" stroke="currentColor" stroke-width="1.200" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+   <button id="mic" aria-label="Dictate"><svg width="12" height="16" viewBox="0 0 12 16" fill="none"><rect x="3.500" y=".8" width="5" height="9" rx="2.500" stroke="currentColor" stroke-width="1.200"/><path d="M1 7.500a5 5 0 0 0 10 0M6 12.500V15" stroke="currentColor" stroke-width="1.200" stroke-linecap="round"/></svg></button>
+   <button id="send" aria-label="Send"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 12V2M2.800 6.200 7 2l4.200 4.200" stroke="currentColor" stroke-width="1.500" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <div id="key"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4 3 8l4 4" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+ </div>
+</div>
+<footer><h3>可拆</h3><dl>
+<dt><code>#input</code></dt><dd>打字时把含糊词和数值原地标色，字母依次跳 3 像素，背景淡入，光标不动</dd>
+<dt><code>#drawer</code></dt><dd>识别到才从输入卡内长出来：猜测确认、预览、取值</dd>
+<dt><code>#yn</code></dt><dd>Yes 把含糊词换成确定对象并变绿；No 或方向键换下一个猜测</dd>
+<dt><code>#prev</code></dt><dd>预览里用斜线标出“这句话会改到的那一块”，随数值实时变化</dd>
+<dt><code>#row</code></dt><dd>四边数值可横向拖动；展开成设计令牌色阶点选</dd></dl></footer>
+<script>
+const $=s=>document.querySelector(s),box=$('#box'),input=$('#input'),drawer=$('#drawer'),dw=$('#dw');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const GUESS=[['Right panel','whole'],['Properties section','props'],['Layers section','layers'],['Toolbar','whole']];
+const SCALE=[[4,'xs'],[8,'sm'],[12,'md'],[16,'lg'],[24,'xl'],[32,'2xl']];
+let guess=0,resolved=false,seen=new Set(),px=24,opened=false;
+const LAYERS=`<h6>Layers<em>4</em></h6><div class="lr on">Hero image<span>Image</span></div><div class="lr">Headline<span>Text</span></div><div class="lr">Subtitle<span>Text</span></div><div class="lr">Get started<span>Button</span></div><div class="add">+ Add layer</div>`;
+const PROPS=`<h6>Properties</h6><div class="fd"><div><i>X</i>24</div><div><i>Y</i>48</div></div><div class="seg"><span class="on">Left</span><span>Center</span><span>Right</span><span>Fill</span></div><div class="sl">Opacity<b>80%</b></div><div class="tr"><u style="width:80%"></u><s style="left:78%"></s></div><div class="sl">Blur<b>20%</b></div><div class="tr"><u style="width:20%"></u><s style="left:18%"></s></div>`;
+const MORE=`<div class="sep"></div><h6>Presets</h6><div class="fd"><div></div><div></div></div>`;
+function view(){const g=GUESS[guess][1];const v=$('#view');
+ if(g==='whole')v.innerHTML=`<div class="host" style="transform:translateX(-50%) scale(.53)"><div class="panel" style="--pad:${px}px"><div class="pi">${LAYERS}<div class="sep"></div>${PROPS}${MORE}</div></div></div>`;
+ else v.innerHTML=`<div class="host sec" style="transform:translate(-50%,-50%) scale(.82)"><div class="panel" style="--pad:${Math.round(px*.7)}px"><div class="pi">${g==='props'?PROPS:LAYERS}</div></div></div>`}
+function setGuess(i,dir){guess=(i+GUESS.length)%GUESS.length;const v=$('#view');v.classList.add('chg');setTimeout(()=>{$('#gname').textContent=GUESS[guess][0];$('#count').textContent=`${guess+1} of ${GUESS.length}`;view();v.classList.remove('chg')},reduce?0:130)}
+function nums(){$('#nums').innerHTML=[0,1,2,3].map(()=>`<span class="n" tabindex="0" role="spinbutton" aria-valuenow="${px}">${px}</span>`).join('');
+ document.querySelectorAll('.n').forEach(n=>{let sx=0,sv=0,drag=false;n.onpointerdown=e=>{drag=true;sx=e.clientX;sv=px;n.setPointerCapture(e.pointerId)};n.onpointermove=e=>{if(!drag)return;const v=Math.max(0,Math.min(64,Math.round(sv+(e.clientX-sx)/3)));if(v!==px)setPx(v,false)};n.onpointerup=()=>drag=false})}
+function scale(){$('#scale').innerHTML=SCALE.map(([v,t])=>`<button class="tok ${v===px?'on':''}" data-v="${v}">${v}<small>${t}</small></button>`).join('');document.querySelectorAll('.tok').forEach(b=>b.onclick=()=>setPx(+b.dataset.v,true))}
+function setPx(v,rs){px=v;const t=SCALE.find(s=>s[0]===v);$('#tname').textContent=t?`space/${t[1]}`:'custom';
+ const p=document.querySelector('#view .panel');if(p)p.style.setProperty('--pad',(GUESS[guess][1]==='whole'?px:Math.round(px*.7))+'px');
+ document.querySelectorAll('.n').forEach(n=>{n.textContent=px});document.querySelectorAll('.tok').forEach(b=>b.classList.toggle('on',+b.dataset.v===px));
+ const txt=input.textContent.replace(/\u00a0/g,' ').replace(/\d+px padding/,`${px}px padding`);seen.add(`${px}px padding`);render(txt,null)}
+// 把纯文本渲染成带高亮的内容。caret 是纯文本偏移
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function spanOf(cls,t,key){const anim=!seen.has(key)&&!reduce;seen.add(key);return `<span class="hl ${cls}${anim?' wave':''}">${[...t].map((c,i)=>`<i style="--i:${i}">${c===' '?'&nbsp;':esc(c)}</i>`).join('')}</span>`}
+function markup(t){const re=/(\[Right panel\]|\[[A-Z][a-z]+ (?:panel|section)\]|side panel|sidebar)|(\b\d+px padding\b)/g;let out='',last=0,m;while((m=re.exec(t))){out+=esc(t.slice(last,m.index));
+   if(m[1])out+=spanOf(m[1][0]==='['?'ok':'term',m[1],m[1]);else out+=spanOf('val',m[2],m[2]);last=m.index+m[0].length}return out+esc(t.slice(last))}
+function caretOffset(){const s=getSelection();if(!s.rangeCount||!input.contains(s.anchorNode))return null;const r=s.getRangeAt(0).cloneRange();r.selectNodeContents(input);r.setEnd(s.anchorNode,s.anchorOffset);return r.toString().replace(/ /g,' ').length}
+function setCaret(o){const w=document.createTreeWalker(input,NodeFilter.SHOW_TEXT);let n,left=o;while((n=w.nextNode())){if(left<=n.length){const r=document.createRange();r.setStart(n,left);r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r);return}left-=n.length}const r=document.createRange();r.selectNodeContents(input);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r)}
+function render(t,c){input.innerHTML=markup(t);if(c!==null&&c!==undefined)setCaret(c);box.classList.toggle('has',t.length>0);detect(t)}
+function detect(t){const has=/(side panel|sidebar|\[[^\]]+\])/.test(t)&&/\b\d+px padding\b/.test(t);const m=t.match(/(\d+)px padding/);if(has&&!opened){opened=true;px=+m[1];setPx.bind(null);const tt=SCALE.find(s=>s[0]===px);$('#tname').textContent=tt?`space/${tt[1]}`:'custom';open()}
+ if(!has&&opened)close()}
+function measure(){const prev=drawer.style.height;drawer.style.height='auto';const h=dw.offsetHeight;drawer.style.height=prev;return h}
+function fitDrawer(){drawer.style.height=measure()+'px'}
+function open(){view();nums();scale();box.classList.add('open');drawer.style.height='0';drawer.offsetHeight;fitDrawer()}
+function close(){opened=false;box.classList.remove('open','res','ex');drawer.style.height='0';resolved=false;guess=0;$('#gname').textContent=GUESS[0][0];$('#count').textContent='1 of 4'}
+input.addEventListener('beforeinput',e=>{if(e.inputType==='insertParagraph'||e.inputType==='insertLineBreak'){e.preventDefault();send()}});
+input.addEventListener('input',()=>{const c=caretOffset(),t=input.textContent.replace(/ /g,' ');render(t,c)});
+function resolve(){const name=GUESS[guess][0];resolved=true;box.classList.add('res');$('#title').textContent=name;const t=input.textContent.replace(/ /g,' ').replace(/side panel|sidebar/,`[${name}]`);render(t,null);setTimeout(fitDrawer,0)}
+$('#yes').onclick=resolve;$('#no').onclick=()=>setGuess(guess+1,1);$('#nx').onclick=()=>setGuess(guess+1,1);$('#pv').onclick=()=>setGuess(guess-1,-1);
+function press(b){b.classList.add('press');setTimeout(()=>b.classList.remove('press'),180)}
+function showKey(){const k=$('#key');k.style.display='flex';clearTimeout(showKey.t);showKey.t=setTimeout(()=>k.style.display='none',500)}
+addEventListener('keydown',e=>{if(!opened||resolved)return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();showKey();setGuess(guess+(e.key==='ArrowLeft'?-1:1))}});
+$('#token').onclick=()=>{const on=box.classList.toggle('ex');$('#token').setAttribute('aria-expanded',on);scale()};
+function send(){const t=input.textContent.replace(/ /g,' ');if(!t.trim())return;const name=(t.match(/\[([^\]]+)\]/)||[])[1],th=$('#thread');
+ const b=document.createElement('div');b.className='u fly';seen=new Set(['[Right panel]','side panel']);seen.add(`${px}px padding`);b.innerHTML=markup(t);th.appendChild(b);
+ input.innerHTML='';box.classList.remove('has');close();opened=false;seen=new Set();
+ th.style.transform='';
+ setTimeout(()=>{const a=document.createElement('div');a.className='a';th.appendChild(a);const parts=name?`Set the padding on the <span class="hl plain" style="color:var(--ok)">${name}</span> to <b>${px}px</b>.`:'Done.';if(reduce){a.innerHTML=parts;return}a.innerHTML=parts;a.style.opacity=0;a.animate([{opacity:0,filter:'blur(3px)'},{opacity:1,filter:'blur(0)'}],{duration:500,fill:'forwards'})},reduce?0:600)}
+$('#send').onclick=send;
+new ResizeObserver(()=>{$('#thread').style.bottom=(71+Math.min(box.offsetHeight,88)+21)+'px'}).observe(box);
+</script></body></html>

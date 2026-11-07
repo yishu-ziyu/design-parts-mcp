@@ -1,0 +1,220 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>building-explainer</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:"EB Garamond";src:url(fonts/EBGaramond-latin-var.woff2) format("woff2");font-weight:400 800}
+:root{--ink:#121211;--text:#1f1f1d;--mid:#55554f;--low:#8d8d87;--faint:#b8b8b2;--line:#e6e6e2;--bg:#fafafa;--kbd:#efefeb}
+*{box-sizing:border-box}html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font:400 14px/22.4px Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.bar{position:sticky;top:0;z-index:5;height:49px;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar>div{width:1144px;max-width:100%;margin:auto;height:48px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;line-height:19.2px;color:var(--mid)}
+.bar .back{color:var(--text);font-weight:500;display:flex;gap:7px;align-items:center}
+.shell{width:1144px;max-width:100%;margin:auto;display:grid;grid-template-columns:172px 600px;column-gap:56px;padding:0 24px;position:relative}
+nav{padding-top:99px;font-size:13px;line-height:18.85px;position:sticky;top:0;align-self:start}
+nav a{display:block;padding:3px 0;color:var(--low)}nav a:hover{color:var(--ink)}
+nav .brand{color:var(--ink);font-weight:500;letter-spacing:-.065px;padding:0;margin-bottom:14px}
+nav .cur{color:var(--ink)}nav .g{margin-top:25.5px}nav .h{margin-bottom:2px;display:flex;justify-content:space-between;color:var(--mid)}nav .h i{font-style:normal;color:var(--faint)}
+nav ul{list-style:none;margin:0 0 0 1px;padding:0 0 0 13px;border-left:1px solid var(--line)}nav li a{font-size:12.5px;line-height:18.125px;padding:3px 0;height:24.2px}
+main{padding:52px 0 40px;min-width:0}
+.eyebrow{margin:0;font-size:11px;line-height:17.6px;letter-spacing:.99px;color:var(--mid);text-transform:uppercase}
+h1{margin:10px 0 25px;font:400 46px/50.6px "EB Garamond",serif;letter-spacing:-.69px;color:var(--ink)}
+.lede{margin:0 0 22px;height:45px}
+.entry{border-block:1px solid var(--line);height:101px;padding-top:21px}.entry a{font:400 24px/31px "EB Garamond",serif;display:block}.entry p{margin:9px 0 0;font-size:12px;line-height:19.2px;color:var(--mid)}
+figure{margin:28px 0 22px;position:relative;height:544px}
+#house{position:absolute;left:-40px;top:0;width:680px;height:544px;cursor:grab;touch-action:none}#house.drag{cursor:grabbing}
+aside{position:absolute;left:656px;top:99px;width:212px;font-size:12.5px;line-height:18.75px;color:var(--low)}
+aside p{margin:0 0 3px}.keys{margin:8px 0 0}.keys div{height:24px;display:flex;align-items:center;gap:7px}.kbd{width:17px;height:17px;border-radius:50%;background:var(--kbd);color:var(--text);font-size:10.5px;font-weight:500;line-height:17px;text-align:center}
+.lab{margin-top:18px}.opts{display:flex;flex-wrap:wrap;margin-top:1px;row-gap:13px}.opts button{height:21px;color:var(--low)}.opts button+button::before{content:"·";padding:0 6.5px;color:var(--faint)}.opts button:nth-child(5)::before{content:none}.opts button:nth-child(5){margin-right:0}#junc button:nth-child(4)::after{content:""}#junc{row-gap:13px}
+.opts button:hover,.opts button.on{color:var(--ink)}.opts button.on span{text-decoration:underline;text-underline-offset:3px}
+.ctl{display:flex;justify-content:space-between;margin-top:14px}.ctl b{font-weight:400;color:var(--text)}
+input[type=range]{appearance:none;width:100%;height:16px;margin:3px 0 0;background:linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:11px;height:11px;border-radius:50%;background:var(--bg);border:1.4px solid var(--ink);cursor:grab}
+.res{margin-top:19px}.res span{display:block}.res .t{color:var(--ink);margin-bottom:4px}
+.cap{margin:0 0 44px}.cap a{text-decoration:underline;text-underline-offset:3px}
+.sec{display:flex;align-items:center;gap:14px;margin:0 0 33px}.sec h2{margin:0;font-size:14px;line-height:22.4px;font-weight:500;color:var(--ink);white-space:nowrap}.sec i{flex:1;height:1px;background:var(--line)}.sec em{font:italic 400 15px/24px "EB Garamond",serif;color:var(--low)}
+.grid{display:grid;grid-template-columns:288px 288px;column-gap:24px}.sub{height:112px;border-bottom:1px solid var(--line);margin-bottom:0;padding-top:0}.grid .sub+.sub{}.sub h3{margin:0 0 6px;font-size:15px;line-height:21px;font-weight:500}.sub h3 span{color:var(--low)}.sub p{margin:0;font-size:12px;line-height:19.2px;color:var(--mid)}.sub small{display:block;margin-top:12px;font-size:11px;line-height:13px;color:var(--low)}.sub{padding-top:0;margin-top:0}
+.more{display:inline-block;margin:21px 0 44px;font-size:12px;color:var(--mid);text-decoration:underline;text-underline-offset:3px}
+h3.k{margin:60px 0 12px;font:500 14px/22px Inter}dl{margin:0;font-size:12.5px;line-height:19px;color:var(--mid)}dt{margin-top:8px}dd{margin:0}code{font:12px ui-monospace,monospace;color:var(--ink)}
+@media(max-width:1180px){.shell{grid-template-columns:1fr;padding:0 16px}nav{display:none}main{padding-top:24px}figure{height:auto}#house{position:static;width:100%;height:auto;aspect-ratio:680/544}aside{position:static;width:auto;margin-top:12px}.grid{grid-template-columns:1fr 1fr}h1{font-size:38px}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header class="bar"><div><a href="#">Placeholder Group</a><a class="back" href="#"><svg width="13" height="9" viewBox="0 0 13 9" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M12.500 4.500H1M4.500 1 1 4.500 4.500 8"/></svg>Back to editor</a></div></header>
+<div class="shell">
+<nav id="nav"></nav>
+<main><article>
+<p class="eyebrow">A visual encyclopedia of the built world</p>
+<h1>Architecture, illustrated.</h1>
+<p class="lede">Explore how buildings work, from the whole system to the smallest connection. Turn a model, see through an assembly, and compare the many ways to solve the same problem.</p>
+<div class="entry"><a href="#">Explore techniques &amp; principles →</a><p>27 entries · 22 interactive studies · A growing reference</p></div>
+<figure id="stage">
+<canvas id="house" role="img" aria-label="A two storey house drawn in line, can be turned and pulled apart"></canvas>
+<aside id="panel"><p>Drag to turn the house</p><p>Click a part, or a ringed dot where systems meet</p>
+<div class="keys"><div><span class="kbd">J</span>next junction</div><div><span class="kbd">E</span>apart, together</div><div><span class="kbd">L</span>cut down a floor</div></div>
+<div class="lab" style="margin-top:14px">Where systems meet</div><div class="opts" id="junc"></div>
+<div class="lab" style="margin-top:14px">Level</div><div class="opts" id="lvl"></div>
+<div class="ctl"><span>Apart</span><b id="pct">0%</b></div><input id="apart" type="range" min="0" max="1" step="0.01" value="0" aria-label="Apart">
+<div class="res" id="res"><span class="t">8 systems · 2,340 pieces</span><span>36 × 24 ft (11.0 × 7.3 m), two storeys on a basement</span><span style="margin-top:2px">19 trusses · 25 windows · 7 junctions</span></div></aside>
+</figure>
+<p class="cap">Start with one house. Reveal its systems, select a part, and follow it into a detail. <a href="#">Explore the house →</a></p>
+<div class="sec"><h2>Explore by subject</h2><i></i><em>01</em></div>
+<div class="grid" id="subjects"></div>
+<a class="more" href="#">See the collection and where it is growing →</a>
+<h3 class="k">可拆</h3><dl>
+<dt><code>#house</code></dt><dd>用 Canvas 2D 画的可转动线描房屋，面按深度排序，线宽 0.6 到 2.2。</dd>
+<dt><code>#apart</code></dt><dd>滑块把八个系统沿高度和水平方向分开。</dd>
+<dt><code>#junc</code></dt><dd>节点按钮切换高亮的圆环，文字面板跟着换。</dd>
+<dt><code>#nav</code></dt><dd>窄侧栏目录：一级 13px，二级 12.5px，左侧细线。</dd>
+</dl>
+</article></main></div>
+<script>
+const NAV=[['Buildings & structures',['Building a house','Building systems','Load path','Columns','Beams','Trusses','Lateral stability','Arches and vaults']],['Site & terrain',['Cut and fill']],['Foundations',['Foundation types','Excavation and backfill','Spread footings']],['Walls & framing',['Masonry bonding','Platform framing']],['Roofs & connections',['Roof framing','Truss connections','Trussed rafters']],['Building envelopes',['Wall assembly']],['Stairs & circulation',['Stairs']],['Building services',['Heating and cooling','Plumbing','Electrical']]];
+nav.innerHTML='<a class="brand" href="#">Placeholder Architecture</a><a href="#">Techniques &amp; principles</a><a class="cur" href="#">Explore</a><a href="#">Building a house</a><a href="#">Why this, not that</a><a href="#">How it is drawn</a>'+NAV.map(([h,l])=>`<div class="g"><a class="h" href="#"><span>${h.replace('&','&amp;')}</span><i>${l.length}</i></a><ul>${l.map(x=>`<li><a href="#">${x}</a></li>`).join('')}</ul></div>`).join('');
+const SUB=[['Architectural design','Space, use, form and circulation.',3],['Site & ground','Soil, terrain, water and foundations.',5],['Structures','Loads, members and stable systems.',16],['Envelopes','Walls, roofs, openings and their junctions.',3],['Building physics','Heat, air, light, sound and moisture.',4],['Building services','Water, power, heating and ventilation.',4],['Interiors','Partitions, finishes and accessible details.',1],['Construction','Assembly, temporary works and sequence.',8],['Existing buildings','Diagnosis, repair, strengthening and reuse.',1],['Regional construction','Local materials, craft and building traditions.',3]];
+subjects.innerHTML=SUB.map(([a,b,c])=>`<a class="sub" href="#"><h3>${a.replace('&','&amp;')} <span>↗</span></h3><p>${b}</p><small>${c} entries</small></a>`).join('');
+const JUNC=[['Sill','Sill plate on foundation wall',[30.7,0,.4],'sill'],['Platform','Floor platform between storeys',[26.6,0,16.5],'f2'],['Eave','Rafter meets top plate',[22,12,24.4],'roof'],['Porch','Porch ledger on the wall',[15,-3,9.6],'porch'],['Window','Window rough opening',[31.6,0,6.5],'f1'],['Stair','Stair through the floor',[27.4,0,10.6],'floor'],['Services','Services through the sill',[33.4,0,17.6],'f2']];
+const LVL=['Whole','2nd','1st','Basement'];
+const $=id=>document.getElementById(id);
+$('junc').innerHTML=JUNC.map((j,i)=>`<button data-j="${i}"><span>${j[0]}</span></button>`).join('');
+$('lvl').innerHTML=LVL.map((l,i)=>`<button data-l="${i}" class="${i?'':'on'}"><span>${l}</span></button>`).join('');
+/* ---- geometry: feet, x along the front, y into the depth, z up ---- */
+const INK='#20201c',PAPER='#f7f7f3',SID='#f5f5f1',ROOF='#dedfd9',SOIL='#ecece4',BASE='#f3f3ee',DARK='#2b2b26';
+function rnd(s){return()=>(s=Math.imul(s,1597334677)+7|0,(s>>>0)/4294967296)}
+const faces=[];
+function F(pts,o={}){faces.push(Object.assign({pts,fill:PAPER,sys:'f1',lw:.9},o))}
+function box(x0,y0,z0,x1,y1,z1,o={}){const a=[[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0]],b=[[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]];
+ F([b[0],b[1],b[2],b[3]],o);F([a[3],a[2],a[1],a[0]],o);F([a[0],a[1],b[1],b[0]],o);F([a[1],a[2],b[2],b[1]],o);F([a[2],a[3],b[3],b[2]],o);F([a[3],a[0],b[0],b[3]],o)}
+const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const seg=(a,b,w=.5,c=INK)=>[a,b,w,c];
+const Z={wb:-9.2,z1:10.3,z2:11,top:17.5,rh:6.9};
+function windowOn(wall,u,z,w,h){const P=(a,b,d=.05)=>[wall.o[0]+wall.d[0]*a+wall.n[0]*d,wall.o[1]+wall.d[1]*a+wall.n[1]*d,b];
+ const q=[],f=.56;
+ q.push({pts:[P(u-.22,z-.32),P(u+w+.22,z-.32),P(u+w+.22,z-.04),P(u-.22,z-.04)],fill:'#f7f7f3',stroke:INK,lw:.7});
+ q.push({pts:[P(u,z),P(u+w,z),P(u+w,z+h),P(u,z+h)],fill:DARK});
+ const g=(a0,a1,b0,b1,fill='#ecece6')=>q.push({pts:[P(a0,b0),P(a1,b0),P(a1,b1),P(a0,b1)],fill});
+ const my=(h-2*f-.22)/2;g(u+f,u+w-f,z+f,z+f+my);g(u+f,u+w-f,z+f+my+.22,z+h-f);
+ q.push({pts:[P(u+w*.46,z+f),P(u+w*.54,z+f),P(u+w*.54,z+h-f),P(u+w*.46,z+h-f)],fill:DARK});
+ q.push({pts:[P(u+w*.62,z+f+.5),P(u+w*.75,z+f+.5),P(u+w*.6,z+f+1.7),P(u+w*.5,z+f+1.7)],fill:'#6f6f68'});
+ return q}
+/* ground block with an L-shaped notch at the front corner */
+const G={x0:-8,x1:44.8,y0:-9.8,y1:28.6,d:-9.2,nx:28.8,ny0:0,hx:36,ny:12.5};
+function diag(A,B,d){const L=[];const len=Math.hypot(B[0]-A[0],B[1]-A[1]),n=Math.floor(len/.55);for(let i=0;i<n;i++){const t=i/n;const a=lerp(A,B,t);const b=lerp(A,B,Math.min(1,t+.026));for(const k of [0,.33,.66]){const az=A[2]+d*(k+((i*7)%5)*.03);L.push(seg([a[0],a[1],az],[b[0],b[1],az+d*.2],.24,'#bcbcb2'))}}return L}
+(function(){const{x0,x1,y0,y1,d,nx,ny0,hx,ny}=G,o={sys:'ground'};
+ F([[x0,y0,0],[nx,y0,0],[nx,ny0,0],[hx,ny0,0],[hx,ny,0],[x1,ny,0],[x1,y1,0],[x0,y1,0]],{...o,fill:'#f2f2ec',bias:900,speck:3,lw:.8});
+ F([[nx,y0,d],[x1,y0,d],[x1,ny,d],[nx,ny,d]],{...o,fill:'#efefe8',bias:950,speck:3,lw:.8});
+ box(nx,y0,d-.75,x1,ny,d,{...o,fill:'#e6e6de',bias:945,lw:.8});
+ const side=(a,b,bias=800)=>{const A=[a[0],a[1],0],B=[b[0],b[1],0];F([[a[0],a[1],d],[b[0],b[1],d],B,A],{...o,fill:'#e9e9e1',lines:diag(A,B,d),bias,lw:.8})};
+ side([x0,y0],[nx,y0]);side([x1,ny],[x1,y1]);side([x1,y1],[x0,y1]);side([x0,y1],[x0,y0]);
+ side([nx,y0],[nx,ny0],700);side([hx,ny],[x1,ny],700);
+})();
+/* basement */
+const WB=Z.wb;
+const baseLines=[seg([36,0,WB],[36,0,0],1),seg([26,0,WB],[26,0,0],.4,'#88887f'),seg([36,10,WB],[36,10,0],.5,'#55554e')];
+F([[28.8,0,WB],[36,0,WB],[36,0,0],[28.8,0,0]],{sys:'base',fill:BASE,speck:2,lines:baseLines,bias:40});
+F([[36,0,WB],[36,12.5,WB],[36,12.5,0],[36,0,0]],{sys:'base',fill:BASE,speck:2,lines:baseLines,bias:40});
+box(28.8,-.9,WB-.05,36.9,0,WB+.75,{sys:'base',fill:'#ecece5',bias:20});box(36,0,WB-.05,36.9,12.5,WB+.75,{sys:'base',fill:'#ecece5',bias:20});
+box(-.25,-.25,0,36.25,24.25,.55,{sys:'sill',fill:'#ecece6',bias:5});
+/* walls */
+const W=[{o:[0,0],d:[1,0],n:[0,-1],len:36},{o:[36,0],d:[0,1],n:[1,0],len:24},{o:[36,24],d:[-1,0],n:[0,1],len:36},{o:[0,24],d:[0,-1],n:[-1,0],len:24}];
+function wall(w,z0,z1,sys,wins){const a=[w.o[0],w.o[1],z0],b=[w.o[0]+w.d[0]*w.len,w.o[1]+w.d[1]*w.len,z0],c=[b[0],b[1],z1],d=[a[0],a[1],z1];
+ const L=[];for(let z=z0+.3;z<z1;z+=.3)L.push(seg([a[0],a[1],z],[b[0],b[1],z],.26,'#9b9b92'));
+ for(let u=8;u<w.len;u+=8){const p=[a[0]+w.d[0]*u,a[1]+w.d[1]*u];L.push(seg([p[0],p[1],z0],[p[0],p[1],z1],.45,'#77776e'))}
+ const n=w.n,co=.32,pa=(u,zz)=>[a[0]+w.d[0]*u+n[0]*.02,a[1]+w.d[1]*u+n[1]*.02,zz];
+ const corner=[{pts:[pa(0,z0),pa(co,z0),pa(co,z1),pa(0,z1)],fill:'#f7f7f3',stroke:INK,lw:.7},{pts:[pa(w.len-co,z0),pa(w.len,z0),pa(w.len,z1),pa(w.len-co,z1)],fill:'#f7f7f3',stroke:INK,lw:.7}];
+ F([a,b,c,d],{sys,fill:SID,lines:L,subs:corner.concat(wins.flatMap(([u,zz,ww,hh])=>windowOn(w,u,zz,ww,hh))),lw:1.3})}
+const up=(u)=>[u,12.1,3,4.8],lo=(u)=>[u,2.9,3,5.9];
+wall(W[0],.55,Z.z1,'f1',[lo(2.4),[10.2,3.2,3,3.6],lo(23.8),lo(30.4)]);
+wall(W[1],.55,Z.z1,'f1',[lo(5.6),lo(15.4)]);
+wall(W[2],.55,Z.z1,'f1',[lo(5),lo(15),lo(26)]);
+wall(W[3],.55,Z.z1,'f1',[lo(5),lo(16)]);
+box(-.28,-.28,Z.z1,36.28,24.28,Z.z2,{sys:'floor',fill:'#ecece6',lw:1});
+wall(W[0],Z.z2,Z.top,'f2',[up(2.6),up(9.4),up(16.6),up(23.5),up(30.5)]);
+wall(W[1],Z.z2,Z.top,'f2',[up(5.6),up(15.4)]);
+wall(W[2],Z.z2,Z.top,'f2',[up(5),up(15),up(26)]);
+wall(W[3],Z.z2,Z.top,'f2',[up(5),up(16)]);
+/* gables, roof */
+const RH=Z.rh,RZ=Z.top,OV=1.05,OG=.75;
+function gable(x,n){const a=[x,0,RZ],b=[x,24,RZ],c=[x,12,RZ+RH];const L=[];for(let z=RZ+.3;z<RZ+RH;z+=.3){const t=(z-RZ)/RH;L.push(seg([x,12*t,z],[x,24-12*t,z],.26,'#9b9b92'))}
+ const v=z=>[[x+.04*n,11.2,z],[x+.04*n,12.8,z],[x+.04*n,12.8,z+1.5],[x+.04*n,11.2,z+1.5]];
+ const vv=v(RZ+3.4);const q=[{pts:vv,fill:DARK},{pts:vv.map((p,i)=>[p[0]+.01*n,p[1]+(i==0||i==3?.25:-.25),p[2]+(i<2?.25:-.25)]),fill:'#a8a8a0'}];
+ F(n>0?[a,b,c]:[b,a,c],{sys:'roof',fill:SID,lines:L,subs:q,lw:1})}
+gable(36,1);gable(0,-1);
+function roofPlane(front){const ey=front?-OV:24+OV,ez=RZ-RH*OV/12;
+ const a=[-OG,ey,ez],b=[36+OG,ey,ez],c=[36+OG,12,RZ+RH],d=[-OG,12,RZ+RH];const L=[];
+ if(front){const rows=19,r=rnd(11);for(let i=1;i<rows;i++){const t=i/rows,p=lerp(a,d,t),q=lerp(b,c,t),t2=(i+1)/rows;L.push(seg(p,q,.75,'#32322d'));
+  const nn=44;for(let k=0;k<=nn;k++){const u=(k+(i%2)*.5)/nn;if(u>1)continue;const s=lerp(p,q,u),e=lerp(lerp(a,d,t2),lerp(b,c,t2),u);L.push(seg(s,e,r()>.72?.8:.42,r()>.72?'#2f2f2a':'#6d6d65'))
+   if(r()>.86){const u2=Math.min(1,u+1/nn);L.push(seg(lerp(s,e,.5),lerp(lerp(p,q,u2),lerp(lerp(a,d,t2),lerp(b,c,t2),u2),.5),2.2,'rgba(60,60,54,.2)'))}}}}
+ L.push(seg(a,b,1.8));
+ F(front?[a,b,c,d]:[b,a,d,c],{sys:'roof',fill:front?ROOF:'#62625b',lines:L,lw:1.3,bias:-30});
+ F(front?[[-OG,ey,ez-.5],[36+OG,ey,ez-.5],b,a]:[[36+OG,ey,ez-.5],[-OG,ey,ez-.5],a,b],{sys:'roof',fill:'#efefe9',lw:1,bias:-28});
+}
+roofPlane(true);roofPlane(false);
+for(const x of [36+OG,-OG]){const n=x>0?1:-1,za=RZ-RH*OV/12,zb=RZ+RH,dz=-.55;
+ const q=(ya,yb,zA,zB)=>F(n>0?[[x,ya,zA+dz],[x,yb,zB+dz],[x,yb,zB],[x,ya,zA]]:[[x,yb,zB+dz],[x,ya,zA+dz],[x,ya,zA],[x,yb,zB]],{sys:'roof',fill:'#f3f3ee',lw:1,bias:-40});
+ q(-OV,12,za,zb);q(12,24+OV,zb,za)}
+box(-OG,11.75,RZ+RH-.15,36+OG,12.25,RZ+RH+.3,{sys:'roof',fill:'#62625b',lw:.9,bias:-45});
+
+/* downspout at the far-left corner */
+box(-.5,-.5,.2,-.1,-.1,Z.top,{sys:'f1',fill:'#efefe9',lw:.7,bias:-3});box(-1.2,-1.1,.1,-.2,-.1,.4,{sys:'f1',fill:'#2b2b26',lw:.5,bias:-3});
+/* porch */
+(function(){const x0=11,x1=26,y0=-5.8,zr=8.6,zp=10.6,o={sys:'porch'};
+ box(x0+2.6,y0-1.7,.0,x1-2.6,y0-.6,.35,{...o,fill:'#efefe9',bias:-5,lw:.8});
+ box(x0-.5,y0-.6,.0,x1+.5,0,1.05,{...o,fill:'#efefe9',bias:-6,lw:.9});
+ for(const x of [x0,x1]){box(x-.26,y0-.1,1.05,x+.26,y0+.42,zr,{...o,fill:PAPER,lw:.9,bias:-20})}
+ for(const x of [x0,x1]){box(x-.2,-.36,1.05,x+.2,-.05,zr+.6,{...o,fill:PAPER,lw:.7,bias:-8})}
+ const P=(a,b)=>[a,-.06,b];
+ F([P(16.8,1.05),P(20.5,1.05),P(20.5,7.9),P(16.8,7.9)],{...o,fill:DARK,lw:1,bias:-2,subs:[{pts:[P(17.1,1.05),P(20.2,1.05),P(20.2,7.6),P(17.1,7.6)],fill:'#f3f3ee'}]});
+ const a=[x0-1.2,y0-.9,zr],b=[x1+1.2,y0-.9,zr],c=[x1+1.2,-.05,zp],d=[x0-1.2,-.05,zp];
+ const L=[],rows=7,r=rnd(5);for(let i=1;i<rows;i++){const t=i/rows,p=lerp(a,d,t),q=lerp(b,c,t);L.push(seg(p,q,.7,'#32322d'));for(let k=0;k<17;k++){const u=(k+(i%2)*.5)/17;if(u<=1)L.push(seg(lerp(p,q,u),lerp(lerp(a,d,t+1/rows),lerp(b,c,t+1/rows),u),r()>.7?.8:.4,'#55554e'))}}
+ L.push(seg(a,b,1.8));
+ F([a,b,c,d],{...o,fill:ROOF,lines:L,lw:1.3,bias:-25});
+ F([[x0-1.2,y0-.9,zr-.55],[x1+1.2,y0-.9,zr-.55],b,a],{...o,fill:'#efefe9',lw:1,bias:-24});
+ F([b,[x1+1.2,y0-.9,zr-.55],[x1+1.2,-.05,zp-.55],c].reverse(),{...o,fill:'#efefe9',lw:1,bias:-24});
+})();
+/* framing visible only when pulled apart */
+for(let x=0;x<=36;x+=1.6){box(x,0,Z.z1+.05,x+.18,24,Z.z2-.05,{sys:'floor',fill:'#efefe9',lw:.4,only:'apart',bias:-1})}
+const OFFS={ground:[0,0,0],base:[0,0,0],sill:[0,0,1.1],f1:[0,0,2.2],floor:[0,0,3.6],f2:[0,0,5],roof:[0,0,7.6],porch:[0,-3.4,2.2]};
+/* ---- view ---- */
+const cv=$('house'),ctx=cv.getContext('2d');
+const S={az:-.738,el:.41,sc:8.62,cx:352,cy:255,apart:0,target:0,level:0,junc:-1,hover:-1};
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);cv.width=r.width*d;cv.height=r.height*d;S.k=r.width/680;S.d=d;draw()}
+function proj(p,o){const x=p[0]+(o?o[0]*S.apart:0)-18,y=p[1]+(o?o[1]*S.apart:0)-12,z=p[2]+(o?o[2]*S.apart:0)-9;
+ const c=Math.cos(S.az),s=Math.sin(S.az),e=Math.sin(S.el),f=Math.cos(S.el);
+ const X=x*c-y*s,Y=x*s+y*c;
+ const persp=1/(1+Y*.0005);
+ return [S.cx+X*S.sc*persp,S.cy-(z*f+Y*e)*S.sc*persp,Y*f-z*e]}
+function hidden(f){const l=S.level,s=f.sys;if(f.only==='apart'&&S.apart<.05)return true;if(l===1)return s==='roof';if(l===2)return ['roof','f2','floor'].includes(s);if(l===3)return ['roof','f2','floor','f1','porch','sill'].includes(s);return false}
+function poly(pts){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath()}
+function speck(f,P){const r=rnd(f.pts.length*97+Math.round(f.pts[0][0]*13+f.pts[0][1]*7));const n=f.speck==2?300:f.speck==3?520:240;ctx.fillStyle=f.speck==3?'rgba(60,60,50,.16)':'rgba(60,60,50,.34)';const xs=f.pts.map(p=>p[0]),ys=f.pts.map(p=>p[1]),zs=f.pts.map(p=>p[2]);const inL=f.pts.length>4;const a=f.pts.length>4?[Math.min(...xs),Math.min(...ys),zs[0]]:f.pts[0],b=f.pts.length>4?[Math.max(...xs),Math.min(...ys),zs[0]]:f.pts[1],c=f.pts.length>4?[Math.max(...xs),Math.max(...ys),zs[0]]:f.pts[2],d=f.pts.length>4?[Math.min(...xs),Math.max(...ys),zs[0]]:(f.pts[3]||f.pts[2]);for(let i=0;i<n;i++){const u=r(),v=r();const p=lerp(lerp(a,b,u),lerp(d,c,u),v);const q=P(p);ctx.fillRect(q[0],q[1],.8,.8)}}
+function draw(){const d=S.d*S.k;ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,680,544);
+ /* soft shadow */
+ const sh=proj([18,12,-11],OFFS.ground);const g=ctx.createRadialGradient(sh[0],sh[1]+20,20,sh[0],sh[1]+20,250);g.addColorStop(0,'rgba(60,60,50,.13)');g.addColorStop(1,'rgba(60,60,50,0)');ctx.save();ctx.translate(0,0);ctx.scale(1,.52);ctx.translate(0,(sh[1]+20)*(1/.52-1));ctx.fillStyle=g;ctx.fillRect(-20,-200,720,1400);ctx.restore();
+ const list=[];for(const f of faces){if(hidden(f))continue;const off=OFFS[f.sys],P=p=>proj(p,off);const s=f.pts.map(P);
+  let a=0;for(let i=0;i<s.length;i++){const j=(i+1)%s.length;a+=s[i][0]*s[j][1]-s[j][0]*s[i][1]}
+  if(a>=-.01)continue;
+  let z=0;for(const p of s)z+=p[2];z=z/s.length+(f.bias||0);list.push({f,s,P,z})}
+ list.sort((a,b)=>b.z-a.z);
+ ctx.lineJoin='round';ctx.lineCap='butt';
+ for(const{f,s,P}of list){poly(s);ctx.fillStyle=f.fill;ctx.fill();
+  if(f.speck)speck(f,P);
+  if(f.lines){ctx.save();poly(s);ctx.clip();for(const[a,b,w,c]of f.lines){const A=P(a),B=P(b);ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineWidth=w;ctx.strokeStyle=c;ctx.stroke()}ctx.restore()}
+  if(f.subs)for(const q of f.subs){poly(q.pts.map(P));ctx.fillStyle=q.fill;ctx.fill();if(q.stroke){ctx.lineWidth=q.lw;ctx.strokeStyle=q.stroke;ctx.stroke()}}
+  poly(s);ctx.lineWidth=f.lw;ctx.strokeStyle=INK;ctx.stroke()}
+ /* junction rings */
+ JUNC.forEach((j,i)=>{const sys=j[3];if(S.level&&hiddenSys(sys))return;const p=proj(j[2],OFFS[sys]);const on=S.junc===i;ctx.beginPath();ctx.arc(p[0],p[1],on?8:6.2,0,7);ctx.fillStyle='rgba(250,250,250,.86)';ctx.fill();ctx.lineWidth=1.1;ctx.strokeStyle=INK;ctx.stroke();ctx.beginPath();ctx.arc(p[0],p[1],1.8,0,7);ctx.fillStyle=INK;ctx.fill();j.s=p})}
+function hiddenSys(s){return hidden({sys:s})}
+/* ---- interaction ---- */
+let drag=null;cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,az:S.az,el:S.el,m:0};cv.setPointerCapture(e.pointerId);cv.classList.add('drag')});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m=Math.max(drag.m,Math.abs(dx)+Math.abs(dy));S.az=drag.az-dx*.008;S.el=Math.max(.18,Math.min(1.25,drag.el+dy*.005));draw()});
+cv.addEventListener('pointerup',e=>{cv.classList.remove('drag');if(drag&&drag.m<4){const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/S.k,y=(e.clientY-r.top)/S.k;JUNC.forEach((j,i)=>{if(j.s&&Math.hypot(j.s[0]-x,j.s[1]-y)<11)pick(i)})}drag=null});
+function setApart(v,anim){S.target=v;const inp=$('apart');inp.value=v;$('pct').textContent=Math.round(v*100)+'%';if(REDUCE||!anim){S.apart=v;draw();return}const a=S.apart,t0=performance.now();(function step(t){const k=Math.min(1,(t-t0)/620),e=1-Math.pow(1-k,3);S.apart=a+(v-a)*e;draw();if(k<1)requestAnimationFrame(step)})(t0)}
+$('apart').addEventListener('input',e=>{setApart(+e.target.value)});
+function pick(i){S.junc=S.junc===i?-1:i;document.querySelectorAll('#junc button').forEach((b,k)=>b.classList.toggle('on',k===S.junc));const r=$('res');if(S.junc<0)r.innerHTML=RES;else{r.innerHTML=`<span class="t">${JUNC[S.junc][0]}</span><span>${JUNC[S.junc][1]}</span>`}draw()}
+const RES=$('res').innerHTML;
+function setLevel(i){S.level=i;document.querySelectorAll('#lvl button').forEach((b,k)=>b.classList.toggle('on',k===i));draw()}
+$('junc').addEventListener('click',e=>{const b=e.target.closest('button');if(b)pick(+b.dataset.j)});
+$('lvl').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLevel(+b.dataset.l)});
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='j')pick((S.junc+1)%JUNC.length);if(k==='e')setApart(S.target>.5?0:1,true);if(k==='l')setLevel((S.level+1)%4)});
+addEventListener('resize',size);
+const q=new URLSearchParams(location.search);if(q.get('apart'))S.apart=S.target=+q.get('apart');size();document.fonts&&document.fonts.ready.then(draw);if(q.get('apart')){$('apart').value=S.apart;$('pct').textContent=Math.round(S.apart*100)+'%';draw()}
+</script></body></html>

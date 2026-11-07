@@ -1,0 +1,33 @@
+/* THE MORPH PATTERN, and it is not the move one. Here the
+   library owns x: it animates the element and its silhouette
+   in perfect sync, so while the button is leaving the two are
+   still one body of liquid, necking thinner until the goo
+   gives up. That is the whole effect.
+
+   It carries a second decision with it. Morph positions its
+   items with a CSS transform on a real wrapper, in LAYOUT
+   pixels, which scales correctly inside a scaled card on its
+   own â so this component must NOT carry the 1/k correction
+   every \`move\` group needs. Right for move, wrong for morph. */
+const has = !!q.trim();
+
+<Liquid blur={3} contrast={22} fill="var(--fill-slab)" shadow="...">
+  <Liquid.Item>                        {/* the bar: never moves */}
+  <Liquid.Item x={has ? 0 : -(BTN + GAP)}>   {/* the button */}
+
+/* THE OFFSET IS ALL ON THE BUTTON. Splitting it between the
+   two keeps the pair centred â which is what the reference
+   does â but everything inside the bar travels with it, so the
+   mic fading out was also sliding sideways. A thing leaving in
+   two ways at once reads as neither. The bar holds still and
+   the button walks out from under its right edge. */
+
+/* THE FILL MUST BE OPAQUE. The goo is a blur then a steep
+   alpha contrast â a = 18a - 7 â so anything under about 0.39
+   comes out at zero. --pane is rgba glass: as a fill it would
+   not look faint, it would not be drawn at all. */
+
+/* and the mic only ever fades. No scale, no travel: the one
+   thing it does is stop being there. */
+.cmd-mic { opacity: 0; transition: opacity 150ms ease; }
+.cmd-mic[data-show="true"] { opacity: 1; }

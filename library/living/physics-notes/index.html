@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Physics Notes</title>
+<style>
+@font-face{font-family:EBG;src:url(fonts/EBGaramond-latin-var.woff2) format("woff2");font-weight:400 800;font-display:block}
+@font-face{font-family:EBG;src:url(fonts/eb-garamond-i.woff2) format("woff2");font-weight:400 800;font-style:italic;font-display:block}
+@font-face{font-family:JB;src:url(fonts/jb.woff2) format("woff2");font-weight:100 800;font-display:block}
+@font-face{font-family:Inter;src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
+html,body{margin:0;background:#f3f3ef}
+#stage{display:block;width:100vw;height:calc(100vw*1125/2000);background:#f3f3ef;overflow:hidden}
+text{font-family:EBG,Georgia,serif;fill:#1b1b1b}
+.mono{font-family:JB,monospace}
+.sans{font-family:Inter,sans-serif}
+.it{font-style:italic}
+#notes{font:14px/1.6 ui-sans-serif,system-ui,sans-serif;color:#333;max-width:760px;margin:0 auto;padding:32px 20px 60px}
+#notes h3{font-size:15px;margin:0 0 10px}#notes dt{margin-top:8px}#notes dd{margin:0}#notes code{font:13px JB,monospace}
+</style>
+</head>
+<body>
+<svg id="stage" viewBox="0 0 2000 1125" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="物理笔记变成可动插图的过程">
+  <defs>
+    <filter id="sh" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="7" flood-color="#000" flood-opacity=".07"/></filter>
+    <radialGradient id="earth" cx=".42" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#f2f2ef"/><stop offset="1" stop-color="#d5d5d0"/></radialGradient>
+    <linearGradient id="hill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ececea"/><stop offset="1" stop-color="#fbfbfa" stop-opacity=".2"/></linearGradient>
+    <clipPath id="figclip"><rect x="818" y="86" width="1137" height="984" rx="20"/></clipPath>
+    <clipPath id="pc"><rect x="212" y="262" width="1574" height="808" rx="16"/></clipPath>
+    <clipPath id="rclip"><rect x="860" y="262" width="926" height="808" rx="16"/></clipPath>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker>
+  </defs>
+  <g id="root"></g>
+  <image id="seq" preserveAspectRatio="none"/>
+  <g id="over"></g>
+  <g id="caption"></g><g id="loop"></g><g id="figcard"></g><g id="breakdown"></g>
+  <g></g><g id="loop"></g>
+</svg>
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#caption</code></dt><dd>压在画面左下的说明卡，文字逐词淡入。</dd>
+    <dt><code>#loop</code></dt><dd>沿圆环运动的小车，速度、支持力、合力和重力四根矢量每帧重算。</dd>
+    <dt><code>#figcard</code></dt><dd>左边编号和大字标题，右边白色插图卡；卡内四角放编号、一句话、提示和读数。卡内画面是原帖截帧。</dd>
+    <dt><code>#breakdown</code></dt><dd>点开某个量时，左页换成该量的说明，右页推近并暂停。右页画面是原帖截帧。</dd>
+  </dl>
+</section>
+<script>
+(()=>{
+const NS='http://www.w3.org/2000/svg',root=document.getElementById('root');
+const DUR=33.55,clamp=(v,a=0,b=1)=>v<a?a:v>b?b:v,ss=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)},mix=(a,b,t)=>a+(b-a)*t;
+const qs=new URLSearchParams(location.search);
+let O=[];
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const T=(x,y,s,o={})=>`<text x="${x}" y="${y}" font-size="${o.s||24}" ${o.c?`class="${o.c}"`:''} ${o.f?`style="fill:${o.f}"`:''} ${o.a?`text-anchor="${o.a}"`:''} ${o.w?`font-weight="${o.w}"`:''} ${o.ls?`letter-spacing="${o.ls}"`:''} ${o.op!=null?`opacity="${o.op}"`:''}>${esc(s)}</text>`;
+const SUB=(x,y,b,sb,o={})=>`<text x="${x}" y="${y}" font-size="${o.s||27}" class="it" style="fill:${o.f||'#1b1b1b'}">${esc(b)}<tspan dy="${(o.s||27)*.22}" font-size="${(o.s||27)*.68}">${esc(sb)}</tspan></text>`;
+const L=(x1,y1,x2,y2,c='#333',w=2,o={})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" ${o.d?`stroke-dasharray="${o.d}"`:''} ${o.op!=null?`opacity="${o.op}"`:''} stroke-linecap="${o.lc||'butt'}"/>`;
+const arrow=(x1,y1,x2,y2,c,w=5,hs=14)=>{const a=Math.atan2(y2-y1,x2-x1),bx=x2-Math.cos(a)*hs*1.3,by=y2-Math.sin(a)*hs*1.3,h=hs*.72;
+  return `<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${c}" stroke-width="${w}"/><path d="M${x2} ${y2}L${bx-Math.sin(a)*h} ${by+Math.cos(a)*h}L${bx+Math.sin(a)*h} ${by-Math.cos(a)*h}z" fill="${c}"/>`};
+const grid=(x1,y1,x2,y2,n=9,c='#f2f2ef')=>{let g='';for(let i=0;i<=n;i++){const u=i/n;g+=L(mix(x1,x1-120,u*0)+(x2-x1)*u,y1,mix(x1-60,x1,u)+(x2-x1+120)*u,y2,c,1)}for(let j=0;j<=5;j++){const v=j/5;const yy=y1+(y2-y1)*v*v;g+=L(x1-60*v,yy,x2+60*v,yy-20*(1-v),c,1)}return g};
+const words=(s,t,t0,dt)=>s.split(' ').map((w,i)=>`<tspan opacity="${ss(t0+i*dt,t0+i*dt+.35,t)}">${esc(w)} </tspan>`).join('');
+/* 说明卡 */
+function caption(t,t0,l1,l2,x=88,y=756,w=788,h=304,cardOp=1,tx=0,ty=0){
+  return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#fafaf7" filter="url(#sh)" opacity="${ss(t0-.5,t0-.25,t)*cardOp}"/>
+  <text x="${x+50+tx}" y="${y+126+ty}" font-size="104">${words(l1,t,t0,.14)}</text><text x="${x+50+tx}" y="${y+238+ty}" font-size="104">${words(l2,t,t0+l1.split(' ').length*.14,.14)}</text></g>`}
+/* 插图卡的外壳 */
+function card(fig,cap,r1,r2,hint='Drag to turn · shift-drag to pan · click to break it down',body=''){
+  return `<g><rect x="818" y="86" width="1137" height="984" rx="20" fill="#fdfdfc" filter="url(#sh)"/>
+  <g clip-path="url(#figclip)">${grid(860,640,1880,1060)}${body}</g>
+  ${T(850,134,fig,{c:'mono',s:15.5,f:'#9a9a96'})}${T(1922,136,cap,{c:'it',s:27,a:'end',f:'#3a3a3a'})}
+  ${T(850,1034,hint,{c:'mono',s:15.5,f:'#a3a3a0'})}
+  ${T(1922,1012,r1,{c:'mono',s:15.5,a:'end',f:'#333'})}${T(1922,1034,r2,{c:'mono',s:15.5,a:'end',f:'#333'})}</g>`}
+const head=(kick,l1,l2)=>T(115,380,kick,{c:'mono',s:23,f:'#7c7c78',ls:'1.5'})+T(115,510,l1,{s:104})+T(115,622,l2,{s:104});
+/* 圆环 */
+function loop(t,cx,cy,r,w,railL=.3){
+  const deg=t<7.5?413-(7.5-t)*129:413+119*(t-7.5),th=deg*Math.PI/180,k=r/362;
+  const x=cx+Math.sin(th)*(r-w*.4),y=cy+Math.cos(th)*(r-w*.4)*1.01,nx=-Math.sin(th),ny=-Math.cos(th),tx=Math.cos(th),ty=-Math.sin(th);
+  const rail=(a)=>L(cx-railL*r,cy+r+a*k+4*k,cx+r*2.2,cy+r+a*k-20*k,'#8a8a90',9*k+1);
+  const ell=(ex,ey,rx,ry)=>`M${ex-rx} ${ey}a${rx} ${ry} 0 1 0 ${rx*2} 0a${rx} ${ry} 0 1 0 ${-rx*2} 0z`;
+  const FNe=[x+nx*186*k-tx*8*k,y+ny*186*k-ty*8*k],SFe=[x+nx*150*k+ny*-30*k,y+ny*150*k+nx*30*k];
+  return `<g><path fill-rule="evenodd" fill="#8a8a8f" d="${ell(cx,cy,r,r*1.01)}${ell(cx-w*.22,cy-w*.42,r-w,r*1.01-w)}"/>
+   ${rail(0)}${rail(44)}
+   <path d="M${cx-r*.36} ${cy+r*.97}A${r} ${r*1.01} 0 0 0 ${cx+r*.36} ${cy+r*.97}" fill="none" stroke="#77777c" stroke-width="${w*1.25}"/>
+   <g transform="translate(${x} ${y}) rotate(${-deg})"><rect x="${-20*k}" y="${-26*k}" width="${40*k}" height="${54*k}" rx="${9*k}" fill="#fff" stroke="#707074" stroke-width="${1.8*k+.4}"/></g>
+   ${arrow(x,y,x+tx*130*k,y+ty*130*k,'#7396c9',6*k+1,15*k)}
+   ${arrow(x,y,FNe[0],FNe[1],'#2a2a2c',7*k+1,17*k)}
+   ${arrow(x,y,SFe[0],SFe[1],'#d9786a',7*k+1,15*k)}
+   ${arrow(x,y,x,y+52*k,'#2a2a2c',6*k+1,13*k)}
+   ${SUB(FNe[0]-20*k,FNe[1]-10*k,'F','N',{s:33*k+2})}${T(x+tx*144*k,y+ty*144*k,'v',{c:'it',s:29*k+2,f:'#5c7fb5'})}${T(SFe[0]-52*k,SFe[1]+2*k,'ΣF',{c:'it',s:31*k+2,f:'#d05d4c'})}${T(x+2*k,y+78*k,'mg',{c:'it',s:31*k+2})}
+  </g>`}
+/* 速度标注共用 */
+const NOTESREAD={r1:'',r2:''};
+function drawNotes(t){
+  const z=mix(1,1.1,ss(0,3.2,t));
+  const a=ss(1.2,1.9,t);
+  const blur=clamp(1-t/.9);
+  return `<image href="source-assets/notes1.jpg" x="0" y="0" width="2000" height="1125" opacity="${1-a}" transform="translate(1000 560) scale(${1+blur*.05}) translate(-1000 -560)"/>
+   <image href="source-assets/notes2.jpg" x="0" y="0" width="2000" height="1125" opacity="${a}"/>
+   <rect x="0" y="0" width="2000" height="1125" fill="#f3f3ef" opacity="${blur*.6}"/>
+   <g opacity="${ss(.4,.8,t)}"><rect x="83" y="700" width="704" height="320" rx="12" fill="#fafaf7" filter="url(#sh)"/>${T(136,828,'174 pages of',{s:104})}${T(136,940,'physics notes.',{s:104})}</g>`}
+function drawVmin(t){
+  const rA=1-ss(6.3,6.9,t)*1,gA=ss(4.3,5.2,t);
+  const cx=1000,cy=mix(576,576,0),r=372;
+  let s=`<rect width="2000" height="1125" fill="#fff"/>`;
+  s+=`<g opacity="${rA}">${T(1000,146,'Vmin',{c:'sans',s:56,a:'middle',f:'#e93a24'})}
+   <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e93a24" stroke-width="8"/>
+   <rect x="${cx-78}" y="${cy-352}" width="156" height="98" fill="none" stroke="#e93a24" stroke-width="9" opacity="${1-gA}"/>
+   <circle cx="${cx}" cy="${cy}" r="56" fill="#e93a24" opacity="${1-gA}"/>
+   <g opacity="${1-gA}">${arrow(cx+318,cy-235,cx+56,cy-10,'#e93a24',10,28)}${T(cx+225,cy-20,'r',{c:'sans',s:50,f:'#e93a24'})}</g>
+   <path d="M-10 700C60 760 200 880 ${cx-300} ${cy+345}" fill="none" stroke="#e93a24" stroke-width="8"/>
+   <path d="M${cx} ${cy+r}C${cx+250} ${cy+r} ${cx+500} ${cy+350} ${cx+780} ${cy+292}" fill="none" stroke="#e93a24" stroke-width="8"/>
+   ${T(8,1096,'V',{s:80})}${T(62,1110,'min',{s:46})}${T(150,1096,'in terms of m, r, and fundamental constants?',{s:76})}
+   ${T(1936,500,'',{})}</g>`;
+  s+=`<g opacity="${gA}">${loop(t,1000,574,362,mix(6,12,ss(5,6.6,t)))}</g>`;
+  s+=caption(t,3.42,'Every diagram','stood still.');
+  return s}
+function drawLoopScene(t){
+  // 7–9.8 整张课页缩回右侧的插图卡
+  const p=ss(8.5,9.6,t);
+  const k=mix(1,.834,p),cx=mix(1000,1202,p),cy=mix(574,580,p);
+  let s=`<rect width="2000" height="1125" fill="#f3f3ef"/>`;
+  const X=mix(532,818,p),W=mix(1468,1137,p),Y=mix(0,86,p),H=mix(1125,984,p);
+  s+=`<rect x="${X}" y="${Y}" width="${W}" height="${H}" rx="${20*p}" fill="#fdfdfc"/>`;
+  // 左页
+  s+=`<g opacity="${1-ss(8.4,8.9,t)}"><rect x="0" y="0" width="532" height="1125" fill="#fbfbf9"/><line x1="532" x2="532" y1="0" y2="1125" stroke="#e7e7e3"/>
+    ${T(-90,1 ,'',{})}${T(-90,172,'in circles',{s:80})}${T(-90,240,'the loop',{c:'it',s:40,f:'#a5a5a0'})}
+    ${T(-150,340,'turns in. At the bottom and top the',{s:30})}${T(-150,386,'motion, so there the net force is vertical:',{s:30})}
+    ${T(14,508,'FN = m(v²/r + g) = 32.8 kN',{c:'mono',s:21,f:'#333'})}${L(0,530,420,530,'#e4e4e0',1)}${T(14,572,'FN = m(v²/r − g) = 3.4 kN',{c:'mono',s:21,f:'#333'})}${L(0,596,420,596,'#e4e4e0',1)}
+    ${T(10,676,'√(gr) = 7.67 m/s',{s:42})}
+   </g>`;
+  s+=`<g opacity="${1-ss(8.4,8.9,t)}">${T(576,10,'Fig. 3.4',{c:'mono',s:15.5,f:'#9a9a96'})}${T(1870,12,'A 6 m loop, 10 m/s over the top',{c:'it',s:27,a:'end'})}${T(576,1104,'Drag to turn · shift-drag to pan · click to break it down',{c:'mono',s:15.5,f:'#a3a3a0'})}${T(1868,1086,'53° from the bottom   v 16.99 m/s',{c:'mono',s:15.5,a:'end',f:'#333'})}${T(1868,1108,'F_N 27.02 kN   mg 4.90 kN',{c:'mono',s:15.5,a:'end',f:'#333'})}</g>`;
+  s+=loop(t,cx,cy,362*k,14*k,mix(.3,1.27,p));
+  if(p>.5)s+=`<g opacity="${ss(.6,1,p)}">${T(850,134,'Fig. 3.4',{c:'mono',s:15.5,f:'#9a9a96'})}${T(1922,136,'A 6 m loop, 10 m/s over the top',{c:'it',s:27,a:'end',f:'#3a3a3a'})}${T(850,1034,'Drag to turn · shift-drag to pan · click to break it down',{c:'mono',s:15.5,f:'#a3a3a0'})}${T(1922,1012,'291° from the bottom   v 16.10 m/s',{c:'mono',s:15.5,a:'end',f:'#333'})}${T(1922,1034,'F_N 23.32 kN   mg 4.90 kN',{c:'mono',s:15.5,a:'end',f:'#333'})}</g>`;
+  s+=caption(t,6.6,'So I made','them move.',88,756,788,304,1-p,mix(0,-23,p),mix(0,-371,p));
+  return s}
+/* 10–21.5 秒：标题和编号是活的，白卡内的三维插图用原帖截帧逐帧播放 */
+const KICK=[[10,'1.6  ·  PROJECTILE MOTION'],[10.4,'3.12  ·  ESCAPE'],[11.7,'4.8  ·  FORCE FROM POTENTIAL ENERGY'],[12.2,'6.2  ·  X, V AND A'],[13.4,'7.13  ·  THE SPIN'],[14,'8.7  ·  BERNOULLI'],[15.7,'14.0  ·  MAGNETIC FIELDS'],[16.2,'14.2  ·  CIRCLING IN A FIELD'],[17.4,'11.4  ·  THE DIPOLE'],[18,'13.7  ·  KIRCHHOFF’S RULES'],[19.2,'15.0  ·  INDUCTION'],[19.7,'15.9  ·  LC OSCILLATIONS']];
+function drawFigures(t){
+  let k=KICK[0][1];for(const[a,b]of KICK)if(t>=a)k=b;
+  const em=t>=15.65,t0=em?15.65:9.85,l1=em?'Electricity and':'Mechanics,',l2=em?'magnetism, too.':'in motion.';
+  return T(115,380,k,{c:'mono',s:23,f:'#7c7c78',ls:'1.5'})+`<text x="115" y="510" font-size="104">${words(l1,t,t0,.05)}</text><text x="115" y="622" font-size="104">${words(l2,t,t0+.1,.05)}</text><g><rect x="818" y="86" width="1137" height="984" rx="20" fill="#fdfdfc" filter="url(#sh)"/></g>`}
+/* 课页通用外壳 */
+function spread(ox,oy,title,sub,dots){
+  let d='';for(let i=0;i<13;i++)d+=`<circle cx="${ox+1332+i*28.3}" cy="${oy+216}" r="4.4" fill="${i==dots?'#222':'none'}" stroke="#999" stroke-width="1.2"/>`;
+  return T(ox+214,oy+222,'Physics Notes',{s:22.5})+T(ox+372,oy+220,sub,{c:'mono',s:13,f:'#999',ls:'.8'})+d+T(ox+1788,oy+220,'EQUATIONS',{c:'mono',s:12.5,f:'#999',a:'end',ls:'1'})+
+  `<rect x="${ox+212}" y="${oy+262}" width="644" height="808" rx="16" fill="#fbfbf9" filter="url(#sh)"/><rect x="${ox+860}" y="${oy+262}" width="926" height="808" rx="16" fill="#fdfdfc" filter="url(#sh)"/>`}
+function drawClick(t){
+  const p=ss(21.5,21.75,t);
+  return (t<21.75?`<image href="source-assets/lc.jpg" x="0" y="40" width="434" height="1030"/>`:'')+`<text x="${mix(434,180,p)}" y="130" font-size="96">${words('Click anything to take it apart.',t,21.1,.13)}</text>`}
+function drawScroll(t){return `<text x="180" y="130" font-size="96">${t<26?words('Scroll to turn the page.',t,24.2,.1):''}</text>`}
+function drawBreak(t){
+  const ox=0,oy=0;
+  let s=`<text x="180" y="130" font-size="96">Click anything to take it apart.</text>`+spread(ox,oy,'','NO. 01  ·  KINEMATICS',6);
+  s+=T(276,340,'BREAKDOWN',{c:'mono',s:13,f:'#a3a39f',ls:'1'})+`<rect x="680" y="316" width="128" height="36" rx="18" fill="#fff" stroke="#c9c9c5"/>`+T(744,339,'Close · Esc',{c:'mono',s:13.5,a:'middle',f:'#333'});
+  s+=T(276,422,'Its velocity',{s:66})+T(276,478,'one arrow, two independent parts',{c:'it',s:27,f:'#9e9e9a'});
+  [['The velocity arrow breaks into a horizontal part that never',522],['changes and a vertical part that behaves exactly like the first',550],['ball’s velocity. Add them tip to tail and you get the arrow back.',578]].forEach(([x,y])=>s+=T(276,y,x,{c:'sans',s:17,f:'#444'}));
+  [['vx','6.00 m/s',626],['v_y','−2.94 m/s',660],['speed √(vₓ² + v_y²)','6.68 m/s',694]].forEach(([a,b,y])=>{s+=T(276,y,a,{c:'mono',s:15,f:'#8e8e8a'})+T(610,y,b,{c:'mono',s:15.5,f:'#333'})+L(276,y+16,778,y+16,'#dcdcd8',1)});
+  s+=T(276,1042,'Kinematics',{c:'it',s:21,f:'#b2b2ad'})+T(790,1040,'7',{c:'it',s:21,f:'#b2b2ad'});
+  return s}
+function drawPractice(t){
+  let s=`<text x="180" y="130" font-size="96">${words('Practice on every page.',t,25.9,.12)}</text>`;
+  s+=spread(0,0,'','NO. 06  ·  OSCILLATIONS',2)+`<g clip-path="url(#pc)"><g transform="translate(0,68)">`;
+  s+=`<rect x="276" y="192" width="3" height="46" fill="#7088b8"/>`+T(296,216,'shadow of uniform circular motion, with the same ω.',{c:'sans',s:16.5,f:'#444'});
+  s+=T(276,292,'PRACTICE',{c:'mono',s:13,f:'#a3a39f',ls:'1'})+T(276,332,'1   At the instant the block is at x = +A,',{c:'sans',s:16.5,f:'#222'});
+  const opt=(y,l,x,on)=>`<rect x="276" y="${y}" width="518" height="44" rx="6" fill="${on?'#f0f7ee':'#fff'}" stroke="${on?'#4d9a68':'#dfdfdb'}" stroke-width="${on?1.8:1}"/>`+T(292,y+27,l,{c:'mono',s:12,f:'#aaa'})+T(312,y+28,x,{c:'sans',s:16,f:'#333'});
+  s+=opt(364,'A','v = 0 and a = 0')+opt(418,'B','v is greatest and a = 0')+opt(472,'C','v = 0 and a is greatest, toward −x',t>27.1)+opt(527,'D','v = 0 and a is greatest, toward +x');
+  s+=`<rect x="276" y="590" width="3" height="66" fill="#d8d8d4"/>`+T(296,616,'The y−t graph has a peak there: zero slope, so v = 0. And a =',{c:'sans',s:15.5,f:'#666'})+T(296,644,'−ω²x is largest in size and points back toward equilibrium, −x.',{c:'sans',s:15.5,f:'#666'});
+  s+=T(276,709,'2   With A = 0.50 m and ω = 4.0 rad/s, how fast is the block',{c:'sans',s:16.5,f:'#222'})+T(276,737,'moving at x = 0.30 m?',{c:'sans',s:16.5,f:'#222'});
+  s+=opt(770,'A','2.00 m/s')+opt(822,'B','1.20 m/s')+opt(876,'C','1.60 m/s')+opt(930,'D','0.80 m/s');
+  s+=T(276,968,'Oscillations',{c:'it',s:21,f:'#b2b2ad'});
+  s+=`</g></g>`;
+  return s}
+function drawHome(t){
+  const up=ss(28,28.6,t)*0;
+  let s=`<text x="180" y="130" font-size="96">${words('Now: 161 pages that move.',t,28.3,.1)}</text>`;
+  s+=T(342,178,'Physics Notes',{s:21})+L(1534,178,1660,178,'#bbb',2,{d:'2 2'});
+  s+=T(1000,390,'Physics, taken apart.',{s:90,a:'middle'})+T(1000,450,'Learn each chapter with in-depth visuals and explanations',{c:'it',s:27,a:'middle',f:'#a5a5a0'});
+  s+=T(337,544,'AP PHYSICS 1 · MECHANICS',{c:'mono',s:13,f:'#a3a39f',ls:'1'});
+  const cards=[['No. 01','10 · 11 pages','Kinematics','motion, frames and calculus'],['No. 02','10 · 13 pages','Newton’s laws','what changes motion'],['No. 03','10 · 13 pages','Circular motion','circles, ellipses, escape'],['No. 04','10 · 12 pages','Work and energy','from work to well']];
+  cards.forEach(([a,b,c,d],i)=>{const x=337+i*343;
+    s+=`<rect x="${x}" y="570" width="337" height="411" rx="12" fill="#fdfdfc" filter="url(#sh)"/>`+T(x+24,600,a,{c:'mono',s:12,f:'#aaa'})+T(x+313,600,b,{c:'mono',s:12,a:'end',f:'#aaa'})+T(x+24,654,c,{s:36})+T(x+24,686,d,{c:'it',s:23,f:'#a5a5a0'});
+    if(i==0)s+=L(x+40,822,x+40,916,'#333',1.5)+`<path d="M${x+66} 912C${x+90} 860 ${x+130} 820 ${x+160} 816" fill="none" stroke="#bbb"/>`+arrow(x+160,816,x+180,812,'#333',2,6)+arrow(x+46,842,x+46,862,'#d9786a',2,6)+arrow(x+162,816,x+162,842,'#d9786a',2,6);
+    if(i==1)s+=`<path d="M${x+60} 930L${x+60} 800L${x+280} 930z" fill="#f4f4f1" stroke="#ddd"/><rect x="${x+90}" y="778" width="26" height="26" fill="#fff" stroke="#777" transform="rotate(30 ${x+100} 790)"/>`+arrow(x+100,790,x+112,750,'#333',2,6);
+    if(i==2)s+=`<circle cx="${x+150}" cy="848" r="76" fill="none" stroke="#777" stroke-width="3.5"/>`+L(x+60,920,x+280,916,'#777',3)+L(x+60,928,x+280,924,'#777',3)+arrow(x+146,920,x+146,860,'#d9786a',3,7)+arrow(x+142,920,x+142,870,'#333',3,7);
+    if(i==3)s+=L(x+124,760,x+130,920,'#333',1.5)+`<rect x="${x+210}" y="830" width="20" height="74" fill="#7ca0d8"/><rect x="${x+262}" y="830" width="20" height="74" fill="#f2f2ef" stroke="#ccc"/>`+`<circle cx="${x+126}" cy="876" r="5" fill="#333"/>`;
+  });
+  [['No. 05','Momentum'],['No. 06','Oscillations'],['No. 07','Rotation'],['No. 08','Fluids']].forEach(([a,c],i)=>{const x=337+i*343;s+=`<rect x="${x}" y="1028" width="337" height="140" rx="12" fill="#fdfdfc" filter="url(#sh)"/>`+T(x+24,1056,a,{c:'mono',s:12,f:'#aaa'})+T(x+24,1108,c,{s:36})+T(x+313,1056,'10 · 12 pages',{c:'mono',s:12,a:'end',f:'#aaa'})});
+  return s}
+function drawTitle(t){
+  const a=ss(31,31.5,t);
+  return `<g opacity="${a}">`+T(1000,578,'Physics Notes',{s:175,a:'middle'})+T(1000,650,'physics-notes.example',{c:'mono',s:36,a:'middle',f:'#444'})+T(1000,752,'Free and open source. AP Physics 1, C: Mechanics, C: E&M',{c:'it',s:42,a:'middle',f:'#d2d2cd'})+`</g>`}
+const CUR=(x,y)=>`<path transform="translate(${x} ${y}) scale(1.25)" d="M0 0v18l5-4.6 3 7 3.2-1.4-3-6.8 6.8-.4z" fill="#111" stroke="#fff" stroke-width="1.3"/>`;
+const SC=[[0,3.4,drawNotes],[3.4,7,drawVmin],[7,10,drawLoopScene],[10,21.5,drawFigures],[21.5,22.75,drawClick],[22.75,24.25,drawBreak],[24.25,26,drawScroll],[26,28.4,drawPractice],[28.4,31,drawHome],[31,DUR+1,drawTitle]];
+const SEQ=[[10,21.25,'c',818,86,1137,984],[21.5,22.5,'s',0,156,1977,969],[22.75,24,'p',860,262,926,808],[24.25,25.75,'s',0,156,1977,969],[26,28.25,'p',860,262,926,808]];
+const seqEl=document.getElementById('seq'),URLS=[];
+for(const[a,b,n]of SEQ)for(let v=a;v<=b+1e-6;v+=.25)URLS.push(`source-assets/seq/${n}-${v.toFixed(2).padStart(5,'0')}.jpg`);
+let curHref='';
+function seqAt(t){for(const[a,b,n,x,y,w,h]of SEQ)if(t>=a&&t<b+.25){const v=a+Math.floor((t-a)/.25+1e-6)*.25,u=`source-assets/seq/${n}-${v.toFixed(2).padStart(5,'0')}.jpg`;if(u!==curHref){seqEl.setAttribute('href',u);curHref=u}seqEl.setAttribute('x',x);seqEl.setAttribute('y',y);seqEl.setAttribute('width',w);seqEl.setAttribute('height',h);seqEl.style.display='';return}seqEl.style.display='none';curHref=''}
+function frame(t){for(const[a,b,f]of SC)if(t>=a&&t<b){let h=f(t);if(t>=26.7&&t<28.4)h+=CUR(mix(594,530,ss(26.7,27.1,t)),mix(594,575,ss(26.7,27.1,t)));root.innerHTML=h;seqAt(t);document.getElementById('over').innerHTML=(t>=21.5&&t<22.75)||(t>=24.25&&t<26)?T(t<21.75?450:214,211,'Physics Notes',{s:22.5}):'';return}}
+window.__seek=t=>frame(+t);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const start=()=>{
+  if(qs.has('t')){frame(+qs.get('t'));document.body.dataset.ready='1';return}
+  if(reduce){frame(13.75);document.body.dataset.ready='1';return}
+  const t0=performance.now();let last=0;const step=n=>{if(n-last>33){last=n;frame(((n-t0)/1000)%DUR)}requestAnimationFrame(step)};requestAnimationFrame(step);document.body.dataset.ready='1'};
+const pre=URLS.map(u=>{const i=new Image();i.src=u;return i.decode().catch(()=>{})});
+Promise.all(['104px EBG','italic 27px EBG','15px JB','16px Inter'].map(f=>document.fonts.load(f)).concat(pre)).then(start,start);
+})();
+</script>
+</body>
+</html>

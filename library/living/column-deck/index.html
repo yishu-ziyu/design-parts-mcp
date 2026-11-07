@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Column Deck</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#17171a;--body:#3c3c40;--mute:#6a6a6e;--rule:#ececee;--sheet:#fdfdfd;--col:299px;--side:264px;--ease:cubic-bezier(.22,.8,.2,1)}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;background:#7f8f92}
+#wall{position:fixed;inset:0;background:#7f8f92 url(source-assets/wall.jpg) left top/cover no-repeat}
+#win{position:fixed;left:max(78px,calc((100vw - 1320px)/2));right:max(-120px,calc((100vw - 1320px)/2));top:62px;bottom:-60px;min-width:1002px;border-radius:17px;padding:10px;background:rgba(240,242,241,.82);box-shadow:0 0 0 1px rgba(255,255,255,.55),0 8px 40px rgba(20,30,30,.28)}
+#sheet{position:relative;height:100%;border-radius:8px;background:var(--sheet);overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.03)}
+#side{position:absolute;left:0;top:0;bottom:0;width:var(--side);padding:27px 18px 27px 27px;background:var(--sheet);border-right:1px solid var(--rule);z-index:5}
+#side h1{font:600 19.5px/25px Inter;letter-spacing:-.3px;margin:0;}
+#side p{font:400 13.15px/21px Inter;color:var(--body);margin:20px 0 0;letter-spacing:0}
+#side p+p{margin-top:22px}
+#side a{color:#1e1e22;text-decoration:underline;text-decoration-color:#b5b5b8;text-underline-offset:2.5px;text-decoration-thickness:1px}
+#nav{list-style:none;margin:20px 0 0;padding:0}
+#nav button{all:unset;display:flex;align-items:center;height:30px;font:400 13.15px/21px Inter;color:var(--mute);cursor:pointer;position:relative;transition:padding .25s var(--ease),color .2s}
+#nav button::before{content:"";width:3px;height:13px;background:#17171a;position:absolute;left:0;top:8.5px;opacity:0;transform:scaleY(.3);transition:opacity .2s,transform .25s var(--ease)}
+#nav button.on{padding-left:7px;color:#17171a;font-weight:500}#nav button.on::before{opacity:1;transform:none}
+#nav button:hover{color:#17171a}
+#deck{position:absolute;left:var(--side);right:0;top:0;bottom:0;display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+#deck::-webkit-scrollbar{display:none}
+.col{position:relative;flex:0 0 var(--col);height:100%;border-right:1px solid var(--rule);background:transparent}
+.col.flash{animation:flash 1.3s ease-out}
+@keyframes flash{0%,55%{background:#dcdcde}100%{background:transparent}}
+.scroll{height:100%;overflow-y:auto;padding:27px 26px 80px 27px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.col header{position:relative}
+.col h2{font:600 19.5px/25px Inter;letter-spacing:-.3px;margin:0;display:flex;align-items:center;gap:6px}
+.col h2 svg{margin-top:1px}
+.col .desc{font:400 13.15px/21px Inter;color:var(--body);margin:20px 0 0;letter-spacing:0}
+.col hr{border:0;border-top:1px solid #f2f2f3;margin:20px 0}
+.more{position:absolute;right:26px;top:27px;width:24px;height:24px;border-radius:50%;border:1px solid #e0e0e2;background:#fff;display:none;align-items:center;justify-content:center;gap:1.6px;z-index:3;padding:0}
+.more i{width:2px;height:2px;border-radius:50%;background:#666}
+.col.dots .more{display:flex}
+/* 深色项目卡 */
+.pcard{display:block;border-radius:12px;overflow:hidden;background:var(--tint,#4f4f49);margin-bottom:28px;height:322px;position:relative;box-shadow:0 0 0 .5px rgba(0,0,0,.08)}
+.pcard .m{position:absolute;left:0;right:0;top:0;overflow:hidden}
+.pcard .m img{display:block;width:100%;height:auto}
+.pcard .tx{position:absolute;left:17px;right:17px;bottom:15px}
+.pcard small{display:block;font:500 9.7px/14px Inter;letter-spacing:.75px;color:#bcbcb2;margin-bottom:9px}
+.pcard b{display:block;font:500 13px/20px Inter;color:#f1f1ec}
+.pcard p{font:400 13px/20px Inter;color:#b5b5ab;margin:7px 0 0}
+/* 白卡 */
+.wcard{display:block;border-radius:15px;background:#fff;box-shadow:0 0 0 1px #e7e7e9;margin-bottom:25px;padding:17px;overflow:hidden}
+.wcard time{display:block;font:400 10.2px/14px Inter;color:#74747a}
+.wcard .m{position:relative;margin:11px -4px 18px}
+.wcard .m img{display:block;width:100%;height:auto}
+.wcard p+.m{margin:14px -4px 0}
+.wr{padding:0}.wr .wm{display:block;width:100%;height:auto;border-radius:15px 15px 0 0}.wr .wb{padding:7px 17px 17px}
+.wcard p{font:400 13.15px/21px Inter;color:#2c2c30;margin:0;letter-spacing:0}
+.wcard p em{font-style:normal;color:#717176}
+/* 相纸 */
+.photo{display:block;background:#fff;border-radius:13px;box-shadow:0 0 0 1px #e7e7e9,0 1px 2px rgba(0,0,0,.03);padding:7px 7px 10px;margin-bottom:27px}
+.photo .pi{display:block;width:100%;height:306px;object-fit:cover;border-radius:7px}
+.photo figcaption{margin-top:9px;text-align:center}.photo figcaption img{display:block;width:216px;height:auto;margin:0 auto}
+/* 简历 */
+.res h3{font:400 11px/14px Inter;color:#74747a;margin:22px 0 14px}.res h3:first-child{margin-top:18px}
+.res p{font:400 11.8px/16px Inter;color:#2c2c30;margin:0 0 15px;white-space:nowrap}.res p em{font-style:normal;color:#77777c}.res p.w{white-space:normal}
+.res a{color:inherit;text-decoration:underline;text-decoration-color:#aaa}
+/* 滚动后的模糊顶和回到列头胶囊 */
+.fade{position:absolute;left:0;right:1px;top:0;height:46px;z-index:2;pointer-events:none;opacity:0;transition:opacity .2s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);-webkit-mask:linear-gradient(#000 45%,transparent);mask:linear-gradient(#000 45%,transparent)}
+.col.scrolled .fade{opacity:1}
+.pill{all:unset;position:absolute;left:21px;top:21px;height:26px;padding:0 8px 0 7px;border-radius:13px;display:flex;align-items:center;gap:5px;font:400 13px/1 Inter;color:#333;background:rgba(245,245,245,.78);backdrop-filter:blur(8px);box-shadow:0 0 0 1px rgba(255,255,255,.5),0 1px 5px rgba(0,0,0,.14);z-index:3;cursor:pointer;opacity:0;transform:translateY(-5px);transition:opacity .2s,transform .25s var(--ease);pointer-events:none}
+.col.scrolled .pill{opacity:1;transform:none;pointer-events:auto}
+.thumb{position:absolute;right:3px;width:6px;border-radius:3px;background:#8d8d8f;opacity:0;transition:opacity .35s;z-index:3;pointer-events:none}
+.col.scrolling .thumb{opacity:1;transition-duration:.08s}
+.notes{font:400 13px/1.55 Inter;color:#444}.notes h3{font:600 13px Inter;margin:0 0 8px;color:#222}.notes dl{margin:0}.notes dt{margin-top:8px}.notes dd{margin:2px 0 0;color:#666}.notes code{font:11.5px ui-monospace,Menlo,monospace;color:#222}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style></head><body>
+<div id="wall" aria-hidden="true"></div>
+<div id="win"><div id="sheet">
+<aside id="side">
+<h1>Che Wei Lee</h1>
+<p>Welcome to my little corner of the internet! I'm a product designer at <a>Nav</a>, helping small businesses build credit and get funding. I'm also working on <a>Gone</a>, an outdoor storytelling app. Before that, I worked in <a>cycling</a> for a bit.</p>
+<p>You can find me<br>on <a>X</a> and <a>Instagram</a>, or reach<br>me via <a>email</a>.</p>
+<ul id="nav"></ul>
+</aside>
+<main id="deck"></main>
+</div></div>
+<script>
+const chev='<svg width="6" height="10" viewBox="0 0 6 10" fill="none"><path d="M1 1l4 4-4 4" stroke="#6b6b70" stroke-width="1.2"/></svg>';
+/* 配图是原站和原帖的截图，只留本机 */
+const SA='source-assets/';
+const pm=k=>`<div class="m"><img src="${SA}${k}.jpg" alt=""></div>`;
+const wm=(k,o='')=>`<div class="m"><img ${o} src="${SA}${k}.jpg" alt=""></div>`;
+const wr=(k,d,t,e)=>`<a class="wcard wr"><img class="wm" src="${SA}${k}.jpg" alt=""><div class="wb"><time>${d}</time><p style="margin-top:8px">${t} <em>${e}</em></p></div></a>`;
+const ph=(k,c,alt)=>`<figure class="photo" style="margin-inline:0;margin-top:0"><img class="pi" src="${SA}${k}.jpg" alt="${alt}"><figcaption><img src="${SA}${c}.png" alt="${alt}"></figcaption></figure>`;
+const COLS=[
+ {id:'projects',t:'Projects',d:'Work that shipped, or got far enough to be worth explaining.',rule:1,body:
+  `<a class="pcard" style="--tint:#575955">${pm('p1')}<div class="tx"><b>Gone — A Storytelling Platform<br>for Outdoor Adventures</b><p>We set out to build a space where any bikepacker, trail runner, or hiker can combine vivid images,...</p></div></a>
+   <a class="pcard" style="--tint:#575b53">${pm('p2')}<div class="tx"><small>HACKATHON</small><b>Wahoogotchi</b><p>An internal hackathon project that reimagines cycling motivation through play. Wahoogotchi blen...</p></div></a>
+   <a class="pcard" style="--tint:#575757">${pm('p3')}<div class="tx"><b>Building &amp; Evolving Wahoo<br>Fitness's Design System</b><p>I led Wahoo Fitness in building a scalable, token-driven design system that integrates seamle...</p></div></a>
+   <a class="pcard" style="--tint:#545c52">${pm('p4')}<div class="tx"><b>Building Responsive Metric Displays</b><p>How I tackled an interesting challenge of building a scalable, responsive metric display for the...</p></div></a>
+   <a class="pcard" style="--tint:#4e655a">${pm('p5')}<div class="tx"><b>Koordinates — Discover Earth's Data.</b><p>Koordinates is designed and engineered for all data users—and not just those with technical...</p></div></a>`},
+ {id:'workbench',t:'Workbench',d:'Experiments, dead ends, prototypes to scratch an itch. Nothing here is finished and some of it never will be.',rule:1,body:
+  `<a class="wcard"><time>Sep 11, 2026</time><div class="m"><img id="seq" src="${SA}seq/f00.jpg" alt=""></div><p>Double-tapping on a photo to leave a fingerprint on it... like a real print?</p></a>
+   <a class="wcard"><time>Sep 4, 2026</time><p style="margin-top:18px">Settings → Bank accounts</p>${wm('w2')}</a>
+   <a class="wcard"><time>Aug 19, 2026</time><p style="margin-top:18px">Connect a bank → Opt into data share → Wait for an offer flow...</p>${wm('w3')}</a>
+   <a class="wcard"><time>Mar 3, 2026</time><p style="margin-top:18px">Credit Builder Card landing page 🤔</p>${wm('w4')}</a>`},
+ {id:'photos',t:'Photos',d:'Places, rides, light. Mostly Fujifilm<br>or iPhone.',rule:1,body:
+  ph('ph1','cap1','Crust Evasion Lite – Upstate New York, May 22, 2026, Putnam County, United States')+ph('ph2','cap2','Tokyo business man, Jan 22, 2024, Tokyo, Japan')},
+ {id:'writing',t:'Writing',d:'Longer pieces on whatever else I\'ve<br>been chewing on.',rule:1,body:
+  wr('wr1','Sep 30, 2019','Blurring the Lines Between Prototype and Real Product','Designing with data is becoming the new norm. Excel sheets, APIs, data Test randomisers are all...')
+  +wr('wr2','Apr 16, 2019','New on Wahoo: Setup Wizard','We’re excited to roll out a slicker way to get you set up on new Wahoo products. This is one of many...')
+  +wr('wr3','Aug 10, 2015','Designing Vend’s new point of sale','How do you redesign a bread &amp; butter tool that 15,000+ retailers around the world use all day, everyday?')},
+ {id:'resume',t:'Resume',d:'',plain:1,body:
+  `<div class="res"><h3>Education</h3><p class="w">Master of Architecture (Prof), <em>— The University of Auckland</em></p><p class="w">Bachelor of Architectural Studies <em>— Architecture — The University of Auckland (2008–2011)</em></p>
+  <h3>Experience</h3><p>Nav Technologies <em>— 2025–Present</em></p><p>Wahoo Fitness <em>— 2019–2025</em></p><p>Koordinates <em>— 2017–2019</em></p><p>Vend by Lightspeed <em>— 2014–2017</em></p><p>AECOM (Architecture) <em>— 2012–2014</em></p>
+  <h3>Talks</h3><p class="w">Introduction to Framer <em>— Roadshow, Auckland, New Zealand (2020)</em></p><p class="w"><a>Jacky Lee, Designer + Developer</a> <em>— design interview podcast (2018)</em></p><p class="w">Prototyping with Bluetooth Devices <em>— Framer Loupe, Amsterdam (2018)</em></p><p class="w">Design with Code <em>— Crimson, Auckland, New Zealand (2018)</em></p></div>
+  <div class="notes" style="margin-top:36px"><h3>可拆</h3><dl>
+  <dt><code>#deck</code></dt><dd>横向一排定宽 299px 的列，每列自己纵向滚动。</dd>
+  <dt><code>#nav</code></dt><dd>点导航把目标列平滑滚到侧栏右边，黑竖条进入，列背景闪灰后退。</dd>
+  <dt><code>#projects</code></dt><dd>列内滚动后，顶部模糊并浮出回到列头的胶囊和滚动条。</dd>
+  <dt><code>#photos</code></dt><dd>白边相纸卡片加手写字说明。</dd></dl></div>`}
+];
+const deck=document.getElementById('deck'),nav=document.getElementById('nav');
+COLS.forEach((c,i)=>{const s=document.createElement('section');s.className='col'+(c.id==='workbench'?' dots':'');s.id=c.id;
+ s.innerHTML=`<button class="pill" aria-label="back to top of ${c.t}"><svg width="11" height="12" viewBox="0 0 11 12" fill="none"><path d="M5.5 11V1.5M1.5 5.5l4-4 4 4" stroke="#333" stroke-width="1.1"/></svg>${c.t}</button><div class="fade"></div><div class="thumb"></div><button class="more" aria-label="more"><i></i><i></i><i></i></button><div class="scroll"><header><h2>${c.t}${c.plain?'':chev}</h2>${c.d?`<p class="desc">${c.d}</p>`:''}</header>${c.rule?'<hr>':''}${c.body}</div>`;
+ deck.appendChild(s);
+ const li=document.createElement('li');li.innerHTML=`<button data-t="${c.id}" class="${i==0?'on':''}">${c.t}</button>`;nav.appendChild(li);
+ const sc=s.querySelector('.scroll'),th=s.querySelector('.thumb');let tm;
+ sc.addEventListener('scroll',()=>{const y=sc.scrollTop,H=sc.clientHeight,T=sc.scrollHeight;s.classList.toggle('scrolled',y>70);
+  const h=Math.max(30,H/T*H);th.style.height=h+'px';th.style.top=(y/(T-H||1))*(H-h)+'px';
+  s.classList.add('scrolling');clearTimeout(tm);tm=setTimeout(()=>s.classList.remove('scrolling'),700)},{passive:true});
+ s.querySelector('.pill').onclick=()=>sc.scrollTo({top:0,behavior:reduced()?'auto':'smooth'});
+});
+const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* 点击：把目标列送到侧栏右边，竖条跟过去，列闪一下 */
+let raf;
+function glide(to){cancelAnimationFrame(raf);if(reduced()){deck.scrollLeft=to;return}const from=deck.scrollLeft,t0=performance.now(),D=620;
+ (function f(t){const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3.4);deck.scrollLeft=from+(to-from)*e;if(p<1)raf=requestAnimationFrame(f)})(t0)}
+function setActive(id){nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t===id))}
+nav.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const col=document.getElementById(b.dataset.t);
+ setActive(b.dataset.t);document.querySelectorAll('.col').forEach(c=>c.classList.remove('dots','flash'));col.classList.add('dots');void col.offsetWidth;col.classList.add('flash');
+ glide(col.offsetLeft)});
+/* 工作台第一张是原站视频的逐帧截图，14 帧，每帧约 1.23 秒 */
+(()=>{const el=document.getElementById('seq'),q=new URLSearchParams(location.search).get('seq');const f=i=>`${SA}seq/f${String(i).padStart(2,'0')}.jpg`;
+ for(let i=0;i<14;i++)new Image().src=f(i);
+ if(q!==null){el.src=f(+q);return}
+ if(reduced())return;let i=0;setInterval(()=>{i=(i+1)%14;el.src=f(i)},1234)})();
+</script></body></html>

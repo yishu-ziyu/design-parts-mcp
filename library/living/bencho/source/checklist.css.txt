@@ -1,0 +1,74 @@
+/* ONE SPRING PER ROW, AND EVERYTHING IS READ OFF IT. The
+   box filling, the tick drawing, the rule crossing the words
+   and the words giving up their ink are four readings of a
+   single number, not four things animated toward the same
+   moment. Four transitions is four chances for one to arrive
+   early and break the illusion that this is one event. */
+const t = useSpring(on ? 1 : 0, bounce);
+
+/* WHERE THE OVERSHOOT IS ALLOWED, AND WHERE IT IS NOT. A
+   spring goes past its target and comes back, which is what
+   makes a check feel like a press â but only some of these
+   survive it. The fill takes the raw value and swells past
+   full. The tick and the rule take it CLAMPED: a tick that
+   overshoots draws itself past its own end and pulls back,
+   which is a glitch rather than a bounce. One spring, two
+   readings, and the difference is one clamp. */
+transform: \`scale(\${t})\`            /* raw    */
+strokeDashoffset={1 - clamp(t, 0, 1)} /* clamped */
+
+/* THE TICK IS DRAWN, NOT FADED. pathLength="1" normalises the
+   dash to the stroke's own length, so the offset is a
+   fraction rather than a number measured off this particular
+   path â change the checkmark and nothing else has to know. */
+<path d="M6 12.4 L10.3 16.7 L18 7.6" pathLength={1}
+      strokeDasharray={1} strokeDashoffset={1 - t} />
+
+/* THE RULE FOLLOWS THE TICK, IT DOES NOT RACE IT. A window on
+   the same number rather than a second timer, so there is
+   nothing to keep in step. Started together they read as one
+   wipe across the row; started apart they read as cause and
+   effect. */
+const cut = clamp((t - 0.12) / 0.72, 0, 1);
+
+/* AND IT IS SCALED, NOT GROWN. A width in pixels needs the
+   word measured; scaleX from the left edge needs nothing, and
+   a 1.5px line has no corner for a scale to distort. The span
+   is sized to the WORDS rather than the row, so the rule
+   stops where the text does. */
+transform: \`scaleX(\${cut})\`
+
+/* AND FINISHING THE LIST TAKES THE FLOOR OUT FROM UNDER IT.
+   Not a state â every task ticked IS the finish, so unticking
+   one during the three seconds makes this false on the same
+   render and the rows climb back without anything having to
+   remember that they had fallen. */
+const fell = done.every(Boolean);
+
+/* Down is a duration with gravity's shape in it â it starts at
+   nothing and gains, which is what easeIn is â and the fourth
+   keyframe is the rebound, which is the difference between
+   landing and being placed. Up is a SPRING, because coming
+   back is the list reasserting itself rather than anything
+   being dropped, and because a spring interrupts cleanly:
+   untick a task halfway through the fall and the row is picked
+   up from wherever it had got to. */
+animate={fell ? { y: [0, drop, drop - 9, drop], rotate: tilt }
+              : { y: 0, rotate: 0 }}
+transition={fell ? { duration: 0.62, delay: wait,
+                     times: [0, 0.66, 0.84, 1],
+                     ease: ["easeIn", "easeOut", "easeIn"] }
+                 : { type: "spring", stiffness: 420, damping: 26 }}
+
+/* Every row falls the SAME distance, because the heap keeps
+   the spacing the list had â three touching blocks losing
+   their support fall together. So the sequence comes from when
+   they let go rather than how far they travel: the bottom row
+   first, 45ms apart, which is a stack collapsing from
+   underneath. */
+
+/* THE FILL OPENS FROM THE MIDDLE, inside a ring that never
+   changes. A checkbox that swaps its background is a
+   different colour arriving; one whose fill grows out of the
+   centre is the box being filled in, which is what the word
+   means. */

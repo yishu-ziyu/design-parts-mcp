@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Particle Palette</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Manrope;src:url(fonts/manrope.woff2) format("woff2");font-weight:200 800}
+@font-face{font-family:"JetBrains Mono";src:url(fonts/jetbrains-mono.woff2) format("woff2");font-weight:100 800}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fbf9f5;color:#111;font-family:Manrope,system-ui,sans-serif}
+#gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+.poster{position:relative;aspect-ratio:4/5;overflow:hidden;background:#fbf9f5;container-type:inline-size}
+.poster canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.layer{position:absolute;left:0;top:0;width:800px;height:1000px;transform-origin:0 0;pointer-events:none}
+.layer svg{position:absolute;inset:0;width:800px;height:1000px;overflow:visible}
+.t{position:absolute;left:41px;top:43px;font-size:47.5px;line-height:67px;letter-spacing:-.012em;font-weight:360;margin:0;color:#121212}
+.l{position:absolute;font:600 10.8px/14px "JetBrains Mono",monospace;letter-spacing:.012em;color:#2a2a2a;white-space:nowrap}
+.g{position:absolute;font:400 11px/14px Manrope,sans-serif;color:#b2b2ae;white-space:nowrap}
+.f{position:absolute;top:944px;font-size:21.5px;line-height:28px;letter-spacing:-.006em;color:#222}
+.notes{max-width:880px;margin:64px auto;padding:0 16px;font-size:14px;line-height:22px;color:#6f6f6b}
+.notes h3{font-size:14px;margin:0 0 10px;color:#111}.notes dl{margin:0;display:grid;grid-template-columns:150px 1fr;gap:6px 18px}.notes dd{margin:0}.notes code{font:12.5px "JetBrains Mono",monospace;color:#111}
+body.one #gallery{display:block}body.one .poster{display:none}body.one .poster.on{display:block}body.one .notes{display:none}
+@media (max-width:760px){#gallery{grid-template-columns:1fr}.notes dl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="gallery"></div>
+<section class="notes">
+<h3>可拆</h3>
+<dl>
+<dt><code>#scatter-form</code></dt><dd>几千个带颜色的小圆拼出主体；打开时从四周收拢，鼠标靠近被推开再弹回。</dd>
+<dt><code>#two-tone</code></dt><dd>主色和互补暖色按身体部位分布，浅色压底、深色在上，颜色密度勾出结构。</dd>
+<dt><code>#diagram-frame</code></dt><dd>细线多边形加圆点和等宽标签，把插画变成研究图表。</dd>
+</dl>
+</section>
+<script src="source-assets/particles.js"></script>
+<script src="particle-palette.js"></script>
+</body>
+</html>

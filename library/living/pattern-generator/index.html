@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pattern Generator</title>
+<style>
+@font-face{font-family:JB;src:url(fonts/jb.woff2) format("woff2");font-weight:100 800;font-display:block}
+html,body{margin:0;background:#f4f3f4}
+#stage{position:relative;width:100vw;aspect-ratio:1483/834;overflow:hidden;background:#fff;max-height:100vh}
+#c{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+#notes{font:14px/1.6 ui-sans-serif,system-ui,sans-serif;color:#333;max-width:760px;margin:0 auto;padding:32px 20px 60px}
+#notes h3{font-size:15px;margin:0 0 10px}#notes dt{margin-top:8px}#notes dd{margin:0}
+#notes code{font:13px JB,monospace}
+.anchor{position:absolute;width:0;height:0;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" role="img" aria-label="程序生成的图案，七段依次切换"></canvas>
+  
+  <span class="anchor" id="island"></span><span class="anchor" id="halftone"></span><span class="anchor" id="bands"></span>
+  <span class="anchor" id="strips"></span><span class="anchor" id="meadow"></span><span class="anchor" id="tags"></span>
+</div>
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#island</code></dt><dd>噪声阈值让色块岛屿长大，边缘散落淡出的小方块，再连上黑色走线和节点。</dd>
+    <dt><code>#halftone</code></dt><dd>大方格逐个亮起，每格用半色调圆点和噪声色块混合。</dd>
+    <dt><code>#bands</code></dt><dd>黑底上的像素色带，叠加短曲线。</dd>
+    <dt><code>#strips</code></dt><dd>五条竖向渐变加颗粒，中间放像素热区和拖尾方块，换色板不换版式。</dd>
+    <dt><code>#meadow</code></dt><dd>噪声映射成天空和草地色阶，分辨率随边界推进从细格变成粗像素。</dd>
+    <dt><code>#tags</code></dt><dd>代码片段做成彩色标签，先四散，再聚成一块，再整体滑向右下并铺满行宽。</dd>
+  </dl>
+</section>
+<script src="data.js"></script>
+<script>
+(()=>{
+const W=1483,H=834,DUR=38.25;
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const qs=new URLSearchParams(location.search);
+const DPR=Math.min(2,Math.max(1,+qs.get('dpr')||devicePixelRatio||1));
+function fit(){cv.width=W*DPR;cv.height=H*DPR}fit();
+const k=W/2000; // 量取时用的 2000 宽坐标换算成画布坐标
+
+/* ---------- 噪声 ---------- */
+let SEED=+qs.get('seed')||7;
+const hash=(x,y,s=SEED)=>{let h=(x*374761393+y*668265263+s*2147483647)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967296};
+const smooth=t=>t*t*(3-2*t);
+function vn(x,y,s=0){const xi=Math.floor(x),yi=Math.floor(y),fx=smooth(x-xi),fy=smooth(y-yi);
+  const a=hash(xi,yi,SEED+s),b=hash(xi+1,yi,SEED+s),c=hash(xi,yi+1,SEED+s),d=hash(xi+1,yi+1,SEED+s);
+  return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy}
+function fbm(x,y,s=0,o=4){let v=0,a=.5,n=0;for(let i=0;i<o;i++){v+=a*vn(x,y,s+i*17);n+=a;a*=.5;x*=2.03;y*=2.03}return v/n}
+const clamp=(v,a=0,b=1)=>v<a?a:v>b?b:v;
+const ss=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)};
+const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const mix=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+const css=(c,al=1)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${al})`;
+function ramp(stops,t){t=clamp(t);for(let i=1;i<stops.length;i++){if(t<=stops[i][0]){const[a,ca]=stops[i-1],[b,cb]=stops[i];return mix(ca,cb,(t-a)/(b-a||1))}}return stops[stops.length-1][1]}
+const R=(...p)=>p.map(([a,c])=>[a,hex(c)]);
+
+/* 颗粒：一张 256 的噪点贴图，平铺后用 overlay 叠 */
+const grain=document.createElement('canvas');grain.width=grain.height=256;
+{const g=grain.getContext('2d'),d=g.createImageData(256,256);for(let i=0;i<d.data.length;i+=4){const v=128+(Math.random()-.5)*150;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}g.putImageData(d,0,0)}
+
+/* ---------- 第一段 岛屿 0–7s ---------- */
+const CA=25*k; // 单格 18.5px，量自原版
+const BG='#f5f4f4';
+const blueD=hex('#3f92dc'),blueL=hex('#4cabf0'),green=hex('#67b04f'),yellow=hex('#f4ec86'),pale=hex('#dcebf6'),teal=hex('#5fa7b4');
+function wires(){
+  const out=[];
+  for(let i=0;i<46;i++){
+    const x0=Math.floor(hash(i,1,91)*79),y0=Math.floor(hash(i,2,91)*44);
+    const pts=[[x0,y0]];let x=x0,y=y0;const n=2+Math.floor(hash(i,3,91)*4);
+    for(let j=0;j<n;j++){const l=2+Math.floor(hash(i,j+9,91)*11);if((j+i)%2)x+=hash(i,j+20,91)<.5?l:-l;else y+=hash(i,j+30,91)<.5?l:-l;pts.push([x,y])}
+    out.push(pts);
+  }return out}
+let WIRES=null;
+function drawIsland(t){
+  if(!WIRES)WIRES=wires();
+  const g=ctx;g.fillStyle=BG;g.fillRect(0,0,W,H);
+  const p=clamp(t/7);
+  const cols=Math.ceil(W/CA),rows=Math.ceil(H/CA);
+  const th=.62-.285*Math.pow(p,.62)-(t<.5?-.08*(1-t*2):0);
+  const blueShift=ss(4.6,6.6,t),holes=ss(3.2,6.2,t);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const x=i*CA,y=j*CA;
+    const u=i/cols,v=j/rows;
+    const cx=(u-.58)*1.9,cy=(v-.52)*2.2;
+    const f=fbm(i*.055,j*.055,1,4)*1.18-.42*Math.hypot(cx,cy)+.17;
+    const fr=f-th;
+    if(fr<-.022)continue;
+    if(fr<0){ // 边缘飘散的小方块
+      const h=hash(i,j,5);if(h>.34)continue;
+      const s=CA*(.42+.3*hash(i,j,6)),al=.35+.55*hash(i,j,7);
+      const b=fbm(i*.05,j*.05,9,3);
+      g.fillStyle=css(b<.42?green:b>.62?yellow:blueL,al);g.fillRect(x+(CA-s)/2,y+(CA-s)/2,s,s);continue}
+    if(holes>0&&fbm(i*.3,j*.3,31,3)<.34+.2*holes-.42*fr*2&&i%1==0){
+      const b=hash(i,j,44);if(b<.75*holes){g.fillStyle=css(pale,.45);g.fillRect(x,y,CA,CA);continue}
+    }
+    const b=fbm(i*.045+3,j*.045,9,3),c2=fbm(i*.12,j*.12,12,3);
+    let col=b<.43?green:b>.625?yellow:mix(blueD,blueL,ss(.42,.6,c2));
+    if(b>.55&&c2>.62)col=pale;
+    if(blueShift>0)col=mix(col,mix(hex('#3a6ee0'),hex('#7aa5f0'),c2),blueShift*.92);
+    g.fillStyle=css(col);g.fillRect(x,y,CA,CA);
+    const tex=fbm(i*.1+9,j*.1+4,21,3);
+    if(tex>.555){ // 中心白方块
+      g.fillStyle='rgba(255,255,255,.82)';const s=CA*.34;g.fillRect(x+(CA-s)/2,y+(CA-s)/2,s,s);
+    }else if(tex<.39){ // 细点纹
+      g.fillStyle=col===green?'rgba(232,240,150,.75)':'rgba(205,232,235,.55)';
+      for(let a=0;a<4;a++)for(let d=0;d<4;d++)g.fillRect(x+1.5+a*4,y+1.5+d*4,2,2);
+    }
+    g.fillStyle='rgba(255,255,255,.62)';g.fillRect(x,y,CA,1);g.fillRect(x,y,1,CA);
+  }
+  // 走线与节点：只有落在岛上的才画
+  const inside=(i,j)=>{const u=i/cols,v=j/rows,cx=(u-.58)*1.9,cy=(v-.52)*2.2;return fbm(i*.055,j*.055,1,4)*1.18-.42*Math.hypot(cx,cy)+.17>th};
+  g.strokeStyle='rgba(12,14,16,.86)';g.lineWidth=1.25;g.fillStyle='#050505';
+  const al=ss(.25,1.2,t);g.globalAlpha=al;
+  for(const[wi,pts]of WIRES.entries()){
+    if(!inside(pts[0][0],pts[0][1]))continue;
+    const dash=wi%5==0;g.setLineDash(dash?[11,9]:[]);
+    g.beginPath();let on=false;
+    for(let n=0;n<pts.length-1;n++){
+      const[a,b]=pts[n],[c,d]=pts[n+1],st=Math.max(Math.abs(c-a),Math.abs(d-b));
+      for(let q=0;q<st;q++){
+        const x1=a+(c-a)*q/st,y1=b+(d-b)*q/st,x2=a+(c-a)*(q+1)/st,y2=b+(d-b)*(q+1)/st;
+        if(inside(x1|0,y1|0)&&inside(x2|0,y2|0)){g.moveTo(x1*CA+CA/2,y1*CA+CA/2);g.lineTo(x2*CA+CA/2,y2*CA+CA/2)}
+      }
+    }
+    g.stroke();g.setLineDash([]);
+    const s=7.2;g.fillRect(pts[0][0]*CA+CA/2-s/2,pts[0][1]*CA+CA/2-s/2,s,s);
+    const l=pts[pts.length-1];if(inside(l[0],l[1]))g.fillRect(l[0]*CA+CA/2-s/2,l[1]*CA+CA/2-s/2,s,s);
+  }
+  g.globalAlpha=1;
+}
+
+/* ---------- 第二段 半色调大格 7–12s ---------- */
+const TB=131.5*k; // 大格 97.5px
+let halfA=null,halfB=null;
+const HG=hex('#7ab947'),HY=hex('#ebe75f'),HB=hex('#45a5ee'),HP=hex('#d9ebe6');
+function renderHalf(off){
+  const c=document.createElement('canvas');c.width=W*DPR;c.height=H*DPR;const g=c.getContext('2d');g.scale(DPR,DPR);
+  g.fillStyle='#fbfcfc';g.fillRect(0,0,W,H);
+  const d=4.35;
+  for(let tj=0;tj<10;tj++)for(let ti=0;ti<17;ti++){
+    const tx=-3+ti*TB,ty=-88+tj*TB+.0;
+    const u=(tx+TB/2)/W;
+    const ty2=hash(ti,tj,71);
+    const right=ss(.52,.6,u);
+    let mode='dots';
+    if(ty2<.07+right*.22)mode='white';
+    else if(ty2<.14+right*.28)mode='pale';
+    const lvl=right?.35+.65*fbm(ti*.4,tj*.4,4,2):1;
+    g.save();g.beginPath();g.rect(tx,ty,TB,TB);g.clip();
+    if(mode==='white'){g.fillStyle='#fdfdfd';g.fillRect(tx,ty,TB,TB)}
+    else if(mode==='pale'){g.fillStyle=right>.5?'#d9ebe7':'#c9dd97';g.fillRect(tx,ty,TB,TB)}
+    else{
+      for(let y=ty;y<ty+TB;y+=d)for(let x=tx;x<tx+TB;x+=d){
+        const nx=x*.012+off,ny=y*.012;
+        const f=fbm(nx,ny,3,4);
+        const gz=ss(.29,.56,1-Math.abs(u-.31)*3.6+(fbm(x*.004,y*.004,8,2)-.5));
+        const blob=fbm(x*.009+off*.6,y*.0105,14,3);
+        let base;
+        if(right>.5){base=[238,246,244]}
+        else if(blob<.385)base=HB;
+        else if(gz>.8&&f>.5)base=HG;
+        else base=mix(HB,HG,ss(.3,.6,gz));
+        g.fillStyle=css(right>.5?mix([250,251,250],hex('#e4ecd0'),lvl):base);g.fillRect(x,y,d+.2,d+.2);
+        if(blob<.385&&right<.5)continue;
+        if(gz>.8&&f>.5&&right<.5)continue;
+        const m=right>.5?(.28+.72*f)*lvl:1;
+        const r=(right>.5?1.25:1.52)*(.8+.32*m);
+        g.fillStyle=right>.5?css(mix([245,246,240],hex('#ebe64a'),m)):css(mix(HY,HG,ss(.8,1,gz)*.25));
+        g.beginPath();g.arc(x+d/2,y+d/2,r,0,6.3);g.fill();
+      }
+    }
+    g.restore();
+    g.fillStyle='rgba(255,255,255,.82)';g.fillRect(tx,ty,TB,1.4);g.fillRect(tx,ty,1.4,TB);
+  }
+  return c;
+}
+function drawHalf(t){
+  if(!halfA){halfA=renderHalf(0);halfB=renderHalf(.22)}
+  const g=ctx,q=clamp((t-8)/4);
+  g.fillStyle='#fbfcfc';g.fillRect(0,0,W,H);
+  const reveal=clamp((t-7)/.9);
+  const cx=W*.47,cy=H*.51;
+  for(let tj=0;tj<10;tj++)for(let ti=0;ti<17;ti++){
+    const tx=-3+ti*TB,ty=-88+tj*TB;
+    const d=Math.hypot((tx+TB/2-cx)/W,(ty+TB/2-cy)/H*.62);
+    const seq=(d*1.36+hash(ti,tj,3)*.09);
+    if(reveal<1&&seq>reveal*(.95))continue;
+    const sx=Math.max(0,tx),sy=Math.max(0,ty);
+    g.drawImage(halfA,sx*DPR,sy*DPR,TB*DPR,TB*DPR,sx,sy,TB,TB);
+    if(q>0){g.globalAlpha=q;g.drawImage(halfB,sx*DPR,sy*DPR,TB*DPR,TB*DPR,sx,sy,TB,TB);g.globalAlpha=1}
+  }
+}
+
+/* ---------- 第三段 黑底色带 12–17s ---------- */
+const CB=12.4*k;
+const BANDS=['#ee3b24','#f3bb3d','#3f9347','#3a62c4'].map(hex);
+let SQ=null;
+function squiggles(){
+  const a=[],cols=['#f0b53c','#f0b53c','#3a62c4','#f6f6f6','#f6f6f6','#ee3b24','#3f9347'];
+  for(let i=0;i<360;i++){
+    const x=hash(i,1,5)*W,y=hash(i,2,5)*H,n=2+Math.floor(hash(i,3,5)*4),l=[];let ang=hash(i,4,5)*6.3;
+    const turn=(hash(i,5,5)-.5)*1.9;
+    for(let j=0;j<n;j++){l.push([12+hash(i,j+7,5)*14,ang]);ang+=turn+(hash(i,j+20,5)-.5)}
+    a.push({x,y,l,c:cols[i%cols.length],d:(hash(i,6,5)-.5)*.5});
+  }return a}
+function drawBands(t){
+  if(!SQ)SQ=squiggles();
+  const g=ctx;g.fillStyle='#010101';g.fillRect(0,0,W,H);
+  const p=clamp((t-12)/5);
+  const cols=Math.ceil(W/CB),rows=Math.ceil(H/CB);
+  const th=.615-.095*Math.pow(p,.7);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const f=fbm(i*.043,j*.058,41,4);
+    if(f<th)continue;
+    const b=fbm(i*.03+7,j*.05-p*.3,43,2)*3.4+ .6*Math.sin((i*.09+j*.14));
+    const bi=(((b*1.6)%4)+4)%4|0;
+    const col=BANDS[bi];
+    const x=i*CB,y=j*CB;
+    g.fillStyle=css(col);g.fillRect(x,y,CB+.3,CB+.3);
+    const h=hash(i,j,51);
+    if(h<.075){g.fillStyle='#050505';g.fillRect(x,y,CB+.3,CB+.3)}
+    else if(h<.095){g.fillStyle='#fcfcfc';g.fillRect(x,y,CB+.3,CB+.3)}
+    else if(h<.12){g.fillStyle=css(mix(col,[0,0,0],.33));g.fillRect(x,y,CB+.3,CB+.3)}
+    else if(h<.15){g.fillStyle=css(mix(col,[255,255,255],.75));g.fillRect(x+CB*.3,y+CB*.3,CB*.4,CB*.4)}
+    else if(bi==3&&h<.34){g.strokeStyle='rgba(235,205,120,.85)';g.lineWidth=.9;g.strokeRect(x+1.5,y+1.5,CB-3,CB-3);g.fillStyle='rgba(235,235,235,.9)';g.fillRect(x+3.4,y+3.4,2,2)}
+  }
+  g.lineJoin='round';g.lineCap='round';g.lineWidth=1.25;
+  for(const s of SQ){
+    g.strokeStyle=s.c;let x=s.x+Math.cos(s.d*7)*t*2,y=s.y+Math.sin(s.d*7)*t*2;g.beginPath();g.moveTo(x,y);
+    for(const[l,a]of s.l){x+=Math.cos(a+s.d*(t-12))*l;y+=Math.sin(a+s.d*(t-12))*l;g.lineTo(x,y)}g.stroke();
+  }
+  for(let i=0;i<190;i++){const x=hash(i,1,77)*W,y=hash(i,2,77)*H;g.fillStyle=['#f6f6f6','#f0b53c','#3a62c4','#ee3b24'][i%4];const s=2+hash(i,3,77)*2;g.fillRect(x,y,s,s)}
+}
+
+/* ---------- 第四、五段 竖条渐变 17–27s ---------- */
+const STRIP=[0,362,625,1340,1597,2000].map(v=>v*k);
+const PINK={
+  c1a:R([0,'#d5c6f1'],[.48,'#f2e3ee'],[1,'#f7e4ee']),
+  c1b:R([0,'#b0c2b1'],[.22,'#b3bdc8'],[.5,'#c9b2d6'],[.72,'#e89c74'],[1,'#ef8a56']),
+  c2:R([0,'#bebaec'],[.5,'#ccc0ee'],[1,'#eed3e1']),
+  c3:R([0,'#e1ebf5'],[1,'#e1ebf5']),
+  c4a:R([0,'#477ce4'],[.3,'#8c86ea'],[.52,'#c3a1e0'],[.75,'#c98f8f'],[1,'#f09453']),
+  c4b:R([0,'#4785ed'],[.42,'#4f8aea'],[1,'#8fa2ed']),
+  c5:R([0,'#eec6ce'],[.45,'#ecc9d8'],[1,'#d8c6f1']),
+  cell:[hex('#e1ebf5'),hex('#ef8765')],hi:hex('#ec5972'),acc:hex('#ed764c'),light:hex('#eaeef3'),ray:'rgba(255,255,255,.3)',line:null
+};
+const BLUE={
+  c1a:R([0,'#204392'],[.5,'#3f73d6'],[1,'#6c9df3']),
+  c1b:R([0,'#3f5a90'],[.3,'#3c64b6'],[.62,'#4d7fe6'],[.8,'#8fbaf5'],[1,'#a8cdfb']),
+  c2:R([0,'#274ea9'],[.5,'#6090e4'],[1,'#7db0f7']),
+  c3:R([0,'#233866'],[.4,'#2a4478'],[.8,'#1d3b78'],[1,'#132d72']),
+  c4a:R([0,'#132d72'],[.2,'#2a4fae'],[.48,'#4a7fee'],[.8,'#a4c5f4'],[1,'#cde7fd']),
+  c4b:R([0,'#2c4c95'],[.5,'#2a54b4'],[1,'#588cef']),
+  c5:R([0,'#2547a2'],[.5,'#3a60b0'],[.85,'#10296c'],[1,'#0d235f']),
+  cell:[hex('#233866'),hex('#82baf3')],hi:hex('#f4f7fd'),acc:hex('#7bbcf7'),light:hex('#3a5288'),ray:'rgba(225,238,255,.55)',line:'#0a1534'
+};
+function vgrad(g,x,y,w,h,st){const l=g.createLinearGradient(0,y,0,y+h);for(const[a,c]of st)l.addColorStop(a,css(c));g.fillStyle=l;g.fillRect(x,y,w,h)}
+const cellX=625*k,cellY=238*k,CS=54*k;
+const heat=(i,j)=>{ // 8 列 14 行的像素热区，亮度中心偏下
+  const v=[[0,.1,.13,0,0,0,0,0],[.1,.24,.24,.22,.05,.05,.1,0],[.12,.22,.4,.24,.1,.14,.2,.04],[.14,.28,-1,.32,.2,.25,.3,.06],[.2,.3,.34,.34,-1,.22,.28,.12],[.3,.32,.38,.4,-1,.36,.3,.18],[.5,.5,.55,.6,-1,.8,-1,.28],[.68,.8,.95,.98,.92,.95,.62,.3],[.62,.78,-1,.98,.92,.9,.6,.28],[-1,.55,.9,.9,.82,.52,.58,.26],[.5,.52,.58,.58,.36,.42,-1,.3],[.4,.42,.42,.42,.36,.38,-1,.28],[.14,.22,.3,.2,-1,.18,-2,.14],[.04,.05,.18,.2,.2,.1,.2,.1]];
+  return (v[j]||[])[i]};
+function drawStrips(t){
+  const g=ctx,blue=t>=22,pal=blue?BLUE:PINK,lt=blue?(t-22)/5:(t-17)/5;
+  const hc=556*k+Math.sin(lt*2)*1.5, bc=(blue?530:531)*k, b2=598*k;
+  g.fillStyle=blue?'#091534':'#e1ebf5';g.fillRect(0,0,W,H);
+  const gap=blue?clamp(lt*3)*5*k:0,[x0,x1,x2,x3,x4,x5]=STRIP;
+  vgrad(g,x0,0,x1-gap,hc-gap,pal.c1a);vgrad(g,x0,hc+gap*.6,x1-gap,H-hc,pal.c1b);
+  vgrad(g,x1+gap,0,x2-x1-gap*2,H,pal.c2);
+  vgrad(g,x2+gap,0,x3-x2-gap*2,H,pal.c3);
+  vgrad(g,x3+gap,0,x4-x3-gap*2,bc,pal.c4a);
+  if(blue){vgrad(g,x3+gap,bc,x4-x3-gap*2,b2-bc,R([0,'#5d97ef'],[1,'#6aa2f2']));vgrad(g,x3+gap,b2,x4-x3-gap*2,H-b2,pal.c4b)}
+  else{vgrad(g,x3,bc,x4-x3,H-bc,pal.c4b);g.fillStyle='rgba(255,255,255,.14)';g.fillRect(x3,b2,x4-x3,1)}
+  vgrad(g,x4+gap,0,x5-x4-gap,H,pal.c5);
+  // 第一列下半的放射细线
+  g.save();g.beginPath();g.rect(0,hc,x1-gap,H-hc);g.clip();g.strokeStyle=pal.ray;g.lineWidth=.9;
+  for(const a of [-.2,-.42,-.68,-.9]){g.beginPath();g.moveTo(10,H+6);g.lineTo(10+Math.cos(a)*520,H+6+Math.sin(a)*520);g.stroke()}g.restore();
+  // 中列的像素热区
+  const ph=blue?ss(0,.4,lt):1;
+  for(let j=0;j<14;j++)for(let i=0;i<8;i++){
+    const v=heat(i,j);if(v===undefined)continue;
+    const x=cellX+i*CS,y=cellY+j*CS;
+    if(v===0)continue;
+    if(v===-2){g.fillStyle=css(pal.acc);g.fillRect(x,y,CS,CS);const l=g.createLinearGradient(0,y+CS,0,y+CS*2.3);l.addColorStop(0,css(mix(pal.acc,pal.c3[0][1],.55),.8));l.addColorStop(1,css(pal.acc,0));g.fillStyle=l;g.fillRect(x,y+CS,CS,CS*1.3);continue}
+    if(v===-1){g.fillStyle=css(pal.light,blue?.9:1);g.fillRect(x,y,CS,CS);continue}
+    g.fillStyle=css(mix(pal.cell[0],pal.cell[1],v*(blue?.92:.94)));g.fillRect(x,y,CS+.3,CS+.3);
+  }
+  g.fillStyle=css(pal.hi);g.fillRect(895*k,628*k,CS,CS);
+  g.fillStyle=css(pal.acc);g.fillRect(1154*k,357*k,CS,CS);
+  {const l=g.createLinearGradient(0,411*k,0,512*k);l.addColorStop(0,css(mix(pal.acc,pal.c3[0][1],.6),.8));l.addColorStop(1,css(pal.acc,0));g.fillStyle=l;g.fillRect(1154*k,411*k,CS,101*k)}
+  if(blue){const v=g.createRadialGradient(x2+250,H*.5,10,x2+250,H*.5,520);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(4,12,40,.28)');g.fillStyle=v;g.fillRect(x2+gap,0,x3-x2-gap*2,H)}
+  // 颗粒
+  g.save();g.globalCompositeOperation='overlay';g.globalAlpha=.16;g.fillStyle=g.createPattern(grain,'repeat');g.fillRect(0,0,W,H);g.restore();
+}
+
+/* ---------- 第六段 像素草地 27–33s ---------- */
+const SKY=R([0,'#f6fafe'],[.3,'#e4f1fc'],[.5,'#b9dcf8'],[.72,'#79bdf0'],[1,'#3f93e0']);
+const GRASS=R([0,'#f4f7df'],[.25,'#d9eaa6'],[.5,'#b6dc7c'],[.75,'#74bb3f'],[1,'#3f962a']);
+const FINE=25*k*1.25,COARSE=15.6*k*1.0;
+function meadowColor(x,y,fine,t){
+  const hz=(508+Math.sin(x*.011)*12+(fbm(x*.02,0,61,3)-.5)*60)*k;
+  if(y<hz){
+    const sky=fbm(x*.0045+.1,y*.016,63,4);
+    const bright=.46+(1-y/hz)*-.1+(y/hz)*.32;
+    const v=clamp((sky-.5)*2.4+bright);
+    return{col:ramp(SKY,v),z:'sky',v};
+  }
+  const d=clamp((y-hz)/(H-hz));
+  const n=fbm(x*.008,y*.012,65,4);
+  const v=clamp(d*.95+(n-.5)*.95+ss(.42,1,1-Math.abs(x-W*.55)/(W*.7))*.1);
+  const teal=d<.5&&hash(Math.floor(x/8),Math.floor(y/8),66)<.28*(1-d*1.8);
+  return{col:teal?hex('#8ad3c5'):ramp(GRASS,v),z:'grass',v};
+}
+function drawMeadow(t){
+  const g=ctx;g.fillStyle='#f2f6f6';g.fillRect(0,0,W,H);
+  const p=clamp((t-27)/5);
+  const edge=(y)=>{ // 边界左侧是粗像素，右侧是细格
+    const e=(p*p*(3-2*p))*.72;
+    const stair=Math.floor((y)/ (31*k*2));
+    return (e*W)+(fbm(stair*.3,1,71,2)-.5)*150*(p>.1?1:0)+((y>H*.58)?-60:40)};
+  // 细格层
+  const fc=31*k;
+  for(let j=0;j<H/fc;j++)for(let i=0;i<W/fc;i++){
+    const x=i*fc,y=j*fc;const m=meadowColor(x+fc/2,y+fc/2,true,t);
+    const ground=m.z==='grass',h=hash(i,j,81);
+    let col=m.col;
+    if(ground){const b=fbm(i*.11,j*.11,83,3);col=mix(hex('#d9e68f'),hex('#a5d170'),clamp((y/H-.5)*2.4));
+      const blobby=b<.44-(1-clamp((y/H-.55)*2.5))*.14;
+      g.fillStyle=css(col);g.fillRect(x,y,fc,fc);
+      if(blobby){g.fillStyle=css(mix(hex('#4da98b'),hex('#3e9fc5'),hash(i,j,91)*.4),.92);const n=4;for(let a=0;a<n;a++)for(let d=0;d<n;d++){if(fbm((x+a*fc/n)*.06,(y+d*fc/n)*.06,87,2)<.56)g.fillRect(x+a*fc/n,y+d*fc/n,fc/n+.2,fc/n+.2)}}
+      if(y/H>.72||h<.3){g.fillStyle='rgba(228,235,120,.7)';for(let a=0;a<6;a++)for(let d=0;d<6;d++)g.fillRect(x+1.5+a*3.9,y+1.5+d*3.9,1.5,1.5)}
+    }else{
+      col=mix(col,[236,240,250],.32+.2*h);if(h<.04)col=[255,255,255];else if(h<.07)col=hex('#dcd2ec');
+      g.fillStyle=css(col);g.fillRect(x,y,fc,fc);
+      if(h<.5){g.fillStyle='rgba(255,255,255,.6)';for(let a=0;a<6;a++)for(let d=0;d<6;d++)g.fillRect(x+1.5+a*3.9,y+1.5+d*3.9,1.3,1.3)}
+    }
+    g.fillStyle='rgba(255,255,255,.55)';g.fillRect(x,y,fc,.9);g.fillRect(x,y,.9,fc);
+  }
+  // 粗像素层，从左侧推进
+  const cc=COARSE;
+  for(let j=0;j<H/cc;j++)for(let i=0;i<W/cc;i++){
+    const x=i*cc,y=j*cc;
+    if(x>edge(y))continue;
+    const m=meadowColor(x+cc/2,y+cc/2,false,t);
+    const q=[6,5,6][0];
+    let col=m.col.map(v=>Math.round(v/q)*q);
+    g.fillStyle=css(col);g.fillRect(x,y,cc+.4,cc+.4);
+  }
+  // 白色笔迹
+  if(t>29){g.fillStyle='#fafafa';const pts=[[920,1045,10,14],[940,1032,14,14],[958,1022,14,10],[985,1014,14,14],[1072,1035,22,10],[1098,1050,10,16],[1082,1080,12,10],[908,1095,14,28]];const a=ss(29,30,t);g.globalAlpha=a;for(const[x,y,w,h]of pts)g.fillRect(x*k,y*k,w*k,h*k);g.globalAlpha=1}
+}
+
+/* ---------- 第七段 代码标签 33–38.25s ---------- */
+const TAGC={g:['#a9e8a4','#2f4f3a'],o:['#ee8a52','#fbe6da'],r:['#e8603a','#fff0e8'],gr:['#c2c4cb','#39404c'],b:['#5196e2','#e7f2ff'],l:['#d9d2f7','#3d4464'],d:['#3b7f3e','#e4f4e2'],y:['#f4c95a','#4a4230'],p:['#eeb0ee','#43354d'],s:['#70b8f5','#143d66'],v:['#5f58cf','#ecebff']};
+const ROWS=[
+ [360,[['hue = (time * 20.0)','g'],['* t);','o'],['// TODO','o'],['fear = None','r']]],
+ [420,[['update(dt):','r'],['sort()','gr'],['sort()','b'],['return','l'],['* t);','d'],['* t);','o'],['wonder: undefined','y']]],
+ [473,[['h.size','g'],['z = fbm(vec3','o'],['hue = (time * 20.0)','p'],['field = curl(noise','p']]],
+ [468,[['cliff[]','gr'],['edge.y','o'],['0x00ff','d'],['wind = 0','o'],['=base.copy()','o']]],
+ [524,[['=base.copy()','g'],['step()','d'],['+= * 0.08;','s'],['break;','p']]],
+ [522,[['* sin(time)','r'],['x += dx','g'],['self.pos','b'],['map(fn)','y'],['pos: float','d'],['sort()','gr']]],
+ [467,[['[y]','y'],['[y]','g'],['fear = None','o'],['stand()','o'],['z = fbm(vec3','s'],['0x00ff','gr'],['# Map 0..255','o']]],
+ [417,[['edge.y','y'],['Path)','gr'],['await','r'],['wind = 0','o'],['[x]','o'],['* sin(time)','p'],['z = fbm(vec3','g']]],
+ [414,[['# 0..1','r'],['sample(x: int, y: int):','s'],['return','l'],['if (','s'],['if (','s']]],
+ [470,[['* sin(time)','r'],['# 0..1','o'],['warp += noise(p * 4.0) * 0.02;','p'],['await','p'],['map(fn)','s']]],
+ [527,[['wind = 0','gr'],['null','y'],['sort()','d'],['Path)','y'],['} else {','l'],['small?','y']]],
+ [475,[['null','o'],['while(true)','gr'],['[x]','v'],['0x00ff','p'],['await','b']]],
+ [419,[['0x00ff','v'],['0x00ff','g'],['sample(x: int, y: int):','gr'],['stand()','y']]],
+ [357,[['(target - pos)','b'],['% 360.0;','s'],['await','v'],['scale *= 0.5','l'],['=base.copy()','s']]]
+];
+const ROW2=[
+ {y:786,x:802,r:[['fear = None','r']]},
+ {y:832,x:800,r:[['update(dt):','r'],['sort()','gr'],['sort()','b'],['* t);','d'],['* t);','o'],['wonder: undefined','y'],['hue = (time * 20.0)','g']]},
+ {y:877,x:803,r:[['cliff[]','gr'],['edge.y','o'],['0x00ff','d'],['wind = 0','o'],['=base.copy()','o'],['z = fbm(vec3','o'],['hue = (time * 20.0)','p']]},
+ {y:922,x:795,r:[['x += dx','g'],['self.pos','b'],['map(fn)','y'],['pos: float','d'],['sort()','gr'],['=base.copy()','g'],['step()','d'],['+= * 0.08;','s']]},
+ {y:967,x:792,r:[['* sin(time)','p'],['[y]','g'],['fear = None','o'],['stand()','o'],['z = fbm(vec3','s'],['0x00ff','gr'],['# Map 0..255','o']]},
+ {y:1012,x:798,r:[['await','p'],['map(fn)','s'],['# 0..1','r'],['sample(x: int, y: int):','s'],['if (','s'],['if (','s'],['edge.y','y'],['Path)','gr']]},
+ {y:1057,x:716,r:[['[x]','v'],['await','b'],['wind = 0','gr'],['null','y'],['sort()','d'],['Path)','y'],['} else {','l'],['small?','y'],['* sin(time)','r'],['# 0..1','o']]},
+ {y:1102,x:652,r:[['(target - pos)','b'],['% 360.0;','s'],['await','v'],['scale *= 0.5','l'],['=base.copy()','s'],['0x00ff','v'],['0x00ff','g'],['stand()','y']]}
+];
+function tagWidth(g,s){return g.measureText(s).width+11.6}
+const TH=31;
+function tag(g,s,c,x,y,al=1,rot=0){
+  const[a,b]=TAGC[c];const w=tagWidth(g,s);
+  g.save();g.globalAlpha=al;g.translate(x,y);if(rot)g.rotate(rot);
+  g.fillStyle=a;g.fillRect(0,0,w,TH);g.fillStyle=b;g.fillText(s,5.8,TH*.5+.8);g.restore();
+  return w}
+function drawTags(t){
+  const g=ctx;g.fillStyle='#f4f3f4';g.fillRect(0,0,W,H);
+  g.font='500 22.3px JB,ui-monospace,monospace';g.textBaseline='middle';
+  const items=[];
+  ROWS.forEach(([rx,row],j)=>{let x=rx*k;const y=(247+j*47.1)*k;row.forEach(([s,c],i)=>{
+    const w=tagWidth(g,s);const jit=(hash(j,i,9)-.5)*5;
+    items.push({s,c,x,y:y+jit,w,i,j,sx:hash(j,i,13)*W,sy:40+hash(j,i,14)*(H-80),dl:hash(j,i,15)*.45});x+=w+(hash(j,i,8)<.5?0:6)
+  })});
+  if(t<35.9){
+    const p=clamp((t-32.95)/.98);
+    for(const it of items){
+      const q=clamp((p-it.dl*.6)/(1-it.dl*.6)),e=1-Math.pow(1-q,3);
+      tag(g,it.s,it.c,it.sx+(it.x-it.sx)*e,it.sy+(it.y-it.sy)*e,clamp((t-33+.25-it.dl*.4)*3.4));
+    }
+  }else{
+    const p=clamp((t-35.9)/.55),e=1-Math.pow(1-p,3);
+    const Y=(ROW2.length?1:0);
+    if(p<1){for(const it of items)tag(g,it.s,it.c,it.x+e*340,it.y+e*420,1-e*.6)}
+    ROW2.forEach((r,j)=>{let x=r.x*k+(1-e)*(-120);const y=r.y*k+(1-e)*(-80)+Math.sin(t*1.6+j)*.5;r.r.forEach(([s,c])=>{x+=tag(g,s,c,x,y,e)+.8})});
+  }
+}
+
+
+/* ---------- 默认构图：按原帖关键帧的网格取样，点击后切回纯噪声 ---------- */
+const DATA=window.PG_DATA;let sampled=!!DATA&&!qs.has('noise');
+const un=b=>{const r=atob(b),o=[];for(let i=0;i<r.length;i+=2){const n=r.charCodeAt(i),v=r.charCodeAt(i+1);for(let k=0;k<n;k++)o.push(v)}return Uint8Array.from(o)};
+const SD={};
+function prep(){for(const n of ['island','half','bands','meadow']){const d=DATA[n];SD[n]={...d,C:d.c.map(un),T:d.tex?d.tex.map(un):null,L:d.lat?d.lat.map(un):null,D:d.d?d.d.map(un):null,rgb:d.pal.map(hex)}}
+  const I=SD.island;I.bgI=I.rgb.map(c=>Math.min(...c)>232&&Math.max(...c)-Math.min(...c)<8);
+}
+// 两个关键帧之间，每格在自己的时刻切换，这样生长是一格一格的
+function pick(d,arrs,i,t){const ts=d.ts;let n=0;while(n<ts.length-1&&ts[n+1]<=t)n++;if(n>=ts.length-1)return arrs[ts.length-1][i];
+  const f=(t-ts[n])/(ts[n+1]-ts[n]);return f>hash(i,n,77)?arrs[n+1][i]:arrs[n][i]}
+function drawIslandS(t){
+  const d=SD.island,g=ctx,{p,x:ox,y:oy,cols,rows}=d;g.fillStyle=BG;g.fillRect(0,0,W,H);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const q=j*cols+i,c=pick(d,d.C,q,t),te=pick(d,d.T,q,t),x=ox+i*p,y=oy+j*p;
+    if(d.bgI[c]){
+      if(te){const h=hash(i,j,4),s=p*(.42+.3*h);g.fillStyle=css(h<.5?green:blueL,.34+.4*hash(i,j,6));g.fillRect(x+(p-s)/2,y+(p-s)/2,s,s)}
+      continue}
+    const col=d.rgb[c];g.fillStyle=css(col);g.fillRect(x,y,p,p);
+    if(te===1){g.fillStyle='rgba(255,255,255,.84)';const s=p*.36;g.fillRect(x+(p-s)/2,y+(p-s)/2,s,s)}
+    else if(te===2){g.fillStyle=col[1]>col[2]?'rgba(232,240,150,.75)':'rgba(205,232,235,.6)';for(let a=0;a<4;a++)for(let b=0;b<4;b++)g.fillRect(x+1.4+a*4,y+1.4+b*4,2,2)}
+    g.fillStyle='rgba(255,255,255,.62)';g.fillRect(x,y,p,1);g.fillRect(x,y,1,p);
+  }
+  const lr=cols+1,lh=rows+1;g.fillStyle='rgba(12,14,16,.92)';
+  for(let j=0;j<lh;j++)for(let i=0;i<lr;i++){
+    const v=pick(d,d.L,j*lr+i,t);if(!v)continue;const x=ox+i*p,y=oy+j*p;
+    if(v&2)g.fillRect(x,y-.6,p,1.25);if(v&4)g.fillRect(x-.6,y,1.25,p);
+    if(v&1){g.fillStyle='#050505';g.fillRect(x-3.7,y-3.7,7.4,7.4);g.fillStyle='rgba(12,14,16,.92)'}
+  }
+}
+const HY2=hex('#e9e75b');let HC=null;
+function buildHalf(){HC=[];const d=SD.half,{p,x:ox,y:oy,cols,rows}=d;
+  d.ts.forEach((_,n)=>{const c=document.createElement('canvas');c.width=W*DPR;c.height=H*DPR;const g=c.getContext('2d');g.scale(DPR,DPR);g.fillStyle='#fbfcfc';g.fillRect(0,0,W,H);
+    for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+      const q=j*cols+i,m=d.rgb[d.C[n][q]],x=ox+i*p,y=oy+j*p;
+      if(x<-p||y<-p||x>W||y>H)continue;
+      if(!d.D[n][q]){g.fillStyle=css(m);g.fillRect(x,y,p+.3,p+.3);continue}
+      const light=(m[0]+m[1]+m[2])/3>205;
+      if(light){const bg=[248,250,248],a=.4,dot=m.map((v,k)=>clamp((v-(1-a)*bg[k])/a,0,255));g.fillStyle=css(bg);g.fillRect(x,y,p+.3,p+.3);g.fillStyle=css(dot);g.beginPath();g.arc(x+p/2,y+p/2,1.5,0,6.3);g.fill()}
+      else{const a=.36,bg=m.map((v,k)=>clamp((v-a*HY2[k])/(1-a),0,255));g.fillStyle=css(bg);g.fillRect(x,y,p+.3,p+.3);g.fillStyle=css(HY2);g.beginPath();g.arc(x+p/2,y+p/2,1.62,0,6.3);g.fill()}
+    }
+    g.fillStyle='rgba(255,255,255,.68)';
+    for(let a=d.tx;a<W;a+=d.tp)g.fillRect(a,0,1,H);for(let b=d.ty%d.tp;b<H;b+=d.tp)g.fillRect(0,b,W,1);
+    HC.push(c)})}
+function drawHalfS(t){
+  if(!HC)buildHalf();const d=SD.half,g=ctx,n=clamp(t-8,0,2.999),a=Math.floor(n),f=n-a,tp=d.tp;
+  g.fillStyle='#fbfcfc';g.fillRect(0,0,W,H);
+  const rev=clamp((t-6.9)/1.1);
+  for(let tj=-1;tj<10;tj++)for(let ti=-1;ti<17;ti++){
+    const tx=d.tx+ti*tp,ty=d.ty%tp+tj*tp,dd=Math.hypot((tx+tp/2-W*.47)/W,(ty+tp/2-H*.47)/H*.6);
+    if(rev<1&&dd*1.5+hash(ti,tj,3)*.1>rev)continue;
+    const sx=Math.max(0,tx),sy=Math.max(0,ty),w=tp-(sx-tx),h=tp-(sy-ty);if(w<=0||h<=0)continue;
+    // 关键帧之间每个大格各自跳到下一状态，不做整体淡入
+    const src=(HC[a+1]&&f>hash(ti,tj,19))?HC[a+1]:HC[a];
+    g.drawImage(src,sx*DPR,sy*DPR,w*DPR,h*DPR,sx,sy,w,h);
+  }
+}
+let SQ2=null;
+function drawBandsS(t){
+  const d=SD.bands,g=ctx,{p,x:ox,y:oy,cols,rows}=d;g.fillStyle='#010101';g.fillRect(0,0,W,H);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const c=pick(d,d.C,j*cols+i,t),col=d.rgb[c];if(Math.max(...col)<26)continue;
+    { // 取样时混进来的细线像素：孤立且不是纯色的格子当黑底
+      let nb=0;for(const[a,b]of [[1,0],[-1,0],[0,1],[0,-1]]){const q=(j+b)*cols+i+a;if(q>=0&&q<d.C[0].length&&Math.max(...d.rgb[pick(d,d.C,q,t)])>=26)nb++}
+      if(nb<2)continue;
+    }
+    const x=ox+i*p,y=oy+j*p;g.fillStyle=css(col);g.fillRect(x,y,p+.3,p+.3);
+    if(col[2]>col[0]*1.5&&col[2]>130&&hash(i,j,51)<.16){g.strokeStyle='rgba(235,205,120,.85)';g.lineWidth=.8;g.strokeRect(x+1.5,y+1.5,p-3,p-3);g.fillStyle='rgba(240,240,240,.9)';g.fillRect(x+3.4,y+3.4,2.2,2.2)}
+  }
+  if(!SQ2){SQ2=[];const cl=['#f0b53c','#f0b53c','#3a62c4','#f6f6f6','#f6f6f6','#ee3b24','#3f9347'];
+    for(let i=0;i<340;i++){const n=2+Math.floor(hash(i,3,5)*2.4),l=[];let a=hash(i,4,5)*6.3;const tu=(hash(i,5,5)-.5)*2.1;for(let k=0;k<n;k++){l.push([7+hash(i,k+7,5)*10,a]);a+=tu}SQ2.push({x:hash(i,1,5)*W,y:hash(i,2,5)*H,l,c:cl[i%cl.length],d:(hash(i,6,5)-.5)*.3})}}
+  for(let i=0;i<190;i++){const x=hash(i,1,77)*W,y=hash(i,2,77)*H;g.fillStyle=['#f6f6f6','#f0b53c','#3a62c4','#ee3b24'][i%4];const s=2+hash(i,3,77)*1.8;g.fillRect(x,y,s,s)}
+  g.lineJoin='round';g.lineCap='round';g.lineWidth=1.45;
+  for(const s of SQ2){g.strokeStyle=s.c;let x=s.x+Math.cos(s.d*9)*(t-12)*3,y=s.y+Math.sin(s.d*9)*(t-12)*3;g.beginPath();g.moveTo(x,y);for(const[l,a]of s.l){x+=Math.cos(a+s.d*(t-12))*l;y+=Math.sin(a+s.d*(t-12))*l;g.lineTo(x,y)}g.stroke()}
+}
+function drawMeadowS(t){
+  const d=SD.meadow,g=ctx,{p,x:ox,y:oy,cols,rows}=d;g.fillStyle='#f2f6f6';g.fillRect(0,0,W,H);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const q=j*cols+i,col=d.rgb[pick(d,d.C,q,t)],x=ox+i*p,y=oy+j*p;
+    g.fillStyle=css(col);g.fillRect(x,y,p+.3,p+.3);
+    if(pick(d,d.D,q,t)){
+      g.fillStyle='rgba(255,255,255,.34)';for(let a=0;a<3;a++)for(let b=0;b<3;b++)g.fillRect(x+1.4+a*3.86,y+1.4+b*3.86,1.5,1.5);
+      g.fillStyle='rgba(255,255,255,.5)';if(!(i&1))g.fillRect(x,y,.9,p);if(!(j&1))g.fillRect(x,y,p,.9);
+    }
+  }
+}
+
+/* ---------- 时间线 ---------- */
+const SCENES=[[0,6.9,()=>sampled?drawIslandS:drawIsland],[6.9,12,()=>sampled?drawHalfS:drawHalf],[12,17,()=>sampled?drawBandsS:drawBands],[17,27,()=>drawStrips],[27,33,()=>sampled?drawMeadowS:drawMeadow],[33,DUR+.01,()=>drawTags]];
+function frame(t){
+  ctx.setTransform(DPR*cv.width/(W*DPR),0,0,DPR*cv.height/(H*DPR),0,0);
+  for(const[a,b,f]of SCENES)if(t>=a&&t<b){f()(t);if(sampled&&(t>=6.9&&t<17||t>=27&&t<33))ctx.drawImage(cv,0,12*DPR,W*DPR,12*DPR,0,0,W,12);break}
+}
+window.__seek=t=>frame(t);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const qt=qs.get('t');
+function start(){
+  if(DATA)prep();
+  if(qt!==null){frame(+qt);document.body.dataset.ready='1';return}
+  if(reduce){frame(+(qs.get('still')||3));document.body.dataset.ready='1';return}
+  let t0=performance.now(),last=0;const step=now=>{if(now-last>=31){last=now;frame(((now-t0)/1000)%DUR)}requestAnimationFrame(step)};requestAnimationFrame(step);document.body.dataset.ready='1';
+}
+// 点画布换一个种子重新生成，这是原帖“生成器”的意思；时长和分段不变
+cv.addEventListener('click',()=>{sampled=false;SEED=(SEED*31+11)%9973;WIRES=null;halfA=halfB=null;SQ=null});
+(document.fonts&&document.fonts.load?document.fonts.load('500 19px JB'):Promise.resolve()).then(start,start);
+})();
+</script>
+</body>
+</html>

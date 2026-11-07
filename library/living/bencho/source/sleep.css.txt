@@ -1,0 +1,7 @@
+/* angles wrap, so the span is measured the short way
+   round and both handles are free to cross midnight */
+const span = ((end - start) + 360) % 360;
+
+/* handle position on the arc */
+const x = cx + r * Math.cos((angle - 90) * Math.PI / 180);
+const y = cy + r * Math.sin((angle - 90) * Math.PI / 180);

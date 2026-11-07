@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HAI — 点开一簇原则</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --ink: #111;
+    --coral: #f15a29;
+    --tile: #111;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --sans: Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+  header.mast { max-width: 760px; margin: 0 auto; padding: 48px 24px 10px; text-align: center; }
+  header.mast .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  header.mast h1 { font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; margin: 8px 0; }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1080px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .bar-row h2 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+  #stage {
+    background: #f6f1e8;
+    border: 1px solid var(--note-ink);
+    padding: 28px 28px 22px;
+    display: grid;
+    grid-template-columns: minmax(200px, .72fr) 1.28fr;
+    gap: 22px;
+    align-items: stretch;
+  }
+  @media (max-width: 720px) { #stage { grid-template-columns: 1fr; padding: 18px; } }
+  .hero-num {
+    border-right: 1px solid var(--ink);
+    padding-right: 18px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  @media (max-width: 720px) { .hero-num { border-right: 0; border-bottom: 1px solid var(--ink); padding: 0 0 16px; } }
+  .hero-num .n {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: clamp(96px, 14vw, 168px);
+    line-height: .78;
+    letter-spacing: -.06em;
+    color: var(--coral);
+    margin: 0;
+  }
+  .hero-num p { margin: 18px 0 0; font-size: clamp(22px, 3vw, 28px); line-height: 1.15; color: var(--ink); }
+  .hero-num .by { font-size: 12px; color: var(--muted); margin-top: auto; padding-top: 24px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .tile {
+    aspect-ratio: 1;
+    background: #111;
+    color: #f4efe6;
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 12px 10px;
+    text-align: left;
+    cursor: pointer;
+    font: 500 14px/1.2 var(--sans);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .tile[data-id="A"] { background: var(--coral); color: #1a120e; }
+  .tile .mark { font-size: 11px; letter-spacing: .12em; opacity: .55; }
+  .tile svg { width: 42%; max-width: 72px; height: auto; margin: 6px auto; display: block; }
+  .tile[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  #panel {
+    margin-top: 14px;
+    background: #fffdf7;
+    border: 1px solid var(--note-ink);
+    padding: 16px 18px 10px;
+    min-height: 120px;
+  }
+  #panel h3 { margin: 0 0 4px; font-size: 18px; color: var(--green); font-weight: 500; }
+  #panel .blurb { margin: 0 0 12px; color: var(--muted); font-style: italic; }
+  .pr { display: grid; grid-template-columns: 36px 1fr; gap: 8px 12px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--note-ink) 16%, transparent); }
+  .pr b { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--coral); padding-top: 2px; }
+  .pr .t { font-weight: 500; }
+  .pr .x { font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  aside.tip { border: 1px solid var(--note-ink); padding: 10px 12px; margin: 18px 0; background: #efe8d6; font-size: 14.5px; }
+  aside.tip b { color: var(--green); }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: ui-monospace, Menlo, monospace; font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; font-size: 12.5px; color: var(--muted); }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · @AdhamDannaway / Taras Bakusevych</div>
+  <h1>点开一簇原则</h1>
+  <p class="sub">左边一个 39。右边九块，A 在正中发橙。点一块，下面列出这一簇的原则。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row"><h2>对照</h2></div>
+  <div id="stage">
+    <div class="hero-num">
+      <div>
+        <p class="n">39</p>
+        <p>design principles<br>for human-AI interaction</p>
+      </div>
+      <div class="by">Taras Bakusevych · Syntax Stream</div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div id="panel"></div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原帖第一屏</h3>
+      <p>奶油底。左栏巨大珊瑚色 39，右栏 3×3 黑方块。A Probabilistic Foundation 在正中、唯一一块橙。其余八块白线图标加簇名。A 放在几何中心，对应框架第一句：同一输入可以给出不同输出。</p>
+      <p>本页把海报做成目录。点一块打开该簇原则和原文例子。全文仍以 <a href="https://syntaxstream.substack.com/p/42-principles-for-designing-humanai">Syntax Stream</a> 为准。</p>
+    </div>
+    <figure>
+      <img src="assets/source-poster.jpg" alt="原帖九宫海报" />
+      <figcaption><strong>图 1.</strong> Adham Dannaway 转发的原图。39 / 九簇 / A 居中发橙。</figcaption>
+    </figure>
+  </div>
+  <aside class="tip"><b>原则：</b>层级靠位置和唯一的颜色，不靠九块一起发光。要看某一簇，点它；不要九簇正文同时铺开。</aside>
+</div>
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#stage</code></dt>
+    <dd>左 39 珊瑚色，右 3×3。A 居中橙底，其余黑底白线。圆角 14px，间距 10px。</dd>
+    <dt><code>#grid</code></dt>
+    <dd>点一块列出该簇原则。A 默认打开。同时只亮一簇。</dd>
+  </dl>
+</section>
+<footer class="colophon">
+  <p>来源：<a href="https://x.com/AdhamDannaway/status/2097328604128374967">@AdhamDannaway</a> · Taras Bakusevych, <a href="https://syntaxstream.substack.com/p/42-principles-for-designing-humanai">39 Principles for Designing Human–AI Interaction</a> · <a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+<script src="data.js"></script>
+<script>
+(function () {
+  const ICONS = {
+    A: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 44 L32 12 L44 44"/><path d="M24 34h16"/><circle cx="26" cy="22" r="1.4" fill="currentColor"/><circle cx="38" cy="28" r="1.4" fill="currentColor"/><circle cx="32" cy="38" r="1.4" fill="currentColor"/><circle cx="22" cy="40" r="1.4" fill="currentColor"/><circle cx="42" cy="42" r="1.4" fill="currentColor"/></svg>',
+    B: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="32" cy="32" rx="10" ry="22"/><ellipse cx="32" cy="32" rx="22" ry="10"/></svg>',
+    C: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="32" cy="32" rx="20" ry="20"/><ellipse cx="32" cy="32" rx="8" ry="20" transform="rotate(-35 32 32)"/></svg>',
+    D: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="32" cy="32" r="18"/><circle cx="38" cy="28" r="7"/></svg>',
+    E: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="32" cy="32" r="8"/><path d="M32 8v10M32 46v10M8 32h10M46 32h10M14 14l7 7M43 43l7 7M14 50l7-7M43 21l7-7"/></svg>',
+    F: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 40 C18 12, 32 12, 32 32 C32 52, 46 52, 54 24"/><path d="M10 40h44"/></svg>',
+    G: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="14" y="14" width="36" height="36"/><path d="M22 40 C28 22, 40 44, 46 24"/></svg>',
+    H: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="32" cy="32" r="8"/><ellipse cx="32" cy="32" rx="22" ry="8" transform="rotate(-28 32 32)"/><ellipse cx="32" cy="32" rx="22" ry="8" transform="rotate(28 32 32)"/></svg>',
+    I: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="32" cy="20" rx="16" ry="6"/><path d="M16 20v24c0 4 7 6 16 6s16-2 16-6V20"/><path d="M16 32c0 4 7 6 16 6s16-2 16-6"/><path d="M16 44c0 4 7 6 16 6s16-2 16-6"/></svg>'
+  }
+  const order = ['B','C','D','E','A','F','G','H','I']
+  const byId = Object.fromEntries(HAI.map((c) => [c.id, c]))
+  const grid = document.getElementById('grid')
+  const panel = document.getElementById('panel')
+
+  function show(id) {
+    const c = byId[id]
+    ;[...grid.children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.id === id ? 'true' : 'false'))
+    panel.innerHTML = '<h3>' + c.id + ' · ' + c.name + '</h3><p class="blurb">' + c.blurb + '</p>' +
+      c.items.map((it) => '<div class="pr"><b>' + it.n + '</b><div><div class="t">' + it.t + '</div><p class="x">' + it.x + '</p></div></div>').join('')
+  }
+
+  order.forEach((id) => {
+    const c = byId[id]
+    const b = document.createElement('button')
+    b.className = 'tile'
+    b.dataset.id = id
+    b.type = 'button'
+    b.innerHTML = '<span class="mark">' + id + '</span>' + ICONS[id] + '<span>' + c.name + '</span>'
+    b.addEventListener('click', () => show(id))
+    grid.appendChild(b)
+  })
+  show('A')
+})()
+</script>
+</body>
+</html>

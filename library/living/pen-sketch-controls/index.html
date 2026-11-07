@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>钢笔手绘控件：忠实复刻</title>
+<style>
+@font-face{font-family:Inter;src:url(fonts/inter-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--ink:#2a25d8;--red:#d13a3a;--gray:#6e6e6e;--lav:#8a87e8;--grn:#3f9a55;--paper:#e4e4e2;--txt:#55555a}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{overflow:auto;font:400 13px/1.4 Inter,system-ui,sans-serif;color:#1b1b1c;-webkit-font-smoothing:antialiased;
+ background:radial-gradient(70% 55% at 0% 72%,#6fbe5c 0%,#3d9a4d 28%,#1d5a3a 55%,transparent 75%),radial-gradient(45% 50% at 100% 95%,#74c264,#38804a 50%,transparent 75%),linear-gradient(170deg,#3b2a56 0%,#44408c 22%,#3f54b0 44%,#274a78 62%,#0d2a26 100%);min-width:960px}
+#wrap{position:relative;height:100vh;min-height:620px;padding:49px 46px 18px}
+#pan{position:relative;width:100%;height:100%;background:var(--paper);border-radius:9px;box-shadow:0 0 0 1px #ffffff80,0 12px 40px #0000004a;overflow:hidden}
+#scr{position:absolute;inset:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}#scr::-webkit-scrollbar{display:none}
+section{position:relative;height:100%;scroll-snap-align:start;overflow:hidden}
+.sk{position:absolute;display:inline-grid;place-items:center;translate:-50% -50%;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.sk svg.ink{position:absolute;left:-10px;top:-10px;overflow:visible;pointer-events:none}
+.sk>*:not(svg){position:relative}
+.sk:active{scale:.97}
+.sk:focus-visible,.sk:focus-within{outline:none}.sk:focus-visible svg.ink path,.sk:focus-within svg.ink path{stroke:currentColor;stroke-width:.7}
+.lab{font-size:14px;font-weight:450;letter-spacing:.005em}
+.sk.chk,.sk.rad,.sk.tog{display:flex;gap:9px;align-items:center;place-items:unset;color:var(--ink)}
+.sk .box{position:relative;display:block;flex:none}
+.sk input[type=checkbox],.sk input[type=radio]{position:absolute;inset:-4px;opacity:0;margin:0;cursor:pointer;width:calc(100% + 8px);height:calc(100% + 8px)}
+.sk .tx{color:var(--txt);font-size:13px}
+.inp input{width:100%;height:100%;background:none;border:0;outline:0;padding:0 10px;font:400 13.500px Inter,sans-serif;color:#222}.inp input::placeholder{color:#a3a3a3}
+#hero{position:absolute;left:50%;top:49.500%;translate:-50% -50%;text-align:center;pointer-events:none}
+#hero h1{margin:0;font-size:81px;line-height:86px;font-weight:700;letter-spacing:-.045em;color:#1a1a1c}
+#hero p{margin:6px 0 0;font-size:13.600px;line-height:21px;color:#58585c}
+#agent{position:absolute;right:26px;top:24px;display:flex;align-items:center;gap:6px;font:400 9.500px "Geist Mono",monospace;color:#9a9a98;z-index:2}#agent svg{width:9px;height:9px;fill:none;stroke:currentColor}
+#steps{position:absolute;left:29px;top:45.100%;display:none;grid-gap:21px;font:400 11.500px Inter,sans-serif;color:#b4b4b1;z-index:3}#steps.on{display:grid}#steps a{color:inherit;text-decoration:none;transition:color .2s}#steps a.cur{color:#1b1b1c}
+code,pre{font-family:"Geist Mono",monospace}
+.cd{font:400 12px/20px "Geist Mono",monospace;white-space:pre;color:#2a2a2e;text-align:left;cursor:default}.cd i{font-style:normal;color:var(--ink)}.cd s{text-decoration:none;color:#3d8a78}.cd u{text-decoration:none;color:#c0682a}.cd em{font-style:normal;color:#a2a2a2}
+.notes{background:#fff;padding:44px 24px 56px}.notes>div{max-width:640px;margin:0 auto;font-size:13px;color:#555}.notes h3{font-size:13px;color:#111;margin:0 0 8px}.notes dt{margin-top:10px}.notes dd{margin:2px 0 0}.notes code{font-size:12px}.notes a{color:inherit}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="wrap"><div id="pan">
+ <div id="agent">agent.md<svg viewBox="0 0 10 10"><rect x="3" y="3" width="6" height="6" rx="1"/><path d="M1 7V2a1 1 0 0 1 1-1h5"/></svg></div>
+ <nav id="steps"><a href="#s1" class="cur">1. Scrawl</a><a href="#s2">2. Install</a><a href="#s3">3. API</a></nav>
+ <div id="scr">
+  <section id="s1"><div id="hero"><h1>scrawl</h1><p>Hand-drawn UI. Fresh pen sketch<br>every mount.</p></div></section>
+  <section id="s2"></section>
+  <section id="s3"></section>
+ </div>
+</div></div>
+<div class="notes"><div><h3>可拆</h3><dl>
+<dt><code>#s1</code></dt><dd>手绘控件组：按钮、单选、复选、开关、输入框、分隔线、卡片全部是原生元素外面套一层 SVG 墨迹。</dd>
+<dt><code>#boil</code></dt><dd>墨迹抖动（看右下角卡片）：每个控件预先算 3 帧噪声不同的路径，每 125ms 换一帧，只改 path 的 d。</dd>
+<dt><code>#redraw</code></dt><dd>悬停重绘（看 Retry 按钮）：换一颗种子，用 280ms 把笔画从起点长到终点。</dd>
+</dl><p>URL 加 <code>?seed=7</code> 固定种子；不加时每次打开都是新的笔迹。</p><p>来源：<a href="https://x.com/dwhitedesign/status/2087944253833916867">@dwhitedesign</a>，取自帖子视频。原库作者尚未开源，算法和代码为本页自写；原视频背景是系统壁纸，这里换成自绘渐变；“scrawl”是原作者的库名，只作占位文字。</p></div></div>
+<script>
+const NS='http://www.w3.org/2000/svg',reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const qs=new URLSearchParams(location.search),SEED=qs.has('seed')?+qs.get('seed'):(Math.random()*1e6|0);
+const RNG=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+/* displace a polyline with low-frequency wander plus fine jitter */
+function wob(pts,r,amp){const a=r()*6.28,b=r()*6.28,c=r()*6.28,f1=.025+r()*.02,f2=.08+r()*.05,f3=.2+r()*.12;let L=0;return pts.map((p,i)=>{if(i)L+=Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1]);const q=pts[Math.min(i+1,pts.length-1)],o=pts[Math.max(i-1,0)],dx=q[0]-o[0],dy=q[1]-o[1],n=Math.hypot(dx,dy)||1;const d=amp*(Math.sin(L*f1+a)*.9+Math.sin(L*f2+b)*.55+Math.sin(L*f3+c)*.28)+(r()-.5)*amp*.35;return[p[0]-dy/n*d,p[1]+dx/n*d]})}
+/* pen ribbon: closed polygon whose width breathes along the stroke */
+function ribbon(pts,w,r,frac=1){const n=Math.min(pts.length,Math.max(2,Math.ceil(pts.length*frac)));if(n<2)return'';const P=pts.slice(0,n),ph=r()*6.28,fr=.05+r()*.05,Lf=[],Rt=[];P.forEach((p,i)=>{const q=P[Math.min(i+1,n-1)],o=P[Math.max(i-1,0)],dx=q[0]-o[0],dy=q[1]-o[1],m=Math.hypot(dx,dy)||1,hw=(w/2)*(.72+.34*Math.sin(i*fr*3+ph)+.14*Math.sin(i*.9+ph*2))*Math.min(1,(i+1)/3,(n-i)/3+.25);Lf.push([p[0]-dy/m*hw,p[1]+dx/m*hw]);Rt.push([p[0]+dy/m*hw,p[1]-dx/m*hw])});const all=Lf.concat(Rt.reverse());return'M'+all.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L')+'Z'}
+function roundRect(w,h,rad,step=5){const o=[],seg=(x1,y1,x2,y2)=>{const L=Math.hypot(x2-x1,y2-y1),n=Math.max(1,Math.round(L/step));for(let i=0;i<n;i++)o.push([x1+(x2-x1)*i/n,y1+(y2-y1)*i/n])},arc=(cx,cy,a0)=>{for(let i=0;i<5;i++){const a=a0+i/5*Math.PI/2;o.push([cx+Math.cos(a)*rad,cy+Math.sin(a)*rad])}};
+ seg(rad,0,w-rad,0);arc(w-rad,rad,-Math.PI/2);seg(w,rad,w,h-rad);arc(w-rad,h-rad,0);seg(w-rad,h,rad,h);arc(rad,h-rad,Math.PI/2);seg(0,h-rad,0,rad);arc(rad,rad,Math.PI);return o}
+function circle(cx,cy,rad,n=26,over=1.15){const o=[];for(let i=0;i<n*over;i++){const a=-1.9+i/n*6.283;o.push([cx+Math.cos(a)*rad,cy+Math.sin(a)*rad])}return o}
+function closed(pts,r,over){const k=Math.round(pts.length*over),st=Math.floor(r()*pts.length);const a=[...pts.slice(st),...pts.slice(0,st)];return a.concat(a.slice(0,k))}
+function outline(w,h,rad,r,o={}){const base=roundRect(w,h,rad),amp=o.amp??1.15,wd=o.w??2.6;let d=ribbon(wob(closed(base,r,.12),r,amp),wd,r,o.frac);if(o.pass!==1)d+=ribbon(wob(closed(base,r,.06),r,amp*.75),wd*.9,r,o.frac);return d}
+function blob(w,h,rad,r,amp){const b=wob(roundRect(w,h,rad),r,amp);return'M'+b.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L')+'Z'}
+function hatch(w,h,r,frac){let d='';const gap=7,tot=w+h;for(let t=gap;t<tot;t+=gap){const a=[Math.max(0,t-h)+.5,Math.min(t,h)-.5],b=[Math.min(t,w)-.5,Math.max(0,t-w)+.5],n=Math.max(3,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/4)),pts=[];for(let i=0;i<=n;i++)pts.push([a[0]+(b[0]-a[0])*i/n,a[1]+(b[1]-a[1])*i/n]);d+=ribbon(wob(pts,r,.6),2,r,frac)}return d}
+/* every control: gen(rng,frac) -> svg path d. boil cycles 3 precomputed frames. */
+const ALL=[];let idc=1;
+function attach(el,w,h,color,gen){const s=document.createElementNS(NS,'svg');s.setAttribute('class','ink');s.setAttribute('width',w+20);s.setAttribute('height',h+20);s.setAttribute('viewBox','-10 -10 '+(w+20)+' '+(h+20));const p=document.createElementNS(NS,'path');p.setAttribute('fill',color);s.append(p);el.prepend(s);
+ const it={el,p,gen,seed:SEED+(idc++)*97,frames:[],i:0,drawing:false};
+ const compute=()=>{it.frames=[0,1,2].map(k=>gen(RNG(it.seed+k*13),1))};it.compute=compute;compute();p.setAttribute('d',it.frames[0]);
+ it.redraw=(ms=280)=>{if(reduce){compute();p.setAttribute('d',it.frames[0]);return}it.seed=(Math.random()*1e9)|0;it.drawing=true;const t0=performance.now(),s0=it.seed;const f=t=>{const k=Math.min(1,(t-t0)/ms);p.setAttribute('d',gen(RNG(s0),k*k*(3-2*k)+.02));if(k<1)requestAnimationFrame(f);else{compute();it.drawing=false}};requestAnimationFrame(f)};
+ el.addEventListener('pointerenter',()=>it.redraw());el.addEventListener('focusin',()=>it.redraw());ALL.push(it);return it}
+const SEC={1:document.getElementById('s1'),2:document.getElementById('s2'),3:document.getElementById('s3')};
+const place=(el,sec,x,y,rot=0)=>{el.style.left=(x/1376*100)+'%';el.style.top=(y/809*100)+'%';el.style.rotate=rot+'deg';SEC[sec].append(el);return el};
+function button(sec,x,y,w,h,rot,label,color,variant='outline'){const b=document.createElement('button');b.className='sk';b.style.width=w+'px';b.style.height=h+'px';const c=`var(--${color})`;b.innerHTML=`<span class="lab" style="color:${variant==='solid'?'#fff':variant==='hatch'?'#2a25d899':c}">${label}</span>`;place(b,sec,x,y,rot);
+ attach(b,w,h,c,(r,f)=>variant==='solid'?(f<1?outline(w,h,7,r,{frac:f,w:3.2,amp:1.5}):blob(w,h,7,r,2.2)):variant==='hatch'?outline(w,h,8,r,{frac:f,w:2.300,amp:1.1})+hatch(w,h,r,f):outline(w,h,7,r,{frac:f}));b.addEventListener('click',()=>ALL.find(i=>i.el===b).redraw());return b}
+function check(sec,x,y,rot,label,on){const l=document.createElement('label');l.className='sk chk';l.innerHTML=`<span class="box" style="width:18px;height:18px"><input type="checkbox" ${on?'checked':''}></span><span class="tx">${label}</span>`;place(l,sec,x,y,rot);const box=l.querySelector('.box'),inp=l.querySelector('input');const it=attach(box,18,18,'var(--ink)',(r,f)=>{let d=ribbon(wob(closed(circle(9,9,8.300,22,1),r,.1),r,1),2.900,r,f)+ribbon(wob(closed(circle(9,9,8.800,22,1),r,.05),r,1.300),2.200,r,f);if(inp.checked){const c=[];for(let i=0;i<=5;i++)c.push([4.500+i*.8,8.500+i*.85]);for(let i=1;i<=8;i++)c.push([8.500+i*.95,12.700-i*1.300]);d+=ribbon(wob(c,r,.3),2.500,r,f)}return d});inp.addEventListener('change',()=>it.redraw(220));l.addEventListener('pointerenter',()=>it.redraw())}
+function radioGroup(sec,items){items.forEach(([x,y,rot,label,on,d0])=>{const l=document.createElement('label');l.className='sk rad';l.innerHTML=`<span class="box" style="width:16px;height:16px"><input type="radio" name="tool" ${on?'checked':''}></span><span class="tx">${label}</span>`;place(l,sec,x,y,rot);const box=l.querySelector('.box'),inp=l.querySelector('input');const it=attach(box,16,16,'var(--ink)',(r,f)=>{let d=ribbon(wob(circle(8,8,7.200,20,1.1),r,.95),3,r,f);if(inp.checked)d+=blob(9,8,4,r,.7).replace(/([\d.-]+) ([\d.-]+)/g,(m,a,b)=>(+a+3.500).toFixed(1)+' '+(+b+4).toFixed(1));return d});l._it=it;inp.addEventListener('change',()=>{SEC[sec].querySelectorAll('.rad').forEach(e=>e._it.redraw(200))})})}
+function toggle(sec,x,y,rot){const l=document.createElement('label');l.className='sk tog';l.innerHTML=`<span class="box" style="width:38px;height:20px"><input type="checkbox" role="switch" aria-label="Toggle"></span>`;place(l,sec,x,y,rot);const box=l.querySelector('.box'),inp=l.querySelector('input');let kx=10;const it=attach(box,38,20,'var(--ink)',(r,f)=>outline(38,20,9.500,r,{frac:f,w:2.700,amp:.75})+blob(17,17,8,r,.9).replace(/([\d.-]+) ([\d.-]+)/g,(m,a,b)=>(+a+kx-8).toFixed(1)+' '+(+b+2).toFixed(1)));inp.addEventListener('change',()=>{const to=inp.checked?28:10,from=kx,t0=performance.now();const f=t=>{const k=reduce?1:Math.min(1,(t-t0)/200);kx=from+(to-from)*(1-(1-k)**3);it.p.setAttribute('d',it.gen(RNG(it.seed),1));if(k<1)requestAnimationFrame(f);else it.compute()};requestAnimationFrame(f)});l.addEventListener('pointerenter',()=>it.redraw())}
+function input(sec,x,y,w,h,rot,ph){const d=document.createElement('div');d.className='sk inp';d.style.width=w+'px';d.style.height=h+'px';d.innerHTML=`<input placeholder="${ph}" aria-label="${ph}">`;place(d,sec,x,y,rot);attach(d,w,h,'var(--ink)',(r,f)=>outline(w,h,5,r,{frac:f,amp:1.5,w:2.700}))}
+function divider(sec,x,y,w,rot){const d=document.createElement('div');d.className='sk';d.style.width=w+'px';d.style.height='6px';d.setAttribute('role','separator');place(d,sec,x,y,rot);attach(d,w,6,'var(--ink)',(r,f)=>{const p=[];for(let i=0;i<=w/5;i++)p.push([i*5,3]);return ribbon(wob(p,r,1),3.200,r,f)})}
+function card(sec,x,y,w,h,rot,html,cls='',wd){const d=document.createElement('div');d.className='sk '+cls;d.style.width=w+'px';d.style.height=h+'px';d.style.cursor='default';d.innerHTML=`<div style="padding:0 34px 0 13px;width:100%;font-size:11.800px;line-height:17.500px;color:#4a4a4e">${html}</div>`;place(d,sec,x,y,rot);attach(d,w,h,'var(--ink)',(r,f)=>outline(w,h,6,r,{frac:f,amp:1.6,w:wd||2.800}));return d}
+function codeCard(sec,x,y,w,h,rot,html){const d=document.createElement('div');d.className='sk';d.style.cssText=`width:${w}px;height:${h}px;cursor:default`;d.innerHTML=`<div class="cd" style="padding:0 12px;width:100%">${html}</div>`;place(d,sec,x,y,rot);attach(d,w,h,'var(--ink)',(r,f)=>outline(w,h,5,r,{frac:f,amp:1.2,w:2.400}));return d}
+/* Section 1, positions read from the overview frame (panel 1376 x 809) */
+button(1,183,120,60,34,-4,'Done','ink','solid');button(1,605,79,50,29,2,'Wait','lav');button(1,1173,160,67,31,3,'Cancel','gray');button(1,1261,305,56,30,-5,'Retry','red').id='redraw';
+button(1,1244,565,63,31,3,'Delete','red');button(1,584,735,64,31,3,'Saved','grn','solid');button(1,140,484,56,29,3,'Save','ink','hatch');
+radioGroup(1,[[116,327,-4,'Pen',true],[182,322,-3,'Pencil',false]]);
+check(1,1204,390,-4,'Ship it',true);toggle(1,1161,547,-1);input(1,285,661,178,38,-2,'your name');divider(1,426,407,79,-1);
+card(1,1122,671,197,84,2,'Every stroke is generated at load. Hover a control to re-sketch.').id='boil';
+/* Section 2 */
+const cb=document.createElement('div');cb.className='sk';cb.style.cssText='width:136px;height:40px;cursor:default';cb.innerHTML=`<div style="display:flex;align-items:center;gap:7px;font:400 12px 'Geist Mono',monospace;color:#2a2a2e"><span style="color:#a3a3a3">$</span>npm i scrawl<button id="cp" aria-label="Copy" style="background:none;border:0;padding:0;color:var(--ink);cursor:pointer;width:12px;height:12px"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.300"><rect x="4" y="4" width="7" height="7" rx="1.500"/><path d="M1.500 8V2.500a1 1 0 0 1 1-1H8"/></svg></button></div>`;place(cb,2,689,345,0);attach(cb,136,40,'var(--ink)',(r,f)=>outline(136,40,7,r,{frac:f,amp:1.1,w:2.800}));
+cb.querySelector('#cp').addEventListener('click',e=>{const b=e.currentTarget,old=b.innerHTML;try{navigator.clipboard?.writeText('npm i scrawl').catch(()=>{})}catch{}b.innerHTML='<svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.500"><path d="M2 6.500 5 9.500 10 3"/></svg>';setTimeout(()=>b.innerHTML=old,1200)});
+codeCard(2,1092,578,226,104,-3.5,`<i>import</i> { ScrawlButton }\n<i>from</i> <s>"scrawl/react"</s>\n\n<em>&lt;</em>ScrawlButton <u>state</u>=<s>"loading"</s><em>&gt;</em>`);
+for(const [t,x,y,r] of [['MIT',258,73,-3],['v0.1.0',1163,106,3]]){const m=document.createElement('span');m.textContent=t;m.style.cssText='position:absolute;translate:-50% -50%;font:400 10.500px "Geist Mono",monospace;color:#55555a';place(m,2,x,y,r)}
+/* Section 3 */
+const api=[[337,134,174,47,-5,'scrawlButton','el, opts'],[641,85,177,42,2,'scrawlRadio','wrap, opts'],[1120,165,201,46,3,'scrawlCheckbox','wrap, opts'],[203,409,181,47,2,'scrawlDivider','el, opts'],[340,621,181,46,-1,'scrawlInput','wrap, opts'],[618,718,186,44,-2,'scrawlToggle','wrap, opts'],[1153,652,158,44,-3,'scrawlCard','el, opts']];
+api.forEach(([x,y,w,h,rot,n,a])=>codeCard(3,x,y,w,h,rot,`<span style="font-size:11px">${n}<u>(${a})</u></span>`));
+codeCard(3,686,401,383,123,0,`<span style="font-size:11.500px;line-height:19px"><i>import</i> { scrawlButton } <i>from</i> <s>"scrawl"</s>;\n<i>import</i> <s>"scrawl/style.css"</s>;\n\nscrawlButton(done, { <u>variant</u>: <s>"solid"</s>, <u>state</u>:\n<s>"success"</s> });</span>`);
+/* boil */
+if(!reduce)setInterval(()=>{for(const it of ALL){if(it.drawing)continue;it.i=(it.i+1)%3;it.p.setAttribute('d',it.frames[it.i])}},125);
+/* section nav */
+const scr=document.getElementById('scr'),steps=document.getElementById('steps'),lks=[...steps.querySelectorAll('a')];
+steps.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:reduce?'auto':'smooth'})});
+scr.addEventListener('scroll',()=>{const i=Math.round(scr.scrollTop/scr.clientHeight);steps.classList.toggle('on',i>0);lks.forEach((a,k)=>a.classList.toggle('cur',k===i))},{passive:true});
+window.__sk={ALL};
+</script></body></html>

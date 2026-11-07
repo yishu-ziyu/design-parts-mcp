@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>伙伴感语音引导</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--blue:#1472f0;--spring:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;margin:0}
+html{background:#060a18}
+body{font:16px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+#fit{position:relative;overflow:hidden;width:100%}
+#stage{position:absolute;left:0;top:0;width:1662px;height:1080px;overflow:hidden;transform-origin:0 0;background:#000}
+#wall{position:absolute;inset:0;width:100%;height:100%}
+#dim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,2,46,.66),rgba(10,4,62,.66) 26%,rgba(2,8,40,.8) 45%,rgba(1,8,24,.88) 68%,rgba(0,4,14,.94));opacity:0;transition:opacity 1.2s ease}
+.on-dim #dim{opacity:1}
+#desk{position:absolute;inset:0;transition:opacity 1.2s ease}
+.on-dim #desk{opacity:.3}
+.on-dim #bar>*{opacity:.72}.on-dim #bar b{opacity:.82}
+.dk{position:absolute;left:1524px;width:130px;text-align:center;font:600 13px/18px -apple-system,sans-serif;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.dk svg{display:block;margin:0 auto 6px}
+#dock{position:absolute;left:376px;top:1022px;width:910px;height:52px;border-radius:17px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.2);transition:opacity 1.2s ease}
+.on-dim #dock{opacity:.14}
+#dock i{position:absolute;top:10px;width:32px;height:32px;border-radius:8px}
+#bar{position:absolute;left:0;right:0;top:0;height:35px;font:600 14px/35px -apple-system,sans-serif;color:#fff;z-index:9}
+#bar span{position:absolute;top:0;font-weight:400}#bar b{position:absolute;top:0;font-weight:700}
+#bar svg{position:absolute}
+#menus{position:absolute;left:0;top:0}#menus.dev{left:20px}
+#notch{position:absolute;left:747px;top:0;width:167px;height:31px;background:#04040a;border-radius:0 0 13px 13px;z-index:10;transition:left .5s var(--spring),width .5s var(--spring)}
+.voice #notch{left:682px;width:298px}
+#orb{position:absolute;left:16px;top:8px;width:19px;height:19px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#a3b3d9,#3c5a9c 62%,#1a2848);opacity:0;transition:opacity .3s}
+.voice #orb{opacity:1}
+#cam{position:absolute;left:1368px;top:785px;width:240px;height:241px;z-index:7}
+#spk{position:absolute;left:30px;top:1036px;opacity:.9;z-index:7}
+#skip{all:unset;position:absolute;left:1578px;top:1036px;font:500 13px/18px -apple-system,sans-serif;color:#c7cbd6;cursor:pointer;opacity:0;transition:opacity .3s;z-index:8}
+.voice #skip{opacity:1}
+/* 文案 */
+.ttl{position:absolute;left:0;right:0;text-align:center;opacity:0;transition:opacity .9s}
+#kicker{top:414px;font:600 12.5px/17px -apple-system,sans-serif;letter-spacing:4.3px;color:#b6bbd6}
+#head{top:438px;font:500 49px/64px -apple-system,sans-serif;letter-spacing:-2.7px;color:#fff;text-shadow:0 0 18px rgba(170,190,255,.25)}
+.s-title .ttl{opacity:1}
+/* 球 */
+#sphere{position:absolute;left:0;top:0;width:612px;height:612px;margin:-306px 0 0 -306px;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 108%,#37b4ff 0,#0d6fe0 10%,#0639bd 34%,#04279c 62%,#031c80 100%);box-shadow:0 0 0 2px rgba(120,190,255,.5),0 0 34px 6px rgba(30,120,255,.75),0 0 120px 40px rgba(10,70,220,.28);opacity:0;will-change:transform}
+#sphere svg{position:absolute;inset:0;width:100%;height:100%}
+/* 标 */
+#mark{position:absolute;left:0;right:0;top:477px;height:120px;display:flex;align-items:center;justify-content:center;opacity:0;font:800 116px/120px -apple-system,sans-serif;letter-spacing:-3.5px;color:#fff;filter:drop-shadow(0 0 7px rgba(190,210,255,.95)) drop-shadow(0 0 22px rgba(120,150,255,.5))}
+#mark .sq{width:68px;height:68px;background:#fff;border-radius:7px;flex:none}
+#mark .cc{width:68px;height:68px;background:#fff;border-radius:50%;flex:none;margin:12px 3px 0}
+#mark .mt{display:inline-block;overflow:hidden;max-width:0;white-space:nowrap;transition:max-width 1s var(--spring)}
+#mark.full .mt{max-width:480px}
+#mark .gap{width:5px}
+#start{all:unset;position:absolute;left:751px;top:656px;width:168px;height:74px;border-radius:37px;text-align:center;font:500 18px/74px -apple-system,sans-serif;color:#e6e8f0;background:rgba(70,84,110,.72);box-shadow:inset 0 0 0 2px rgba(190,200,220,.55),inset 0 1px 0 rgba(255,255,255,.3),0 3px 14px rgba(0,0,0,.3);cursor:pointer;opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s var(--spring);pointer-events:none}
+#start.show{opacity:1;transform:none;pointer-events:auto}
+#fly{position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 12px #fff;opacity:0}
+/* 对话文字 */
+#say{position:absolute;left:0;right:0;top:381px;text-align:center;font:500 29.8px/49px -apple-system,sans-serif;letter-spacing:-.72px;color:#f3f4f8;text-shadow:0 1px 10px rgba(0,0,20,.4);transition:opacity .4s}
+#say .w{opacity:0;display:inline-block;white-space:pre;transition:opacity .5s ease,filter .5s ease;filter:blur(3px)}
+#say .w.in{opacity:1;filter:none}
+#names{position:absolute;left:545px;top:557px;width:572px;display:flex;gap:9px;opacity:0;transform:translateY(10px) scale(.98);transition:opacity .45s,transform .55s var(--spring);pointer-events:none}
+#names.show{opacity:1;transform:none;pointer-events:auto}
+#names label{position:relative;display:block;flex:1;height:56px}
+#names input{all:unset;display:block;box-sizing:border-box;width:100%;height:100%;border-radius:28px;padding:0 26px;background:linear-gradient(180deg,#b2b5c9,#bfc4d6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 3px 14px rgba(0,0,20,.25);font:400 16.5px/56px -apple-system,sans-serif;color:#0b0c14;caret-color:#111;transition:background .2s}
+#names input:focus{background:linear-gradient(180deg,#cdcfdc,#d2d6e2)}
+#names input::placeholder{color:#62657a}
+#send{all:unset;position:absolute;right:10px;top:12px;width:32px;height:32px;border-radius:50%;background:#7ca6e8;display:grid;place-items:center;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+#names input:focus-visible{outline:none}
+#send:focus-visible,#lang button:focus-visible,#start:focus-visible,#cont:focus-visible,#skip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+/* 语言面板 */
+#lang{position:absolute;left:589px;top:310px;width:484px;height:548px;border-radius:28px;background:rgba(219,223,235,.93);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 20px 60px rgba(0,0,0,.35);color:#1d1f26;opacity:0;transform:translateY(16px) scale(.97);transition:opacity .4s,transform .6s var(--spring);pointer-events:none}
+#lang.show{opacity:1;transform:none;pointer-events:auto}
+#lang h3{position:absolute;left:27px;top:23px;font:700 24.5px/32px -apple-system,sans-serif;letter-spacing:-.65px;color:#232631}
+#lang p{position:absolute;left:27px;top:62px;font:400 14px/20px -apple-system,sans-serif;color:#6a6d78}
+#srch{position:absolute;left:23px;top:98px;width:438px;height:44px;border-radius:22px;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);padding-left:45px;font:400 15px/44px -apple-system,sans-serif;color:#74777f}
+#srch svg{position:absolute;left:17px;top:14px}
+#srch i{position:absolute;left:44px;top:13px;width:1px;height:18px;background:#333;animation:cb 1.1s steps(2) infinite}
+@keyframes cb{50%{opacity:0}}
+#list{position:absolute;left:23px;top:156px;width:431px;height:305px;overflow:hidden;-webkit-mask:linear-gradient(#000 92%,transparent);mask:linear-gradient(#000 92%,transparent)}
+#list button{all:unset;display:block;position:relative;box-sizing:border-box;width:431px;height:62px;margin-bottom:4px;border-radius:12px;cursor:pointer;transition:background .18s}
+#list button:hover{background:rgba(255,255,255,.3)}
+#list button.sel{background:rgba(255,255,255,.42)}
+#list .bx{position:absolute;left:14px;top:20px;width:22px;height:22px;border-radius:6px;box-shadow:inset 0 0 0 2px #a9abb4;display:grid;place-items:center;transition:background .15s}
+#list .sel .bx{background:var(--blue);box-shadow:none}
+#list .bx svg{opacity:0}#list .sel .bx svg{opacity:1}
+#list strong{position:absolute;left:49px;top:12px;font:600 15.5px/20px -apple-system,sans-serif;color:#232631}
+#list small{position:absolute;left:49px;top:32px;font:400 12.5px/17px -apple-system,sans-serif;color:#5e616c}
+#list em{position:absolute;right:23px;top:22px;font:500 13px/18px -apple-system,sans-serif;font-style:normal;color:#5b5f6c;display:flex;gap:6px;align-items:center}
+#scrub{position:absolute;left:458px;top:155px;width:6px;height:13px;border-radius:3px;background:#a5a8b3}
+#cont{all:unset;position:absolute;left:23px;top:481px;width:438px;height:44px;border-radius:12px;background:#0f6ff0;text-align:center;font:600 15.5px/44px -apple-system,sans-serif;color:#fff;cursor:pointer;box-shadow:0 2px 12px rgba(15,111,240,.3)}
+/* 权限窗 */
+#perm{position:absolute;left:238px;top:88px;width:1186px;height:780px;border-radius:20px;background:linear-gradient(180deg,#fff 0,#fff 78%,#e8f1fc);color:#14161c;box-shadow:0 18px 60px rgba(0,0,40,.4);opacity:0;transition:opacity .7s;pointer-events:none;z-index:6}
+.s-perm #perm{opacity:1;pointer-events:auto}
+#prog{position:absolute;left:26px;top:26px;width:1134px;height:12px;border-radius:6px;background:#f0f1f3;overflow:hidden}
+#prog i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:linear-gradient(90deg,#1578cf 0,#82b8e9 36%,#e6eff8 62%,#9ac6ec 82%,#4a97dd 100%);transition:width 1.4s var(--spring)}
+.s-perm #prog i{width:374px}
+#perm h3{position:absolute;left:105px;top:170px;font:500 25.5px/36px -apple-system,sans-serif;letter-spacing:-.3px}
+.pc{position:absolute;left:105px;width:435px;height:99px;border-radius:16px;background:#fff;box-shadow:0 0 0 .5px #ececee,0 3px 10px rgba(0,0,0,.025)}
+.pc strong{position:absolute;left:19px;top:18px;font:500 17.5px/25px -apple-system,sans-serif}
+.pc span{position:absolute;left:19px;top:56px;font:400 16px/23px -apple-system,sans-serif;color:#74767d}
+.pc svg{position:absolute;right:19px;top:18px;transform:scale(0);transition:transform .45s cubic-bezier(.3,1.6,.5,1)}
+.pc.ok svg{transform:scale(1)}
+#permgo{all:unset;position:absolute;left:105px;top:598px;width:154px;height:50px;border-radius:16px;text-align:center;font:400 18px/50px -apple-system,sans-serif;background:#fff;box-shadow:0 0 0 1px #b9c0cc,0 2px 7px rgba(0,0,0,.08);cursor:pointer;color:#1a1c22}
+/* 系统设置示意 */
+#sys{position:absolute;left:630px;top:178px;width:467px;height:341px;border-radius:14px;background:#f8f8f9;box-shadow:0 0 0 .5px #eeeef0;overflow:hidden;font:400 11px/16px -apple-system,sans-serif;color:#9fa1a8}
+#sys .sb{position:absolute;left:0;top:0;bottom:0;width:130px;background:#f0f0f2}
+#sys .lights{position:absolute;left:12px;top:12px;display:flex;gap:6px}#sys .lights i{width:8px;height:8px;border-radius:50%}
+#sys .q{position:absolute;left:9px;top:39px;width:113px;height:18px;border-radius:5px;background:#e4e4e6;padding-left:19px;font-size:9.5px;line-height:18px;color:#8f9197}
+.sbi{position:absolute;left:12px;width:110px;height:13px;font-size:8px;line-height:13px;padding-left:18px;color:#cdced3}
+.sbi:before{content:"";position:absolute;left:0;top:0;width:12px;height:12px;border-radius:3px;background:#dcdfe6}
+.sbi.a{left:8px;margin-top:-3px;width:115px;height:19px;border-radius:4px;background:#2c79e8;color:#fff;font-size:9.5px;line-height:19px;padding-left:23px}
+.sbi.a:before{left:7px;top:4px;width:11px;height:11px;background:#7fb0f2}
+#sys h4{position:absolute;left:176px;top:13px;font:600 11.5px/16px -apple-system,sans-serif;color:#2e3036}
+#sys .nav{position:absolute;left:144px;top:15px;width:20px;height:10px;color:#6d6f75}
+#sys .box{position:absolute;left:141px;top:42px;width:315px;height:127px;border-radius:6px;background:#efeff1}
+#sys .box p{position:absolute;left:8px;top:9px;font-size:8.5px;color:#8f9197}
+.sr{position:absolute;left:8px;width:300px;height:30px}
+.sr i{position:absolute;left:0;top:6px;width:16px;height:16px;border-radius:3px;background:#dcdce0}
+.sr u{position:absolute;left:22px;top:11px;height:6px;border-radius:3px;background:#dcdce0}
+.sr s{position:absolute;right:0;top:7px;width:20px;height:12px;border-radius:6px;background:#dcdce0;transition:background .25s}
+.sr s:after{content:"";position:absolute;left:1px;top:1px;width:10px;height:10px;border-radius:50%;background:#fff;transition:left .25s}
+.sr.on s{background:#2c79e8}.sr.on s:after{left:9px}
+.sr b{position:absolute;left:22px;top:6px;font:500 9px/14px -apple-system,sans-serif;color:#50525a;opacity:0}
+.sr.on b{opacity:1}.sr.on u{opacity:0}
+#drag{position:absolute;left:686px;top:503px;width:357px;height:81px;border-radius:7px;background:#fff;box-shadow:0 8px 28px rgba(0,0,30,.16);font:400 9.5px/12px -apple-system,sans-serif;color:#2e3036;z-index:2;transition:opacity .35s,transform .35s}
+#drag.gone{opacity:0;transform:translateY(8px)}
+#drag .dot{position:absolute;left:10px;top:11px;width:17px;height:17px;border-radius:50%;background:#1a78e0;color:#fff;display:grid;place-items:center;font-size:10px}
+#drag .tx{position:absolute;left:35px;top:9px;width:300px}
+#drag .ro{position:absolute;left:8px;right:8px;bottom:7px;height:29px;border-radius:5px;background:#f6f6f7;display:flex;align-items:center;padding-left:9px;gap:8px;color:#55575f}
+#drag .ro em{margin-left:auto;margin-right:9px;font-style:normal;color:#b5b6bc;font-size:8px}
+#ghost{position:absolute;left:795px;top:510px;width:26px;height:18px;z-index:3;transition:transform .9s cubic-bezier(.45,0,.2,1),opacity .25s;display:flex;align-items:center;gap:1px}
+#ghost i{display:block;width:10px;height:10px;background:#111;border-radius:50%}
+#ghost i:first-child{border-radius:2px}
+#ghost u{position:absolute;right:-5px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:#2db55d}
+.cur{position:absolute;width:15px;height:21px;z-index:4}
+/* 可拆 */
+.notes{max-width:1000px;margin:0 auto;padding:30px 16px 44px;color:#c6cad6;line-height:1.6;font-size:14px}
+.notes h3{font-size:15px;margin-bottom:8px;color:#fff}
+.notes dt{margin-top:10px}.notes dd{margin:2px 0 0;color:#8f94a6}
+.notes code{font:12.5px ui-monospace,Menlo,monospace;color:#9db9ff}
+.notes button{all:unset;display:inline-block;margin-bottom:14px;padding:6px 14px;border-radius:99px;background:#1a2036;cursor:pointer;font-size:12px;color:#d7dbea}
+.hid{visibility:hidden}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="fit"><div id="stage">
+<svg id="wall" viewBox="0 0 1662 1080" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="w0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10008f"/><stop offset=".12" stop-color="#2606a8"/><stop offset=".28" stop-color="#5426cc"/><stop offset=".4" stop-color="#6a4bd8"/><stop offset=".5" stop-color="#3d58d9"/></linearGradient>
+    <linearGradient id="w1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b2fc4"/><stop offset=".3" stop-color="#0a35cc"/><stop offset=".75" stop-color="#071fa0"/><stop offset="1" stop-color="#06127a"/></linearGradient>
+    <linearGradient id="rib" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfd8ff" stop-opacity=".6"/><stop offset=".2" stop-color="#f3f5ff"/><stop offset=".6" stop-color="#fbfbff"/><stop offset=".85" stop-color="#eaf0ff"/><stop offset="1" stop-color="#fff"/></linearGradient>
+    <filter id="g70" x="-30%" y="-40%" width="160%" height="180%"><feGaussianBlur stdDeviation="46"/></filter>
+    <filter id="g24" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="g4" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="g1" x="-5%" y="-10%" width="110%" height="120%"><feGaussianBlur stdDeviation=".8"/></filter>
+  </defs>
+  <rect width="1662" height="1080" fill="url(#w0)"/>
+  <path d="M0 430C200 462 360 470 800 465 1170 450 1440 340 1662 268V1080H0Z" fill="url(#w1)"/>
+  <path d="M420 462C520 372 640 362 740 404 780 424 810 450 860 465Z" fill="#14239a" filter="url(#g24)"/>
+  <path d="M330 480C520 462 800 462 960 462 860 520 660 540 520 524 440 516 380 500 330 480Z" fill="#7f90ee" filter="url(#g24)"/>
+  <path d="M0 460C150 500 280 540 340 560 240 660 90 700 0 720Z" fill="#021a78" filter="url(#g24)"/>
+  <path d="M1662 330C1540 380 1320 470 1090 560 1200 600 1400 560 1662 390Z" fill="#6a7fe4" opacity=".55" filter="url(#g24)"/>
+  <path d="M0 840C120 700 230 690 320 790 380 860 500 900 600 960 660 1010 690 1080 690 1080H0Z" fill="#8493cf" filter="url(#g70)"/>
+  <path d="M1040 1080C1140 930 1230 750 1310 640 1420 590 1560 510 1662 480V1080Z" fill="#a2b3e6" filter="url(#g70)"/>
+  <path d="M980 1080C950 900 1100 720 1190 660 900 600 620 620 470 800 620 880 760 960 800 1080Z" fill="#0620a4" filter="url(#g24)"/>
+  <path d="M0 433C180 480 360 556 560 618 720 665 860 680 980 674 1230 660 1460 540 1662 412" fill="none" stroke="url(#rib)" stroke-width="4" stroke-linecap="round" filter="url(#g1)"/>
+</svg>
+<div id="dim"></div>
+<div id="desk">
+  <div class="dk" style="top:50px"><svg width="52" height="60" viewBox="0 0 52 60"><path d="M6 4 44 1c3 18 6 36 2 56L10 58C3 40 6 22 6 4Z" fill="#f4f4f5"/></svg>Documents</div>
+  <div class="dk" style="top:173px"><svg width="58" height="60" viewBox="0 0 58 60"><rect x="4" y="3" width="50" height="17" fill="#3c2860"/><rect x="2" y="16" width="54" height="40" rx="3" fill="#f6f6f8"/><rect x="22" y="14" width="14" height="14" fill="#222"/></svg>Images</div>
+  <div class="dk" style="top:298px"><svg width="58" height="58" viewBox="0 0 58 58"><rect x="1" y="10" width="56" height="34" rx="3" fill="#15151b"/><rect x="5" y="22" width="48" height="4" fill="#3a3a44"/></svg>Screenshots</div>
+  <div class="dk" style="top:420px"><svg width="66" height="60" viewBox="0 0 66 60"><path d="M1 8a4 4 0 0 1 4-4h18l6 6h32a4 4 0 0 1 4 4v38a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4Z" fill="#57c3f1"/></svg>Fundraising</div>
+  <div class="dk" style="top:544px"><svg width="66" height="60" viewBox="0 0 66 60"><path d="M1 8a4 4 0 0 1 4-4h18l6 6h32a4 4 0 0 1 4 4v38a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4Z" fill="#ea2e2e"/></svg>Screen<br>Recordings</div>
+  <div class="dk" style="top:667px"><svg width="66" height="60" viewBox="0 0 66 60"><path d="M1 8a4 4 0 0 1 4-4h18l6 6h32a4 4 0 0 1 4 4v38a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4Z" fill="#57c3f1"/></svg>voiceos-mobile-<br>waitlist</div>
+</div>
+<div id="dock"></div>
+<div id="bar">
+  <svg style="left:22px;top:9px" width="15" height="17" viewBox="0 0 15 17" fill="#fff" opacity=".85"><circle cx="7.5" cy="9.5" r="6.5"/></svg>
+  <b style="left:58px" id="app">Terminal</b><span id="menus"><span style="left:141px" id="menu1">Shell</span><span style="left:195px">Edit</span><span style="left:245px">View</span><span style="left:297px">Window</span><span style="left:373px">Help</span></span>
+  <svg style="left:986px;top:11px" width="15" height="13" fill="none" stroke="#ccc"><path d="M7 1 2 6.5 7 12M13 1 8 6.5l5 5.5"/></svg>
+  <svg style="left:1017px;top:5px" width="44" height="25"><rect width="44" height="25" rx="12" fill="#6b77f7"/><rect x="12" y="7" width="19" height="12" rx="2" fill="none" stroke="#fff"/></svg>
+  <svg style="left:1078px;top:10px" width="15" height="15" fill="#ddd"><path d="M6 1a7 7 0 1 0 8 8A6 6 0 0 1 6 1Z"/></svg>
+  <svg style="left:1115px;top:11px" width="28" height="13"><rect x=".5" y=".5" width="24" height="12" rx="3.5" fill="none" stroke="#ddd"/><rect x="2" y="2" width="20" height="9" rx="2" fill="#ddd"/><rect x="25.5" y="4" width="2" height="5" rx="1" fill="#ddd"/></svg>
+  <svg style="left:1164px;top:11px" width="19" height="14" fill="none" stroke="#ddd" stroke-width="1.7"><path d="M1 5c5-5 12-5 17 0M4 8c3-3 8-3 11 0M7 11c1.5-1 3.5-1 5 0"/></svg>
+  <svg style="left:1204px;top:10px" width="16" height="16" fill="none" stroke="#ddd" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/></svg>
+  <svg style="left:1243px;top:10px" width="16" height="16" fill="#ddd"><rect width="7" height="7" rx="1"/><rect x="9" width="7" height="16" rx="1"/><rect y="9" width="7" height="7" rx="1"/></svg>
+  <b style="left:1285px;font-family:Georgia,serif;font-size:19px;color:#ddd">V</b>
+  <svg style="left:1329px;top:11px" width="13" height="13" fill="#ddd"><circle cx="6.5" cy="6.5" r="5.5"/></svg>
+  <svg style="left:1366px;top:9px" width="18" height="18" fill="none" stroke="#ddd" stroke-width="1.5"><circle cx="9" cy="9" r="7.5"/><rect x="6" y="6" width="6" height="6" fill="#ddd"/></svg>
+  <svg style="left:1405px;top:9px" width="18" height="18" fill="none" stroke="#ddd" stroke-width="1.3"><circle cx="9" cy="9" r="7.5"/><circle cx="9" cy="9" r="3.5"/></svg>
+  <svg style="left:1449px;top:10px" width="18" height="16" fill="none" stroke="#ddd" stroke-width="1.5"><rect x="1" y="1" width="16" height="6" rx="3"/><rect x="1" y="9" width="16" height="6" rx="3"/></svg>
+  <svg style="left:1490px;top:10px" width="16" height="16" fill="none" stroke="#ddd" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13"/></svg>
+  <span style="left:1520px;color:#e6e6ec">Fri Sep 18&nbsp; 17:27</span><i style="position:absolute;left:1646px;top:14px;width:6px;height:6px;border-radius:50%;background:#32d74b"></i>
+</div>
+<div id="notch"><i id="orb"></i></div>
+<div id="kicker" class="ttl">THE WORLD'S FIRST</div>
+<div id="head" class="ttl">voice operating system</div>
+<div id="sphere"><svg viewBox="0 0 612 612"><defs><filter id="sb" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="9"/></filter></defs><g id="capT"><path d="M22 -30H590V195C590 278 560 326 512 326 438 326 390 268 306 268 222 268 174 326 100 326 52 326 22 278 22 195Z" fill="#c4d7ee" filter="url(#sb)"/><path d="M34 -30H578V185C578 258 548 300 508 300 438 300 390 248 306 248 222 248 174 300 104 300 64 300 34 258 34 185Z" fill="#fbfcfe" filter="url(#sb)" opacity=".98"/></g><g id="capB"><ellipse cx="306" cy="660" rx="290" ry="130" fill="#eef4fb" filter="url(#sb)"/></g></svg></div>
+<div id="mark"><span class="sq" id="mS"></span><span class="mt" id="m1"><span class="gap" style="display:inline-block"></span>ompani</span><span class="cc" id="mC"></span><span class="mt" id="m2">n</span></div>
+<button id="start">Get Started</button>
+<div id="fly"></div>
+<div id="say" aria-live="polite"></div>
+<div id="names"><label><input id="first" placeholder="First name" autocomplete="off" aria-label="First name"></label><label><input id="last" placeholder="Last name" autocomplete="off" aria-label="Last name"><button id="send" aria-label="Submit"><svg width="12" height="13" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><path d="M6 12V2M2 5.5 6 1.5l4 4"/></svg></button></label></div>
+<section id="lang" aria-label="What language do you speak?">
+  <h3>What language do you speak?</h3><p>Choose all that apply and mark your primary language.</p>
+  <div id="srch"><svg width="16" height="16" fill="none" stroke="#6f7178" stroke-width="1.3"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg><i></i>Search languages</div>
+  <div id="list"></div><i id="scrub"></i>
+  <button id="cont">Continue</button>
+</section>
+<section id="perm" aria-label="Enable core features">
+  <div id="prog"><i></i></div>
+  <h3>Enable core features</h3>
+  <div class="pc" style="top:241px"><strong>Microphone permission granted.</strong><span>Your speech will be transcribed.</span><svg width="26" height="26"><circle cx="13" cy="13" r="13" fill="#1270e0"/><path d="M8 13.5 11.5 17 18.5 9.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg></div>
+  <div class="pc" style="top:353px"><strong>Accessibility permission granted.</strong><span>VoiceOS can insert and edit text.</span><svg width="26" height="26"><circle cx="13" cy="13" r="13" fill="#1270e0"/><path d="M8 13.5 11.5 17 18.5 9.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg></div>
+  <div class="pc" style="top:465px"><strong>Screen permission granted.</strong><span>Agent Mode can answer questions about your screen.</span><svg width="26" height="26"><circle cx="13" cy="13" r="13" fill="#1270e0"/><path d="M8 13.5 11.5 17 18.5 9.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg></div>
+  <button id="permgo">Continue</button>
+  <div id="sys">
+    <div class="sb"><div class="lights"><i style="background:#ee6a5e"></i><i style="background:#f5bf4f"></i><i style="background:#61c554"></i></div><div class="q">Search</div></div>
+    <div class="nav">‹&nbsp;&nbsp;›</div><h4>Screen &amp; System Audio Recording</h4>
+    <div class="box"><p>Allow the applications below to record your screen and audio.</p><div class="sr" style="top:34px"><i></i><u style="width:52px"></u><s></s></div><div class="sr" id="rowOn" style="top:65px"><i></i><u style="width:66px"></u><b>VoiceOS</b><s></s></div></div>
+  </div>
+  <div id="drag"><div class="dot">↑</div><div class="tx">Drag VoiceOS into Screen &amp; System Audio Recording list, then turn its switch on.</div><div class="ro"><b style="font-size:9px">▪●</b>VoiceOS<em>Drag me</em></div></div>
+  <div id="ghost"><i></i><i></i><u></u></div>
+</section>
+<svg id="cam" viewBox="0 0 240 241" aria-label="摄像头画面占位">
+  <defs><clipPath id="sq"><path d="M70 0H170C220 0 240 22 240 70V170C240 220 220 241 170 241H70C20 241 0 220 0 170V70C0 22 20 0 70 0Z"/></clipPath></defs>
+  <g clip-path="url(#sq)"><rect width="240" height="241" fill="#d9c7a6"/><rect y="0" width="240" height="30" fill="#b9a58a"/><rect x="42" y="50" width="120" height="120" fill="#f2f4f4"/><rect x="170" y="30" width="70" height="210" fill="#b89a74"/><path d="M0 241V190C20 165 60 160 118 156 180 160 225 168 240 200V241Z" fill="#46413d"/><ellipse cx="120" cy="105" rx="42" ry="54" fill="#d9ac8e"/><path d="M78 100C72 58 100 50 122 50 148 50 170 66 162 102 150 82 140 72 120 74 100 76 88 84 78 100Z" fill="#1f1b1a"/><rect x="100" y="152" width="40" height="22" fill="#d9ac8e"/></g>
+</svg>
+<svg id="spk" width="15" height="13" viewBox="0 0 15 13" fill="#d9dbe5"><path d="M0 4h3l4-4v13L3 9H0Z"/><path d="M10 3c2 2 2 5 0 7" fill="none" stroke="#d9dbe5" stroke-width="1.2"/></svg>
+<button id="skip">Skip intro</button>
+</div></div>
+<div class="notes"><button id="replay">从头重播</button><h3>可拆</h3><dl>
+  <dt><code>#sphere</code></dt><dd>发光球从屏幕底部升起，边升边缩，收成一个小白点，再展开成标志。</dd>
+  <dt><code>#say</code></dt><dd>助手说话的字幕：逐词淡入，按语音节奏分两句，背后还是桌面。</dd>
+  <dt><code>#names</code></dt><dd>问到称呼时才升起的两个胶囊输入框，回车后名字进入下一句回应。</dd>
+  <dt><code>#lang</code></dt><dd>半透明语言面板：多选，加一个星标选主语言。</dd>
+  <dt><code>#perm</code></dt><dd>权限窗：左边逐条打勾，右边用拖拽示意图教操作，桌面亮回来。</dd>
+</dl></div>
+<script>
+(function(){
+const $=s=>document.querySelector(s),st=$('#stage');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 程序坞占位
+const cols=['#3aa8f5','#e8e8ec','#f6cf45','#3ccc58','#e8e8ee','#6677f2','#a0a4aa','#16161a','#e4e4e8',0,'#f4f4f4','#2a2a2a','#5a6ad8','#7a4bd8','#d8d8d8','#f23b5c','#f2f2f2','#555',0,'#efefef','#1e2b2a','#2a2730','#22242a','#d8dade'];
+let x=16;$('#dock').innerHTML=cols.map(c=>{if(!c){x+=12;return ''}const s=`<i style="left:${x}px;background:${c}"></i>`;x+=39.5;return s}).join('');
+document.querySelector('#sys .sb').insertAdjacentHTML('beforeend',['Notifications','Sound','Focus','Screen Time','General','Appearance','Accessibility','Privacy & Security','Desktop & Dock','Displays','Wallpaper','Keyboard'].map((n,i)=>`<div class="sbi${i===7?' a':''}" style="top:${70+i*21.2}px">${n}</div>`).join(''));
+// 语言
+const LANGS=[['English','English',1,1],['Japanese','日本語',1,0],['Afrikaans','Afrikaans'],['Amharic','አማርኛ'],['Arabic','العربية'],['Bengali','বাংলা']];
+const tick='<svg width="14" height="11" fill="none" stroke="#fff" stroke-width="2"><path d="M1.5 5.5 5 9l7.5-8"/></svg>';
+const star=(f)=>`<svg width="17" height="17" viewBox="0 0 17 17" fill="${f?'#1472f0':'none'}" stroke="${f?'#1472f0':'#8d9099'}" stroke-width="1.2"><path d="M8.5 1.3l2.2 4.7 5.1.6-3.8 3.5 1 5.1-4.5-2.5L4 15.2l1-5.1L1.2 6.6l5.1-.6Z"/></svg>`;
+function drawL(){$('#list').innerHTML=LANGS.map((l,i)=>`<button class="${l[2]?'sel':''}" data-i="${i}"><span class="bx">${tick}</span><strong>${l[0]}</strong><small>${l[1]}</small>${l[2]?`<em data-star="${i}">${star(l[3])}${l[3]?'Primary':''}</em>`:''}</button>`).join('')}
+drawL();
+$('#list').onclick=e=>{const s=e.target.closest('[data-star]');if(s){LANGS.forEach((l,i)=>l[3]=i==s.dataset.star?1:0);drawL();return}const b=e.target.closest('button');if(!b)return;const l=LANGS[b.dataset.i];l[2]=l[2]?0:1;if(!l[2])l[3]=0;drawL()};
+function menu(d){$('#app').textContent=d?'VoiceOS Dev':'Terminal';$('#menu1').textContent=d?'File':'Shell';$('#menu1').style.left=d?'150px':'141px';$('#menus').classList.toggle('dev',!!d);$('#menu1').style.marginLeft='0'}
+// 工具
+let token=0;const wait=ms=>new Promise(r=>setTimeout(r,reduce?Math.min(ms,30):ms));
+function cls(c,on=true){st.classList.toggle(c,on)}
+function say(html,keep){const box=$('#say');const words=html.split(/(\s+|<br>)/).filter(s=>s&&s.trim()||s==='<br>');const mk=w=>w==='<br>'?'<br>':`<span class="w">${w} </span>`;if(!keep)box.innerHTML='';box.insertAdjacentHTML('beforeend',words.map(mk).join(''))}
+async function reveal(ms=95,t){const ws=[...document.querySelectorAll('#say .w:not(.in)')];for(const w of ws){if(t!==token)return;w.classList.add('in');await wait(ms)}}
+function clearSay(){$('#say').style.opacity=0}
+function resetSay(){const b=$('#say');b.innerHTML='';b.style.opacity=1}
+// 球路径（秒）：取自原视频抽帧
+const SPH=[[0,831,1400,612],[.8,831,1200,612],[1.8,831,940,612],[2.5,831,760,420],[3,831,610,210],[3.3,831,565,150],[3.6,865,545,110],[4,882,532,96]];
+function sphere(){const s=$('#sphere'),T=SPH[SPH.length-1][0]*1000;s.style.opacity=1;
+  const a=s.animate(SPH.map(k=>({offset:k[0]/SPH[SPH.length-1][0],transform:`translate(${k[1]}px,${k[2]}px) scale(${k[3]/612})`})),{duration:T,easing:'cubic-bezier(.5,0,.35,1)',fill:'forwards'});
+  $('#capT').animate([{transform:'translateY(0)'},{transform:'translateY(0)',offset:.4},{transform:'translateY(-110px)',offset:.6},{transform:'translateY(160px)',offset:.8},{transform:'translateY(360px)'}],{duration:T,fill:'forwards'});
+  $('#capB').animate([{transform:'translateY(0)'},{transform:'translateY(0)',offset:.4},{transform:'translateY(-90px)',offset:.62},{transform:'translateY(-300px)'}],{duration:T,fill:'forwards'});
+  return a}
+function markStage(n){const m=$('#mark'),S=$('#mS'),C=$('#mC');m.classList.toggle('full',n>=2);m.style.opacity=n>=1?1:0}
+// 拖拽示意：循环
+async function dragLoop(t){const g=$('#ghost'),d=$('#drag'),r=$('#rowOn');
+  while(t===token){g.style.transition='none';g.style.transform='';g.style.opacity=1;d.classList.remove('gone');r.classList.remove('on');g.offsetWidth;g.style.transition='';await wait(1100);if(t!==token)return;g.style.transform='translate(-95px,-170px) scale(.8)';await wait(1000);if(t!==token)return;g.style.opacity=0;d.classList.add('gone');r.classList.add('on');await wait(2300)}}
+// 场景
+async function perm(t){cls('voice');cls('on-dim',false);cls('s-perm');menu(1);resetSay();$('#names').classList.remove('show');$('#lang').classList.remove('show');
+  $('#mark').style.opacity=0;$('#start').classList.remove('show');$('#sphere').style.opacity=0;
+  const cs=[...document.querySelectorAll('.pc')];cs.forEach(c=>c.classList.remove('ok'));await wait(700);for(const c of cs){if(t!==token)return;c.classList.add('ok');await wait(450)}dragLoop(t)}
+async function afterLang(t){$('#lang').classList.remove('show');const p=LANGS.find(l=>l[3])||LANGS.find(l=>l[2])||LANGS[0];resetSay();say(`Perfect, ${p[0]} it is.`);await wait(450);await reveal(110,t);if(t!==token)return;await wait(900);say(`<br>Let's get you set up.`,true);await reveal(110,t);await wait(1200);if(t!==token)return;clearSay();await wait(350);perm(t)}
+async function hey(t){const n=($('#first').value||'friend').trim();$('#names').classList.remove('show');clearSay();await wait(1200);if(t!==token)return;resetSay();say(`Hey ${n}, it's great to meet you!`);await reveal(110,t);await wait(2200);if(t!==token)return;clearSay();await wait(500);if(t!==token)return;resetSay();$('#lang').classList.add('show')}
+async function welcome(t){cls('voice');resetSay();await wait(1200);say(`Welcome to VoiceOS. I'm your assistant.`);await reveal(150,t);if(t!==token)return;await wait(600);say(`<br>So, what should I call you?`,true);await reveal(140,t);if(t!==token)return;await wait(250);$('#names').classList.add('show');await wait(500);if(t===token)$('#first').focus({preventScroll:true})}
+function go(){const t=token;const f=$('#fly');$('#start').classList.remove('show');$('#mark').style.opacity=0;
+  f.style.opacity=1;f.animate([{left:'824px',top:'530px'},{left:'824px',top:'52px',offset:.7,opacity:1},{left:'824px',top:'16px',opacity:0}],{duration:reduce?1:800,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});welcome(t)}
+async function intro(){const t=++token;resetAll();await wait(650);if(t!==token)return;cls('on-dim');menu(1);await wait(350);cls('s-title');await wait(1000);if(t!==token)return;
+  sphere();await wait(3400);if(t!==token)return;cls('s-title',false);markStage(1);$('#sphere').style.transition='opacity .25s';$('#sphere').style.opacity=0;await wait(1700);if(t!==token)return;markStage(2);await wait(700);if(t!==token)return;$('#start').classList.add('show')}
+function resetAll(){['on-dim','s-title','s-perm','voice'].forEach(c=>cls(c,false));menu(0);resetSay();markStage(0);$('#sphere').getAnimations().forEach(a=>a.cancel());$('#sphere').style.opacity=0;$('#start').classList.remove('show');$('#names').classList.remove('show');$('#lang').classList.remove('show');$('#first').value='';$('#last').value='';$('#fly').style.opacity=0;$('#fly').getAnimations().forEach(a=>a.cancel());document.querySelectorAll('.pc').forEach(c=>c.classList.remove('ok'))}
+$('#start').onclick=go;
+const submit=e=>{e&&e.preventDefault();if(!$('#names').classList.contains('show'))return;hey(token)};
+$('#send').onclick=submit;$('#first').onkeydown=$('#last').onkeydown=e=>{if(e.key==='Enter')submit(e)};
+$('#cont').onclick=()=>afterLang(token);$('#permgo').onclick=()=>intro();$('#skip').onclick=()=>{token++;perm(token)};$('#replay').onclick=intro;
+// 适配
+function fit(){const s=Math.min(1,innerWidth/1662);st.style.transform=`scale(${s})`;$('#fit').style.height=1080*s+'px'}addEventListener('resize',fit);fit();
+// 关键帧 ?s=desktop|title|sphere|logo|word|name|lang|perm
+const s=new URLSearchParams(location.search).get('s');
+if(!s){intro();return}
+const style=document.createElement('style');style.textContent='*{transition:none!important}';document.head.append(style);
+const dim=()=>{cls('on-dim');menu(1)};
+if(s==='desktop')return;
+dim();
+if(s==='title'||s==='sphere'){cls('s-title');if(s==='sphere'){const k=SPH[2],sp=$('#sphere');sp.style.opacity=1;sp.style.transform=`translate(${k[1]}px,${k[2]}px)`}return}
+if(s==='logo'){markStage(1);return}
+if(s==='word'){markStage(2);$('#start').classList.add('show');return}
+if(s==='name'){cls('voice');say(`Welcome to VoiceOS. I'm your assistant.<br>So, what should I call you?`);document.querySelectorAll('#say .w').forEach(w=>w.classList.add('in'));$('#names').classList.add('show');$('#first').value='K';return}
+if(s==='lang'){cls('voice');$('#lang').classList.add('show');return}
+if(s==='perm'){cls('voice');cls('on-dim',false);cls('s-perm');document.querySelectorAll('.pc').forEach(c=>c.classList.add('ok'));return}
+})();
+</script>
+</body>
+</html>

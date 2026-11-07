@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doodle Appliance</title>
+<style>
+:root{--paper:#f0ede6;--ink:#231e16;--muted:#857d6e;--rule:#ddd6c8;--accent:#93d3b0;--grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .42  0 0 0 0 .39  0 0 0 0 .33  .16 0 0 0 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>")}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--paper) var(--grain);color:var(--ink);font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;display:flex;overflow-x:hidden}
+nav{flex:none;width:220px;height:100vh;overflow:hidden;border-right:1px solid var(--rule);padding:24px 16px;background:#f2efe9 var(--grain)}
+nav h1{font-size:13px;font-weight:700;margin:0 0 8px;line-height:18px}
+nav>p{font-size:12px;line-height:17px;color:var(--muted);margin:0 0 23px}
+nav a{display:block;height:50px;margin-bottom:4px;padding:8px 10px;border-radius:8px;line-height:18px}
+nav a span{display:block;font-size:11px;color:var(--muted);line-height:15px;margin-bottom:1px}
+nav a.on{background:var(--ink);color:#f2efe7}nav a.on span{color:#ffffffaa}
+main{position:relative;flex:1;min-width:0;height:100vh;min-height:700px;overflow:hidden}
+#head{position:absolute;left:26px;right:26px;top:24px;display:flex;justify-content:space-between}
+#head b{font-weight:700;line-height:18px}#head i{font-style:normal;color:var(--muted);line-height:18px}
+#cap{position:absolute;left:26px;top:45px;font-size:11px;letter-spacing:.08em;color:var(--muted);line-height:15px}
+#btns{position:absolute;left:26px;top:72px;display:flex;flex-direction:column;align-items:flex-start;gap:8.5px;z-index:3}
+.act{font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;height:31px;padding:0 14px;cursor:pointer;white-space:nowrap}
+.act:hover{background:#e3e0d9}.act:focus-visible,#rot button:focus-visible,.sw:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.act .car{margin-left:6px;font-size:10px}
+.sw2{position:relative}#chips{display:none;gap:6px;background:var(--paper);border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:8px;position:absolute;left:calc(100% + 10px);top:-4px;width:max-content}
+#chips.open{display:flex}#chips button{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:8px;padding:4px 8px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+#chips button:hover{background:var(--accent)}#chips button.cur{background:var(--ink);color:var(--paper)}
+#fig{position:absolute;left:0;top:0;width:816px;height:640px;overflow:visible;user-select:none}
+#fig text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+[data-act]{cursor:pointer}
+#toast{position:absolute;left:50%;top:40px;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:#fff1bf;border:1px solid rgba(35,30,22,.28);border-radius:8px;padding:7px 13px;font-weight:600;font-size:12.5px;box-shadow:0 8px 22px rgba(35,30,22,.16);transition:opacity .18s,transform .18s;z-index:4}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#rot{position:absolute;right:26px;top:583px;width:167px;display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;letter-spacing:.08em}
+#rot button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);background:transparent;padding:0;cursor:pointer;display:grid;place-items:center;color:var(--ink);font-size:15px;line-height:1}
+#rot button:hover{background:#e3e0d9}
+#ctl{position:absolute;left:26px;right:26px;top:627px;border-top:1px solid var(--rule);padding-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px}
+#ctl label,#ctl .lb{display:block;color:var(--muted);font-size:11px;letter-spacing:.08em;margin-bottom:10px;line-height:15px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:236px;max-width:100%;height:14px;margin:0;background:none;cursor:pointer;--v:50%}
+input[type=range]::-webkit-slider-runnable-track{height:7px;border-radius:9px;background:linear-gradient(90deg,var(--ink) var(--v),#faf8f3 var(--v));box-shadow:inset 0 0 0 .5px #b8b2a4}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--ink);margin-top:-4px}
+#pals{display:flex;gap:8px}.sw{width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid var(--ink);cursor:pointer}.sw[aria-pressed=true]{outline:2px solid var(--ink);outline-offset:2px}
+#after{position:fixed;left:-9999px}
+@media (prefers-reduced-motion:reduce){.act,#toast{transition:none}}
+@media (max-width:760px){nav{display:none}body{overflow-x:auto}main{min-width:816px}}
+</style></head><body>
+<nav aria-label="Figures"><h1>Playfigures</h1><p>Hand-inked isometric figures you can play with.</p><div id="list"></div></nav>
+<main>
+<div id="head"><b>Fig. 01 — Washing machine</b><i>load the laundry, add soap, pick a program, start — then unload</i></div>
+<div id="cap">MACHINE</div>
+<div id="btns">
+ <button class="act" id="bLoad">Load laundry</button>
+ <button class="act" id="bSoap">Add soap</button>
+ <div class="sw2"><button class="act" id="bProg" aria-expanded="false">Choose program<span class="car">▾</span></button><div id="chips"></div></div>
+ <button class="act" id="bStart">Start / pause</button>
+ <button class="act" id="bOpen">Open door, unload</button>
+ <button class="act" id="bClose">Close door</button>
+</div>
+<svg id="fig" viewBox="0 0 816 640" role="img" aria-label="Washing machine, hand-inked isometric figure">
+<defs>
+ <filter id="hand" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+  <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4" result="w"/>
+  <feDisplacementMap id="disp" in="SourceGraphic" in2="w" scale="3.4" xChannelSelector="R" yChannelSelector="G" result="d"/>
+  <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="9" result="n"/>
+  <feColorMatrix in="n" values="0 0 0 0 .14  0 0 0 0 .12  0 0 0 0 .09  0 0 0 1.100 -.62" result="g"/>
+  <feComposite in="g" in2="d" operator="in" result="gg"/>
+  <feMerge><feMergeNode in="d"/><feMergeNode in="gg"/></feMerge>
+ </filter>
+ <clipPath id="glass"><circle cx="0" cy="0" r="51"/></clipPath>
+</defs>
+<g id="art" filter="url(#hand)">
+ <path id="shadow" fill="#404d97"/>
+ <ellipse id="shB" fill="#404d97"/><ellipse id="shD" fill="#404d97" opacity="0"/>
+ <g id="feet" fill="#2c2a26" stroke="#231e16" stroke-width="2"></g>
+ <path id="hull" fill="#231e16" stroke="#231e16" stroke-width="5" stroke-linejoin="round"/>
+ <g id="base"><path/><path/><path/><path/></g>
+ <g id="fLeft"><rect id="sideL" x="0" y="0" width="230" height="242" rx="12"/>
+  <rect class="band" x="0" y="0" width="230" height="20" rx="10" fill="var(--accent)"/><rect class="band" x="0" y="10" width="230" height="12" fill="var(--accent)" opacity=".92"/>
+  <rect id="wash" x="38" y="66" width="150" height="124" rx="17" fill="#fff" opacity=".13" stroke="#231e16" stroke-opacity=".35"/>
+  <text x="50" y="108" font-size="34" font-weight="800" fill="#231e16" opacity=".55" letter-spacing="2">WASH</text>
+  <text x="50" y="146" font-size="14" font-weight="700" fill="#231e16" opacity=".45" letter-spacing="1">4 KG · 40°</text>
+  <g stroke="#231e16" stroke-width="1.6" opacity=".65"><path d="M46 206h142M46 217h142M46 228h142"/></g>
+ </g>
+ <g id="fFront"><rect id="sideF" width="236" height="242" rx="13"/>
+  <rect x="6" y="8" width="224" height="50" rx="13" fill="#d8eee2" stroke="#231e16" stroke-width="2"/>
+  <g data-act="drawer" id="drawer"><rect x="14" y="16" width="58" height="35" rx="3" fill="#f2efe7" stroke="#231e16" stroke-width="2.2"/><text x="23" y="30" font-size="9" fill="#231e16">I II ✿</text><rect x="24" y="37" width="38" height="6" rx="3" fill="#2d2a25"/></g>
+  <text x="82" y="28" font-size="9" fill="#231e16" opacity=".8">C</text><text x="102" y="20" font-size="9" fill="#231e16" opacity=".8">Q</text><text x="122" y="28" font-size="9" fill="#231e16" opacity=".8">S</text>
+  <g data-act="dial" transform="translate(103 36)"><circle r="18" cy="1.5" fill="#b9bbb7" stroke="#231e16" stroke-width="2"/><g id="dial"><circle r="16" fill="#e8e7e1" stroke="#231e16" stroke-width="1.8"/><rect x="-3.5" y="-15" width="7" height="30" rx="3" fill="#f7f6f1" stroke="#231e16" stroke-width="1.4"/><circle cy="-9" r="2.2" fill="#e0413c"/></g></g>
+  <rect x="148" y="19" width="44" height="31" rx="4" fill="#123b2d" stroke="#231e16" stroke-width="2"/><text id="dLabel" x="170" y="31" font-size="9" font-weight="800" text-anchor="middle" fill="#7be08f">SPIN</text><text id="dTime" x="170" y="44" font-size="12" font-weight="800" text-anchor="middle" fill="#7be08f">0:11</text>
+  <g data-act="start" transform="translate(212 28)"><circle r="12.5" id="sRing" fill="#d9dbd8" stroke="#3d9b63" stroke-width="3"/><circle r="8.5" fill="#f1f0ea" stroke="#231e16" stroke-width="1.5"/><path d="M-3-5 5 0-3 5Z" fill="#231e16"/></g>
+  <text x="201" y="53" font-size="7" fill="#231e16" opacity=".8">START</text>
+  <circle id="lockDot" cx="78" cy="68" r="2" fill="#d83a36"/><text id="lock" x="84" y="71" font-size="8" fill="#d83a36" font-weight="700">LOCKED</text>
+  <rect x="196" y="204" width="32" height="24" rx="6" fill="none" stroke="#231e16" stroke-width="1.8"/><path d="M206 216h12" stroke="#231e16" stroke-width="1.8"/>
+  <text x="18" y="234" font-size="9.5" font-weight="700" fill="#231e16" letter-spacing=".5">WASHMATIC 9</text>
+  <g id="cav" transform="translate(118 142)">
+   <circle r="64" fill="#2a2a27" stroke="#231e16" stroke-width="2"/>
+   <circle r="54" fill="#6e7270"/>
+   <g id="holes" fill="#2a2a27"></g>
+   <path d="M-52 14 A54 54 0 0 0 52 14 L36 6-36 6Z" fill="#b5b8b5" opacity=".75"/><path d="M-50 22 50 22M-44 32 44 32" stroke="#555" stroke-width="1.5"/>
+   <g clip-path="url(#glass)"><g id="drum"></g></g>
+   <path id="water" d="M-46 18Q0 8 46 18A48 48 0 0 1-46 18Z" fill="#79c4e8" opacity="0"/>
+  </g>
+  <g id="hinges"><path d="M198 84h20v22h-20Z" fill="#d8dad7" stroke="#231e16" stroke-width="2"/><path d="M198 84l6-6h20l-6 6ZM218 84l6-6v22l-6 6Z" fill="#b8bbb8" stroke="#231e16" stroke-width="1.6"/><path d="M198 158h20v22h-20Z" fill="#d8dad7" stroke="#231e16" stroke-width="2"/><path d="M198 158l6-6h20l-6 6ZM218 158l6-6v22l-6 6Z" fill="#b8bbb8" stroke="#231e16" stroke-width="1.6"/></g>
+ </g>
+ <g id="fTop"><rect id="sideT" x="0" y="0" width="236" height="230" rx="15"/>
+  <path d="M50 74 L128 66 L138 150 L58 158Z" fill="#f4f0e2" stroke="#231e16" stroke-opacity=".2" stroke-linejoin="round" stroke-width="2"/>
+  <path d="M70 86l46-4M72 102l46-4M74 118l46-4M76 134l32-3" stroke="#231e16" stroke-width="1.2" opacity=".75"/>
+ </g>
+ <g id="door" data-act="door">
+  <g id="doorOut"><circle r="85" fill="#dcdedb" stroke="#231e16" stroke-width="2"/><circle r="80" fill="#c6c9c6" opacity=".6"/><path d="M-78-30A84 84 0 0 1 30-78L25-62A66 66 0 0 0-62-24Z" fill="#fbfbf9" opacity=".95"/>
+   <circle r="63" fill="#a9aeac" stroke="#231e16" stroke-width="2.2"/><circle r="55" fill="#34403c" stroke="#231e16" stroke-width="1.8"/>
+   <g clip-path="url(#glass)"><circle r="51" fill="#6d7674"/><g id="gw" transform="scale(1.3)"><g id="glassClothes"></g></g><path d="M-51-14Q0-56 44-32L51-51-51-51Z" fill="#fff" opacity=".16"/></g>
+   <rect x="-98" y="-4" width="24" height="50" rx="3" fill="#d6d8d5" stroke="#231e16" stroke-width="2.2"/><rect x="-90" y="5" width="7" height="32" rx="2" fill="#5a5f5c"/>
+   <rect x="68" y="-76" width="20" height="24" rx="2" fill="#d6d8d5" stroke="#231e16" stroke-width="1.8"/><rect x="82" y="-12" width="10" height="24" rx="2" fill="#d6d8d5" stroke="#231e16" stroke-width="1.6"/></g>
+  <g id="doorIn"><circle r="85" fill="#c2c5c2" stroke="#231e16" stroke-width="2.4"/><circle r="78" fill="#dfe1de"/><circle r="56" fill="#cfe2e6" stroke="#231e16" stroke-width="1.8"/><path d="M-52-14A54 54 0 0 1 30-44L10-10-30 20Z" fill="#fff" opacity=".6"/><circle r="30" cx="-6" cy="4" fill="#e6f1f2" stroke="#231e16" stroke-width="1.5"/></g>
+ </g>
+ <g id="soap" opacity="0"><ellipse cx="0" cy="0" rx="14" ry="6" fill="#f7f4e9" stroke="#231e16" stroke-width="1.5"/></g>
+ <path id="stray" d="M0 8C4-2 18-4 32-3c8 0 20-5 24-1 4 3-4 8-6 10-14 6-30 8-46 5-4 0-6-2-4-3Z" fill="#f6f0dc" stroke="#231e16" stroke-width="1.5" opacity="0"/>
+ <g id="basket"><path d="M-54-8 0-36 56-8 44 28Q0 56-44 28Z" fill="#5a97d4" stroke="#231e16" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M-46-9 0-30 48-8 0 18Z" fill="#245070" stroke="#231e16" stroke-width="2"/>
+  <g id="bClothes"><path d="M-24-2C-32-14-10-20-4-14c6 2 14 4 10 12-4 8-26 6-34 4Z" fill="#f2c937" stroke="#231e16" stroke-width="1.6"/><path d="M0-26 18-28 30-14 14-2 -2-10Z" fill="#3f78d8" stroke="#231e16" stroke-width="1.6"/><path d="M6-22 22-20 12-8Z" fill="#f3f4ee"/><path d="M2-6 14-14 28-8 24 6 8 8Z" fill="#df4a38" stroke="#231e16" stroke-width="1.6"/></g>
+  <path d="M-54-8 0 18 56-8M-44 2-40 26M-30 8-27 32M-14 14-13 38M14 14 13 38M30 8 27 32M44 2 40 26" fill="none" stroke="#231e16" stroke-width="1.4" stroke-linecap="round"/>
+ </g>
+ <g id="fly"></g>
+</g>
+</svg>
+<div id="toast" role="status"></div>
+<div id="rot"><button id="rL" aria-label="Turn left">⟲</button><span id="vLabel">FRONT</span><button id="rR" aria-label="Turn right">⟳</button></div>
+<div id="ctl">
+ <div><label for="li">LIGHT DIRECTION</label><input id="li" type="range" min="-90" max="60" step="1" value="0"></div>
+ <div><label for="wb">HAND-DRAWN WOBBLE</label><input id="wb" type="range" min="0" max="7" step="0.1" value="2.4"></div>
+ <div><span class="lb">COLOUR</span><div id="pals"></div></div>
+</div>
+</main>
+<section id="after"><h3>可拆</h3><dl>
+ <dt><code>#fig</code></dt><dd>手绘等距物件：一张 SVG 画完整台机器，所有面用矩阵投影，所以能转。</dd>
+ <dt><code>#hand</code></dt><dd>手绘抖动和纸感：SVG 滤镜让线条歪一点并叠上颗粒，滑块控制抖动幅度。</dd>
+ <dt><code>#shadow</code></dt><dd>平涂的蓝色投影：由底面四角沿光线方向平移后取外框算出，滑块改光向。</dd>
+ <dt><code>#door</code></dt><dd>绕铰链开合的舱门：转过 90 度后切到内侧图形。</dd>
+ <dt><code>#btns</code></dt><dd>步骤按钮：按顺序操作机器，状态不满足时给出提示条。</dd>
+</dl></section>
+<script>
+const $=id=>document.getElementById(id),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const F=['Washing machine','Espresso machine','Vending machine','Toaster','Microwave','Pencil sharpener','Wind-up toy','Traffic light','Smoke alarm','Fridge','Music box'];
+$('list').innerHTML=F.map((n,i)=>`<a class="${i?'':'on'}"${i?' aria-disabled="true"':' aria-current="page"'}><span>Fig. ${String(i+1).padStart(2,'0')}</span>${n}</a>`).join('');
+/* projection: a ground circle squashed to half height, turned by yaw */
+const W=236,D=230,H=256,Z0=14,C=[409,422],deg=Math.PI/180;
+const st={yaw:0,yawT:0,light:0,beta:0,betaT:0,running:false,t:11,spin:0,shake:0,clothes:'basket',soap:false,prog:'SPIN',accent:'#93d3b0',dark:'#1e4a3a',done:false};
+const axis=a=>[Math.cos((a+st.yaw)*deg),-.5*Math.sin((a+st.yaw)*deg)];
+function U(){return axis(45)}function V(){return axis(135)}
+function pt(x,y,z){const u=U(),v=V();return[C[0]+u[0]*(x-W/2)+v[0]*(y-D/2),C[1]+u[1]*(x-W/2)+v[1]*(y-D/2)-z]}
+const mat=(u,v,o)=>`matrix(${u[0]} ${u[1]} ${v[0]} ${v[1]} ${o[0]} ${o[1]})`;
+const mix=(a,b,t)=>{const p=s=>[1,3,5].map(i=>parseInt(s.substr(i,2),16)),A=p(a),B=p(b);return'#'+A.map((c,i)=>Math.round(c+(B[i]-c)*t).toString(16).padStart(2,'0')).join('')};
+/* holes and clothes */
+{let h='';for(let r of[26,40])for(let i=0;i<(r>30?16:9);i++){const a=i/(r>30?16:9)*6.283;h+=`<rect x="${(r*Math.cos(a)).toFixed(1)}" y="${(r*Math.sin(a)).toFixed(1)}" width="3.5" height="3.5" rx=".8"/>`}$('holes').innerHTML=h}
+const CL=[['#e44d3e','M-24-20C-14-34 8-30 12-18 16-8 0-2-10-6-20-8-30-12-24-20Z'],['#f2c937','M6-14C18-20 30-12 28 0 26 10 14 8 8 4 2 0-2-10 6-14Z'],['#f3f4ee','M-16 0C-6-6 10 2 8 14 6 24-8 30-18 22-28 14-26 6-16 0Z'],['#5fb07a','M-34 8C-30 2-22 6-20 14-18 24-24 30-30 26-36 22-38 14-34 8Z'],['#e87ca8','M-40-10C-34-18-26-12-26-4-26 2-36 6-40 0-42-4-42-6-40-10Z']];
+const cl=CL.map(([c,d])=>`<path d="${d}" fill="${c}" stroke="#231e16" stroke-width="1.4"/>`).join('');
+const clO='<path d="M-6 24 18-14 30-6 8 32Z" fill="#df4a7a" stroke="#231e16" stroke-width="1.4"/><path d="M-4 22 20-12" stroke="#fff" stroke-width="3" opacity=".8"/><path d="M14-20 34-34 38-18 26-8Z" fill="#5fb07a" stroke="#231e16" stroke-width="1.4"/>';
+function paintClothes(){const inDrum=st.clothes==='drum';$('glassClothes').innerHTML=inDrum?cl:'';$('drum').innerHTML=(inDrum||st.stray)?clO:'';$('basket').style.display=inDrum?'none':'';$('shB').style.display=inDrum?'none':'';$('shD').style.display=inDrum?'none':''}
+function draw(){
+ const u=U(),v=V(),dn=[0,1],n=[-v[0],-v[1]];
+ const norm={front:[-v[0],-v[1]],left:[-u[0],-u[1]],right:u,back:v};
+ const lightPhi=(-35+st.light)*deg,shade=nm=>{const ph=Math.atan2(-nm[1]*2,nm[0]),c=Math.cos(ph-lightPhi);return Math.max(0,Math.min(1,.12+c*1.2))};
+ /* hull */
+ const c=[pt(0,0,Z0),pt(W,0,Z0),pt(W,D,Z0),pt(0,D,Z0)],t=[pt(0,0,H),pt(W,0,H),pt(W,D,H),pt(0,D,H)];
+ const pts=hull([...c,...t]);$('hull').setAttribute('d',roundPath(pts,15));
+ /* faces */
+ const front=mat(u,dn,t[0]);$('fFront').setAttribute('transform',front);$('fFront').style.display=norm.front[1]>0.02?'':'none';$('sideF').setAttribute('fill',mix(st.dark,st.accent,shade(norm.front)));
+ { const fs=[[t[0],t[1],c[1],c[0],norm.front],[t[1],t[2],c[2],c[1],norm.right],[t[2],t[3],c[3],c[2],norm.back],[t[3],t[0],c[0],c[3],norm.left]],el=$('base').children;fs.forEach((q,i)=>{const on=q[4][1]>.02;el[i].setAttribute('d',on?roundPath(q.slice(0,4),8):'');el[i].setAttribute('fill',mix(st.dark,st.accent,shade(q[4])));el[i].setAttribute('stroke','#231e16');el[i].setAttribute('stroke-width','2.5')}) }
+ /* the dark panel shows on whichever side face is visible */
+ const lv=norm.left[1]>.02,rv=norm.right[1]>.02,bv=norm.back[1]>.02;
+ let m=null,nn=null;if(lv){m=mat([-v[0],-v[1]],dn,t[3]);nn=norm.left}
+ $('fLeft').setAttribute('transform',m||'');$('fLeft').style.display=m?'':'none';if(nn)$('sideL').setAttribute('fill',mix(st.dark,st.accent,shade(nn)));
+ $('fTop').setAttribute('transform',mat(u,v,t[0]));$('sideT').setAttribute('fill',st.accent);
+ /* door: rotates about a vertical line on the front face */
+ const hu=211,hb=pt(hu,0,H-142),b=st.beta*deg,du=[u[0]*Math.cos(b)-n[0]*Math.sin(b),u[1]*Math.cos(b)-n[1]*Math.sin(b)];
+ const free=[hb[0]-du[0]*93,hb[1]-du[1]*93];
+ const fv=norm.front[1]>.02;$('door').style.display=fv?'':'none';
+ $('door').setAttribute('transform',mat(du,dn,free));$('doorOut').style.display=st.beta<90?'':'none';$('doorIn').style.display=st.beta<90?'none':'';
+ /* drum spins, body shakes */
+ const sp=`rotate(${st.spin})`;$('drum').setAttribute('transform',sp);$('glassClothes').setAttribute('transform',sp);
+ $('holes').setAttribute('transform',sp);$('cav').style.display=st.beta>4&&fv?'':'none';$('hinges').style.display=st.beta>12?'':'none';
+ $('art').setAttribute('transform',st.running?`translate(${(Math.sin(st.spin*.31)*.8).toFixed(2)} ${(Math.cos(st.spin*.43)*.5).toFixed(2)})`:'');
+ /* feet */
+ $('feet').innerHTML=[[14,12],[W-14,12],[12,D-14],[W-14,D-14]].map(([x,y])=>pt(x,y,0)).map(p=>`<path d="M${p[0]-9} ${p[1]-8}v10a9 5 0 0 0 18 0v-10Z"/>`).join('');
+ /* shadow: footprint swept along the light */
+ const off=lightVec(),foot=[pt(0,0,0),pt(W,0,0),pt(W,D,0),pt(0,D,0)];const sh=hull([...foot,...foot.map(p=>[p[0]+off[0],p[1]+off[1]])]);$('shadow').setAttribute('d','M'+sh.map(p=>p.join(' ')).join('L')+'Z');
+ /* basket follows the turntable */
+ const bk=pt(36,-80,0);$('basket').setAttribute('transform',`translate(${bk[0]} ${bk[1]-8}) scale(1.03)`);
+ $('shB').setAttribute('cx',bk[0]-42);$('shB').setAttribute('cy',bk[1]+24);$('shB').setAttribute('rx',52);$('shB').setAttribute('ry',26);
+ const sD=Math.max(0,st.beta/96);$('shD').setAttribute('opacity',fv&&sD>.05?1:0);const dc=[free[0]+du[0]*93*.0,free[1]];
+ $('shD').setAttribute('cx',bk[0]+50);$('shD').setAttribute('cy',bk[1]-22);$('shD').setAttribute('rx',78*Math.min(1,sD));$('shD').setAttribute('ry',42*Math.min(1,sD));
+ const sy=pt(0,0,0);$('stray').setAttribute('transform',`translate(${sy[0]+88} ${sy[1]-62})`);
+ $('stray').setAttribute('opacity',st.stray&&st.beta>60?1:0);
+ $('lock').textContent=st.running?'LOCKED':(st.beta>4?'UNLOCKED':'LOCKED');const lk=st.beta>4&&!st.running;$('lock').setAttribute('fill',lk?'#3d7e5d':'#d83a36');$('lockDot').setAttribute('fill',lk?'none':'#d83a36');
+ $('dLabel').textContent=st.prog;const m2=Math.floor(st.t/60);$('dTime').textContent=`${m2}:${String(Math.round(st.t%60)).padStart(2,'0')}`;
+ const ang={SPIN:60,QUICK:0,COTTON:-60}[st.prog];$('dial').setAttribute('transform',`rotate(${ang})`);
+ $('sRing').setAttribute('stroke',st.running?'#49c172':'#7aa78c');
+ $('water').setAttribute('opacity',st.running?.45:0);
+}
+function roundPath(P,r){let d='';const n=P.length;P.forEach((p,i)=>{const a=P[(i+n-1)%n],b=P[(i+1)%n],la=Math.hypot(a[0]-p[0],a[1]-p[1]),lb=Math.hypot(b[0]-p[0],b[1]-p[1]),ra=Math.min(r,la/2)/la,rb=Math.min(r,lb/2)/lb,s=[p[0]+(a[0]-p[0])*ra,p[1]+(a[1]-p[1])*ra],e=[p[0]+(b[0]-p[0])*rb,p[1]+(b[1]-p[1])*rb];d+=(i?'L':'M')+s[0].toFixed(1)+' '+s[1].toFixed(1)+'Q'+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '+e[0].toFixed(1)+' '+e[1].toFixed(1)});return d+'Z'}
+function hull(P){P=[...P].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);const L=[],R=[];for(const p of P){while(L.length>1&&cr(L[L.length-2],L[L.length-1],p)<=0)L.pop();L.push(p)}for(const p of P.slice().reverse()){while(R.length>1&&cr(R[R.length-2],R[R.length-1],p)<=0)R.pop();R.push(p)}return[...L.slice(0,-1),...R.slice(0,-1)]}
+function lightVec(){const a=Math.atan2(-92*2,-223)+st.light*deg,len=Math.hypot(223,184);return[Math.cos(a)*len,-Math.sin(a)*len*.5]}
+/* animation loop runs only while something is moving */
+let raf=0,last=0;function kick(){if(!raf){last=performance.now();raf=requestAnimationFrame(tick)}}
+function tick(now){raf=0;const dt=Math.min(40,now-last)/1000;last=now;let more=false;
+ const ease=(k,tk,sp)=>{const tg=st[tk],d=tg-st[k];if(Math.abs(d)<.05){st[k]=tg;return}st[k]+=d*Math.min(1,dt*sp);more=true};
+ if(reduce){st.beta=st.betaT;st.yaw=st.yawT}else{ease('beta','betaT',7);ease('yaw','yawT',6)}
+ if(st.running){if(!reduce)st.spin=(st.spin+dt*420)%36000;st.t=Math.max(0,st.t-dt);more=true;if(st.t<=0){st.running=false;st.done=true;toast('Done. Open the door to unload.')}}
+ draw();if(more)raf=requestAnimationFrame(tick)}
+let toastT;function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),1800)}
+const PROG={SPIN:11,QUICK:30,COTTON:80};
+$('chips').innerHTML=Object.keys(PROG).map(k=>`<button data-k="${k}">${k}</button>`).join('');
+function setChips(){[...$('chips').children].forEach(b=>b.classList.toggle('cur',b.dataset.k===st.prog))}setChips();
+$('bProg').onclick=()=>{const o=$('chips').classList.toggle('open');$('bProg').setAttribute('aria-expanded',o)};
+$('chips').onclick=e=>{const k=e.target.dataset.k;if(!k)return;st.prog=k;st.t=PROG[k];setChips();$('chips').classList.remove('open');$('bProg').setAttribute('aria-expanded',false);draw()};
+function flyClothes(fromB,cb){if(reduce){cb();return}const a=pt(36,-80,20),b=pt(118,0,H-142),s=fromB?a:b,e=fromB?b:a,N=3,cols=['#f2c937','#3f78d8','#df4a38'];const g=$('fly');const t0=performance.now();g.innerHTML=cols.map(c=>`<path d="M-12-6C-6-14 8-12 12-4 14 6 0 10-8 6-14 2-14-2-12-6Z" fill="${c}" stroke="#231e16" stroke-width="1.5"/>`).join('');
+ (function step(now){const k=(now-t0)/650;[...g.children].forEach((el,i)=>{const p=Math.min(1,Math.max(0,k-i*.14)),q=p*p*(3-2*p),x=s[0]+(e[0]-s[0])*q,y=s[1]+(e[1]-s[1])*q-Math.sin(q*Math.PI)*70;el.setAttribute('transform',`translate(${x} ${y}) rotate(${q*260})`)});if(k<1.3)requestAnimationFrame(step);else{g.innerHTML='';cb()}})(t0)}
+$('bLoad').onclick=()=>{if(st.running)return toast('It is running. Pause it first.');if(st.clothes==='drum')return toast('The drum is already full.');st.betaT=96;kick();setTimeout(()=>flyClothes(true,()=>{st.clothes='drum';paintClothes();kick()}),reduce?0:260)};
+$('bSoap').onclick=()=>{if(st.soap)return toast('There is already soap in the drawer.');st.soap=true;const d=$('drawer');d.setAttribute('transform','translate(-3 2)');setTimeout(()=>d.removeAttribute('transform'),350);toast('Soap added.')};
+$('bStart').onclick=()=>{if(st.running){st.running=false;kick();return}if(st.clothes!=='drum')return toast('Load the laundry first.');if(st.beta>4||st.betaT>4){st.betaT=0}if(st.t<=0)st.t=PROG[st.prog];st.running=true;$('chips').classList.remove('open');kick()};
+$('bOpen').onclick=()=>{if(st.running)return toast('The door is locked while it runs.');st.betaT=96;kick();if(st.clothes==='drum')setTimeout(()=>flyClothes(false,()=>{st.clothes='basket';st.stray=true;paintClothes();kick()}),reduce?0:300)};
+$('bClose').onclick=()=>{st.betaT=0;kick()};
+const VIEWS=['FRONT','LEFT','BACK','RIGHT'];let vi=0;function turn(d){vi=(vi+d+4)%4;st.yawT+=d*90;$('vLabel').textContent=VIEWS[vi];kick()}$('rL').onclick=()=>turn(-1);$('rR').onclick=()=>turn(1);
+function fillRange(el){el.style.setProperty('--v',(el.value-el.min)/(el.max-el.min)*100+'%')}
+$('li').oninput=e=>{st.light=+e.target.value;fillRange(e.target);draw()};fillRange($('li'));
+$('wb').oninput=e=>{$('disp').setAttribute('scale',(+e.target.value*1.42).toFixed(2));fillRange(e.target)};fillRange($('wb'));
+const PAL=[['mustard','#f4b829','#6a4a10'],['tomato','#ef6a4c','#6e2318'],['mint','#93d3b0','#1e4a3a'],['cobalt','#76a0e2','#1e3468'],['blush','#f3a6bb','#6a2a44']];
+$('pals').innerHTML=PAL.map((p,i)=>`<button class="sw" title="${p[0]}" aria-label="${p[0]}" aria-pressed="${i===2}" style="background:${p[1]}"></button>`).join('');
+[...$('pals').children].forEach((b,i)=>b.onclick=()=>{[...$('pals').children].forEach(x=>x.setAttribute('aria-pressed',x===b));st.accent=PAL[i][1];st.dark=PAL[i][2];document.documentElement.style.setProperty('--accent',st.accent);draw()});
+document.querySelector('[data-act=door]').addEventListener('click',()=>{if(st.running)return toast('The door is locked while it runs.');st.betaT=st.betaT>4?0:96;kick()});
+document.querySelector('[data-act=start]').addEventListener('click',()=>$('bStart').click());
+document.querySelector('[data-act=dial]').addEventListener('click',()=>{const k=Object.keys(PROG),i=(k.indexOf(st.prog)+1)%k.length;st.prog=k[i];st.t=PROG[st.prog];setChips();draw()});
+paintClothes();draw();
+</script></body></html>

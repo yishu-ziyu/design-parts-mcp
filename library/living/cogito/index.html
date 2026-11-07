@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cogito — 源码与预览同一窗口</title>
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --canvas: #fdfcfb;
+    --ink: #1c1c1c;
+    --ink-strong: #0a0a0a;
+    --ink-soft: #5c5c5c;
+    --ink-muted: #858585;
+    --accent: #d9621a;
+    --rule: #0000000f;
+    --rule-strong: #00000026;
+    --sans: "SF Pro Text", "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body {
+    font-family: var(--serif);
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  header.mast {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1280px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--sans);
+    padding: 8px 12px;
+    border: 1px solid var(--note-ink);
+    background: var(--note-ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage {
+    position: relative;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: min(92vh, 980px);
+    overflow: hidden;
+    border: 1px solid var(--note-ink);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 auto;
+    padding: 22px 40px 0;
+    font-size: 14px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    color: var(--ink-strong);
+    text-decoration: none;
+  }
+  .brand img { width: 24px; height: 24px; display: block; }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .nav-links span { cursor: default; }
+  .dl {
+    background: var(--ink-strong);
+    color: var(--canvas);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+
+  .hero {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 80px 0 0;
+  }
+  @media (max-width: 640px) {
+    .hero { padding: 56px 24px 0; }
+    .nav { padding: 16px 16px 0; }
+    .nav-links span:not(.dl) { display: none; }
+  }
+
+  .icon-wrap {
+    width: 88px;
+    height: 88px;
+    filter: drop-shadow(0 25px 25px #00000026);
+  }
+  @media (max-width: 640px) {
+    .icon-wrap { width: 72px; height: 72px; }
+  }
+  .icon-wrap img { width: 100%; height: auto; display: block; }
+
+  .copy {
+    max-width: 630px;
+    margin-top: 16px;
+  }
+  .copy p, .copy h2 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 28px;
+  }
+  .kicker-line { color: var(--ink); }
+  .kicker-line b { font-weight: 700; }
+  .kicker-line i { font-style: italic; font-weight: 400; }
+  .copy h2 {
+    font-weight: 700;
+    color: var(--ink-strong);
+    margin: 16px 0 0;
+    text-wrap: pretty;
+  }
+  .copy h2 .accent { color: var(--accent); }
+  .lede {
+    color: var(--ink-soft);
+    margin-top: 16px !important;
+  }
+
+  #stage.is-loud .lede { color: var(--ink-strong); }
+  #stage.is-plain h2 .accent { color: inherit; }
+
+  .preview-bleed {
+    margin: 64px -52px 0;
+  }
+  @media (max-width: 880px) {
+    .preview-bleed { margin-left: -24px; margin-right: -24px; }
+  }
+  @media (max-width: 640px) {
+    .preview-bleed { margin-left: -24px; margin-right: -24px; margin-top: 48px; }
+  }
+
+  .seg-wrap { display: flex; justify-content: center; margin-bottom: 0; }
+  .seg {
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 999px;
+    background: var(--rule);
+    padding: 3px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .knob {
+    position: absolute;
+    inset-block: 3px;
+    left: 3px;
+    right: calc(50% + 3px);
+    border-radius: 999px;
+    background: var(--canvas);
+    box-shadow: 0 1px 3px rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1);
+    transition: left .2s cubic-bezier(0, 0, .2, 1), right .2s cubic-bezier(0, 0, .2, 1);
+  }
+  #stage[data-view="preview"] .knob {
+    left: calc(50% + 3px);
+    right: 3px;
+  }
+  #stage.is-cut .knob { transition: none; }
+  .seg button {
+    position: relative;
+    z-index: 1;
+    border: 0;
+    background: transparent;
+    padding: 2px 12px;
+    border-radius: 999px;
+    font: 500 12px / 16px var(--sans);
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .seg button:hover { color: var(--ink-soft); }
+  #stage[data-view="source"] .seg button[data-view="source"],
+  #stage[data-view="preview"] .seg button[data-view="preview"] {
+    color: var(--ink-strong);
+  }
+
+  .frame {
+    position: relative;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  @media (min-width: 640px) { .frame { margin-top: 0; } }
+  .crop {
+    position: relative;
+    height: 0;
+    padding-bottom: 64.5%;
+  }
+  .pane {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .pane img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  #stage[data-view="source"] .pane.source,
+  #stage[data-view="preview"] .pane.preview {
+    position: relative;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .hair {
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    z-index: 2;
+    background: linear-gradient(to right, transparent, var(--rule-strong) 5%, var(--rule-strong) 95%, transparent);
+  }
+
+  #stage.is-full .crop {
+    height: auto;
+    padding-bottom: 0;
+  }
+  #stage.is-full .pane { position: relative; }
+  #stage.is-full .pane.source,
+  #stage.is-full .pane.preview { position: relative; }
+  #stage.is-full[data-view="source"] .pane.preview,
+  #stage.is-full[data-view="preview"] .pane.source {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+    overflow: hidden;
+  }
+  #stage.is-full .hair { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .knob { transition: none; }
+  }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 80px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+    margin: 0 0 28px;
+  }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 14px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  pre, code { font-family: ui-monospace, Menlo, monospace; }
+  pre {
+    background: var(--note-ink);
+    color: var(--cream);
+    padding: 16px 18px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .recipe { border-top: 1px solid var(--note-ink); padding-top: 22px; margin-top: 10px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  .nums {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 0 0 18px;
+  }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+    vertical-align: top;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+  #notes {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+  }
+  #notes h3 { margin-bottom: 14px; }
+  #notes dl { margin: 0; }
+  #notes dt {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    margin: 16px 0 6px;
+  }
+  #notes dd {
+    margin: 0;
+    max-width: 38rem;
+    font-size: 15px;
+  }
+  @media (max-width: 760px) {
+    #notes { padding-left: 18px; padding-right: 18px; }
+  }
+
+  footer.colophon {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 28px 48px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · cogito.md</div>
+  <h1>源码与预览同一窗口</h1>
+  <p class="sub">标题与正文同为 16px。Source / Preview 切换同一份 Markdown，而不是并排两张产品图。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-slide" aria-pressed="true">过渡</button>
+      <button type="button" id="t-crop" aria-pressed="true">裁切</button>
+      <button type="button" id="t-mute" aria-pressed="true">降对比</button>
+      <button type="button" id="t-accent" aria-pressed="true">强调色</button>
+    </div>
+  </div>
+
+  <div id="stage" data-view="source">
+    <div class="nav">
+      <a class="brand" href="https://cogito.md/" target="_blank" rel="noreferrer">
+        <img src="assets/glyph-raw-dark-nopadding.png" alt="" />
+        Cogito
+      </a>
+      <div class="nav-links">
+        <span>Release notes</span>
+        <span>Help</span>
+        <span class="dl">Download</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="icon-wrap">
+        <img src="assets/app-icon-light.png" width="512" height="512" alt="Cogito app icon" />
+      </div>
+      <div class="copy" id="copy">
+        <p class="kicker-line"><b>Cogito (beta).</b> Pronounced <i>koh-gee-toh</i>.</p>
+        <h2>A quiet, beautiful, native app for your <span class="accent">(and&nbsp;your agents’)</span> Markdown files.</h2>
+        <p class="lede">Built for power users and developers, but with simplicity and minimalism in mind. It's&nbsp;fast, polished, and a pleasure to use.</p>
+      </div>
+      <div class="preview-bleed" id="swap">
+        <div class="seg-wrap">
+          <div class="seg" role="tablist" aria-label="Source or Preview">
+            <span class="knob" aria-hidden="true"></span>
+            <button type="button" role="tab" data-view="source" aria-selected="true">Source</button>
+            <button type="button" role="tab" data-view="preview" aria-selected="false">Preview</button>
+          </div>
+        </div>
+        <div class="frame">
+          <div class="crop">
+            <div class="pane source">
+              <img src="assets/hero-source-light.png" width="2212" height="1746" alt="Cogito Markdown editor showing source mode on macOS" />
+            </div>
+            <div class="pane preview">
+              <img src="assets/hero-preview-light.png" width="2212" height="1746" alt="Cogito Markdown editor showing preview mode on macOS" />
+            </div>
+          </div>
+          <div class="hair"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>第一屏结构</h3>
+      <p>原站第一屏由四层组成：88px 应用图标、三行 16px / 28px 的文字、Source / Preview 分段控件，以及一扇裁去下沿的 macOS 窗口。标题中只有 <i>(and your agents’)</i> 使用强调色 <code>#d9621a</code>。</p>
+      <p>切换到 Preview 时，分段滑块用 200ms 移到右侧。窗口内仍是同一份笔记：YAML 前页渲染为表格，Markdown 标题去掉标记符号，侧栏选中项不变。</p>
+    </div>
+    <figure>
+      <img src="assets/source-hero.png" alt="cogito.md 原站第一屏，Source 状态" />
+      <figcaption><strong>图 1.</strong> cogito.md 第一屏，Source 状态。标题计算样式为 16px / 28px / 700。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>窗口不是三维模型，而是导出的 PNG（2212 × 1746）。显示框高度为宽度的 64.5%，超出部分由 <code>overflow</code> 裁切；底边一条 1px 渐变线提示窗口仍向下延伸。</p>
+    <p>源码与预览叠在同一容器中，而不是并排两张图。切换时图片瞬间替换，不做淡入；过渡只作用在分段滑块上。</p>
+    <p>层级不靠放大标题。标题、读音行、正文同为 16px / 28px。区别来自字重（700 / 400）和颜色（<code>#0a0a0a</code> / <code>#5c5c5c</code>），外加一处 <code>#d9621a</code>。</p>
+    <p>Source / Preview 不是浅色与深色主题切换，而是同一文件的源码视图与预览视图。</p>
+  </div>
+
+  <figure>
+    <img src="assets/source-preview.png" alt="cogito.md 原站切换到 Preview" />
+    <figcaption><strong>图 2.</strong> 同一视口切换到 Preview。侧栏、窗口控件与选中文件不变，变化发生在编辑区域。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>原则：</b>突出重点时，先降低次要内容的对比，而不是把标题放大。字号不是建立层级的唯一手段。留白从过多开始，再收到合适的密度。
+  </aside>
+
+  <div class="prose">
+    <h3>对照开关</h3>
+    <p><b>过渡</b>关闭后，滑块立即到位，图片仍为瞬间替换。原站的 <code>duration-200 ease-out</code> 只作用在分段滑块上，不作用在图片。</p>
+    <p><b>裁切</b>关闭后，取消 64.5% 比例框，显示完整 PNG。原图拍摄了完整窗口，页面再按比例裁切。</p>
+    <p><b>降对比</b>关闭后，正文与标题同为 <code>#0a0a0a</code>。没有灰色，标题不再构成层级。</p>
+    <p><b>强调色</b>关闭后，<i>(and your agents’)</i> 回到黑色。这是全屏唯一的 accent。</p>
+  </div>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>canvas</td><td>#fdfcfb</td></tr>
+      <tr><td>ink / strong / soft / muted</td><td>#1c1c1c / #0a0a0a / #5c5c5c / #858585</td></tr>
+      <tr><td>accent-vivid</td><td>#d9621a</td></tr>
+      <tr><td>标题与正文</td><td>16px / 28px，栏宽 630px，字重 700 / 400</td></tr>
+      <tr><td>图标</td><td>桌面 88px（size-22），窄屏 72px；drop-shadow 0 25px 25px #00000026</td></tr>
+      <tr><td>分段控件</td><td>145 × 26，内边距 3px，12px Medium，过渡 200ms cubic-bezier(0, 0, .2, 1)</td></tr>
+      <tr><td>窗口</td><td>1495 视口下宽 872px（48rem + 两侧 13 间距）；高 = 宽 × 0.645</td></tr>
+      <tr><td>图像</td><td>hero-source-light / hero-preview-light，原文件 2212 × 1746</td></tr>
+    </tbody>
+  </table>
+
+  <div class="recipe">
+    <h3>复用要点</h3>
+    <ol class="how">
+      <li>标题与正文使用同一字号，用字重和灰色建立层级，只保留一处强调色。</li>
+      <li>第一屏的产品证据是一扇可切换状态的窗口。源码与预览叠在同一容器，不要并排两张产品图。</li>
+      <li>过渡只作用在状态控件上。图片瞬间替换。显示框按宽度比例裁切，不要把完整截图放入第一屏。</li>
+      <li>使用原站导出的图像。数值从计算样式读取。</li>
+    </ol>
+  </div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#copy</code></dt>
+    <dd>标题与正文同为 16px / 28px，栏宽 630px。标题字重 700、颜色 <code>#0a0a0a</code>；正文 400、<code>#5c5c5c</code>。读音行同号。标题中 <i>(and your agents’)</i> 使用不换行空格与 <code>#d9621a</code>，为全屏唯一 accent。</dd>
+    <dt><code>#swap</code></dt>
+    <dd>Source / Preview 分段控件 145×26，内边距 3px，12px Medium。白滑块过渡 200ms <code>cubic-bezier(0, 0, .2, 1)</code>。两张 PNG（2212×1746）叠在同一容器：未选中层 <code>absolute inset-0 opacity-0</code>，图片无淡入。显示框 <code>padding-bottom: 64.5%</code>；1495 视口下宽 872px。底边 1px <code>linear-gradient</code> 使用 <code>--rule-strong</code>。</dd>
+  </dl>
+</section>
+
+<footer class="colophon">
+  <p>来源：<a href="https://cogito.md/">cogito.md</a> · 目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const stage = document.getElementById('stage')
+  const tabs = [...stage.querySelectorAll('.seg button')]
+
+  function setView(view) {
+    stage.dataset.view = view
+    tabs.forEach((btn) => {
+      const on = btn.dataset.view === view
+      btn.setAttribute('aria-selected', on ? 'true' : 'false')
+    })
+  }
+
+  tabs.forEach((btn) => {
+    btn.addEventListener('click', () => setView(btn.dataset.view))
+  })
+
+  function bind(id, onClass, attr) {
+    const btn = document.getElementById(id)
+    btn.addEventListener('click', () => {
+      const next = btn.getAttribute('aria-pressed') !== 'true'
+      btn.setAttribute('aria-pressed', next ? 'true' : 'false')
+      if (onClass) stage.classList.toggle(onClass, !next)
+    })
+  }
+
+  bind('t-slide', 'is-cut')
+  bind('t-crop', 'is-full')
+  bind('t-mute', 'is-loud')
+  bind('t-accent', 'is-plain')
+})()
+</script>
+</body>
+</html>

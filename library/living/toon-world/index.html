@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Toon World</title><link rel="icon" href="data:,">
+<style>
+:root{--ground:#e4e4e4;--ink:#0b0b0b;--paper:#e9ebe9;--line:#353534;--ease-sheet:cubic-bezier(.17,.72,.24,1)}
+*{box-sizing:border-box}html,body{margin:0;background:var(--ground);color:var(--line);font:14px/1.5 ui-sans-serif,system-ui,sans-serif}
+#stage{position:relative;height:100vh;min-height:520px;overflow:hidden;background:var(--ground);touch-action:none;cursor:default;user-select:none}
+#world{position:absolute;inset:0;width:100%;height:100%;display:block}
+#hover-name{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font-size:15px;color:#6f6f6f;pointer-events:none;opacity:0;transition:opacity .15s;text-transform:lowercase;white-space:nowrap}
+#hover-name.on{opacity:1}
+.sketch{position:absolute;bottom:26px;width:156px;height:156px;background:none}
+.sketch svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#qr{left:26px}#minimap{right:26px}
+#qr canvas,#minimap canvas{position:absolute;inset:0;width:100%;height:100%}
+#handle{position:absolute;left:50%;bottom:8px;width:48px;height:20px;margin-left:-24px;background:none;border:0;padding:0;cursor:pointer}
+#handle::before{content:"";position:absolute;left:0;right:0;top:8px;height:5px;border-radius:9px;background:#8f8f8f;transition:background .15s,transform .2s var(--ease-sheet)}
+#handle:hover::before{background:#5f5f5f;transform:scaleX(1.15)}
+#draw-overlay{position:absolute;inset:0;background:var(--paper);transform:translateY(103%);transition:transform .912s var(--ease-sheet);visibility:hidden}
+#draw-overlay.open{transform:none;visibility:visible}
+#draw-overlay.moving{visibility:visible}
+#draw-canvas{position:absolute;left:50%;top:50%;width:min(482px,70vh);height:min(482px,70vh);transform:translate(-50%,-58%);border-radius:3.5%;background:var(--paper);box-shadow:inset 0 0 0 1px rgba(53,53,52,.14);cursor:crosshair;touch-action:none}
+#draw-controls{position:absolute;left:50%;top:calc(50% + min(241px,35vh) + 40px);transform:translateX(-50%);display:flex;gap:69px}
+.draw-control{width:48px;height:48px;border-radius:50%;border:0;background:none;color:var(--line);cursor:pointer;display:grid;place-items:center;padding:0;transition:background .15s,opacity .15s}
+.draw-control:not(:disabled):hover{background:rgba(53,53,52,.08)}.draw-control:disabled{opacity:.3;cursor:default}
+.draw-control svg{width:22px;height:22px}
+#draw-hint{position:absolute;left:0;right:0;bottom:43px;text-align:center;font-size:14px;line-height:20px}
+#close-sheet{position:absolute;top:18px;right:20px;width:36px;height:36px;border:0;background:none;color:var(--line);cursor:pointer;border-radius:50%;font-size:20px}
+#notes{padding:40px 24px 64px;max-width:780px;margin:0 auto}
+#notes h3{font-size:14px;margin:0 0 12px}#notes dl{margin:0;display:grid;grid-template-columns:150px 1fr;gap:6px 14px}#notes dd{margin:0}#notes code{font:12px ui-monospace,monospace}
+</style></head><body>
+<section id="stage" aria-label="toon world">
+  <canvas id="world"></canvas>
+  <div id="hover-name"></div>
+  <div class="sketch" id="qr"><canvas></canvas><svg viewBox="0 0 156 156"><path d="M18 2C50 3 104 1 139 2 149 3 154 8 154 18 155 52 153 104 154 138 153 149 148 154 138 154 104 155 52 153 18 154 8 153 3 148 2 138 1 104 3 52 2 18 3 8 8 3 18 2Z" fill="none" stroke="#2c2c2c" stroke-width="1.1"/></svg></div>
+  <div class="sketch" id="minimap"><canvas></canvas><svg viewBox="0 0 156 156"><path d="M18 2C50 3 104 1 139 2 149 3 154 8 154 18 155 52 153 104 154 138 153 149 148 154 138 154 104 155 52 153 18 154 8 153 3 148 2 138 1 104 3 52 2 18 3 8 8 3 18 2Z" fill="none" stroke="#2c2c2c" stroke-width="1.1"/></svg></div>
+  <button id="handle" aria-label="draw a creature"></button>
+  <div id="draw-overlay">
+    <button id="close-sheet" aria-label="close">×</button>
+    <canvas id="draw-canvas" width="964" height="964"></canvas>
+    <div id="draw-controls">
+      <button class="draw-control" data-a="undo" aria-label="undo" disabled><svg viewBox="0 0 24 24"><path d="M7.1 9.3c1.5-2.8 4.4-4.5 7.5-3.9 3.3.7 5.6 3.7 5.3 7.1-.3 3.3-3.1 5.9-6.5 5.9-2 0-3.8-.9-4.9-2.3 M6.9 4.7c0 1.7.1 3.2.3 4.6 1.5-.1 3-.3 4.5-.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="draw-control" data-a="clear" aria-label="clear" disabled><svg viewBox="0 0 24 24"><path d="M7.3 7.5c3.4 2.8 6.4 5.9 9.3 9.2 M16.7 7.3c-3.3 2.9-6.4 6-9.3 9.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="draw-control" data-a="done" aria-label="done" disabled><svg viewBox="0 0 24 24"><path d="M5.8 12.9c1.5 1.7 2.9 3.4 4.1 5.1 2.3-4.1 5.2-7.8 8.5-11.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div id="draw-hint">draw a solid shape — it becomes a creature</div>
+  </div>
+</section>
+<section id="notes"><h3>可拆</h3><dl>
+<dt><code>#world</code></dt><dd>灰地 + 墨黑生物的世界：拖动平移、滚轮缩放，生物走走停停，按脚底排前后。</dd>
+<dt><code>#hover-name</code></dt><dd>鼠标停到生物上，头顶出现小写名字；点一下跳一下、冒表情气泡。</dd>
+<dt><code>#minimap</code></dt><dd>手绘描边的小地图，点阵是世界里的物体，小方块是当前视野。</dd>
+<dt><code>#draw-overlay</code></dt><dd>从底部升起的画板：撤销、清除、完成；画好的闭合形状填墨、开眼，掉进世界。</dd>
+</dl></section>
+<script>
+const W0=1468,H0=871,GROUND='#e4e4e4';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SP=[["wonder",738,206,108,163],["sol",917,210,73,106],["kit",1386,220,64,95],["wonder2",632,233,76,107],["moss",107,266,131,151],["hum",820,319,124,172],["bloom",1347,352,94,115],["pip",140,411,126,171],["cube",413,478,127,108],["ona",569,545,69,101],["dot",1247,547,54,97],["mono",759,557,77,99],["bean",13,572,65,97],["stilt",274,585,99,124]];
+const NAMES={wonder2:'wonder',wonder:'twins',sol:'sol',kit:'kit',moss:'moss',hum:'hum',bloom:'bloom',pip:'pip',cube:'cube',ona:'ona',dot:'dot',mono:'mono',bean:'bean',stilt:'stilt'};
+// props placed outside the reference frame, so panning finds more world (2x sprites)
+const PROPS=[["table",1312,-118,112,72],["tree1",1560,190,50,130],["tree3",1640,240,70,165],["tree4",1730,170,55,160],["tree2",-190,330,45,105],["tree5",-130,300,40,110],["monolith",-320,430,68,142],["rocka",200,-170,60,55],["rockb",280,-120,60,60],["rockc",860,-150,42,40],["rockd",1050,-210,58,52],["rocka",500,980,60,55],["rockb",610,1040,60,60],["rockc",1080,960,42,40],["rockd",1240,1050,58,52],["rockc",-120,880,42,40],["rockd",1650,780,58,52],["tree1",1120,1120,50,130],["tree3",220,1040,70,165]];
+const load=s=>new Promise((res,rej)=>{const i=new Image;i.onload=()=>res(i);i.onerror=()=>rej(new Error('missing '+s));i.src=s});
+const cv=document.getElementById('world'),ctx=cv.getContext('2d'),stage=document.getElementById('stage'),nameEl=document.getElementById('hover-name');
+const cam={x:W0/2,y:H0/2,z:1,base:1,tz:1};let ground,bubble,tick=[];const creatures=[];const props=[];
+function rng(seed){return()=>(seed=(seed*16807)%2147483647)/2147483647}
+function resize(){const r=stage.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);cv.width=r.width*d;cv.height=r.height*d;cam.base=Math.max(r.width/W0,r.height/H0);cam.d=d;cam.w=r.width;cam.h=r.height}
+const toScreen=(x,y)=>[(x-cam.x)*cam.z*cam.base+cam.w/2,(y-cam.y)*cam.z*cam.base+cam.h/2];
+const toWorld=(x,y)=>[(x-cam.w/2)/(cam.z*cam.base)+cam.x,(y-cam.h/2)/(cam.z*cam.base)+cam.y];
+function mkCreature(img,x,y,w,h,name){return{img,x,y,w,h,name,hx:x,hy:y,tx:x,ty:y,wait:Math.random()*4,phase:Math.random()*6,hop:0,bub:0,born:1}}
+function step(dt){for(const c of creatures){
+  if(c.born<1)c.born=Math.min(1,c.born+dt/.7);
+  if(c.hop>0)c.hop=Math.max(0,c.hop-dt*2.4);
+  if(c.bub>0)c.bub=Math.max(0,c.bub-dt/2.4);
+  if(reduce)continue;
+  if(c===hover){continue}
+  const dx=c.tx-c.x,dy=c.ty-c.y,dist=Math.hypot(dx,dy);
+  if(dist<1){c.moving=false;c.wait-=dt;if(c.wait<=0){const a=Math.random()*6.283,r=14+Math.random()*30;c.tx=c.hx+Math.cos(a)*r;c.ty=c.hy+Math.sin(a)*r*.6;c.wait=1.5+Math.random()*5}}
+  else{c.moving=true;const v=11;c.x+=dx/dist*v*dt;c.y+=dy/dist*v*dt;c.phase+=dt*7}
+}}
+function drawSprite(c){const[sx,sy]=toScreen(c.x,c.y),s=cam.z*cam.base,bob=c.moving?Math.abs(Math.sin(c.phase))*2:0,rot=c.moving?Math.sin(c.phase)*.022:0;
+  const hop=c.hop>0?Math.sin(c.hop*Math.PI)*14:0,b=c.born<1?1+2.2*Math.pow(c.born-1,3)+1.2*Math.pow(c.born-1,2):1;
+  const w=c.w*s,h=c.h*s,fx=sx+w/2,fy=sy+h*.92;
+  ctx.save();ctx.translate(fx,fy);ctx.rotate(rot);ctx.scale(b,b);ctx.translate(0,-(bob+hop)*s);ctx.drawImage(c.img,-w/2,-h*.92,w,h);
+  if(c.bub>0&&bubble){ctx.globalAlpha=Math.min(1,c.bub*4);const bw=60*s,bh=56*s;ctx.drawImage(bubble,-bw/2+6*s,-h*.92-bh*.55,bw,bh)}
+  ctx.restore()}
+function draw(){const d=cam.d,s=cam.z*cam.base;ctx.setTransform(d,0,0,d,0,0);ctx.fillStyle=GROUND;ctx.fillRect(0,0,cam.w,cam.h);
+  ctx.strokeStyle='#3a3a3a';ctx.lineWidth=Math.max(.7,.9*s);ctx.lineCap='round';ctx.beginPath();
+  for(const t of tick){const[x,y]=toScreen(t[0],t[1]);if(x<-20||y<-20||x>cam.w+20||y>cam.h+20)continue;
+    ctx.moveTo(x,y);ctx.lineTo(x-t[2]*s,y-t[3]*s);if(t[4]){ctx.moveTo(x,y);ctx.lineTo(x+t[2]*s,y-t[3]*s)}}
+  ctx.stroke();
+  const[gx,gy]=toScreen(0,0);ctx.drawImage(ground,gx,gy,W0*s,H0*s);
+  const all=[...props,...creatures].sort((a,b)=>(a.y+a.h)-(b.y+b.h));
+  for(const p of all){if(p.prop){const[x,y]=toScreen(p.x,p.y);ctx.drawImage(p.img,x,y,p.w*s,p.h*s)}else drawSprite(p)}
+  drawMini()}
+let miniCtx,miniDots=[];
+function drawMini(){if(!miniCtx)return;const m=miniCtx,S=312;m.setTransform(1,0,0,1,0,0);m.clearRect(0,0,S,S);m.fillStyle='#2c2c2c';
+  m.globalAlpha=.55;for(const p of miniDots)m.fillRect(p[0],p[1],1.6,1.6);m.globalAlpha=1;
+  const MW=W0*5.2,MH=H0*8.76,mx=x=>(x-W0/2)/MW*S+S/2,my=y=>(y-H0/2)/MH*S+S/2;for(const c of creatures)m.fillRect(mx(c.x+c.w/2)-1,my(c.y+c.h/2)-1,2,2);
+  const[ax,ay]=toWorld(0,0),[bx,by]=toWorld(cam.w,cam.h);m.strokeStyle='#2c2c2c';m.lineWidth=1.6;
+  m.strokeRect(mx(ax),my(ay),(bx-ax)/MW*S,(by-ay)/MH*S)}
+function drawQR(c){const x=c.getContext('2d'),N=29,S=c.width=c.height=312,pad=30,u=(S-pad*2)/N;const r=rng(912);x.fillStyle='#e9ebe9';x.fillRect(0,0,S,S);x.fillStyle='#232323';
+  const finder=(a,b)=>{x.fillRect(pad+a*u,pad+b*u,7*u,7*u);x.fillStyle='#e9ebe9';x.fillRect(pad+(a+1)*u,pad+(b+1)*u,5*u,5*u);x.fillStyle='#232323';x.fillRect(pad+(a+2)*u,pad+(b+2)*u,3*u,3*u)};
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const inF=(i<8&&j<8)||(i>N-9&&j<8)||(i<8&&j>N-9);if(!inF&&r()>.5)x.fillRect(pad+i*u,pad+j*u,u+.3,u+.3)}
+  finder(0,0);finder(N-7,0);finder(0,N-7)}
+let hover=null;
+function pick(px,py){const[wx,wy]=toWorld(px,py);let best=null;for(const c of creatures){if(wx>=c.x&&wx<=c.x+c.w&&wy>=c.y&&wy<=c.y+c.h*.9){if(!best||c.y>best.y)best=c}}return best}
+function placeName(){if(!hover){nameEl.classList.remove('on');return}const[x,y]=toScreen(hover.x+hover.w/2,hover.y);nameEl.textContent=hover.name;if(hover.bub>0){nameEl.classList.remove("on");return}nameEl.style.left=x+'px';nameEl.style.top=(y-6)+'px';nameEl.classList.add('on')}
+let drag=null,moved=0;
+stage.addEventListener('pointerdown',e=>{if(e.target!==cv)return;drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y};moved=0;cv.setPointerCapture(e.pointerId)});
+stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();if(drag){const s=cam.z*cam.base;cam.x=drag.cx-(e.clientX-drag.x)/s;cam.y=drag.cy-(e.clientY-drag.y)/s;moved+=Math.abs(e.movementX)+Math.abs(e.movementY);return}
+  if(e.target!==cv){hover=null;return}hover=pick(e.clientX-r.left,e.clientY-r.top);cv.style.cursor=hover?'pointer':'default'});
+stage.addEventListener('pointerup',e=>{if(drag&&moved<4){const r=stage.getBoundingClientRect(),c=pick(e.clientX-r.left,e.clientY-r.top);if(c){c.hop=1;c.bub=1}}drag=null});
+stage.addEventListener('wheel',e=>{e.preventDefault();cam.tz=Math.min(4,Math.max(.45,cam.tz*Math.exp(-e.deltaY*.0016)))},{passive:false});
+// draw sheet
+const ov=document.getElementById('draw-overlay'),dc=document.getElementById('draw-canvas'),dx=dc.getContext('2d');let strokes=[],cur=null;
+function sheet(open){ov.classList.add('moving');ov.classList.toggle('open',open);if(!open)setTimeout(()=>ov.classList.remove('moving'),reduce?0:920)}
+if(reduce)ov.style.transition='none';
+document.getElementById('handle').onclick=()=>sheet(true);document.getElementById('close-sheet').onclick=()=>sheet(false);
+function redraw(){dx.clearRect(0,0,964,964);dx.lineCap=dx.lineJoin='round';dx.lineWidth=34;dx.strokeStyle=dx.fillStyle='#0b0b0b';for(const s of strokes){dx.beginPath();s.forEach((p,i)=>i?dx.lineTo(p[0],p[1]):dx.moveTo(p[0],p[1]));dx.closePath();dx.fill();dx.stroke()}
+  ov.querySelectorAll('.draw-control').forEach(b=>b.disabled=!strokes.length)}
+dc.addEventListener('pointerdown',e=>{cur=[];strokes.push(cur);dc.setPointerCapture(e.pointerId);add(e)});dc.addEventListener('pointermove',e=>{if(cur)add(e)});dc.addEventListener('pointerup',()=>cur=null);
+function add(e){const r=dc.getBoundingClientRect();cur.push([(e.clientX-r.left)/r.width*964,(e.clientY-r.top)/r.height*964]);redraw()}
+ov.querySelector('[data-a=undo]').onclick=()=>{strokes.pop();redraw()};ov.querySelector('[data-a=clear]').onclick=()=>{strokes=[];redraw()};
+ov.querySelector('[data-a=done]').onclick=()=>{hatch();strokes=[];redraw();sheet(false)};
+function hatch(){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const s of strokes)for(const p of s){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])}
+  const pad=30,w=x1-x0+pad*2,h=y1-y0+pad*2,S=Math.min(150/Math.max(w,h),1),c=document.createElement('canvas');c.width=w*S*2;c.height=(h+h*.22)*S*2;const g=c.getContext('2d');g.scale(S*2,S*2);
+  g.fillStyle='#9a9a9a';g.beginPath();g.ellipse(w/2,h*1.03,w*.42,h*.09,0,0,7);g.fill();
+  g.translate(-x0+pad,-y0+pad);g.strokeStyle=g.fillStyle='#0b0b0b';g.lineWidth=34;g.lineCap=g.lineJoin='round';for(const s of strokes){g.beginPath();s.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();g.fill();g.stroke()}
+  const ex=(x0+x1)/2,ey=y0+(y1-y0)*.42,er=Math.max(16,(x1-x0)*.13);g.fillStyle='#e9e9e9';g.beginPath();g.ellipse(ex,ey,er*1.3,er*.8,-.1,0,7);g.fill();g.fillStyle='#0b0b0b';g.beginPath();g.arc(ex+er*.1,ey,er*.36,0,7);g.fill();
+  const[ccx,ccy]=[cam.x,cam.y],cw=w*S,ch=h*1.22*S,n=mkCreature(c,ccx-cw/2,ccy-ch/2,cw,ch,'new');n.born=0;creatures.push(n)}
+(async()=>{try{
+  const[g,b]=await Promise.all([load('source-assets/ground.jpg'),load('source-assets/p-bubble.png')]);ground=g;bubble=b;
+  for(const[n,x,y,w,h]of SP)creatures.push(mkCreature(await load(`source-assets/c-${n}.png`),x,y,w,h,NAMES[n]));
+  for(const[n,x,y,w,h]of PROPS)props.push({prop:1,img:await load(`source-assets/p-${n}.png`),x,y,w,h});
+  const r=rng(77);for(let i=0;i<520;i++){const x=-700+r()*(W0+1400),y=-560+r()*(H0+1120);if(x>-6&&x<W0+6&&y>-6&&y<H0+6)continue;tick.push([x,y,1.5+r()*2.5,4+r()*6,r()>.4])}
+  for(let i=0;i<70;i++){const a=r()*6.283,q=.55+r()*.42;miniDots.push([156+Math.cos(a)*q*140,156+Math.sin(a)*q*140])}
+  const qc=document.querySelector('#qr canvas');drawQR(qc);const mc=document.querySelector('#minimap canvas');mc.width=mc.height=312;miniCtx=mc.getContext('2d');
+  resize();addEventListener('resize',resize);let t0=performance.now();
+  (function frame(t){const dt=Math.min(.05,(t-t0)/1000);t0=t;cam.z+=(cam.tz-cam.z)*Math.min(1,dt*9);step(dt);draw();placeName();requestAnimationFrame(frame)})(t0);
+}catch(e){console.error(e)}})();
+</script></body></html>

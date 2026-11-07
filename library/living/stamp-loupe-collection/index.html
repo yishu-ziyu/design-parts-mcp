@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stamp Loupe Collection</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Lib;src:url(fonts/libertinus-r.woff2) format('woff2');font-style:normal}
+@font-face{font-family:Lib;src:url(fonts/libertinus-i.woff2) format('woff2');font-style:italic}
+@font-face{font-family:Plex;src:url(fonts/plex500.woff2) format('woff2');font-weight:500}
+@font-face{font-family:Plex;src:url(fonts/plex600.woff2) format('woff2');font-weight:600}
+@font-face{font-family:Hand;src:url(fonts/labelle.woff2) format('woff2')}
+@font-face{font-family:Wide;src:url(fonts/archivo-wide.woff2) format('woff2');font-weight:300 800}
+:root{--s100:#f5f5f4;--s200:#e7e5e4;--s300:#d6d3d1;--s400:#a6a09b;--s500:#79716b;--s600:#57534d;--s700:#44403b;--grain:none}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--s100);color:var(--s700)}
+#fit{position:relative;width:100vw;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1495px;height:962px;transform-origin:0 0;background:var(--s100);overflow:hidden;font-family:Lib,serif}
+#stage::after{content:"";position:absolute;inset:0;background-image:var(--grain);background-size:220px;pointer-events:none;z-index:300;mix-blend-mode:multiply}
+#left{position:absolute;left:0;top:0;width:680px;height:100%}
+#divide{position:absolute;left:680px;top:0;bottom:0;width:1px;background:var(--s300)}
+.crumb{position:absolute;left:72px;top:20px;font-size:16px;line-height:24px;letter-spacing:-.4px;color:#6b6661}
+h1#title{position:absolute;left:68px;top:80px;margin:0;font-size:38.4px;line-height:48px;font-weight:400;color:#65605b;letter-spacing:-.25px}
+.copy{position:absolute;left:68px;top:164px;width:544px;font-size:16px;line-height:24px;color:#6b6661}
+.copy p{margin:0 0 20px}
+#empty{position:absolute;left:66px;top:390px;width:548px;height:303px;transition:opacity .2s}
+#meta{position:absolute;left:68px;top:392px;width:544px;opacity:0;pointer-events:none;transition:opacity .2s}
+.has-sel #empty{opacity:0}.has-sel #meta{opacity:1;pointer-events:auto}
+.insp{height:24px;line-height:24px;font-size:16px;color:var(--s600);display:flex;gap:6px;align-items:center}
+.chip{font:600 10.5px/20px Plex,monospace;letter-spacing:.8px;color:var(--s500);background:var(--s200);padding:0 9px;height:20px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%);
+ -webkit-mask:radial-gradient(circle 2px at 3px 0,#0000 98%,#000) -3px 0/6px 51% repeat-x,radial-gradient(circle 2px at 3px 100%,#0000 98%,#000) -3px 100%/6px 51% repeat-x}
+table{margin-top:20px;width:100%;border-collapse:collapse;font:500 14px/20px Plex,monospace;letter-spacing:0}
+tr{border-top:1px solid var(--s300)}tr:last-child{border-bottom:1px solid var(--s300)}
+td{padding:8px 0;vertical-align:top;color:var(--s500);white-space:pre-line}
+td:first-child{width:217px;color:var(--s400)}
+#board{position:absolute;left:737px;top:20px;width:686px;height:890px;border:1px solid var(--s300);background-color:var(--s100);overflow:hidden}
+#gridc{position:absolute;inset:0;width:100%;height:100%}
+#list{position:absolute;left:737px;top:20px;width:686px;height:890px;z-index:5;overflow:visible}
+.stamp{position:absolute;left:0;top:0;cursor:grab;will-change:transform;touch-action:none;outline:0}
+.stamp canvas{display:block;width:100%;height:100%;filter:drop-shadow(0 1px 2px rgb(0 0 0/.1)) drop-shadow(0 1px 1px rgb(0 0 0/.06));transition:filter .2s ease,opacity .2s ease;pointer-events:none}
+.stamp:focus-visible canvas{filter:drop-shadow(0 0 0 1px var(--s500))}
+.has-sel .stamp{pointer-events:none}
+.has-sel .stamp.sel{pointer-events:auto;cursor:default}
+.has-sel .stamp:not(.sel) canvas{opacity:.6;filter:blur(12px)}
+.stamp.drag{cursor:grabbing}
+#acts{position:absolute;left:0;top:0;width:0;height:0;z-index:6;transition:opacity .2s}
+.has-sel #acts{opacity:0;pointer-events:none}
+.hand{all:unset;cursor:pointer;display:flex;gap:6px;align-items:center;font:19px/30px Hand,cursive;letter-spacing:.8px;color:#57534d;height:32px;transform:translateY(0);border-radius:2px}
+.hand:focus-visible{outline:1px dashed var(--s500)}
+.hand svg{flex:none}
+#zoom{position:absolute;left:0;top:0;z-index:7;opacity:0;pointer-events:none;transition:opacity .2s}
+.has-sel #zoom{opacity:1;pointer-events:auto}
+.tab{position:absolute;left:1423px;width:39px;writing-mode:vertical-rl;font:600 12px/16px Plex,monospace;letter-spacing:1.2px;text-transform:uppercase;border:1px dashed;display:flex;align-items:center;justify-content:center;gap:4px;padding:0;cursor:pointer;background:var(--mb);color:var(--mf);border-color:var(--mf);border-radius:0 6px 6px 0;box-shadow:0 2px 5px rgb(0 0 0/.1);transition:opacity .2s}
+.tab.on{background:var(--b);color:var(--f);border-style:solid;z-index:6}
+.tab:hover:not(:disabled){background:var(--b);color:var(--f)}
+.tab:disabled{cursor:not-allowed;opacity:.5}
+.has-sel .tab:not(.on){opacity:.32}.has-sel .tab{pointer-events:none}.has-sel .tab.on{opacity:.62}
+.hole{position:absolute;left:703px;width:12px;background:var(--s300);border-radius:9px;box-shadow:inset 0 1px 2px rgb(0 0 0/.2)}
+.foot{position:absolute;left:737px;top:918px;width:686px;display:grid;grid-template-columns:1fr 1fr 1fr;font:600 12px/16px Plex,monospace;color:var(--s400);text-transform:uppercase}
+.foot span{display:flex;align-items:center;gap:8px}.foot svg{flex:none}
+.foot .ctr{justify-content:center}.foot .rt{justify-content:flex-end}
+.foot button{all:unset;cursor:pointer;font:10px/10px Arial,sans-serif;color:var(--s400)}.foot button:hover{color:var(--s600)}.foot .arr{display:inline-flex;gap:9px;margin-left:0}
+#loupe{position:absolute;left:0;top:0;width:400px;height:400px;border-radius:50%;z-index:8;background:var(--s400);box-shadow:0 4px 6px -1px rgb(0 0 0/.3),0 2px 4px -2px rgb(0 0 0/.3);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1)}
+#loupe.on{opacity:1}
+#loupe .bev{position:absolute;inset:32px;border-radius:50%;background:radial-gradient(circle closest-side,#0000 87%,#ddd9d6 91%,#c6c2bd 95%,#8d8782 100%);filter:blur(1.5px)}
+#loupe canvas{position:absolute;left:50px;top:50px;width:300px;height:300px;border-radius:50%;cursor:grab;pointer-events:auto;touch-action:none}
+#loupe.on canvas{pointer-events:auto}#loupe:not(.on) canvas{pointer-events:none}
+#loupe .inner{position:absolute;left:50px;top:50px;width:300px;height:300px;border-radius:50%;box-shadow:0 0 3px 3px rgb(0 0 0/.2) inset;pointer-events:none}
+#dial{position:absolute;inset:0;cursor:grab;touch-action:none;pointer-events:none}
+#loupe.on #dial{pointer-events:auto}
+.note{max-width:960px;margin:0 auto;padding:40px 24px 80px;font:15px/1.7 Lib,serif;color:var(--s700)}
+.note h3{font-size:20px;margin:0 0 12px}.note dt{margin-top:12px}.note dd{margin:2px 0 0}.note code{font:500 13px Plex,monospace}
+@media (prefers-reduced-motion:reduce){.stamp canvas,#loupe,#empty,#meta,.tab,#acts{transition:none}}
+</style></head><body>
+<div id="fit"><div id="stage">
+ <div id="left">
+  <div class="crumb">archive / digital stamp collection</div>
+  <h1 id="title">The weight of paper</h1>
+  <div class="copy"><p>Paying homage to my grandpa's lifelong passion for philately, by recreating his stamps in a digital form, exploring the blend of art, history, and typography and bringing it online for a new audience to enjoy.</p>
+  <p>Each stamp tells a story of a piece of history, a moment in time. Some recreations are inspired by the stamps I have in my family's archive, and some by global finds I stumbled upon. Together, they celebrate the enduring craft of stamp design — and the stories that linger in a miniature piece of <i>paper</i>.</p></div>
+  <img id="empty" src="source-assets/empty.webp" alt="" width="548" height="303">
+  <div id="meta"><div class="insp">This stamp was inspired by an <span class="chip">EXISTING STAMP</span></div><table id="mt"></table></div>
+ </div>
+ <div id="divide"></div>
+ <div class="hole" style="top:183px;height:12px"></div><div class="hole" style="top:297px;height:20px"></div><div class="hole" style="top:337px;height:20px"></div><div class="hole" style="top:459px;height:12px"></div><div class="hole" style="top:573px;height:20px"></div><div class="hole" style="top:613px;height:20px"></div><div class="hole" style="top:735px;height:12px"></div>
+ <div id="board"><canvas id="gridc"></canvas></div>
+ <div id="list" role="list" aria-label="stamps"></div>
+ <div id="acts">
+  <button class="hand" style="position:absolute;left:975px;top:56px;height:26px" id="org" aria-label="organize"><img src="source-assets/organize.webp" width="99" height="26" alt=""></button>
+  <button class="hand" style="position:absolute;left:1090px;top:50px;height:38px" id="shu" aria-label="shuffle"><img src="source-assets/shuffle.webp" width="94" height="38" alt=""></button>
+ </div>
+ <button class="hand" id="zoom" aria-label="loupe"><img id="zplus" src="source-assets/loupebtn.webp" width="64" height="25" alt=""></button>
+ <div id="tabs"></div>
+ <div class="foot"><span>Notebook <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#a6a09b" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M5 9.5c1.6 2 4.4 2 6 0" stroke-linecap="round"/><circle cx="5.8" cy="6.3" r=".6" fill="#a6a09b"/><circle cx="10.2" cy="6.3" r=".6" fill="#a6a09b"/></svg> G-System</span><span class="ctr">Give feedback</span><span class="rt"><span id="clabel"></span><span class="arr"><button id="prev" aria-label="previous">◄</button><button id="next" aria-label="next">►</button></span></span></div>
+ <div id="loupe" aria-hidden="true"><svg id="dial" width="400" height="400" viewBox="0 0 400 400"></svg><div class="bev"></div><canvas id="lens" width="600" height="600"></canvas><div class="inner"></div></div>
+</div></div>
+<div class="note"><h3>可拆</h3><dl>
+<dt><code>#list</code></dt><dd>散落的邮票：可拖、带惯性、整理成网格或打乱。落位用 900ms 弹簧曲线，随机角度 ±35°。</dd>
+<dt><code>#zoom</code></dt><dd>选中后其余邮票模糊 12px、透明度 0.5，选中那张回正放大到中央，下方出现放大镜开关。</dd>
+<dt><code>#loupe</code></dt><dd>金属放大镜：拖动移动，拖外圈转刻度改倍率 1×–3×，镜片用 WebGL 按折射偏移并分离红绿蓝。</dd>
+<dt><code>#tabs</code></dt><dd>笔记本索引页签：未选虚线、选中实线，叠压 8px。</dd>
+</dl><p>来源：<a href="https://x.com/Heylaosan/status/2094334090657046996">@Heylaosan 转的 Marijana Pavlinić 数字邮票收藏</a>。邮票图和手写字是从原站截取的原作素材，只留本机。</p></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),Q=new URLSearchParams(location.search);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SPRING='linear(0,.2266,.4544,.6162,.7301,.8102,.8665,.9061,.934,.9536,.9673,.977,.9838,.9886,.992,.9944,.996,.9972,.998,.9986,1)',PLACE=900;
+const COL={typographic:{b:'#F6DEB6',f:'#C07E16',mb:'#FCF3E5',mf:'#ECB35A'},textured:{b:'#E5D2DD',f:'#A45684',mb:'#F8F3F6',mf:'#CC9EB9'},monoline:{b:'#D3EEC9',f:'#4D7C37',mb:'#F2FAEF',mf:'#99C883'},dither:{b:'#C3DEEE',f:'#457AA1',mb:'#EDF5FA',mf:'#82ACCA'}};
+const TABS=[['typographic',21,124],['textured',139,99],['monoline',232,99],['dither',325,98]];
+const PAPER='#faf9f7',RED='#e9573a',BLU='#3a17e6',VIO='#6a57ea',SAL='#e8694c';
+
+/* 邮票数据：图片从原站截取（source-assets），位置和资料也来自原站一次真实排布 */
+const DEF={"typographic":[{"id":"typographic-0","label":"Uruguay","w":160,"h":207,"x":50,"y":633,"r":-6,"m":["URUGUAY","1959-03-06","MICHEL UY 842\nSTAMP NUMBER UY C196\nYVERT ET TELLIER UY PA181\nSTANLEY GIBBONS UY 1104","ANNIVERSARIES AND JUBILEES","UNKNOWN","38 URUGUAYAN CENTÉSIMOS","500,000"]},{"id":"typographic-1","label":"Uruguay","w":160,"h":207,"x":50,"y":157.5,"r":12,"m":["URUGUAY","1959-03-06","MICHEL UY 842\nSTAMP NUMBER UY C196\nYVERT ET TELLIER UY PA181\nSTANLEY GIBBONS UY 1104","ANNIVERSARIES AND JUBILEES","UNKNOWN","38 URUGUAYAN CENTÉSIMOS","500,000"]},{"id":"typographic-2","label":"Uruguay","w":160,"h":207,"x":338,"y":293.5,"r":-32,"m":["URUGUAY","1959-03-06","MICHEL UY 842\nSTAMP NUMBER UY C196\nYVERT ET TELLIER UY PA181\nSTANLEY GIBBONS UY 1104","ANNIVERSARIES AND JUBILEES","UNKNOWN","38 URUGUAYAN CENTÉSIMOS","500,000"]},{"id":"typographic-3","label":"Uruguay","w":160,"h":207,"x":368,"y":633,"r":9,"m":["URUGUAY","1959-03-06","MICHEL UY 842\nSTAMP NUMBER UY C196\nYVERT ET TELLIER UY PA181\nSTANLEY GIBBONS UY 1104","ANNIVERSARIES AND JUBILEES","UNKNOWN","38 URUGUAYAN CENTÉSIMOS","500,000"]},{"id":"typographic-4","label":"Gibraltar","w":160,"h":208,"x":389,"y":507,"r":12,"m":["GIBRALTAR","1959-03-06","MICHEL GI 565\nSTAMP NUMBER GI 545\nYVERT ET TELLIER GI 575\nSTANLEY GIBBONS GI 609","ANNIVERSARIES AND JUBILEES","UNKNOWN","4 GIBRALTAR PENCE","500,000"]},{"id":"typographic-5","label":"Gibraltar","w":160,"h":208,"x":187,"y":632,"r":-27,"m":["GIBRALTAR","1959-03-06","MICHEL GI 565\nSTAMP NUMBER GI 545\nYVERT ET TELLIER GI 575\nSTANLEY GIBBONS GI 609","ANNIVERSARIES AND JUBILEES","UNKNOWN","4 GIBRALTAR PENCE","500,000"]},{"id":"typographic-6","label":"Gibraltar","w":160,"h":208,"x":424,"y":238,"r":-7,"m":["GIBRALTAR","1959-03-06","MICHEL GI 565\nSTAMP NUMBER GI 545\nYVERT ET TELLIER GI 575\nSTANLEY GIBBONS GI 609","ANNIVERSARIES AND JUBILEES","UNKNOWN","4 GIBRALTAR PENCE","500,000"]},{"id":"typographic-7","label":"Gibraltar","w":160,"h":208,"x":456,"y":193,"r":17,"m":["GIBRALTAR","1959-03-06","MICHEL GI 565\nSTAMP NUMBER GI 545\nYVERT ET TELLIER GI 575\nSTANLEY GIBBONS GI 609","ANNIVERSARIES AND JUBILEES","UNKNOWN","4 GIBRALTAR PENCE","500,000"]}],"textured":[{"id":"textured-0","label":"Algeria","w":160,"h":203,"x":50,"y":120,"r":-22,"m":["ALGERIA","1974","MICHEL GI 638\nSTAMP NUMBER GI 528\nYVERT ET TELLIER GI 595\nSTANLEY GIBBONS GI 653","17TH-CENTURY BRASSWARE","UNKNOWN","0.60 ALGERIAN DINARS","UNKNOWN"]},{"id":"textured-1","label":"Germany","w":160,"h":216,"x":456,"y":290,"r":-26,"m":["GERMANY","1973-11-09","MICHEL DE 790\nSTAMP NUMBER DE B507\nYVERT ET TELLIER DE 639\nSTANLEY GIBBONS DE 1678","CHARITY / CHRISTMAS SEMI-POSTAL","ISOLDE MONSON-BAUMGART","30+15 PFENNIGS","8,797,000"]},{"id":"textured-2","label":"Falkland Islands","w":130,"h":203,"x":50,"y":637,"r":27,"m":["FALKLAND ISLANDS","1991-08-26","MICHEL FK 541\nSTAMP NUMBER FK 538\nYVERT ET TELLIER FK 556\nSTANLEY GIBBONS FK 636","ANIMALS (FAUNA)","IAN JOHN STRANGE","20 FALKLAND ISLANDS PENCE","155,000"]},{"id":"textured-3","label":"Argentina","w":160,"h":248,"x":456,"y":592,"r":9,"m":["ARGENTINA","1960-02-06","MICHEL AR 716\nSTAMP NUMBER AR B23\nYVERT ET TELLIER AR 614\nSTANLEY GIBBONS AR 965","ANIMALS (FAUNA)","HORACIO ROMULO ALVAREZ BOERO","50+20 ARGENTINE CENTAVOS","500,000"]},{"id":"textured-4","label":"Great Britain","w":160,"h":126,"x":50,"y":120,"r":-11,"m":["GREAT BRITAIN","1937-05-01","MICHEL GB —\nSTAMP NUMBER GB —\nYVERT ET TELLIER GB —\nSTANLEY GIBBONS GB D28","POSTAGE DUE","GEORGE W. EVE","ONE PENNY","UNKNOWN"]},{"id":"textured-5","label":"Italy","w":160,"h":247,"x":50,"y":120,"r":-14,"m":["ITALY","1930-10-20","MICHEL IT 340\nSTAMP NUMBER IT 276/80\nYVERT ET TELLIER IT —\nSTANLEY GIBBONS IT —","ANNIVERSARIES AND JUBILEES","DINO TOFANI","5+2 ITALIAN LIRE","12,000"]},{"id":"textured-6","label":"Mozambique","w":225,"h":149,"x":161.5,"y":387.5,"r":-10,"m":["MOZAMBIQUE","1987-01-02","MICHEL MZ 1397\nSTAMP NUMBER MZ 1304\nYVERT ET TELLIER MZ 1401AW\nSTANLEY GIBBONS MZ 1464A","MINERALS / GEMSTONES","UNKNOWN","8 MOZAMBICAN METICAIS","UNKNOWN"]}],"monoline":[{"id":"monoline-0","label":"Canada","w":160,"h":204,"x":50,"y":628,"r":14,"m":["CANADA","1989-08-04","MICHEL CA 1142\nSTAMP NUMBER CA 1247\nYVERT ET TELLIER CA 1106\nSTANLEY GIBBONS CA 1333","MUSHROOMS & FUNGI","ERNST ROCH","38 CANADIAN CENTS","3,610,200"]},{"id":"monoline-1","label":"Great Britain","w":185,"h":185,"x":71.5,"y":217.5,"r":2,"m":["GREAT BRITAIN","1989-08-04","MICHEL GB —\nSTAMP NUMBER GB —\nYVERT ET TELLIER GB —\nSTANLEY GIBBONS GB D28","POSTAGE DUE","GEORGE W. EVE","ONE PENNY","UNKNOWN"]},{"id":"monoline-2","label":"Ghana","w":185,"h":185,"x":431,"y":236.5,"r":23,"m":["GHANA","1964-12-14","MICHEL GH 198A\nSTAMP NUMBER GH 192\nYVERT ET TELLIER GH 181\nSTANLEY GIBBONS GH 357","ANIMALS (FAUNA)","ANTHONY S. B. NEW","1 GHANAIAN PENNY","UNKNOWN"]},{"id":"monoline-3","label":"Sweden","w":225,"h":145,"x":267.5,"y":695,"r":-25,"m":["SWEDEN","1984-02-09","MICHEL SE 1271\nSTAMP NUMBER SE 1487\nYVERT ET TELLIER SE 1253\nSTANLEY GIBBONS SE 1184","EUROPA (C.E.P.T.)\nDESIGNERS\nJACKY LARRIVIÈRE\nLARS SJÖÖBLOM","","2.70 SWEDISH KRONA","8,954,000"]},{"id":"monoline-4","label":"Czechoslovakia","w":170,"h":218,"x":128,"y":120,"r":4,"m":["CZECHOSLOVAKIA","1920-09-01","MICHEL CS 168A\nSTAMP NUMBER CS 85A\nYVERT ET TELLIER CS 163\nSTANLEY GIBBONS CS 194A","ANIMALS (FAUNA)\nDESIGNERS\nJAROSLAV BENDA","","25 CZECHOSLOVAK HALÉŘ","37,330,000"]},{"id":"monoline-5","label":"United States of America","w":150,"h":235,"x":173,"y":577.5,"r":-26,"m":["UNITED STATES OF AMERICA","1968-06-27","MICHEL US 950\nSTAMP NUMBER US 1344\nYVERT ET TELLIER US 847\nSTANLEY GIBBONS US 1329","ANIMALS (FAUNA) | ELECTIONS\nDESIGNERS\nB. HYDE\nN. TODHUNTER\nARTHUR W. DINTAMAN","","6 UNITED STATES CENT","159,000,000"]},{"id":"monoline-6","label":"Monaco","w":180,"h":176,"x":274,"y":440,"r":31,"m":["MONACO","1964-05-19","MICHEL MC 775\nSTAMP NUMBER MC 583\nYVERT ET TELLIER MC 539B\nSTANLEY GIBBONS MC 673","SEA LIFE","PIERRE BÉQUET\nPIERRETTE LAMBERT","0.12 MONEGASQUE FRANCS","2,697,320"]},{"id":"monoline-7","label":"United States of America","w":200,"h":134,"x":416,"y":120,"r":9,"m":["UNITED STATES OF AMERICA","1967-12-11","MICHEL US 938\nSTAMP NUMBER US 1337\nYVERT ET TELLIER US 841\nSTANLEY GIBBONS US 1317","ANNIVERSARIES AND JUBILEES","ANDREW BUCCI\nJ. CREAMER","5 UNITED STATES CENTS","113,000,000"]},{"id":"monoline-8","label":"Australia","w":170,"h":216,"x":446,"y":120,"r":-7,"m":["AUSTRALIA","1967-09-29","MICHEL AU 391A\nSTAMP NUMBER AU 399\nYVERT ET TELLIER AU 323A\nSTANLEY GIBBONS AU 386C","CROWNS AND CORONETS","P. E. MORRISS","5 AUSTRALIAN CENTS","1,672,194,000"]},{"id":"monoline-9","label":"Czechoslovakia","w":200,"h":169,"x":50,"y":565.5,"r":3,"m":["CZECHOSLOVAKIA","1971-03-25","MICHEL CS 1991X\nSTAMP NUMBER CS 1740\nYVERT ET TELLIER CS 1838\nSTANLEY GIBBONS CS 1945","BUILDINGS","JAROSLAV LUKAVSKÝ\nMILOŠ ONDRÁČEK","9 CZECHOSLOVAK KORUNAS","34,645,000"]},{"id":"monoline-10","label":"United States of America","w":190,"h":190,"x":426,"y":579,"r":-7,"m":["UNITED STATES OF AMERICA","1977-10-21","MICHEL US 1318\nSTAMP NUMBER US 1730\nYVERT ET TELLIER US 1176\nSTANLEY GIBBONS US 1706","CHRISTMAS","DOLLI TINGLE BRACKETT","13 UNITED STATES CENTS","922,000,000"]},{"id":"monoline-11","label":"Nicaragua","w":140,"h":215,"x":476,"y":234.5,"r":14,"m":["NICARAGUA","1969-03-12","MICHEL NI 2835\nSTAMP NUMBER NI C667-76\nYVERT ET TELLIER NI —\nSTANLEY GIBBONS NI —","ANIMALS (FAUNA)","UNKNOWN","1 NICARAGUAN CÓRDOBA","UNKNOWN"]},{"id":"monoline-12","label":"Yugoslavia","w":130,"h":168,"x":379,"y":340,"r":9,"m":["YUGOSLAVIA","1977-07-28","MICHEL YU 1695\nSTAMP NUMBER YU 1153\nYVERT ET TELLIER YU 1620\nSTANLEY GIBBONS YU 1566A","POST HORNS","UNKNOWN","1 YUGOSLAV DINAR","UNKNOWN"]},{"id":"monoline-13","label":"Latvia","w":160,"h":319,"x":297,"y":336.5,"r":35,"m":["LATVIA","2012-02-11","MICHEL LV 828\nSTAMP NUMBER LV 802\nYVERT ET TELLIER LV 802\nSTANLEY GIBBONS LV 821","PLANTS (FLORA)","LILIJA DINERE","35 LATVIAN SANTĪMS","500,000"]},{"id":"monoline-14","label":"Vatican City","w":180,"h":275,"x":199,"y":411.5,"r":-13,"m":["VATICAN CITY","1968-03-12","MICHEL VA 536\nSTAMP NUMBER VA C53\nYVERT ET TELLIER VA PA53\nSTANLEY GIBBONS VA 511","RELIGION","EGIDIO VANGELLI\nTULLIO MELE","1,000 VATICAN LIRE","13,250,000"]}]};
+const IMG={},LG={};
+const LBL=['COUNTRY','ISSUED ON','CATALOG CODES','CATEGORY','DESIGNER','FACE VALUE','PRINT RUN'];
+
+/* ---- 渲染 ---- */
+const RES=3,noise=(()=>{const n=document.createElement('canvas');n.width=n.height=220;const x=n.getContext('2d'),d=x.createImageData(220,220);let s=7;const R=()=>(s=(s*16807)%2147483647)/2147483647;for(let i=0;i<d.data.length;i+=4){const v=225+R()*30;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0);return n})();
+document.documentElement.style.setProperty('--grain',`url(${(()=>{const n=document.createElement('canvas');n.width=n.height=220;const x=n.getContext('2d');x.globalAlpha=.16;x.drawImage(noise,0,0);return n.toDataURL()})()})`);
+function paint(id){const im=IMG[id],cv=document.createElement('canvas');cv.width=im.naturalWidth;cv.height=im.naturalHeight;cv.getContext('2d').drawImage(im,0,0);return cv}
+
+const list=$('#list'),BX=737,BY=20,BW=686,BH=890;
+let col=Q.get('c')||'typographic',items=[],sel=null,zoomed=false,zi=100;
+const CC=()=>({x:BW/2,y:Q.has('loupe')||true?445:445});
+function pose(it,p,dur,ease=SPRING){const {x,y,r,s=1}=p;const tf=`translate3d(${x-it.w/2}px,${y-it.h/2}px,0) rotate(${r}deg) scale(${s})`;it.p={x,y,r,s};if(!dur||reduce||Q.has('still')){it.el.style.transform=tf;return}const prev=getComputedStyle(it.el).transform;it.el.animate([{transform:prev},{transform:tf}],{duration:dur,easing:ease});it.el.style.transform=tf}
+function build(name,fly=true){sel=null;zoomed=false;document.body.classList.remove('has-sel');$('#loupe').classList.remove('on');col=name;list.innerHTML='';items=(DEF[name]||[]).map((d,i)=>{const {id,w,h,x:ax,y:ay,r,label,m}=d;const el=document.createElement('div');el.className='stamp';el.tabIndex=0;el.setAttribute('role','listitem');el.style.width=w+'px';el.style.height=h+'px';el.style.zIndex=i+1;el.setAttribute('aria-label',label);const cv=paint(id);el.append(cv);list.append(el);const it={id,m,w,h,el,cv,home:{x:ax+w/2,y:ay+h/2,r}};wire(it);return it});items.forEach((it,i)=>{if(fly&&!reduce&&!Q.has('still')){pose(it,{x:BW/2,y:BH/2,r:0});requestAnimationFrame(()=>pose(it,it.home,PLACE))}else pose(it,it.home)});
+ $('#clabel').textContent=`${name} ${String(TABS.findIndex(t=>t[0]===name)+1).padStart(2,'0')}`;renderTabs()}
+function renderTabs(){$('#tabs').innerHTML=TABS.map(([n,t,h])=>{const c=COL[n],lock=n==='dither';return`<button class="tab${n===col?' on':''}" ${lock?'disabled':''} data-c="${n}" style="top:${t}px;height:${h}px;--b:${c.b};--f:${c.f};--mb:${c.mb};--mf:${c.mf}">${n}${lock?'<svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor"><rect y="3" width="8" height="6" rx="1"/><path d="M2 3V2a2 2 0 0 1 4 0v1" fill="none" stroke="currentColor"/></svg>':''}</button>`}).join('');document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>build(b.dataset.c))}
+/* 拖动 + 惯性 + 点击选中 */
+function wire(it){let st=null;const sc=()=>scale;
+ it.el.addEventListener('pointerdown',e=>{if(sel&&sel!==it)return;if(sel)return;it.el.setPointerCapture(e.pointerId);it.el.style.zIndex=++zi;st={x:e.clientX,y:e.clientY,px:it.p.x,py:it.p.y,moved:false,tr:[]};it.el.classList.add('drag')});
+ it.el.addEventListener('pointermove',e=>{if(!st)return;const dx=(e.clientX-st.x)/sc(),dy=(e.clientY-st.y)/sc();if(Math.hypot(dx,dy)>3)st.moved=true;st.tr.push([performance.now(),it.p.x,it.p.y]);if(st.tr.length>8)st.tr.shift();pose(it,{...it.p,x:st.px+dx,y:st.py+dy})});
+ const end=e=>{if(!st)return;it.el.classList.remove('drag');const moved=st.moved,tr=st.tr;st=null;if(!moved){select(it);return}const a=tr[0],b=tr[tr.length-1];if(a&&b&&b[0]>a[0]){const vx=(b[1]-a[1])/(b[0]-a[0]),vy=(b[2]-a[2])/(b[0]-a[0]);const dx=vx*260,dy=vy*260,amp=Math.hypot(dx,dy);if(amp>4){const x=Math.max(it.w/3,Math.min(BW-it.w/3,it.p.x+dx)),y=Math.max(it.h/3,Math.min(BH-it.h/3,it.p.y+dy));pose(it,{...it.p,x,y},Math.round(380*Math.log(amp)),'cubic-bezier(.22,1,.36,1)')}}it.home={x:it.p.x,y:it.p.y,r:it.p.r}};
+ it.el.addEventListener('pointerup',end);it.el.addEventListener('pointercancel',end);
+ it.el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(it)}})}
+function select(it){sel=it;document.body.classList.add('has-sel');it.el.classList.add('sel');it.el.style.zIndex=++zi;const s=Math.min(1.5,700/it.h,420/it.w);const y=445;pose(it,{x:BW/2,y,r:0,s},900);const bot=BY+y+it.h*s/2;const z=$('#zoom');z.style.left=(BX+BW/2-32)+'px';z.style.top=(bot+26)+'px';
+ const m=it.m;$('#mt').innerHTML=LBL.map((k,i)=>`<tr><td>${k}</td><td>${m[i]}</td></tr>`).join('');}
+function deselect(){if(!sel)return;closeLoupe();const it=sel;sel=null;document.body.classList.remove('has-sel');it.el.classList.remove('sel');pose(it,it.home,900)}
+function organize(){const cols=Math.ceil(Math.sqrt(items.length)),rows=Math.ceil(items.length/cols),cw=BW/cols,ch=(BH-90)/rows;items.forEach((it,i)=>{it.home={x:cw*(i%cols+.5),y:90+ch*(Math.floor(i/cols)+.5),r:0};pose(it,it.home,PLACE)})}
+function shuffle(){items.forEach(it=>{it.home={x:it.w/2+Math.random()*(BW-it.w),y:90+it.h/2+Math.random()*(BH-90-it.h),r:Math.round(-35+Math.random()*70)};it.el.style.zIndex=++zi;pose(it,it.home,PLACE)})}
+$('#org').onclick=organize;$('#shu').onclick=shuffle;
+$('#prev').onclick=()=>build(col==='typographic'?'monoline':col==='monoline'?'textured':'typographic');$('#next').onclick=()=>build(col==='typographic'?'textured':col==='textured'?'monoline':'typographic');
+addEventListener('keydown',e=>{if(e.key==='Escape')zoomed?closeLoupe():deselect()});
+$('#list').addEventListener('click',e=>{if(e.target===list)deselect()});$('#board').addEventListener('click',deselect);
+
+/* ---- 放大镜 ---- */
+const L=$('#loupe'),glc=$('#lens').getContext('webgl',{preserveDrawingBuffer:true});let lens=null,loupeXY={x:0,y:0},mag=1.62,dialA=0;
+const VS='attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
+const FS=`precision highp float;varying vec2 v;uniform sampler2D t;uniform vec2 sz,cen;uniform float R,mag;
+void main(){vec2 q=v*2.-1.;float r=length(q);if(r>1.){gl_FragColor=vec4(0.);return;}
+ vec2 c=cen/sz;c.y=1.-c.y;vec2 m=q*R/mag/sz;
+ float r2=r*r,e=r2*r2*r2*r2,bar=.1*r2+.45*e,cr=.13*e+.012*r2;vec2 unit=q*R/mag/sz;vec2 dr=unit*(bar-cr),dg=unit*bar,db=unit*(bar+cr);
+ vec3 col=vec3(texture2D(t,c+m+dr).r,texture2D(t,c+m+dg).g,texture2D(t,c+m+db).b);
+ float z=sqrt(max(0.,1.-r*r));vec3 n=normalize(vec3(-q,z));float vn=clamp(n.z,0.,1.);float f0=.0426;float fr=f0+(1.-f0)*pow(1.-vn,5.);
+ vec3 h=normalize(vec3(.35,.55,1.)+vec3(0.,0.,1.));float sp=pow(max(dot(n,normalize(h)),0.),80.)*.35;
+ float rim=smoothstep(.78,.98,r)*.5,dim=smoothstep(.55,1.,r)*.18;gl_FragColor=vec4(col*(1.-dim)+vec3(sp*fr)+vec3(rim*fr),1.);}`;
+function glInit(){if(!glc)return null;const g=glc;const sh=(ty,s)=>{const o=g.createShader(ty);g.shaderSource(o,s);g.compileShader(o);if(!g.getShaderParameter(o,g.COMPILE_STATUS))console.error(g.getShaderInfoLog(o));return o};const pr=g.createProgram();g.attachShader(pr,sh(g.VERTEX_SHADER,VS));g.attachShader(pr,sh(g.FRAGMENT_SHADER,FS));g.linkProgram(pr);g.useProgram(pr);const b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),g.STATIC_DRAW);const a=g.getAttribLocation(pr,'p');g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);const tx=g.createTexture();g.bindTexture(g.TEXTURE_2D,tx);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.pixelStorei(g.UNPACK_FLIP_Y_WEBGL,true);return{sz:g.getUniformLocation(pr,'sz'),cen:g.getUniformLocation(pr,'cen'),R:g.getUniformLocation(pr,'R'),mag:g.getUniformLocation(pr,'mag')}}
+function buildSource(){const SC=4,cv=document.createElement('canvas');cv.width=Math.round(BW*SC);cv.height=Math.round(BH*SC);const c=cv.getContext('2d');c.scale(SC,SC);c.fillStyle='#f5f5f4';c.fillRect(0,0,BW,BH);grid(c);
+ for(const it of items){if(it===sel)continue;c.save();c.globalAlpha=.6;c.filter=`blur(${12*SC}px)`;c.translate(it.p.x,it.p.y);c.rotate(it.p.r*Math.PI/180);c.drawImage(it.cv,-it.w/2,-it.h/2,it.w,it.h);c.restore()}
+ const s=sel;c.save();c.translate(s.p.x,s.p.y);c.scale(s.p.s,s.p.s);c.imageSmoothingQuality='high';c.imageSmoothingQuality='high';c.drawImage(LG[s.id]&&LG[s.id].complete&&LG[s.id].naturalWidth?LG[s.id]:s.cv,-s.w/2,-s.h/2,s.w,s.h);c.restore();
+ return{cv,SC}}
+let src=null;
+function drawLens(){if(!lens||!src)return;const g=glc;g.uniform2f(lens.sz,src.cv.width,src.cv.height);const cx=(loupeXY.x-BX)*src.SC,cy=(loupeXY.y-BY)*src.SC;g.uniform2f(lens.cen,cx,cy);g.uniform1f(lens.R,150*src.SC);g.uniform1f(lens.mag,mag);g.drawArrays(g.TRIANGLE_STRIP,0,4)}
+function openLoupe(){if(!sel)return;zoomed=true;$('#zplus').src='source-assets/loupebtn-open.webp';if(!lens)lens=glInit();src=buildSource();const g=glc;if(g){g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,src.cv)}placeLoupe(BX+sel.p.x,BY+sel.p.y);L.classList.add('on');L.setAttribute('aria-hidden','false')}
+function closeLoupe(){zoomed=false;$('#zplus').src='source-assets/loupebtn.webp';L.classList.remove('on');L.setAttribute('aria-hidden','true')}
+function placeLoupe(x,y){loupeXY={x:Math.max(BX,Math.min(BX+BW,x)),y:Math.max(BY,Math.min(BY+BH,y))};L.style.transform=`translate(${loupeXY.x-200}px,${loupeXY.y-200}px)`;drawLens()}
+$('#zoom').onclick=()=>zoomed?closeLoupe():openLoupe();
+{const lc=$('#lens');let st=null;lc.addEventListener('pointerdown',e=>{lc.setPointerCapture(e.pointerId);st={x:e.clientX,y:e.clientY,lx:loupeXY.x,ly:loupeXY.y};lc.style.cursor='grabbing';e.stopPropagation()});lc.addEventListener('pointermove',e=>{if(st)placeLoupe(st.lx+(e.clientX-st.x)/scale,st.ly+(e.clientY-st.y)/scale)});lc.addEventListener('pointerup',()=>{st=null;lc.style.cursor='grab'});
+ const d=$('#dial');let ds=null;const ang=e=>{const r=L.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI};d.addEventListener('pointerdown',e=>{d.setPointerCapture(e.pointerId);ds={a:ang(e),base:dialA};e.stopPropagation()});d.addEventListener('pointermove',e=>{if(!ds)return;let da=ang(e)-ds.a;if(da>180)da-=360;if(da<-180)da+=360;dialA=Math.max(0,Math.min(360,ds.base+da));d.firstElementChild.setAttribute('transform',`rotate(${180+dialA} 200 200)`);mag=1.3+dialA/360*2.6;drawLens()});d.addEventListener('pointerup',()=>ds=null)}
+/* 刻度和铭文 */
+(function(){const N=179;let s='<g transform="rotate(180 200 200)">';for(let i=0;i<N;i++){const a=i*2*Math.PI/N,long=i%5===0,r1=184,r2=long?196:192;s+=`<line x1="${200+r1*Math.cos(a)}" y1="${200+r1*Math.sin(a)}" x2="${200+r2*Math.cos(a)}" y2="${200+r2*Math.sin(a)}" stroke="#e7e5e4" stroke-width="1"/>`}
+ s+=`<defs><path id="ins" d="M200 200m-175 0a175 175 0 1 0 350 0a175 175 0 1 0 -350 0"/></defs><text font-family="Helvetica,Arial,sans-serif" font-size="9.4" fill="#e7e5e4" letter-spacing=".3" dominant-baseline="middle" xml:space="preserve"><textPath href="#ins" startOffset="0">PEAK 1983   |   10× Measuring Loupe   |   Digital Stamp Collection · Archive Edition</textPath><textPath href="#ins" startOffset="50%">PEAK 1983   |   10× Measuring Loupe   |   Digital Stamp Collection · Archive Edition</textPath></text><circle cx="392" cy="200" r="0"/></g><circle cx="200" cy="391" r="4" fill="#e7e5e4"/>`;$('#dial').innerHTML=s})();
+/* 背景格 */
+function grid(c){c.strokeStyle='#d6d3d1';c.lineWidth=1;c.beginPath();for(let x=39;x<BW;x+=32){c.moveTo(x+.5,0);c.lineTo(x+.5,BH)}for(let y=33;y<BH;y+=32){c.moveTo(0,y+.5);c.lineTo(BW,y+.5)}c.stroke()}
+{const g=$('#gridc');g.width=BW*2;g.height=BH*2;const c=g.getContext('2d');c.scale(2,2);grid(c)}
+/* 自适应缩放 */
+let scale=1;function fit(){scale=Math.min(innerWidth/1495,Math.max(.25,innerHeight/962),innerWidth/1495);$('#stage').style.transform=`scale(${scale})`;$('#fit').style.height=962*scale+'px'}addEventListener('resize',fit);fit();
+const loadImgs=Promise.all(Object.values(DEF).flat().map(d=>new Promise(res=>{const i=new Image;i.onload=res;i.onerror=res;i.src=`source-assets/${d.id}.webp`;IMG[d.id]=i;const l=new Image;l.src=`source-assets/${d.id}-lg.webp`;LG[d.id]=l})));
+loadImgs.then(()=>document.fonts.ready).then(()=>Promise.all(['600 12px Wide','700 12px Wide','800 12px Wide','400 12px Lib','12px Hand','500 12px Plex','600 12px Plex'].map(f=>document.fonts.load(f)))).then(()=>{
+ build(col,!Q.has('still'));
+ if(Q.has('sel')){const it=items.find(i=>i.id===Q.get('sel'))||items[0];select(it);if(Q.has('loupe')){openLoupe();if(Q.has('lx'))placeLoupe(+Q.get('lx'),+Q.get('ly'))}}
+ document.body.dataset.ready='1'});
+</script></body></html>

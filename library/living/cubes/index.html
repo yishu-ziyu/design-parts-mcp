@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cubes — 方块长出第三边</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --ink: #17181a;
+    --lede: #6b6862;
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --display: Fraunces, "Iowan Old Style", Palatino, serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --ui: Inter, "Helvetica Neue", Arial, sans-serif;
+    --size: 148px;
+    --half: 74px;
+    --rx: -26deg;
+    --ry: -38deg;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { background: var(--paper); }
+  body { color: var(--note-ink); font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+
+  header.mast {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 10px;
+    text-align: center;
+  }
+  header.mast .kicker {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  header.mast h1 {
+    font-weight: 400;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.02em;
+    margin: 8px 0;
+  }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1120px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .bar-row h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--ui);
+    padding: 8px 12px;
+    border: 1px solid var(--note-ink);
+    background: var(--note-ink);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  .toggles button[aria-pressed="false"] {
+    background: transparent;
+    color: var(--muted);
+  }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--note-ink);
+    padding: 48px 36px 40px;
+  }
+  .eyebrow {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: #9a9690;
+    margin: 0 0 10px;
+  }
+  .site-title {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(32px, 4.4vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -.03em;
+    text-align: center;
+    margin: 0 0 28px;
+  }
+
+  #field {
+    position: relative;
+    height: 340px;
+    border-radius: 8px;
+    overflow: visible;
+    background: #efe8dc url("assets/paint.jpg") center/cover no-repeat;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 28px;
+    padding: 0 8% 54px;
+  }
+  .slot {
+    width: var(--size);
+    height: var(--size);
+    perspective: none;
+    cursor: pointer;
+  }
+  .bob, .lift, .cube { width: var(--size); height: var(--size); transform-style: preserve-3d; }
+  .bob { transform-origin: 50% 100%; }
+  .lift { transition: transform 420ms cubic-bezier(.22, 1.12, .36, 1); }
+  .slot:hover .lift, .slot:focus-visible .lift {
+    transform: translateY(-22px) scale(1.06);
+  }
+  .cube {
+    position: relative;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transform-origin: 50% 50%;
+    transition: transform 560ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .slot[data-flat] .cube { transform: none; }
+  .face {
+    position: absolute;
+    width: var(--size);
+    height: var(--size);
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--ink);
+    background: transparent;
+    backface-visibility: hidden;
+    opacity: 0;
+  }
+  .slot[data-show] .face { opacity: 1; }
+  .slot[data-flat] .face:not(.front) { opacity: 0; }
+  .face.is-fill.front { background: #fff; }
+  .face.is-fill.back { background: #ece8e1; }
+  .face.is-fill.right { background: #d4cfc6; }
+  .face.is-fill.left { background: #f2eee6; }
+  .face.is-fill.top { background: #fbfaf7; }
+  .face.is-fill.bottom { background: #cfc9bf; }
+  .front { transform: translateZ(var(--half)); display: flex; align-items: flex-end; justify-content: center; padding: 14px; }
+  .back { transform: rotateY(180deg) translateZ(var(--half)); }
+  .right { transform: rotateY(90deg) translateZ(var(--half)); }
+  .left { transform: rotateY(-90deg) translateZ(var(--half)); }
+  .top { transform: rotateX(90deg) translateZ(var(--half)); }
+  .bottom { transform: rotateX(-90deg) translateZ(var(--half)); }
+  .front span {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .slot.is-drift .bob { animation: bob var(--dur, 3s) ease-in-out infinite; }
+  .slot.is-drift[data-mirror] .bob { animation-direction: reverse; }
+  @keyframes bob {
+    from, to { transform: translateY(0); }
+    50% { transform: translateY(-22px); }
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 920px;
+    margin: 28px auto 0;
+  }
+  .cols h3 {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 500;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .cols p {
+    margin: 0 0 12px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--lede);
+    font-family: Georgia, "Iowan Old Style", serif;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips b {
+    font: 400 10.5px var(--mono);
+    padding: 3px 7px;
+    border: 1px solid #e3dfd6;
+    background: #f7f4ee;
+    color: #4a4742;
+    font-weight: 400;
+  }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .pair, .cols { grid-template-columns: 1fr; }
+    #field { height: 780px; flex-direction: column; align-items: center; padding: 48px 0; gap: 48px; }
+    .page { padding-left: 18px; padding-right: 18px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 18px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .nums { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .recipe { border-top: 1px solid var(--note-ink); padding-top: 22px; margin-top: 8px; max-width: 52rem; }
+  ol.how { margin: 0 0 12px 1.15em; padding: 0; }
+  ol.how li { margin: 0 0 8px; }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: ui-monospace, Menlo, monospace; font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon {
+    max-width: 980px; margin: 0 auto; padding: 0 28px 48px;
+    font-size: 12.5px; color: var(--muted);
+  }
+  a { color: inherit; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .92em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slot.is-drift .bob { animation: none; }
+    .lift, .cube { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · x.com/0xCharlota</div>
+  <h1>方块长出第三边</h1>
+  <p class="sub">三枚正方形先画出线框，再按正面、侧面、顶底填色，变成立方体。标签贴在正面，跟着走。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-replay">重播建造</button>
+      <button type="button" id="t-drift" aria-pressed="true">上下漂</button>
+    </div>
+  </div>
+
+  <div id="stage">
+    <p class="eyebrow">What you’ll get</p>
+    <h2 class="site-title">A brand identity<br>that scales</h2>
+
+    <div id="field">
+      <div class="slot" data-i="0" style="--dur:2.4s" tabindex="0">
+        <div class="bob"><div class="lift"><div class="cube"></div></div></div>
+      </div>
+      <div class="slot" data-i="1" data-mirror style="--dur:3s" tabindex="0">
+        <div class="bob"><div class="lift"><div class="cube"></div></div></div>
+      </div>
+      <div class="slot" data-i="2" style="--dur:3.8s" tabindex="0">
+        <div class="bob"><div class="lift"><div class="cube"></div></div></div>
+      </div>
+    </div>
+
+    <div class="cols" id="copy">
+      <div>
+        <h3>01 Foundation</h3>
+        <p>The logomark, the typefaces, the palette. Decided once, because everything after this inherits them.</p>
+        <div class="chips"><b>Logo</b><b>Palette</b><b>Type</b><b>Graphic Assets</b></div>
+      </div>
+      <div>
+        <h3>02 Systems</h3>
+        <p>Your brand packaged. A component library, written rules, and tools that make any new assets on-brand.</p>
+        <div class="chips"><b>Brand Kit (Figma)</b><b>design.md</b><b>Brand tools</b><b>Prompt Library</b><b>AI Workflows</b></div>
+      </div>
+      <div>
+        <h3>03 Applications</h3>
+        <p>Where it meets the world. Website design, packaging, campaigns, ad templates, key visuals.</p>
+        <div class="chips"><b>Marketing Assets</b><b>Web Design</b><b>Packaging</b><b>Social templates</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原帖第一屏</h3>
+      <p>白卡片。标题衬线。下面一块油画底上立着三枚立方体，正面分别写 <code>01 FOUNDATION</code> / <code>02 SYSTEMS</code> / <code>03 APPLICATIONS</code>。六个面是真的，标签在正面上，立方体一动字跟着走。</p>
+      <p>原帖是 Framer Agent 的操作录像。本页不收编辑器壳。发明是立方体本身：从正方形到体积，再错相漂浮。</p>
+    </div>
+    <figure>
+      <img src="assets/source-hero.jpg" alt="三枚立方体站在油画底上" />
+      <figcaption><strong>图 1.</strong> 站点完成态。立方体已经填面，在画底上轻微错开高度。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>CSS <code>transform-style: preserve-3d</code>。三枚立方体共用同一组转角 <code>rotateX(-26deg) rotateY(-38deg)</code>，正交等轴，没有透视缩短。原制作里写过：perspective 关掉，共用底边。</p>
+    <p>建造按叙事走。01 先到，然后 02，然后 03。每一枚先只显示正面（正方形），再转到体积并露出线框，然后按正面与背面 → 两侧 → 顶与底填色。三枚都站稳之后，才开始沿 Y 轴循环。时长 2.4s / 3s / 3.8s，中间一枚反向，所以永远对不齐。</p>
+    <p>悬停把立方体从漂浮里抬起并放大。弹簧在 <code>.lift</code> 上，不和漂浮抢同一层 transform。标签是正面的子元素，不另做位移。</p>
+  </div>
+
+  <figure>
+    <img src="assets/source-squares.jpg" alt="建造前的三枚正方形" />
+    <figcaption><strong>图 2.</strong> 起点。三枚正方形，标签已经写在框里。Agent 提示要求把字移到正面。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>原则：</b>错开出现，让三枚各自到场。标签跟面走，体积才成立。漂浮等站稳之后才开始，建造才读得见。
+  </aside>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>边长</td><td>148px。半深 74px，六个面 translateZ(74px)</td></tr>
+      <tr><td>转角</td><td>rotateX −26° / rotateY −38°。三枚相同</td></tr>
+      <tr><td>描边</td><td>1px #17181a</td></tr>
+      <tr><td>填色顺序</td><td>front+back → left+right → top+bottom</td></tr>
+      <tr><td>入场间隔</td><td>每枚错开 520ms。填色步 160ms</td></tr>
+      <tr><td>漂浮</td><td>translateY 0 → −22px，2.4 / 3 / 3.8s，中间反向</td></tr>
+      <tr><td>悬停</td><td>抬起 22px，scale 1.06，420ms cubic-bezier(.22, 1.12, .36, 1)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="recipe">
+    <h3>复用要点</h3>
+    <ol class="how">
+      <li>需要体积时用六个面，不要画一张等轴插图。字放在正面上。</li>
+      <li>先线框后填色。填色按对边成组，不要六面一起淡入。</li>
+      <li>循环漂浮要等建造结束。相邻反向、时长不同，才不会读成同步呼吸灯。</li>
+      <li>悬停的抬起单独一层 transform，不要写进漂浮的 keyframes。</li>
+    </ol>
+  </div>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#field</code></dt>
+    <dd>油画底上三枚 CSS 3D 立方体。共用 <code>rotateX(-26deg) rotateY(-38deg)</code>，无透视缩短。边长 148px，描边 1px。标签是正面子元素。</dd>
+    <dt><code>#build</code></dt>
+    <dd>01 → 02 → 03，间隔 520ms。每枚：正方形 → 线框体积 → 正面与背面 → 两侧 → 顶底。三枚站稳后才给 <code>.is-drift</code>。</dd>
+    <dt><code>#drift</code></dt>
+    <dd>Y 轴 0 到 −22px。时长 2.4s / 3s / 3.8s。中间一枚 <code>animation-direction: reverse</code>。悬停在 <code>.lift</code>：抬起 22px、scale 1.06、420ms 弹簧。减少动态效果时停漂浮。</dd>
+  </dl>
+</section>
+
+<footer class="colophon">
+  <p>来源：<a href="https://x.com/0xCharlota/status/2098094554259800245">x.com/0xCharlota</a> · 目录：<a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+
+<script>
+(function () {
+  const LABELS = ['01 Foundation', '02 Systems', '03 Applications'].map((s) => s.toUpperCase())
+  const FACES = ['bottom', 'back', 'left', 'right', 'top', 'front']
+  const slots = [...document.querySelectorAll('.slot')]
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  let driftOn = !reduced
+  let timer = 0
+
+  function makeCube(slot, i) {
+    const cube = slot.querySelector('.cube')
+    cube.innerHTML = FACES.map((name) => {
+      const label = name === 'front' ? '<span>' + LABELS[i] + '</span>' : ''
+      return '<div class="face ' + name + '">' + label + '</div>'
+    }).join('')
+  }
+  slots.forEach(makeCube)
+
+  function sleep(ms) {
+    return new Promise((resolve) => { timer = window.setTimeout(resolve, ms) })
+  }
+
+  function setFill(slot, names, on) {
+    names.forEach((n) => {
+      const el = slot.querySelector('.face.' + n)
+      if (el) el.classList.toggle('is-fill', on)
+    })
+  }
+
+  function reset() {
+    window.clearTimeout(timer)
+    slots.forEach((slot) => {
+      slot.classList.remove('is-drift')
+      slot.setAttribute('data-flat', '')
+      slot.removeAttribute('data-show')
+      slot.querySelectorAll('.face').forEach((f) => f.classList.remove('is-fill'))
+    })
+  }
+
+  async function build() {
+    reset()
+    if (reduced) {
+      slots.forEach((slot) => {
+        slot.removeAttribute('data-flat')
+        slot.setAttribute('data-show', '')
+        slot.querySelectorAll('.face').forEach((f) => f.classList.add('is-fill'))
+        if (driftOn) slot.classList.add('is-drift')
+      })
+      return
+    }
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i]
+      slot.setAttribute('data-show', '')
+      slot.setAttribute('data-flat', '')
+      setFill(slot, ['front'], true)
+      await sleep(180)
+      slot.removeAttribute('data-flat')
+      setFill(slot, ['front'], false)
+      await sleep(420)
+      setFill(slot, ['front', 'back'], true)
+      await sleep(160)
+      setFill(slot, ['left', 'right'], true)
+      await sleep(160)
+      setFill(slot, ['top', 'bottom'], true)
+      await sleep(220)
+    }
+    if (driftOn) slots.forEach((s) => s.classList.add('is-drift'))
+  }
+
+  document.getElementById('t-replay').addEventListener('click', () => { build() })
+  document.getElementById('t-drift').addEventListener('click', function () {
+    driftOn = this.getAttribute('aria-pressed') !== 'true'
+    this.setAttribute('aria-pressed', driftOn ? 'true' : 'false')
+    slots.forEach((s) => s.classList.toggle('is-drift', driftOn && !s.hasAttribute('data-flat')))
+  })
+
+  build()
+})()
+</script>
+</body>
+</html>

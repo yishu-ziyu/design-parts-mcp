@@ -1,0 +1,41 @@
+/* The pill grows because one number changes: the width
+   of the rail the faces sit in. They are absolutely placed
+   inside it, so nobody moves when somebody arrives â there is
+   simply more room, and CSS carries the width across.
+
+   Worked out rather than measured. Every block on this bench
+   is drawn at a fraction of its own size, and a layout
+   animation that measures screen rectangles gets a different
+   answer at every zoom. Arithmetic gets the same one. */
+const rail = picked.length
+  ? FACE + (picked.length - 1) * (FACE - overlap)
+  : 0;
+
+.pik-rail {
+  position: relative;
+  transition: width 300ms cubic-bezier(0.33, 0.55, 0.2, 1);
+}
+.pik-face {
+  position: absolute;
+  transform: translateX(/* i * (FACE - overlap) */);
+  /* the gap between two faces is the CARD's colour, not white,
+     or the stack grows a halo in dark mode */
+  box-shadow: 0 0 0 2px var(--fill-slab, var(--card));
+}
+
+/* ââ Grid âââââââââââââââââââââââââââââââââââââââââââââââââ
+   The same four faces packed into the footprint of ONE, so
+   the pill does not grow at all. Nothing overlaps, which is
+   the point: a row hides parts of faces behind other faces,
+   the quad shows all of every face and pays in size.
+
+   The box does not fill up â it SUBDIVIDES. One face is the
+   whole box, four are a quarter each, and three fill reading
+   order and leave the last cell empty: the quad is four fixed
+   slots, so three people occupy three of them.
+
+   Placed by transform, not by left/top/width/height, so a
+   face changing arrangement travels instead of teleporting â
+   one vector and one scale describe both layouts. */
+const cell = (FACE - gutter) / 2;
+const scale = cell / FACE;

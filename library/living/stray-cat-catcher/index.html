@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>抓流浪猫：忠实复刻</title>
+<style>
+@font-face{font-family:"Oswald";src:url(fonts/oswald.woff2) format("woff2");font-weight:200 700;font-display:block}
+@font-face{font-family:"Abril";src:url(fonts/abril.woff2) format("woff2");font-display:block}
+@font-face{font-family:"Inter";src:url(fonts/inter.woff2) format("woff2");font-weight:100 900;font-display:block}
+html,body{margin:0;background:#fff}
+body{display:grid;justify-items:center;padding:24px 0 40px;font-family:Inter,system-ui,sans-serif}
+#fit{width:360px;height:782px;position:relative}
+#phone{width:938px;height:2037px;position:absolute;left:0;top:0;transform-origin:0 0;transform:scale(.3838);border-radius:106px;overflow:hidden;background:linear-gradient(180deg,#4b6f9f 0,#4b6f9f 9%,#5172a7 15%,#567ebb 20%,#5982ba 30%,#608bc2 50%,#5f8ac1 80%,#5d8bbf 84.5%,#5a85b8 86.5%);box-shadow:0 0 0 2px #dfe3e6;user-select:none;touch-action:none;cursor:grab;-webkit-font-smoothing:antialiased}
+#phone *{box-sizing:border-box}
+#dots{position:absolute;inset:150px 0 0;background-image:radial-gradient(circle,rgba(255,255,255,.2) 2.4px,transparent 3px);background-size:58px 58px}
+#band{position:absolute;left:0;right:0;bottom:0;height:320px;background:linear-gradient(180deg,rgba(66,98,140,0),rgba(66,98,140,.55) 45%,rgba(66,98,140,.88) 70%,rgba(70,104,148,.86))}
+#world,#stk{position:absolute;inset:0}
+.st{position:absolute;left:0;top:0;will-change:transform,filter,opacity;pointer-events:none}
+#title{position:absolute;z-index:5;left:0;right:0;top:172px;text-align:center;color:#fff;font:400 100px/136px Oswald,sans-serif;letter-spacing:.2px;transform-origin:50% 50%;white-space:nowrap}
+#status{position:absolute;inset:0 0 auto;height:120px;z-index:40;color:#fff}
+#time{position:absolute;left:100px;top:40px;font:600 37px/48px -apple-system,"SF Pro Text",Inter,sans-serif}
+#ind{position:absolute;right:62px;top:42px;width:190px;height:44px}
+#island{position:absolute;z-index:42;left:270px;top:28px;width:370px;height:78px;border-radius:40px;background:#000;overflow:hidden}
+#rec{position:absolute;z-index:43;left:296px;top:52px;width:26px;height:26px;border-radius:50%;background:#e4492f}
+#green{position:absolute;z-index:43;left:501px;top:60px;width:13px;height:13px;border-radius:50%;background:#44d36a;opacity:0}
+#cam{position:absolute;inset:0;opacity:0}
+#cam img{position:absolute;left:20px;top:80px;width:838px;height:887px;object-fit:cover;border-radius:66px;opacity:0}
+#photo{position:absolute;z-index:30;object-fit:cover;opacity:0;pointer-events:none}
+#capture{position:absolute;z-index:20;left:322px;top:1800px;width:300px;height:132px;border-radius:66px;background:#23436c;color:#fff;display:flex;align-items:center;justify-content:center;gap:22px;font:400 38px Inter,sans-serif;border:0;cursor:pointer;padding:0}
+#shutter{position:absolute;z-index:21;left:379px;top:1744px;width:180px;height:180px;border-radius:50%;border:5px solid #fff;background:0 0;padding:0;cursor:pointer;opacity:0;display:none}
+#shutter i{position:absolute;inset:16px;border-radius:50%;background:#fff;display:block}
+#review{position:absolute;inset:0;z-index:25;display:none;opacity:0}
+#caught{position:absolute;left:0;right:0;top:294px;text-align:center;color:#fff;font:400 38px/48px -apple-system,Inter,sans-serif;letter-spacing:-.2px}
+.round{position:absolute;width:108px;height:108px;border-radius:50%;background:#42587d;border:0;padding:0;color:#fff;cursor:pointer;display:grid;place-items:center}
+#again{left:40px;top:158px}
+#bigcat{position:absolute;left:149px;top:360px;width:640px;transform-origin:50% 0;pointer-events:none}
+#name{position:absolute;left:0;right:0;text-align:center;color:#fff;font:400 64px/84px -apple-system,Inter,sans-serif;white-space:pre}
+#name.empty{color:rgba(255,255,255,.34)}
+#add{position:absolute;left:41px;width:839px;height:112px;border-radius:56px;border:0;background:#fff;color:#16181c;font:500 34px -apple-system,Inter,sans-serif;cursor:pointer}
+#kb{position:absolute;left:0;right:0;top:1282px;height:755px;background:#1b3045;border-radius:52px 52px 0 0;color:#fff}
+#kb .k{position:absolute;height:96px;border-radius:14px;background:#475a72;display:grid;place-items:center;font:400 46px -apple-system,Inter,sans-serif;cursor:pointer}
+#kb .k.up{background:#475a72}
+#detail{position:absolute;inset:0;z-index:28;display:none;opacity:0}
+#dname{position:absolute;left:-40px;right:-40px;top:306px;text-align:center;color:#fff;font:400 112px/140px Abril,serif;letter-spacing:2px;transform:scaleX(1.27);white-space:nowrap}
+#dcat{position:absolute;left:124px;top:438px;width:690px;pointer-events:none}
+#chip{position:absolute;left:285px;top:1730px;width:370px;height:90px;border-radius:24px;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;gap:16px;font:400 32px Inter,sans-serif}
+#met{position:absolute;left:0;right:0;top:1860px;text-align:center;color:rgba(255,255,255,.8);font:400 28px Inter,sans-serif}
+.dk{background:#1d3a63!important;top:156px}
+#back{left:40px}#share{right:40px}
+#notes{width:min(720px,calc(100vw - 32px));margin-top:32px;font:13px/1.65 Inter,system-ui,sans-serif;color:#555}
+#notes h3{font-size:13px;margin:0 0 8px;color:#111}#notes dl{margin:0;display:grid;grid-template-columns:120px 1fr;gap:6px 12px}#notes dd{margin:0}#notes code{color:#111}
+</style></head><body>
+<div id="fit"><div id="phone" aria-label="stray cat catcher replica">
+ <div id="dots"></div>
+ <div id="world"><div id="stk"></div><div id="title">CATCHING STRAYS</div></div>
+ <div id="band"></div>
+ <button id="capture" aria-label="Capture"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="10.4"/><path d="M14.3 8l5.74 9.93M9.7 8h11.47M7.4 12l5.74-9.93M9.7 16L3.96 6.07M14.3 16H2.83M16.6 12l-5.74 9.93"/></svg>Capture</button>
+ <button id="shutter" aria-label="Take photo"><i></i></button>
+ <div id="review">
+  <div id="caught">You just caught one:</div>
+  <button class="round" id="again" aria-label="Retake"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.3"/><path d="M3.500 3.300v5h5"/></svg></button>
+  <img id="bigcat" src="source-assets/spider.webp" alt="">
+  <div id="name" class="empty">Give it a name</div>
+  <button id="add">Add to Collection</button>
+  <div id="kb"></div>
+ </div>
+ <img id="photo" src="source-assets/photo.jpg" alt="">
+ <div id="detail">
+  <div id="dname">SPIDERCAT</div>
+  <img id="dcat" src="source-assets/spider-detail.webp" alt="">
+  <button class="round dk" id="back" aria-label="Back"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+  <button class="round dk" id="share" aria-label="Share"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9H6v11h12V9h-2M12 15V3M8 7l4-4 4 4"/></svg></button>
+  <div id="chip"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M21 3 3 10.500l7.800 2.700L13.500 21z"/></svg>143, Niti Khand 2</div>
+  <div id="met">Met today, 11:13PM</div>
+ </div>
+ <div id="status"><div id="time">11:13</div>
+  <svg id="ind" viewBox="0 0 190 44"><g fill="#fff"><rect x="0" y="26" width="10" height="10" rx="2"/><rect x="14" y="26" width="10" height="10" rx="2"/><rect x="28" y="26" width="10" height="10" rx="2" opacity=".45"/><rect x="42" y="26" width="10" height="10" rx="2" opacity=".45"/><rect x="14" y="12" width="10" height="10" rx="2"/><rect x="0" y="12" width="10" height="10" rx="2" opacity=".0"/><rect x="28" y="12" width="10" height="10" rx="2" opacity=".45"/><rect x="42" y="12" width="10" height="10" rx="2" opacity=".45"/></g><path d="M64 15a30 30 0 0 1 40 0M71 23a19 19 0 0 1 26 0M78 30a9 9 0 0 1 12 0" fill="none" stroke="#fff" stroke-width="5.500" stroke-linecap="round"/><circle cx="84" cy="36" r="3.500" fill="#fff"/><rect x="123" y="9" width="60" height="28" rx="9" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2.500"/><rect x="127" y="13" width="26" height="20" rx="6" fill="#fff"/><rect x="185" y="18" width="4" height="10" rx="2" fill="#fff" fill-opacity=".6"/></svg>
+ </div>
+ <div id="island"><div id="cam"></div></div>
+ <div id="rec"></div><div id="green"></div>
+</div></div>
+<section id="notes"><h3>可拆</h3><dl>
+<dt><code>#stk</code></dt><dd>贴纸世界：抠图贴纸在蓝底上移动，越靠边越暗越糊，按住可拖</dd>
+<dt><code>#island</code></dt><dd>灵动岛长成取景框：黑块从状态栏往下放大，整个世界被推下去</dd>
+<dt><code>#bigcat</code></dt><dd>拍完变贴纸：照片虚化淡出，白边抠图放大盖上</dd>
+<dt><code>#detail</code></dt><dd>详情页：大名字压在没有白边的大图上，地点胶囊在下面</dd>
+</dl></section>
+<script>
+const $=s=>document.querySelector(s);const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ease=x=>{x=clamp(x);return 1-Math.pow(1-x,3)},inOut=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const seg=(t,a,b,e=ease)=>e((t-a)/(b-a));const mix=(a,b,k)=>a+(b-a)*k;
+const fit=()=>{const k=Math.min(360,innerWidth-16)/938;$('#phone').style.transform=`scale(${k})`;$('#fit').style.width=938*k+'px';$('#fit').style.height=2037*k+'px'};fit();addEventListener('resize',fit);
+/* 贴纸实例：图片 + 自然尺寸 */
+const IM={B:['batman',383,455],O:['orange',262,396],T:['tan',278,508],G:['grey',267,301],K:['kitten',245,424],Y:['tabby',499,444],S:['spider',640,1041],F:['fluffy',468,429],X:['face',0,0],M:['small',0,0],M2:['small',0,0],S2:['spider',640,1041],S3:['spider',640,1041]};
+const stk=$('#stk');const E={};for(const k in IM){const i=document.createElement('img');i.src=`source-assets/${IM[k][0]}.webp`;i.className='st';i.alt='';i.dataset.k=k;stk.appendChild(i);E[k]=i}
+/* 视角：贴纸中心 x、y 和显示高度，来自视频逐帧测量（938 宽坐标） */
+const V={
+ a:{B:[304,355,311],O:[639,805,449],T:[290,1267,450],F:[650,1690,300]},
+ k1:{B:[312,558,330],O:[650,976,330]},
+ k2:{B:[297,745,420],Y:[658,284,180]},
+ b:{K:[470,742,424],B:[780,1218,331],G:[442,1640,300]},
+ c:{K:[268,745,379],B:[580,1217,455],G:[245,1660,300],M:[884,753,174]},
+ d:{Y:[430,584,444],S:[780,1084,346],B:[115,1064,292],O:[443,1524,396]},
+ e:{B:[340,552,253],O:[555,845,270],G:[122,854,190],T:[332,1141,275],M:[755,1139,215],F:[561,1427,260],S:[770,562,245],S2:[135,1435,230],M2:[350,1700,190]},
+ f:{T:[345,880,530],F:[720,1310,430],M:[880,300,160]},
+ g:{O:[650,723,420],T:[300,1160,436],F:[657,1620,300]},
+ h:{Y:[310,575,410],X:[621,1065,450],O:[322,1513,367]},
+ i:{S:[455,640,340],Y:[770,1130,320],S2:[430,1740,300]},
+ j:{Y:[400,1040,440],K:[720,520,300],G:[640,1560,300]}};
+/* 视频时间轴：到达时刻和所用视角 */
+const KEY=[[0,'a'],[.75,'a'],[1,'b'],[1.25,'b'],[1.5,'c'],[1.8,'c'],[2.05,'d'],[3,'d'],[3.35,'e'],[3.95,'e'],[4.3,'f'],[4.7,'f'],[5.05,'e'],[5.45,'e'],[5.85,'g'],[6.25,'k1'],[6.9,'k1'],[7.3,'k2'],[17.05,'k2'],[17.1,'h'],[17.4,'h'],[18,'h'],[18.5,'i'],[21.2,'i'],[21.5,'j'],[21.78,'a']];
+function off(p){const dx=p[0]-469,dy=p[1]-1018,l=Math.hypot(dx,dy)||1;return [469+dx/l*1250,1018+dy/l*1500,p[2]]}
+function pose(k,v){const q=V[v][k];if(q)return q;for(const n of Object.keys(V)){if(V[n][k])return off(V[n][k])}}
+function poses(t){let a=KEY[0],b=KEY[KEY.length-1];for(let i=0;i<KEY.length-1;i++){if(t>=KEY[i][0]&&t<=KEY[i+1][0]){a=KEY[i];b=KEY[i+1];break}}
+ const u=a[1]===b[1]?0:inOut((t-a[0])/(b[0]-a[0]));const o={};for(const k in E){let p=V[a[1]][k],q=V[b[1]][k];if(!p&&!q){o[k]=null;continue}if(!p)p=off(q);if(!q)q=off(p);o[k]=[mix(p[0],q[0],u),mix(p[1],q[1],u),mix(p[2],q[2],u)]}return o}
+let pan=[0,0];
+function drawWorld(t){const P=poses(t);for(const k in E){const e=E[k],p=P[k];if(!p){e.style.display='none';continue}e.style.display='block';const x=p[0]+pan[0],y=p[1]+pan[1];const nat=e.naturalHeight||1;const s=p[2]/nat;const w=e.naturalWidth*s;
+ /* 离中心越远越暗越糊，原版靠这个做出纵深 */
+ const d=Math.hypot((x-469),(y-930)*.72);const f=clamp(clamp((d-330)/420)+(y<520?.55:0));e.style.width=w+'px';e.style.transform=`translate(${x-w/2}px,${y-p[2]/2}px)`;e.style.filter=f>.02?`blur(${(f*2.2).toFixed(2)}px) saturate(${1-.25*f})`:'none';e.style.opacity=1-.42*f}}
+const CAM=[[7,0],[7.8,1],[8.3,2],[8.9,3],[9.5,4],[10,5]];const cam=$('#cam');CAM.forEach((c,i)=>{const m=document.createElement('img');m.src=`source-assets/cam${i}.jpg`;m.alt='';cam.appendChild(m)});
+/* 键盘 */
+const kb=$('#kb');const rows=[['QWERTYUIOP',14,91],['ASDFGHJKL',59,91],['ZXCVBNM',150,91]];const tops=[108,228,348];let keyEls=[];
+rows.forEach((r,ri)=>{[...r[0]].forEach((c,i)=>{const d=document.createElement('div');d.className='k';d.textContent=c;d.dataset.c=c;d.style.cssText=`left:${r[1]+i*90.6}px;top:${tops[ri]}px;width:78px`;kb.appendChild(d);keyEls.push(d)})});
+kb.insertAdjacentHTML('beforeend',`<div class="k" style="left:14px;top:348px;width:106px"><svg width="44" height="44" viewBox="0 0 24 24" fill="#fff"><path d="M12 3 3 13h5v7h8v-7h5z"/></svg></div><div class="k" id="bs" style="left:803px;top:348px;width:106px"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#c9d3e0" stroke-width="1.700"><path d="M8 5h13v14H8l-6-7zM12 9l5 6M17 9l-5 6"/></svg></div><div class="k" style="left:14px;top:468px;width:213px;font-size:36px">123</div><div class="k" id="sp" style="left:241px;top:468px;width:440px"></div><div class="k" id="ok" style="left:694px;top:468px;width:215px;background:#2c6ae8"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13l5 6L20 5"/></svg></div>
+<svg style="position:absolute;left:60px;top:620px" width="62" height="62" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11.500" fill="#fff"/><circle cx="8" cy="9.500" r="1.800" fill="#1b3045"/><circle cx="16" cy="9.500" r="1.800" fill="#1b3045"/><path d="M6 14c1 3.400 3.300 5 6 5s5-1.600 6-5z" fill="#1b3045"/></svg><svg style="position:absolute;left:800px;top:618px" width="62" height="66" viewBox="0 0 24 26" fill="none" stroke="#fff" stroke-width="1.800" stroke-linecap="round"><rect x="8" y="2" width="8" height="14" rx="4"/><path d="M4 12a8 8 0 0 0 16 0M12 20v4M8 24h8"/></svg>`);
+kb.insertAdjacentHTML('beforeend','<i style="position:absolute;left:268px;top:30px;width:2px;height:50px;background:#2c4560"></i><i style="position:absolute;left:542px;top:30px;width:2px;height:50px;background:#2c4560"></i><div style="position:absolute;left:850px;top:30px;width:40px;height:44px;border-radius:8px;background:#5c6d83;color:#dfe6ee;font:24px/44px sans-serif;text-align:center">क</div>');let typed='';let lastCase=null;
+const els=Object.fromEntries(['world','title','band','dots','capture','shutter','review','caught','bigcat','name','add','kb','photo','detail','dname','dcat','island','rec','green','status','cam'].map(i=>[i,$('#'+i)]));
+const q=new URLSearchParams(location.search);const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function render(t){
+ /* 世界和取景框 */
+ const open=seg(t,6.2,6.7,inOut);const down=seg(t,11.1,11.45);const up=seg(t,17,17.42,inOut);const inCam=t>=6.2&&t<11.5;const inRev=t>=11.15&&t<17.45;const inDet=t>=19&&t<21.45;
+ drawWorld(t);
+ let wy=0;if(t>=6.2&&t<17)wy=868*open+1250*down;if(t>=17&&t<17.42)wy=mix(-2100,0,up);if(t>=17.42)wy=0;
+ const dim=inDet?seg(t,19,19.32):0;const back=seg(t,21.2,21.45);
+ els.world.style.transform=`translateY(${wy}px)`;els.world.style.visibility=(t>11.4&&t<17)?'hidden':'visible';els.title.style.opacity=(t>=19&&t<21.45)?mix(1,.32,dim)*(1):1;
+ const inR=inDet?(1-back):0;
+ els.world.style.opacity=inDet?mix(1,0,seg(t,19.3,19.5))+mix(0,1,back)*0+ (t>21.2?back:0):1;
+ /* 岛 → 取景框 */
+ const shrink=seg(t,11.05,11.25);const g=inCam?open:0;
+ const L=mix(270,22,g),T=mix(28,28,g),W=mix(370,875,g),H=mix(78,998,g),R=mix(40,72,g);
+ Object.assign(els.island.style,{left:L+'px',top:T+'px',width:W+'px',height:H+'px',borderRadius:R+'px'});
+ els.island.style.opacity=t>=11.1&&t<11.3?1-shrink:1;if(t>=11.25&&t<11.3){els.island.style.opacity=1}
+ if(t>=11.25&&inCam===false){Object.assign(els.island.style,{left:'270px',top:'28px',width:'370px',height:'78px',borderRadius:'40px',opacity:1})}
+ els.cam.style.opacity=clamp((t-6.65)/.2)*(t<11.15?1:0);
+ [...els.cam.children].forEach((m,i)=>{const nx=CAM[i+1]?CAM[i+1][0]:1e9;const a=clamp((t-CAM[i][0])/.25)*(t<nx+.25?1:0);m.style.opacity=a});
+ els.status.style.opacity=1-clamp((open-.15)/.4)*(t<11.2?1:0);els.rec.style.opacity=(t>=6.2&&t<11.2)?1-clamp(open*3):1;els.green.style.opacity=(t>=6.7&&t<11.15)?1:0;
+ /* 拍摄按钮 */
+ const capA=t<6.2?1:t<6.45?1-seg(t,6.2,6.45):t>=17.25?seg(t,17.25,17.42):0;els.capture.style.opacity=(inDet?1-dim*.75:1)*capA*(t>=19.35&&t<21.3?0:1);els.capture.style.pointerEvents=capA>.9?'auto':'none';els.capture.style.display=capA>0?'flex':'none';
+ const sh=t>=6.25&&t<11.2;els.shutter.style.display=sh?'block':'none';els.shutter.style.opacity=clamp((t-6.25)/.2);let ss=mix(.6,1,seg(t,6.25,6.55));if(t>10.95)ss=1-.14*Math.sin(clamp((t-10.95)/.2)*Math.PI);els.shutter.style.transform=`scale(${ss})`;
+ els.band.style.opacity=inRev?1-seg(t,11.15,11.4)+seg(t,17,17.4):(t>=19.3&&t<21.3?0:1);
+ /* 拍完 */
+ els.review.style.display=inRev?'block':'none';
+ if(inRev){let ry=t>=17?mix(0,2150,up):0;els.review.style.transform=`translateY(${ry}px)`;els.review.style.opacity=clamp((t-11.15)/.18);
+  const key=seg(t,14,14.3,inOut);const dis=seg(t,12.25,12.5);
+  els.caught.style.opacity=1;
+  /* 照片 → 贴纸 */
+  const big=mix(1,.545,key);els.bigcat.style.opacity=dis;els.bigcat.style.filter=dis<1?`blur(${(1-dis)*14}px)`:'none';els.bigcat.style.left=(149+640*(1-big)/2)+'px';els.bigcat.style.width=640*big+'px';els.bigcat.style.top='360px';
+  const nameY=mix(1530,985,key);els.name.style.top=nameY+'px';els.name.style.opacity=seg(t,12.3,12.5);els.name.style.fontSize='64px';
+  const shown=q.has('typed')?q.get('typed'):(typed||(t<15.2?'':'Spidercat'.slice(0,Math.floor(clamp((t-15.2)/.75)*9)+0)));
+  els.name.textContent=shown||'Give it a name';els.name.classList.toggle('empty',!shown);const lower=!!shown;if(lower!==lastCase){lastCase=lower;keyEls.forEach(k=>k.textContent=lower?k.dataset.c.toLowerCase():k.dataset.c)}
+  els.add.style.top=mix(1878,1132,key)+'px';els.add.style.background=`rgba(255,255,255,${mix(.22,1,dis)})`;els.add.style.color=dis>.8?'#16181c':`rgba(16,30,50,${mix(.42,1,dis)})`;
+  els.kb.style.transform=`translateY(${mix(780,0,key)}px)`;
+ }
+ const ph=t>=11.05&&t<12.6;els.photo.style.display=ph?'block':'none';if(ph){const a=seg(t,11.1,11.3,inOut);els.photo.style.left=mix(42,126,a)+'px';els.photo.style.top=mix(108,425,a)+'px';els.photo.style.width=mix(838,689,a)+'px';els.photo.style.height=mix(887,916,a)+'px';els.photo.style.borderRadius=mix(66,44,a)+'px';els.photo.style.opacity=t<12.25?1:1-seg(t,12.25,12.5);els.photo.style.filter=`blur(${seg(t,12.25,12.5)*6}px)`}
+ /* 详情 */
+ els.detail.style.display=inDet?'block':'none';if(inDet){$('#dname').textContent=(typed||'Spidercat').toUpperCase();const a=seg(t,19.3,19.62);els.detail.style.opacity=a*(1-back);els.dname.style.opacity=clamp((a-.2)/.8);els.dcat.style.transform=`scale(${mix(.86,1,a)})`}
+ /* 详情入场时世界里的那只放大 */
+ if(t>=19&&t<19.5){const e=E.S;const u=seg(t,19,19.45);const w=340/(e.naturalHeight||1)*e.naturalWidth;}
+}
+/* 时钟：默认自动播放；一有操作就改成走到下一个停靠点 */
+const D=21.78;let t=+(q.get('t')??0);let hold=null;let last=performance.now();const fixed=q.has('t')||reduce;
+function frame(n){const dt=(n-last)/1000;last=n;if(!fixed||hold!==null){if(!(hold!==null&&t>=hold)){t+=dt;if(t>=D)t=0}}render(t);requestAnimationFrame(frame)}
+const go=(a,b)=>{t=a;hold=b;};
+$('#capture').onclick=()=>go(6.2,10.9);$('#shutter').onclick=()=>go(10.95,14.4);$('#add').onclick=()=>go(17,18.6);$('#again').onclick=()=>go(0,0.01);$('#back').onclick=()=>go(21.2,21.5);
+kb.addEventListener('pointerdown',e=>{const k=e.target.closest('.k');if(!k)return;if(hold===null)hold=t;if(k.id==='bs')typed=typed.slice(0,-1);else if(k.dataset.c)typed+=(typed?k.dataset.c.toLowerCase():k.dataset.c);else if(k.id==='sp')typed+=' ';});
+/* 按住拖世界，点蜘蛛猫进详情 */
+let dn=null;const ph=$('#phone');ph.addEventListener('pointerdown',e=>{if(e.target.closest('button,#kb'))return;if(t>=6.2&&t<17.4)return;dn={x:e.clientX,y:e.clientY,p:pan.slice(),moved:0};if(hold===null)hold=t});
+addEventListener('pointermove',e=>{if(!dn)return;const k=938/ph.getBoundingClientRect().width;const dx=(e.clientX-dn.x)*k,dy=(e.clientY-dn.y)*k;dn.moved=Math.hypot(dx,dy);pan=[dn.p[0]+dx,dn.p[1]+dy]});
+addEventListener('pointerup',e=>{if(!dn)return;const m=dn.moved;dn=null;if(m<12&&t>=17.4&&t<19)go(19,20.4)});
+if(q.has('hold'))hold=+q.get('hold');
+Promise.all(Object.values(E).map(i=>i.decode().catch(()=>{}))).then(()=>{document.body.dataset.ready=1;render(t);requestAnimationFrame(frame)});
+window.__seek=x=>{t=x;hold=x;render(t)};
+</script></body></html>

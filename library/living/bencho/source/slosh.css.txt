@@ -1,0 +1,81 @@
+/* A slider whose value has mass.
+
+   The handle is RIGID. It is under your finger, and anything
+   under a finger that lags it is broken. The fill is a second
+   spring behind it â softer, barely damped â so a fast drag
+   throws it past the handle, into the end stop, and rocks it
+   back two or three times before it settles. */
+
+/* Stiffness falls and damping rises together, which is why
+   these are one knob and not two: thin liquid is slow to
+   answer and slow to forget, and that is the same sentence
+   twice. 0 is exactly an ordinary slider and has to be
+   exactly that, not a very stiff spring that still rings. */
+const soft  = viscosity / 100;
+const stiff = 0.34 - soft * 0.29;
+const damp  = 0.74 + soft * 0.22;
+
+fv += (value - fill) * stiff * dt;
+fv *= Math.pow(damp, dt);      /* per FRAME, so a dropped one
+                                  cannot double the loss */
+fill += fv * dt;
+
+/* The end stop is a wall, and a wall gives some back. Without
+   this the overshoot at the top of the track is swallowed and
+   the liquid stops behaving like liquid exactly where you are
+   looking at it. */
+if (fill > 100) { fill = 100; fv = -fv * 0.42; }
+if (fill < 0)   { fill = 0;   fv = -fv * 0.42; }
+
+/* The release is a throw, not a stop: the handle leaves along
+   the velocity it actually had and decelerates. */
+value += hv * dt;
+hv    *= Math.pow(0.86 + (momentum / 100) * 0.115, dt);
+
+/* THE MENISCUS is what sells it. A bar that lags is a laggy
+   bar; a bar whose leading edge leans the way it is going is
+   a surface with momentum in it. Clipped, never skewed â a
+   skew leans the whole body and lifts the bottom edge off the
+   floor of the track, which is a bar tipping over. */
+--lean: clamp(-20px, (tilt / 100) * fv * 3, 20px);
+clip-path: polygon(0 0, calc(100% + var(--lean)) 0,
+                   calc(100% - var(--lean)) 100%, 0 100%);
+
+/* No transitions anywhere on this block. Every number is
+   written by the loop, and a transition on top of a spring is
+   two opinions about the same value. The loop parks itself
+   once handle, fill and both velocities are at rest. */
+
+/* The liquid is the fill's own ink at low alpha, so a light
+   track holds a dark body and a dark one holds a light. The
+   same alpha is NOT the same contrast, though: 0.14 of ink
+   over white reads cleanly, 0.14 of near-white over #0e0f11
+   left the liquid all but invisible. The dark fill gets its
+   own number, exactly as dark glass carries a brightness pass
+   that light does not. */
+.slo-fill                      { background: rgba(var(--fill-on-rgb), 0.14); }
+[data-fill="dark"] .slo-fill   { background: rgba(var(--fill-on-rgb), 0.24); }
+
+/* ââ Fill and Stroke âââââââââââââââââââââââââââââââââââââââââ
+   The surface reads the stage's fill tokens with its own value
+   left as the var() FALLBACK rather than as a second
+   declaration underneath, which is what lets one line serve
+   both cases.
+
+   And both happen. .bench-app carries a data-fill of its own
+   that follows the theme, so on the wall this is already
+   filled and the overlay's control is a choice to DIFFER from
+   the bench rather than a switch from nothing. The fallback is
+   for a surface mounted outside .bench-app altogether â
+   which is what this file is for, since a block lifted out of
+   this project has to draw.
+
+   --fill-on-rgb rather than --fill-on wherever the ink is not
+   at full strength, because a fallback has to nest inside the
+   rgba() to survive: rgba(var(--fill-on-rgb, var(--ink-rgb)), .78).
+
+   The hairline hangs on a ::before that is transparent until
+   [data-stroke="on"] colours it â the same ::before every
+   other surface on the bench uses. Nothing here is glass, so
+   there is no lit rim for the stroke to lose to: the hairline
+   is the only edge these can have. */

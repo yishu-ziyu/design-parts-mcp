@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Answer length drag</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Inter;src:url(fonts/Inter-normal.woff2) format('woff2');font-style:normal;font-weight:100 900;font-display:block}
+@font-face{font-family:Inter;src:url(fonts/Inter-italic.woff2) format('woff2');font-style:italic;font-weight:100 900;font-display:block}
+*{box-sizing:border-box}html,body{margin:0;background:#f5f4f3;color:#232326;font:400 13px/21.7px Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:831px;height:623px;margin:0 auto;overflow:hidden;
+background:radial-gradient(420px 520px at -4% 16%,#fde4d2 0,rgba(253,228,210,.5) 45%,rgba(253,228,210,0) 100%),radial-gradient(330px 380px at 100% 42%,#e8e4fb 0,rgba(232,228,251,.55) 50%,rgba(232,228,251,0) 100%),radial-gradient(760px 240px at 44% 106%,#e4f1f3 0,rgba(228,241,243,0) 100%),#f6f5f3}
+#ask{position:absolute;right:203px;top:106px;height:37px;padding:0 16px;line-height:37px;border-radius:19px;background:rgba(255,255,255,.62);white-space:nowrap}
+#card{position:absolute;left:201px;top:158px;width:427px;border-radius:20px;background:rgba(255,255,255,.86);box-shadow:0 12px 26px rgba(90,90,110,.07),0 1px 2px rgba(0,0,0,.02);transition:height .42s cubic-bezier(.3,1.14,.45,1)}
+#clip{position:absolute;inset:0;border-radius:20px;overflow:hidden;padding:15px 19px 0}
+.b{margin:0 0 3px;transition:line-height .42s cubic-bezier(.3,.9,.4,1),margin .42s cubic-bezier(.3,.9,.4,1);width:389px}
+.h{font-weight:600;font-size:14px;margin-top:15.5px;margin-bottom:4px}.h:first-child{margin-top:0}
+ul.b{list-style:none;margin:3px 0 0;padding:0}li{position:relative;padding-left:16px;line-height:24.4px;transition:line-height .42s cubic-bezier(.3,.9,.4,1)}
+li:before{content:"";position:absolute;left:5px;top:10.200px;width:4.500px;height:4.500px;border-radius:50%;background:#232326;transition:opacity .25s}
+#clip{transition:padding .42s}#clip[data-l="1"] ul.b{margin-top:8px}#clip[data-l="1"] .b:last-child{margin-top:8px}#clip[data-l="2"] .b:last-child{margin-top:9px}#clip[data-l="3"] .b:last-child{margin-top:1px}.gone{font-size:0!important;line-height:0!important;margin-top:0!important;margin-bottom:0!important}li.gone:before{opacity:0}
+.w{display:inline;font-size:1em;opacity:1;transition:font-size .42s cubic-bezier(.3,.9,.4,1),opacity .3s}
+.w.x{font-size:0;opacity:0;line-height:0}
+.tiny .w.fading{font-size:.6em}
+#hd{position:absolute;left:50%;bottom:-9px;margin-left:-22.500px;width:45px;height:16px;border-radius:8px;background:#fff;box-shadow:0 2px 6px rgba(70,70,90,.1);cursor:ns-resize;touch-action:none;outline:0;display:grid;place-items:center}
+#hd:before{content:"";position:absolute;inset:-10px -14px}
+#hd i{width:21px;height:2.5px;border-radius:2px;background:#aeaeb4;transition:background .15s,width .15s}
+#hd:hover i,#hd.drag i,#hd:focus-visible i{background:#2a2a2e}
+#read{position:absolute;right:4px;bottom:-29px;font-size:10.5px;line-height:14px;color:#a4a4aa;white-space:nowrap;font-variant-numeric:tabular-nums}
+#cur{position:absolute;left:0;top:0;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;background:rgba(255,255,255,.34);box-shadow:inset 0 0 0 1.500px rgba(220,220,224,.9),0 2px 6px rgba(80,80,90,.1);backdrop-filter:blur(1px);pointer-events:none;opacity:0;transition:transform .5s cubic-bezier(.35,.9,.4,1),opacity .3s}
+.note{max-width:760px;margin:26px auto 60px;padding:0 24px;color:#444;font-size:14px;line-height:1.6;font-family:system-ui,-apple-system,"PingFang SC",sans-serif}h3{font-weight:500;font-size:17px;margin:18px 0 6px}dl{margin:0}dt code{font-size:13px}dd{margin:2px 0 12px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}#cur{display:none}}
+</style></head><body>
+<div id="stage"><div id="ask">Can I leave cooked rice out overnight?</div>
+<div id="card"><div id="clip"></div><div id="hd" role="slider" tabindex="0" aria-label="Answer length" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><i></i></div><div id="read"></div></div>
+<div id="cur"></div></div>
+<div class="note"><h3>可拆</h3><dl>
+<dt><code>#hd</code></dt><dd>卡片底边的小把手。向上拖切到更短的版本，向下拖放回完整内容；方向键也能调。把手本身不做连续拉伸，只吸附到几档长度。</dd>
+<dt><code>#clip</code></dt><dd>被删的词原地缩小淡出，留下的词跟着挤拢：文字不是整段替换，所以看得出哪些内容被留了下来。</dd>
+<dt><code>#read</code></dt><dd>卡片右下角的预计阅读时间，随长度一起变，告诉用户这一档省了多少时间。</dd>
+</dl></div>
+<script>
+// 每个片段写成 [文字, 从第几档, 到第几档]；0 档最长，3 档最短。不写范围表示所有档都有。
+const A=(t)=>[t,0,0],S=(t,a,b)=>[t,a,b];
+const DOC=[
+{t:'h',max:0,x:[A('Why it matters')]},
+{t:'p',max:2,x:[A('Uncooked rice'),S('Rice',1,2),S(' can contain',0,1),S(' spores',0,2),A(' of '),['<em>Bacillus cereus</em>,',0,0],S(' which',0,1),S(' survive cooking',0,2),A('. At room temperature they can germinate'),S(' and produce toxins',0,2),S('.',2,2),S(' that reheating won’t destroy.',0,1)]},
+{t:'h',max:0,x:[A('What experts recommend')]},
+{t:'ul',max:1,items:[[S('Cool rice within one hour',0,1),A(' of cooking')],[S('Store it in the fridge',0,1),A(' at or below 5 °C')],[S('Eat',0,1),A(' leftovers'),S(' within 24 hours',0,1)],[A('Reheat only once, until steaming hot')]]},
+{t:'h',max:0,x:[A('The bottom line')]},
+{t:'p',max:3,x:[S('If your rice has been out overnight,',0,2),S('No,',3,3),A(' the safest choice is to'),S(' throw it away.',0,3)]}];
+const clip=document.getElementById('clip'),card=document.getElementById('card'),hd=document.getElementById('hd'),rd=document.getElementById('read'),cur=document.getElementById('cur');
+const READ=['20 s read','10 s read','4 s read','1 s read'];
+function w(x){const[t,a,b]=x;return `<span class="w" data-a="${a}" data-b="${b}">${t}</span>`}
+clip.innerHTML=DOC.map(d=>{if(d.t==='ul')return `<ul class="b" data-max="${d.max}">${d.items.map(it=>`<li data-max="${Math.max(...it.map(x=>x[2]))}">${it.map(w).join('')}</li>`).join('')}</ul>`;
+ return `<p class="b ${d.t==='h'?'h':''}" data-max="${d.max}">${d.x.map(w).join('')}</p>`}).join('');
+const words=[...clip.querySelectorAll('.w')],blocks=[...clip.querySelectorAll('.b,li')];
+let level=-1;const H=[];
+function paint(l){clip.dataset.l=l;words.forEach(e=>e.classList.toggle('x',l<+e.dataset.a||l>+e.dataset.b));
+ blocks.forEach(b=>b.classList.toggle('gone',l>+b.dataset.max));
+ clip.querySelectorAll('.b').forEach(b=>{b.style.marginTop='';b.style.marginBottom=''});}
+function measure(){const prev=clip.style.cssText;document.body.classList.add('m');const st=document.createElement('style');st.textContent='*{transition:none!important}';document.head.append(st);
+ for(let l=0;l<4;l++){paint(l);clip.style.position='static';clip.style.height='auto';card.style.height='auto';const box=[...clip.querySelectorAll('.b:not(.gone)')].pop();H[l]=Math.round(box.getBoundingClientRect().bottom-card.getBoundingClientRect().top+19);clip.style.position='';clip.style.height=''}
+ st.remove();clip.style.cssText=prev}
+function set(l,instant){if(l===level)return;const grow=level>l;level=l;paint(l);card.style.transitionDuration=grow?'.26s':'.5s';card.style.height=H[l]+'px';rd.textContent=READ[l];hd.setAttribute('aria-valuenow',l);hd.setAttribute('aria-valuetext',READ[l])}
+// 拖把手：指针离哪一档的卡片底边最近就吸到哪一档
+let drag=false,user=false;
+function nearest(y){let b=0,d=1e9;H.forEach((h,i)=>{const e=Math.abs(h-y);if(e<d){d=e;b=i}});return b}
+const ly=e=>(e.clientY-card.getBoundingClientRect().top)/(parseFloat(document.getElementById('stage').style.zoom)||1);
+hd.addEventListener('pointerdown',e=>{user=true;stop();cur.style.opacity=0;drag=true;hd.setPointerCapture(e.pointerId);hd.classList.add('drag');e.preventDefault();hd.focus()});
+hd.addEventListener('pointermove',e=>{if(drag)set(nearest(ly(e)))});
+const up=()=>{drag=false;hd.classList.remove('drag')};hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up);
+hd.addEventListener('keydown',e=>{const k=e.key;if(k==='ArrowUp'||k==='ArrowDown'){e.preventDefault();user=true;stop();cur.style.opacity=0;set(Math.max(0,Math.min(3,level+(k==='ArrowUp'?1:-1))))}});
+// 自动演示：只在用户没碰过时循环
+// [毫秒, 档位, [光标x, y, 显示, 正在拖]]
+const T=[[0,0,null],[900,0,[470,450,1,0]],[1800,0,[414,506,1,1]],[2600,1,[414,349,1,1]],[3000,1,[398,423,1,0]],[4500,1,[414,349,1,1]],[5100,2,[414,270,1,1]],[6100,2,[414,255,1,1]],[6800,3,[414,222,1,1]],[8700,3,[414,222,1,1]],[9200,2,[414,300,1,1]],[9450,0,[414,500,1,1]],[10300,0,[414,560,0,0]]];
+let timers=[];function stop(){timers.forEach(clearTimeout);timers=[]}
+function step(x){const[,l,c]=x;set(l);if(c){cur.style.opacity=c[2]?1:.0;cur.style.transform=`translate(${c[0]}px,${c[1]}px)`;hd.classList.toggle('drag',!!c[3])}else{cur.style.opacity=0;hd.classList.remove('drag')}}
+function play(){stop();T.forEach(x=>timers.push(setTimeout(()=>step(x),x[0])));timers.push(setTimeout(play,11400))}
+const fit=()=>{document.getElementById('stage').style.zoom=Math.min(1,innerWidth/831)};addEventListener('resize',fit);fit();
+const q=new URLSearchParams(location.search),REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.fonts.ready.then(()=>{measure();set(+(q.get('level')||0));
+ if(q.has('frame')){const x=T[+q.get('frame')];step(x)}
+ else if(!q.has('level')&&!REDUCE)play()});
+</script></body></html>

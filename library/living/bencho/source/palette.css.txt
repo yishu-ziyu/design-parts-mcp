@@ -1,0 +1,57 @@
+/* THE COLOURS ARE PICKED IN OKLCH, which is the whole
+   difference between this and the random-hex generator
+   everybody writes first. In HSL, "lightness" is a lie:
+   hsl(60 90% 50%) is a bright yellow and hsl(240 90% 50%) is
+   a near-black blue â at the same number. A palette built by
+   holding L and stepping the hue comes out with one swatch
+   that glows and one you can barely see.
+
+   OKLCH is perceptually uniform, so a ramp written in it is a
+   ramp you can actually see. Generated there, converted to
+   hex on the way out, because hex is what somebody wants to
+   paste into their own file. */
+
+/* AND THEY ARE A RAMP, NOT A SPIN. Four random hues do not
+   make a palette however even their lightness is. What makes
+   a set look chosen is that it agrees about one thing and
+   varies another: these hold a hue family and ramp the
+   lightness across it, which is what a person does by hand. */
+const L = 0.9 - p * 0.5;                        /* light to deep */
+const C = 0.05 + Math.sin(p * Math.PI) * 0.105; /* vivid in the middle */
+const H = base + i * step;                      /* 16-34 degrees apart */
+
+/* CHROMA PEAKS IN THE MIDDLE rather than being held flat, for
+   the same reason a very light and a very dark colour cannot
+   be vivid: there is no room left in the gamut, and asking
+   for it is what makes generated palettes go chalky at one
+   end and muddy at the other. */
+
+/* ONE SET IN THREE GETS AN ACCENT â the last swatch jumps to
+   the far side of the wheel. A ramp on its own is tasteful and
+   slightly dull, and the odd complement is what stops a run of
+   generated sets feeling like one set regenerated. */
+
+/* THE SWAP IS HIDDEN, and that is the whole motion. Each
+   swatch draws into a circle and the colour changes at the
+   top of that â the frame there is least of it to look at â
+   then it spreads back into its slot. You never see a
+   crossfade because there is nothing to cross. A palette that
+   dissolved from old to new would show you every muddy colour
+   in between, and none of those are in either palette. */
+const d = swellOf(t);                     /* 0 at rest, 1 drawn in */
+const shown = t >= 0.4 ? next[i] : now[i];
+
+/* AND THEY ALL GO AT ONCE. The obvious version staggers them,
+   so the change travels along the bar â which looks good and
+   says the wrong thing. A wave says these are a sequence and
+   that one caused the next. They are a set, and one press
+   replaced all of them in the same instant. */
+
+/* THE BLUR RIDES THE MOTION AND IS ZERO AT REST. It has to
+   be: an alpha-contrast filter blurs everything under it, so
+   a standing blur smears neighbouring colours into one
+   gradient. Because every swatch is a single solid colour at
+   every frame, the filter can only ever bridge the GAP
+   between two of them â which is liquid. Blur applied inside
+   a colour is just smear. */
+const heat = Math.sin(Math.PI * t) * 5;

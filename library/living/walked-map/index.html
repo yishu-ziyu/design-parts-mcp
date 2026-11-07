@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Walked Map</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:JP;src:url(fonts/noto-jp.woff2) format('woff2');font-weight:400 700}
+@font-face{font-family:Int;src:url(fonts/inter.woff2) format('woff2');font-weight:100 900}
+@font-face{font-family:Wide;src:url(fonts/archivo-wide.woff2) format('woff2');font-weight:300 800}
+:root{--B:#3c60c0;--E:#2b4aa6;--bg:#111317;--fg:#d9dbe0;--jp:JP,"Hiragino Sans",sans-serif}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f2f4;--fg:#25272c}}
+:root[data-theme="light"]{--bg:#f1f2f4;--fg:#25272c}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 Int,sans-serif}
+#wall{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:1720px;margin:0 auto;padding:16px}
+@media (max-width:1000px){#wall{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){#wall{grid-template-columns:1fr}}
+.cell{aspect-ratio:689/916;position:relative;overflow:hidden;background:var(--B);cursor:pointer}
+.sc{position:absolute;left:0;top:0;width:689px;height:916px;transform-origin:0 0;overflow:hidden;background:var(--B);font-family:Int,sans-serif;color:#111}
+.solo #wall{padding:0;display:block;max-width:none}.solo .note{display:none}.solo .cell{width:689px;height:916px}
+.abs{position:absolute}
+.st{position:absolute;overflow:visible;filter:url(#die) drop-shadow(0 3px 5px rgb(10 20 60/.28))}
+.bl{filter:blur(13px)}
+.phone{position:absolute;background:#fff;border:8px solid var(--E);overflow:hidden}
+.status{position:absolute;left:0;right:0;top:0;height:44px;display:flex;justify-content:space-between;align-items:center;padding:12px 30px 0;font:600 13px Int;color:#222}
+.island{position:absolute;left:50%;top:13px;width:104px;height:30px;border-radius:15px;background:#0a0a0c;transform:translateX(-50%)}
+.sig{display:flex;gap:4px;align-items:center}
+/* 地图场景 */
+#mapwrap{position:absolute;left:0;top:0;width:520px;height:680px;will-change:transform}
+#mapwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;display:flex;flex-direction:column;align-items:center;width:64px;margin-left:-32px;transform-origin:50% 100%}
+.pin svg{position:static;width:42px;height:42px;filter:url(#die) drop-shadow(0 1px 2px rgb(0 0 0/.3))}
+.lab{font:800 7.5px/8.4px Wide;color:#fff;background:#3159c8;padding:2px 3px;border-radius:2px;text-align:center;box-shadow:0 0 0 1px #fff;max-width:64px;margin-bottom:-3px;position:relative;z-index:2}
+.big{font:800 26px/28px Wide;color:#2f5fd0;-webkit-text-stroke:0;text-shadow:0 0 0 #fff,1.6px 0 #fff,-1.6px 0 #fff,0 1.6px #fff,0 -1.6px #fff,1.2px 1.2px #fff,-1.2px -1.2px #fff,1.2px -1.2px #fff,-1.2px 1.2px #fff;letter-spacing:-1px}
+.sub{font:500 8px Int;letter-spacing:.8px;color:#6b7180}
+#sheet{position:absolute;left:12px;right:12px;top:290px;height:430px;border-radius:26px;background:#fbf8f3;box-shadow:0 -4px 22px rgb(30 40 70/.18)}
+#sheet .grab{position:absolute;left:50%;top:7px;width:26px;height:3px;background:#d8d3cb;border-radius:2px;margin-left:-13px}
+.place{position:absolute;inset:0}
+.ph{position:absolute;left:36px;top:52px;width:186px;height:178px;border-radius:18px;border:4px solid #fff;box-shadow:0 5px 14px rgb(0 0 0/.22);overflow:hidden;transform:rotate(-3deg)}
+.ph.b{transform:rotate(5deg);left:42px;top:50px;background:#d6d3cd}
+.tag{position:absolute;right:16px;top:32px;font:800 15px/16px Wide;color:#fff;background:#3159c8;padding:4px 7px;border-radius:5px;box-shadow:0 0 0 1.5px #fff;transform:rotate(9deg);text-align:center;letter-spacing:-.3px}
+.place .st{width:68px;height:68px;left:24px;top:170px}
+.who{position:absolute;left:18px;top:278px;right:16px;font:500 9.5px/14px var(--jp);color:#444}
+.who b{font:600 10.5px Int;color:#222;display:flex;gap:7px;align-items:center;margin-bottom:6px}
+.who i{display:inline-block;width:24px;height:24px;border-radius:50%;background:#f0ddb6;box-shadow:inset 0 0 0 1px #dcc48f}
+.meta{position:absolute;left:0;right:0;top:248px;text-align:center;font:500 8.5px Int;color:#6d6d6d}
+/* 见面场景 */
+.meet{position:absolute;inset:0;border-radius:52px;overflow:hidden}
+#sky{position:absolute;inset:0}
+.h1{font:700 31px/38px Wide;letter-spacing:-1.3px;color:#3159c8;text-align:center;position:absolute;left:0;right:0;top:150px}
+.h2{font:500 13px Int;color:#3a5cae;text-align:center;position:absolute;left:0;right:0;top:194px;letter-spacing:-.2px}
+.cta{position:absolute;left:21px;right:21px;bottom:21px;height:60px;border-radius:16px;background:#2f63df;color:#fff;font:600 15px/60px Int;text-align:center}
+/* 聊天场景 */
+#chatp{position:absolute;left:89px;top:0;width:526px;height:916px;background:#fbfbfb;overflow:hidden}
+#chat{position:absolute;left:0;right:0;top:0;will-change:transform}
+.msg{position:absolute;font:400 21.5px/29px var(--jp);padding:10px 22px;border-radius:24px;letter-spacing:.2px}
+.me{right:30px;background:#4896f5;color:#d3e7ff}.me::after,.you::after{content:"";position:absolute;bottom:0;width:16px;height:16px}
+.me::after{right:-5px;background:#4896f5;clip-path:path('M0 0C4 8 8 12 16 16C8 16 2 15 0 14Z')}
+.you{left:34px;background:#ececee;color:#2e2e30}.you::after{left:-5px;background:#ececee;clip-path:path('M16 0C12 8 8 12 0 16C8 16 14 15 16 14Z')}
+#hd{position:absolute;left:0;right:0;top:0;height:170px;background:linear-gradient(#fbfbfb 78%,#fbfbfb00);z-index:3}
+.av{position:absolute;left:50%;top:38px;width:86px;height:86px;margin-left:-43px;border-radius:50%;background:var(--B);overflow:hidden}
+.nm{position:absolute;left:50%;top:121px;transform:translateX(-50%);background:#fff;border-radius:18px;padding:6px 14px 6px 20px;font:600 23px/30px Int;letter-spacing:-.3px;box-shadow:0 3px 16px rgb(0 0 0/.14);white-space:nowrap}
+.nm s{text-decoration:none;color:#b8b8bc;font-weight:400;margin-left:4px}
+.dots{display:flex;gap:6px;padding:15px 22px}.dots b{width:9px;height:9px;border-radius:50%;background:#b3b3b7}
+/* 城市卡场景 */
+#track{position:absolute;left:0;top:0;width:689px;height:916px;will-change:transform}
+.city{position:absolute;border:8px solid var(--E);border-radius:60px;overflow:hidden;transform-origin:50% 50%}
+.city h4{position:absolute;left:24px;top:58px;margin:0;font:700 34px/40px Wide;letter-spacing:-1.3px}
+.city .m{position:absolute;left:22px;right:22px;top:108px;height:500px;border-radius:26px;overflow:hidden}
+.city .m canvas{position:absolute;inset:0;width:100%;height:100%}
+.cap{position:absolute;left:24px;top:628px;font:700 23px/29px Wide;letter-spacing:-.6px;width:260px}
+.small{position:absolute;left:24px;bottom:24px;font:500 11px Int;opacity:.72}
+.gp{position:absolute;display:flex;flex-direction:column;align-items:center;margin-left:-30px;width:60px;transform-origin:50% 90%}
+.gp svg{position:static;width:48px;height:48px;filter:url(#die) drop-shadow(0 1px 2px rgb(0 0 0/.3))}
+.gp span{font:700 11px/12px var(--jp);color:#fff;padding:2px 4px;border-radius:3px;text-align:center;white-space:nowrap;margin-bottom:-4px;position:relative;z-index:2}
+.note{max-width:960px;margin:0 auto;padding:32px 16px 80px}.note h3{font-size:20px;margin:0 0 12px}.note dt{margin-top:10px}.note dd{margin:2px 0 0;opacity:.85}.note code{font:13px ui-monospace,Menlo,monospace}.note a{color:inherit}
+</style></head><body>
+<main id="wall"></main>
+<div class="note"><h3>可拆</h3><dl>
+<dt><code>#word</code></dt><dd>立体字：这里用原作字母剪拼的占位词。用滤镜做立体字的版本在 mechanism.html。</dd>
+<dt><code>#sheet</code></dt><dd>地图和地点卡片：这里是原帖视频的逐帧截图，10 帧每秒。可改的结构在 mechanism.html。</dd>
+<dt><code>#sky</code></dt><dd>开场从夜到白天：逐帧截图，标题是真实文字。可改的结构在 mechanism.html。</dd>
+<dt><code>#chat</code></dt><dd>消息逐条进入，整列向上顶，头像和名字固定在顶部。这一段是真实元素，照片和头像取自原帖。</dd>
+<dt><code>#track</code></dt><dd>城市卡片：逐帧截图。贴纸依次弹出的结构在 mechanism.html。</dd>
+</dl><p>来源：<a href="https://x.com/sakinotomiura/status/2093308370119967192">@sakinotomiura</a>，2026-08-28。四段竖屏视频。含原作素材，只留本机。产品名和角色名换成占位。</p></div>
+<script>
+'use strict';
+const Q=new URLSearchParams(location.search),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=s=>document.querySelector(s);
+/* ---------- 逐帧场景：帧从原帖视频暂停后截图，10fps，只留本机 ---------- */
+const FLIP={s1:{dir:'map',n:113,D:11233,anchor:'sheet'},s2:{dir:'meet',n:114,D:11333,anchor:'sky'},s4:{dir:'city',n:81,D:8057,anchor:'track'}};
+function flipScene(id,extra=''){return ()=>{const f=FLIP[id];const sc=document.createElement('div');sc.className='sc';sc.id=id;
+ sc.innerHTML=`<canvas id="${f.anchor}" width="689" height="916" style="position:absolute;inset:0;width:689px;height:916px"></canvas>${extra}`;
+ f.g=sc.querySelector('canvas').getContext('2d');f.imgs=[];f.left=f.n;f.last=-1;
+ for(let i=0;i<f.n;i++){const im=new Image();im.onload=()=>{if(--f.left===0)f.ready=true};im.onerror=()=>{console.error('frame missing',f.dir,i);f.left--};im.src=`source-assets/${f.dir}/${String(i).padStart(3,'0')}.webp`;f.imgs.push(im)}
+ return sc}}
+function flipTL(id,after){return sc=>{const f=FLIP[id];TL[id]={list:[],D:f.D};f.a=add(id,sc.querySelector('canvas'),[{opacity:1},{opacity:1}],{duration:f.D});if(after)after(sc,f.D)}}
+function drawFlips(){for(const id in FLIP){const f=FLIP[id];if(!f.a)continue;const i=Math.min(f.n-1,Math.floor((f.a.currentTime||0)/f.D*f.n));if(i===f.last)continue;const im=f.imgs[i];if(im&&im.complete&&im.naturalWidth){f.g.drawImage(im,0,0,689,916);f.last=i}}requestAnimationFrame(drawFlips)}
+window.__wmFramesReady=()=>Object.values(FLIP).filter(f=>f.imgs).every(f=>f.ready);
+const s1=flipScene('s1','<img id="word" src="source-assets/word-placeholder.png" alt="Holes" style="position:absolute;left:190px;top:57px;height:181.5px">');
+const s2=flipScene('s2','<div class="h1" id="meetT" style="left:160px;width:370px;right:auto;top:214px;font:700 35px/42px Wide;letter-spacing:-2.3px;color:#3f73c9">Meet Crumb</div>');
+const s4=flipScene('s4');
+const timeline1=flipTL('s1');
+const timeline2=flipTL('s2',(sc,D)=>{add('s2',sc.querySelector('#meetT'),[{offset:0,opacity:0,transform:'translateY(8px)'},{offset:.52,opacity:0,transform:'translateY(8px)',easing:'cubic-bezier(.22,1,.36,1)'},{offset:.58,opacity:1,transform:'none'},{offset:1,opacity:1,transform:'none'}],{duration:D})});
+const timeline4=flipTL('s4');
+const CHAT=[['me',['このへんでコーヒーお','すすめある？']],['you',['Concierge Coffee、今いるギャラ','リーに近いしいいんじゃない？地','図にピン置いといた。']],['img'],['me',['いい感じ！']],['typing'],['you',['うわ、その上の層なに。コーヒー','の顔してるけど、かなりデザート側','だな。']]];
+function s3(){const sc=document.createElement('div');sc.className='sc';sc.id='s3';
+ sc.innerHTML=`<div class="abs" style="left:76px;top:0;width:552px;height:916px;background:var(--E)"></div><div id="chatp"><div id="chat"></div><div id="hd"><div class="av" style="border-radius:0;background:none;overflow:visible"><img src="source-assets/avatar.jpg" alt="" style="width:86px;height:86px;display:block;mix-blend-mode:multiply"></div><div class="nm">Crumb<s>›</s></div></div></div>`;
+ const ch=sc.querySelector('#chat');let html='';CHAT.forEach((m,i)=>{if(m[0]==='img')html+=`<div class="msg-i abs" data-i="${i}" style="right:30px;width:208px;height:206px;border-radius:20px;overflow:hidden"><img src="source-assets/coffee.jpg" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;else if(m[0]==='typing')html+=`<div class="msg you dots" data-i="${i}"><b></b><b></b><b></b></div>`;else html+=`<div class="msg ${m[0]}" data-i="${i}">${m[1].join('<br>')}</div>`});ch.innerHTML=html;return sc}
+/* ---------- 时间线 ---------- */
+const SPR='linear(0,.25,.62,.92,1.06,1.09,1.07,1.03,1,.99,1)',OUT='cubic-bezier(.22,1,.36,1)';
+const TL={};const add=(sc,el,kf,o)=>{const a=el.animate(kf,{fill:'both',easing:'linear',...o});a.pause();(TL[sc]=TL[sc]||{list:[]}).list.push(a);return a};
+function timeline3(sc){const D=7300;TL.s3={list:[],D};const ch=sc.querySelector('#chat');const H=[77,108,207,52,40,107],times=[.4,2.4,3.2,4.2,5.4,6.6];const tops=[236,332,458,675,746,746];const els=[...ch.children];els.forEach((e,i)=>{e.style.top=tops[i]+'px'});
+ /* 每条进来时整列移动，让这一条的底边停在 y=842 */
+ const dy=H.map((h,i)=>842-(tops[i]+h));const key=[{offset:0,transform:`translateY(${dy[0]+60}px)`}];dy.forEach((d,i)=>{const t=times[i]*1000;key.push({offset:t/D,easing:OUT,transform:key[key.length-1].transform});key.push({offset:(t+460)/D,transform:`translateY(${d}px)`})});key.push({offset:1,transform:`translateY(${dy[5]}px)`});add('s3',ch,key,{duration:D});
+ els.forEach((e,i)=>{const t=times[i]*1000/D;const end=i===4?(times[5]*1000/D):1;const kf=[{offset:0,opacity:0,transform:'scale(.9) translateY(10px)'},{offset:t,opacity:0,transform:'scale(.9) translateY(10px)',easing:OUT},{offset:Math.min(.999,t+.04),opacity:1,transform:'none'}];if(i===4){kf.push({offset:end-.001,opacity:1,transform:'none'},{offset:end,opacity:0,transform:'none'});}kf.push({offset:1,opacity:i===4?0:1,transform:'none'});e.style.transformOrigin=e.classList.contains('you')?'0 100%':'100% 100%';add('s3',e,kf,{duration:D})})}
+/* ---------- 启动 ---------- */
+const solo=Q.get('scene');if(solo)document.body.classList.add('solo');
+const makers=[s1,s2,s3,s4],tls=[timeline1,timeline2,timeline3,timeline4];
+function fit(){document.querySelectorAll('.cell').forEach(c=>{const k=c.clientWidth/689;c.firstElementChild.style.transform=`scale(${k})`})}
+document.fonts.ready.then(()=>Promise.all(['700 20px Wide','800 20px Wide','600 13px Int','400 20px JP','700 12px JP'].map(f=>document.fonts.load(f)))).then(()=>{
+ const wall=$('#wall');makers.forEach((m,i)=>{if(solo&&+solo!==i+1)return;const cell=document.createElement('div');cell.className='cell';cell.tabIndex=0;cell.setAttribute('role','button');cell.setAttribute('aria-label','replay');const sc=m();cell.append(sc);wall.append(cell);tls[i](sc);const key='s'+(i+1);const start=()=>{const T=TL[key];T.t0=performance.now();T.list.forEach(a=>{a.currentTime=0;a.play()})};cell.addEventListener('click',start);cell.addEventListener('keydown',e=>{if(e.key==='Enter')start()});
+  const T=TL[key];const fixed=Q.get('t');if(fixed!==null){T.list.forEach(a=>{a.pause();a.currentTime=+fixed})}else if(reduce){T.list.forEach(a=>{a.pause();a.currentTime=T.D-1})}else{start();setInterval(()=>{if(performance.now()-T.t0>T.D+1200)start()},400)}});
+ fit();addEventListener('resize',fit);drawFlips();document.body.dataset.ready='1'});
+</script></body></html>

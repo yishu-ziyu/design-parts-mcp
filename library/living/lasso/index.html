@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lasso — 圈一块，镜头跟过去</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4efe4;
+    --note-ink: #1c1914;
+    --muted: #5c564c;
+    --green: #2f6b4f;
+    --cream: #fffdf7;
+    --field: #f3f3f4;
+    --ink: #17181a;
+    --lede: #6b6862;
+    --line: #ececee;
+    --dot: rgba(23, 24, 26, .07);
+    --ease: cubic-bezier(.22, 1, .36, 1);
+    --serif: "Iowan Old Style", Palatino, "Songti SC", "Noto Serif SC", Georgia, serif;
+    --sans: Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--note-ink); }
+  body { font-family: var(--serif); font-size: 16.5px; line-height: 1.55; }
+
+  header.mast { max-width: 760px; margin: 0 auto; padding: 48px 24px 10px; text-align: center; }
+  header.mast .kicker { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  header.mast h1 { font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.02em; margin: 8px 0; }
+  header.mast .sub { margin: 0; font-style: italic; color: var(--muted); }
+
+  .studio { max-width: 1120px; margin: 18px auto 0; padding: 0 16px; }
+  .bar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .bar-row h2 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggles button {
+    font: 600 13px var(--sans); padding: 8px 12px;
+    border: 1px solid var(--note-ink); background: var(--note-ink); color: var(--cream); cursor: pointer;
+  }
+  .toggles button:hover { background: var(--green); border-color: var(--green); color: var(--cream); }
+
+  #stage {
+    position: relative;
+    background: var(--field);
+    border: 1px solid var(--note-ink);
+    min-height: 560px;
+    overflow: hidden;
+  }
+
+  #narrator {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 248px;
+    z-index: 4;
+    overflow: hidden;
+    background: rgba(247, 247, 248, .96);
+    border-right: 1px solid #ececee;
+    padding: 28px 18px 20px;
+    font-family: var(--sans);
+    left: -260px;
+    transition: left 520ms var(--ease);
+  }
+  #stage.is-tour #narrator { left: 0; }
+  #narrator .count {
+    font: 600 11px var(--sans);
+    letter-spacing: .14em;
+    color: #b0b0b4;
+    margin-bottom: 8px;
+  }
+  .step {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    padding: 10px 0;
+    cursor: pointer;
+    color: #c5c5c8;
+    transition: color 280ms ease;
+  }
+  .step .t { font: 600 14.5px/1.25 var(--sans); }
+  .step .d { font: 400 12.5px/1.4 var(--sans); margin-top: 4px; }
+  .step.is-on { color: var(--ink); }
+  .step.is-on .d { color: #6a6a70; }
+
+  #view {
+    position: relative;
+    overflow: hidden;
+    min-height: 560px;
+    height: 560px;
+  }
+  #world {
+    position: absolute;
+    left: 0; top: 0;
+    width: 1080px; height: 640px;
+    transform-origin: 0 0;
+    transition: transform 820ms var(--ease);
+    background-image: radial-gradient(var(--dot) 1.1px, transparent 1.2px);
+    background-size: 18px 18px;
+    background-color: #f7f7f8;
+  }
+
+  .lane {
+    position: absolute;
+    top: 72px;
+    width: 320px;
+    height: auto;
+    border: 1px solid #ececee;
+    border-radius: 22px;
+    background: rgba(255,255,255,.42);
+    padding: 16px 16px 18px;
+  }
+  .lane b {
+    display: block;
+    font: 600 11px var(--sans);
+    letter-spacing: .16em;
+    color: #9a9aa0;
+    margin: 2px 0 14px 6px;
+  }
+  .node {
+    background: #fff;
+    border: 1px solid #e4e4e6;
+    border-radius: 16px;
+    padding: 14px 16px 16px;
+    box-shadow: 0 8px 24px -18px rgba(20,20,30,.35);
+  }
+  .node + .node { margin-top: 14px; }
+  .node .k {
+    font: 600 15px var(--sans);
+    color: var(--ink);
+    letter-spacing: -.02em;
+  }
+  .node .s { font: 400 12px var(--sans); color: #8a8a90; margin-top: 2px; }
+  .lines { margin-top: 12px; display: grid; gap: 7px; }
+  .lines i { display: block; height: 7px; border-radius: 99px; background: #ececee; }
+  .row3 { display: flex; align-items: center; gap: 8px; margin-top: 10px; font: 500 12.5px var(--sans); color: #5c5c64; }
+  .row3 em {
+    width: 14px; height: 14px; border-radius: 4px;
+    border: 1.5px solid #cfcfd4; flex: 0 0 14px;
+    font-style: normal;
+  }
+  .mini {
+    margin-top: 12px;
+    border: 1px solid #ececee;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fafafa;
+  }
+  .mini .bar { height: 14px; background: #f0f0f2; display: flex; align-items: center; gap: 4px; padding: 0 8px; }
+  .mini .bar u { width: 6px; height: 6px; border-radius: 99px; background: #d4d4d8; text-decoration: none; }
+  .mini .page { height: 72px; padding: 10px; display: grid; gap: 6px; }
+  .wire { position: absolute; pointer-events: none; }
+
+  #lasso {
+    position: absolute;
+    border-radius: 20px;
+    border: 1.5px solid rgba(28, 28, 32, .16);
+    box-shadow: 0 0 0 120vmax rgba(255, 255, 255, .7);
+    pointer-events: none;
+    z-index: 6;
+    opacity: 0;
+    transition:
+      left 820ms var(--ease),
+      top 820ms var(--ease),
+      width 820ms var(--ease),
+      height 820ms var(--ease),
+      opacity 280ms ease;
+  }
+  #stage.is-tour #lasso { opacity: 1; }
+
+  #hand {
+    position: absolute;
+    width: 28px; height: 28px;
+    pointer-events: none;
+    z-index: 8;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.18));
+    transition: left 480ms var(--ease), top 480ms var(--ease);
+  }
+  #ring {
+    position: absolute;
+    width: 46px; height: 46px;
+    margin: -23px 0 0 -23px;
+    border: 3px solid #2f6dff;
+    border-radius: 99px;
+    pointer-events: none;
+    z-index: 7;
+    opacity: 0;
+    transform: scale(.7);
+  }
+  #ring.is-on { animation: ring 520ms ease-out; }
+  @keyframes ring {
+    0% { opacity: .95; transform: scale(.55); }
+    100% { opacity: 0; transform: scale(1.18); }
+  }
+
+  .page { max-width: 980px; margin: 0 auto; padding: 36px 28px 40px; }
+  .pair { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: start; }
+  @media (max-width: 760px) {
+    .pair { grid-template-columns: 1fr; }
+    .page { padding-left: 18px; padding-right: 18px; }
+    #stage { min-height: 420px; display: flex; flex-direction: column; }
+    #narrator {
+      position: relative;
+      left: 0;
+      width: 100%;
+      height: auto;
+      background: #f7f7f8;
+      max-height: 168px;
+      overflow: auto;
+    }
+    #stage.is-tour #narrator { left: 0; }
+    #view { min-height: 360px; height: 400px; }
+  }
+  h3 { color: var(--green); font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  figure { margin: 0 0 16px; }
+  figure img { width: 100%; display: block; border: 1px solid var(--note-ink); background: #fff; }
+  figcaption { font-size: 12.5px; padding: 7px 2px 0; }
+  figcaption strong { font-weight: 600; }
+  aside.tip {
+    border: 1px solid var(--note-ink);
+    padding: 10px 12px;
+    margin: 18px 0;
+    background: #efe8d6;
+    font-size: 14.5px;
+  }
+  aside.tip b { color: var(--green); }
+  .prose { max-width: 38rem; }
+  .nums { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 18px; }
+  .nums th, .nums td {
+    text-align: left;
+    border-bottom: 1px solid color-mix(in srgb, var(--note-ink) 18%, transparent);
+    padding: 6px 8px 6px 0;
+  }
+  .nums th { font-weight: 500; color: var(--muted); }
+  .nums td:first-child, .nums th:first-child { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  #notes { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; }
+  #notes dt { font-family: ui-monospace, Menlo, monospace; font-size: 13px; margin: 16px 0 6px; }
+  #notes dd { margin: 0; max-width: 38rem; font-size: 15px; }
+  footer.colophon { max-width: 980px; margin: 0 auto; padding: 0 28px 48px; font-size: 12.5px; color: var(--muted); }
+  a { color: inherit; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .92em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #world, #lasso, #hand, #stage, .step { transition: none; }
+    #ring.is-on { animation: none; opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="kicker">标本 · x.com/OhansEmmanuel</div>
+  <h1>圈一块，镜头跟过去</h1>
+  <p class="sub">圆角框圈住产品上的一块，其余变淡。镜头平移过去。左边按步讲解。</p>
+</header>
+
+<div class="studio">
+  <div class="bar-row">
+    <h2>对照</h2>
+    <div class="toggles">
+      <button type="button" id="t-replay">重播走查</button>
+    </div>
+  </div>
+
+  <div id="stage">
+    <aside id="narrator"></aside>
+    <div id="view">
+      <div id="world">
+        <svg class="wire" width="1080" height="640" viewBox="0 0 1080 640" fill="none" aria-hidden="true">
+          <path d="M336 210 C 368 210, 380 210, 400 210" stroke="#d8d8dc" stroke-width="1.6"/>
+          <path d="M680 210 C 712 210, 724 210, 744 210" stroke="#d8d8dc" stroke-width="1.6"/>
+          <path d="M336 400 C 368 400, 380 400, 400 400" stroke="#d8d8dc" stroke-width="1.6"/>
+          <path d="M680 400 C 712 400, 724 400, 744 400" stroke="#d8d8dc" stroke-width="1.6"/>
+        </svg>
+
+        <div class="lane" style="left:36px">
+          <b>WRITE</b>
+          <div class="node" id="n-composer">
+            <div class="k">Composer</div>
+            <div class="s">句子写在这里</div>
+            <div class="lines">
+              <i style="width:92%"></i>
+              <i style="width:74%"></i>
+              <i style="width:61%"></i>
+            </div>
+          </div>
+          <div class="node" id="n-library">
+            <div class="k">Library</div>
+            <div class="s">材料挨着草稿</div>
+            <div class="row3"><em></em>source.jpg</div>
+            <div class="row3"><em></em>notes.md</div>
+          </div>
+        </div>
+
+        <div class="lane" style="left:380px">
+          <b>REVIEW</b>
+          <div class="node" id="n-diff">
+            <div class="k">Diff</div>
+            <div class="s">改了哪几句</div>
+            <div class="lines">
+              <i style="width:80%;background:#e8f6ee"></i>
+              <i style="width:54%;background:#fbeaea"></i>
+              <i style="width:70%"></i>
+            </div>
+          </div>
+          <div class="node" id="n-checks">
+            <div class="k">Checks</div>
+            <div class="s">发出去之前对一次</div>
+            <div class="row3"><em style="background:#12b85a;border-color:#12b85a"></em>链接</div>
+            <div class="row3"><em></em>图注</div>
+          </div>
+        </div>
+
+        <div class="lane" style="left:724px">
+          <b>LIVE</b>
+          <div class="node" id="n-site">
+            <div class="k">Site</div>
+            <div class="s">同一份到站上</div>
+            <div class="mini">
+              <div class="bar"><u></u><u></u><u></u></div>
+              <div class="page">
+                <i style="display:block;height:8px;width:48%;background:#e8e8ea;border-radius:99px"></i>
+                <i style="display:block;height:44px;background:#f0f0f2;border-radius:6px"></i>
+              </div>
+            </div>
+          </div>
+          <div class="node" id="n-feed">
+            <div class="k">Feed</div>
+            <div class="s">订阅也拿到</div>
+            <div class="row3"><em></em>早报</div>
+            <div class="row3"><em></em>更新</div>
+          </div>
+        </div>
+
+        <div id="lasso"></div>
+      </div>
+    </div>
+    <div id="hand" aria-hidden="true">
+      <svg viewBox="0 0 64 64" width="28" height="28">
+        <path d="M26 30 V12.5 a4 4 0 0 1 8 0 V28 M34 28 V16 a4 4 0 0 1 8 0 V30 M42 30 V20 a4 4 0 0 1 8 0 V36 c0 12-8 22-22 22-11 0-18-7-18-16 V32 a4 4 0 0 1 8 0 V30" fill="#fff" stroke="#111" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div id="ring"></div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="pair">
+    <div>
+      <h3>原帖第一屏</h3>
+      <p>浅灰点阵画布。一张产品图铺开。走查开始后，左边列出步骤，画布上出现圆角框，框外发白。镜头平移、拉近，让这一块停在画面中间。</p>
+      <p>原帖是 PR Lens 的 18.8 秒演示，1600 级画幅里是 1046×720、60fps。本页收圈选和运镜，不收他们的架构图和 PR 工具壳。画布换成一扇产品窗：写、核对、发布。</p>
+    </div>
+    <figure>
+      <img src="assets/source-lasso.jpg" alt="圆角框圈住 POST 和队列，其余变淡" />
+      <figcaption><strong>图 1.</strong> 圈选。圆角框在画布上。框外变淡。左边 01 / 04。</figcaption>
+    </figure>
+  </div>
+
+  <div class="prose">
+    <h3>机制</h3>
+    <p>镜头是视口对整张画布做 <code>translate + scale</code>，原点在左上。圈选是画布上的圆角矩形，用大一圈的白影把框外盖住。框和镜头走同一条 820ms 缓动，框跟着世界走，描边不会在屏幕上独自滑动。</p>
+    <p>左边步骤是一份目录。当前步黑，其余接近底色。点一步，手移过去，蓝圈在指尖闪一下，镜头和框同时到新的一块。</p>
+    <p>整卡巡游仍走 <a href="../bento/index.html">bento</a>。这里多出来的是框：先圈，再让周围退开，镜头才有东西可跟。</p>
+  </div>
+
+  <figure>
+    <img src="assets/source-step.jpg" alt="镜头拉近到队列和 worker，左边第二步发黑" />
+    <figcaption><strong>图 2.</strong> 第二步。镜头拉近。圈选跟着换成这一组节点。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/source-ring.jpg" alt="底部缩略图上套着蓝圈" />
+    <figcaption><strong>图 3.</strong> 点按前的蓝圈。圈选框是画布上的矩形；蓝圈只在指尖停一下。</figcaption>
+  </figure>
+
+  <aside class="tip">
+    <b>原则：</b>圈选先把周围变淡。镜头跟着框走。步骤目录同时只亮一行。
+  </aside>
+
+  <h3>测量值</h3>
+  <table class="nums">
+    <thead><tr><th>项目</th><th>取值</th></tr></thead>
+    <tbody>
+      <tr><td>原件</td><td>18.8s，1046×720，60fps。走查四步</td></tr>
+      <tr><td>画布</td><td>1080×640。点阵 18px。底 #f7f7f8</td></tr>
+      <tr><td>镜头</td><td>820ms <code>cubic-bezier(.22, 1, .36, 1)</code>。translate + scale，原点 0 0</td></tr>
+      <tr><td>圈选</td><td>圆角 20px，描边 1.5px。白影 120vmax，透明度 .62</td></tr>
+      <tr><td>蓝圈</td><td>46px，#2f6dff，520ms 放大淡出</td></tr>
+      <tr><td>步骤</td><td>每步停 2.4s。点目录会停住自动走查</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<section id="notes">
+  <h3>可拆</h3>
+  <dl>
+    <dt><code>#lasso</code></dt>
+    <dd>圆角框圈住一块。框外白影。和镜头同一条缓动。</dd>
+    <dt><code>#view</code></dt>
+    <dd>视口 overflow:hidden。画布 <code>translate + scale</code>。原点左上。</dd>
+    <dt><code>#narrator</code></dt>
+    <dd>四步目录。当前黑，其余淡。点一步，手和蓝圈先到，镜头再跟。</dd>
+  </dl>
+</section>
+<footer class="colophon">
+  <p>来源：<a href="https://x.com/OhansEmmanuel/status/2096996689680978148">@OhansEmmanuel</a> · <a href="https://github.com/coldteadotai/pr-lens">PR Lens</a> · <a href="../INDEX.md">living/INDEX.md</a></p>
+</footer>
+<script>
+(function () {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  const stage = document.getElementById("stage")
+  const world = document.getElementById("world")
+  const view = document.getElementById("view")
+  const lasso = document.getElementById("lasso")
+  const narrator = document.getElementById("narrator")
+  const hand = document.getElementById("hand")
+  const ring = document.getElementById("ring")
+
+  const STEPS = [
+    {
+      id: "composer",
+      t: "草稿从这里起",
+      d: "句子写在这一块。先圈住它。",
+      pad: 10,
+      nodes: ["n-composer"]
+    },
+    {
+      id: "write",
+      t: "材料挨着草稿",
+      d: "来源就在下面，不用另开一页。",
+      pad: 14,
+      nodes: ["n-composer", "n-library"]
+    },
+    {
+      id: "review",
+      t: "发出去之前对一次",
+      d: "改了哪几句，清单还差哪一项。",
+      pad: 14,
+      nodes: ["n-diff", "n-checks"]
+    },
+    {
+      id: "live",
+      t: "同一份到站上",
+      d: "站和订阅读同一份，不再另做一版。",
+      pad: 14,
+      nodes: ["n-site", "n-feed"]
+    }
+  ]
+
+  function worldBox(el) {
+    let x = 0, y = 0, n = el
+    while (n && n !== world) {
+      x += n.offsetLeft
+      y += n.offsetTop
+      n = n.offsetParent
+    }
+    return { x: x, y: y, w: el.offsetWidth, h: el.offsetHeight }
+  }
+
+  function union(ids, pad) {
+    let x1 = 1e9, y1 = 1e9, x2 = 0, y2 = 0
+    ids.forEach(function (id) {
+      const b = worldBox(document.getElementById(id))
+      x1 = Math.min(x1, b.x)
+      y1 = Math.min(y1, b.y)
+      x2 = Math.max(x2, b.x + b.w)
+      y2 = Math.max(y2, b.y + b.h)
+    })
+    return { x: x1 - pad, y: y1 - pad, w: x2 - x1 + pad * 2, h: y2 - y1 + pad * 2 }
+  }
+
+  function frame(rect, maxScale) {
+    const vw = view.clientWidth
+    const vh = view.clientHeight
+    const gutter = stage.classList.contains("is-tour") && vw > 640 ? 248 : 0
+    const area = Math.max(200, vw - gutter)
+    const scale = Math.min(area / (rect.w + 72), vh / (rect.h + 72), maxScale || 1.7)
+    const cx = rect.x + rect.w / 2
+    const cy = rect.y + rect.h / 2
+    const tx = gutter + area / 2 - cx * scale
+    const ty = vh / 2 - cy * scale
+    world.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")"
+  }
+
+  function setLasso(rect) {
+    lasso.style.left = rect.x + "px"
+    lasso.style.top = rect.y + "px"
+    lasso.style.width = rect.w + "px"
+    lasso.style.height = rect.h + "px"
+  }
+
+  function overview() {
+    stage.classList.remove("is-tour")
+    frame({ x: 0, y: 0, w: 1080, h: 640 }, 1)
+    setLasso({ x: 200, y: 140, w: 680, h: 360 })
+  }
+
+  STEPS.forEach(function (step, i) {
+    const b = document.createElement("button")
+    b.type = "button"
+    b.className = "step"
+    b.dataset.i = String(i)
+    b.innerHTML = '<div class="t">' + step.t + '</div><div class="d">' + step.d + '</div>'
+    b.addEventListener("click", function (ev) {
+      scripted = false
+      go(i, ev)
+    })
+    narrator.appendChild(b)
+  })
+
+  function pulse(x, y) {
+    ring.classList.remove("is-on")
+    ring.style.left = x + "px"
+    ring.style.top = y + "px"
+    void ring.offsetWidth
+    ring.classList.add("is-on")
+  }
+
+  function moveHand(x, y) {
+    hand.style.left = x - 6 + "px"
+    hand.style.top = y - 4 + "px"
+  }
+
+  let index = -1
+  let scripted = true
+  let timer = 0
+  let countEl = document.createElement("div")
+  countEl.className = "count"
+  narrator.insertBefore(countEl, narrator.firstChild)
+
+  function go(i, ev) {
+    index = i
+    const step = STEPS[i]
+    const rect = union(step.nodes, step.pad)
+    stage.classList.add("is-tour")
+    countEl.textContent = String(i + 1).padStart(2, "0") + " / 04"
+    ;[].forEach.call(narrator.querySelectorAll(".step"), function (b, j) {
+      b.classList.toggle("is-on", j === i)
+    })
+    const btn = narrator.querySelectorAll(".step")[i]
+    const hx = 28
+    const hy = btn.offsetTop + 18
+    moveHand(hx, hy)
+    pulse(hx + 10, hy + 8)
+    if (ev && ev.clientX) {
+      const sr = stage.getBoundingClientRect()
+      pulse(ev.clientX - sr.left, ev.clientY - sr.top)
+    }
+    requestAnimationFrame(function () {
+      setLasso(rect)
+      frame(rect, 1.55)
+    })
+  }
+
+  function play() {
+    clearTimeout(timer)
+    scripted = !reduce
+    overview()
+    moveHand(stage.clientWidth * 0.62, stage.clientHeight * 0.58)
+    if (reduce) { go(0); return }
+    let i = 0
+    function next() {
+      if (!scripted) return
+      go(i)
+      i += 1
+      if (i < STEPS.length) timer = setTimeout(next, 2400)
+    }
+    timer = setTimeout(next, 900)
+  }
+
+  document.getElementById("t-replay").addEventListener("click", play)
+  window.addEventListener("resize", function () {
+    if (index < 0) overview()
+    else go(index)
+  })
+  play()
+})()
+</script>
+</body>
+</html>

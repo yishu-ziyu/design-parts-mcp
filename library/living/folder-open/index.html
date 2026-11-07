@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Folder open</title><link rel="icon" href="data:,">
+<style>
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-display:block}
+:root{--spring:linear(0,.009,.035 2.1%,.141 4.4%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1.001)}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#1a2a26;font:400 13px/20px "Geist Mono",ui-monospace,monospace}
+#stage{position:relative;height:720px;overflow:hidden;touch-action:manipulation}
+/* 文件夹 250x300，透视 511 */
+#scene{position:absolute;left:50%;top:224px;margin-left:-125px;width:250px;height:300px;perspective:511px;perspective-origin:58% 50%}
+#folder{position:absolute;inset:0;transform-style:preserve-3d;cursor:pointer;transition:transform .35s ease-out;filter:none}
+.back{position:absolute;inset:0;background:linear-gradient(90deg,#03241f 0,#04281f 50%,#03241f 100%);border-radius:12px;transform:translateZ(0);box-shadow:0 10px 26px -14px #0d1f1a30,0 0 22px #0d1f1a0c;transition:border-radius .16s}
+#folder.open .back{border-radius:0;inset:0 -.8px}#folder.open .pocket{border-radius:9px 9px 0 0;left:-.8px;right:-.8px}
+#inner{position:absolute;inset:0;transform:translateZ(.2px);transform-style:flat;overflow:visible}
+.pocket{position:absolute;left:0;right:0;bottom:0;height:122px;background:#0c322b;border-radius:9px 9px 12px 12px;transform:translateZ(.4px);transition:border-radius .16s}
+/* 两片门：外面深绿带标识，里面更暗带钉眼 */
+.flap{position:absolute;top:0;bottom:0;width:124.400px;transform-style:preserve-3d;transform:translateZ(.6px) rotateY(var(--r,0deg));will-change:transform}
+#L{left:0;transform-origin:0 50%}
+#R{right:0;transform-origin:100% 50%}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.out{background:linear-gradient(90deg,#08342c 0,#07332b 88%,#062f28 100%)}
+#L .out{border-radius:12px 0 0 12px}
+#R .out{border-radius:0 12px 12px 0;background:linear-gradient(90deg,#062f28 0,#07332c 8%,#08342c 100%)}
+.in{transform:rotateY(180deg);background:linear-gradient(90deg,#072f27 0,#072f27 44%,#062b24 74%,#04261f 100%)}
+#L .in{border-radius:12px 0 0 12px}
+#R .in{border-radius:0 12px 12px 0;background:linear-gradient(90deg,#04261f 0,#062b24 26%,#072f27 56%,#072f27 100%)}
+.eye{position:absolute;top:150px;width:6.500px;height:6.500px;margin-top:-3.200px;border-radius:50%;background:#49534f;box-shadow:0 0 0 1px #0c1f1b,0 0 0 2.500px #1c4a43,0 0 7px 3px #0a3b3488}
+#L .out .eye{right:10px}#R .out .eye{left:10px}#L .in .eye{left:6px}#R .in .eye{right:6px}
+.logo{position:absolute;left:13.500px;top:13.500px;width:24px;height:24px;color:#f6f6f2}
+.cap{position:absolute;left:14px;bottom:14px;font:300 8.900px/14px "Geist Mono",ui-monospace,monospace;color:#e8ece6;white-space:nowrap;letter-spacing:0}
+.cap b{display:block;font:400 9px/14px -apple-system,"Helvetica Neue",sans-serif;color:#a9bcb4;letter-spacing:.2px}
+/* 邮票组：放在夹层里被口袋挡住；取出来时搬到 #over 这一层 */
+#over{position:absolute;inset:0;z-index:5;pointer-events:none;transform-style:flat}
+.stack{position:absolute;left:0;top:0;width:250px;height:300px;transform-origin:125px 150px;pointer-events:none}
+.stamp{position:absolute;left:36.500px;top:25px;width:177px;height:250px;transform-origin:50% 50%;pointer-events:auto;transition:transform .55s var(--spring);filter:drop-shadow(0 1.500px 2px #06201a40)}
+.stamp svg{display:block;width:100%;height:100%;overflow:visible}
+#s2{--tx:3px;--ty:2px;--rt:5deg;transform:translate(var(--tx),var(--ty)) rotate(var(--rt))}
+.fan #s2{--tx:42px;--ty:7px;--rt:14deg}
+.inpocket #s2{--tx:27px;--ty:36px;--rt:5deg}
+.doc{max-width:560px;margin:0 auto;padding:0 16px 72px;color:#42514c;font-size:12.500px}
+.doc h3{font:600 14px/22px "Geist Mono",monospace;color:#10201c;margin:0 0 8px}.doc dt{margin-top:10px}.doc dd{margin:2px 0 0}.doc code{font-weight:600}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".04 .55" numOctaves="3" seed="4"/><feColorMatrix values="0 0 0 0 .55 0 0 0 0 .5 0 0 0 0 .4 0 0 0 .1 0"/><feComposite in2="SourceGraphic" operator="in"/><feBlend in2="SourceGraphic" mode="multiply"/></filter>
+<pattern id="wave" width="20" height="10" patternUnits="userSpaceOnUse"><rect width="20" height="10" fill="#2f9aa0"/><g fill="none" stroke="#e8f2ec" stroke-width=".8"><path d="M0 10a10 10 0 0 1 20 0M4 10a6 6 0 0 1 12 0M7.500 10a2.500 2.500 0 0 1 5 0"/><path d="M-10 5a10 10 0 0 1 20 0M-6 5a6 6 0 0 1 12 0M-2.500 5a2.500 2.500 0 0 1 5 0M10 5a10 10 0 0 1 20 0M14 5a6 6 0 0 1 12 0M17.500 5a2.500 2.500 0 0 1 5 0"/></g></pattern>
+</defs></svg>
+<div id="stage"><div id="scene" aria-label="Stamp collection folder" role="button" tabindex="0">
+ <div id="folder">
+  <div class="back"></div>
+  <div id="inner"></div>
+  <div class="pocket"></div>
+  <div class="flap" id="L"><div class="face out"><svg class="logo" viewBox="1 1 22 22" fill="currentColor" aria-hidden="true"><g id="pet"><path d="M12 11c-2.600-3-2.600-7 0-10.500 2.600 3.500 2.600 7.500 0 10.500Z"/><path d="M12 11c-2.600-3-2.600-7 0-10.500 2.600 3.500 2.600 7.500 0 10.500Z" transform="rotate(62 12 12)"/><path d="M12 11c-2.600-3-2.600-7 0-10.500 2.600 3.500 2.600 7.500 0 10.500Z" transform="rotate(122 12 12)"/><path d="M12 11c-2.600-3-2.600-7 0-10.500 2.600 3.500 2.600 7.500 0 10.500Z" transform="rotate(178 12 12)"/><path d="M12 11c-2.600-3-2.600-7 0-10.500 2.600 3.500 2.600 7.500 0 10.500Z" transform="rotate(238 12 12)"/><path d="M12 11c-2.600-3-2.600-7 0-10.500 2.600 3.500 2.600 7.500 0 10.500Z" transform="rotate(298 12 12)"/></g></svg><div class="eye"></div><div class="cap">Stamp collection<b>02 total</b></div></div><div class="face in"><div class="eye"></div></div></div>
+  <div class="flap" id="R"><div class="face out"><div class="eye"></div></div><div class="face in"><div class="eye"></div></div></div>
+ </div>
+ <div id="over"></div>
+</div></div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#folder</code></dt><dd>两片门绕外侧竖边转 98°，透视 511px，再用鼠标位置给整体加一点 Y 轴倾斜。</dd>
+<dt><code>#s2</code></dt><dd>后面那张邮票：鼠标移到邮票上才滑出来，移开收回。</dd>
+<dt><code>#over</code></dt><dd>邮票飞到最高点时换到最上层，这样门关上时它还在门前面。</dd></dl></section>
+<script>
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 打孔边：矩形沿边咬半圆，邮票不用图片
+function perf(w,h,n,m,r){const px=w/n,py=h/m;let d=`M0 0`;for(let i=0;i<n;i++){d+=`H${(i+.5)*px-r}a${r} ${r} 0 0 0 ${2*r} 0`}d+=`H${w}`;for(let i=0;i<m;i++){d+=`V${(i+.5)*py-r}a${r} ${r} 0 0 0 0 ${2*r}`}d+=`V${h}`;for(let i=n-1;i>=0;i--){d+=`H${(i+.5)*px+r}a${r} ${r} 0 0 0 ${-2*r} 0`}d+=`H0`;for(let i=m-1;i>=0;i--){d+=`V${(i+.5)*py+r}a${r} ${r} 0 0 0 0 ${-2*r}`}return d+'Z'}
+const edge=perf(177,250,19,27,2.3);
+const sparrow=`<g transform="translate(26 133) scale(1.08)"><path d="M18 76c6-12 12-22 20-30s20-12 34-16 M36 49c-5 2-12 4-17 2 3-5 11-6 17-2Zm8-9c-4 6-8 15-8 22 6-5 10-14 8-22Zm9-6c-2 6-3 14-1 20 5-5 6-14 1-20Zm15-5c-1-6 3-12 10-14-1 7-5 12-10 14Z M28 62c-1 6-4 11-9 16-1-7 3-13 9-16Z" fill="none" stroke="#6f6e72" stroke-width=".8"/><path d="M20 52c-6-3-13-2-19 2 6 3 13 3 19-2Z" fill="#d57a50"/><circle cx="74" cy="17" r="2.700" fill="#d9503b"/><path d="M62 24c1 3 8-1 12-7" fill="none" stroke="#6f6e72" stroke-width=".7"/>
+<path d="M17 25C22 14 34 2 46 3c7 .6 11 6 10 13-1 8-9 14-17 15-6 1-14-1-22-6Z" fill="#f1ece1" stroke="#55535a" stroke-width=".8"/><path d="M36 4c6-3 15-2 18 4 1 1 1 3 1 4-4-3-10-3-15-1-2 1-6 0-4-7Z" fill="#7d7b88" stroke="#55535a" stroke-width=".5"/><path d="M44 10c3-1 8-1 11 2-2 2-8 2-11-2Z" fill="#292731"/><circle cx="48" cy="10.500" r="1.100" fill="#111"/><path d="M55 10l5 1.800-5 1.700Z" fill="#d95a3b"/><path d="M6 37c2-9 14-19 25-20 5 0 5 6 2 9-6 7-16 11-27 11Z" fill="#a9a7ad" stroke="#55535a" stroke-width=".7"/><path d="M12 32c6-2 12-6 17-11M9 35c8-1 16-5 21-10" fill="none" stroke="#efece2" stroke-width=".8"/><path d="M0 44c3-3 7-6 11-8l1 3c-4 2-8 4-12 5Z" fill="#55535a"/><path d="M36 30v5m6-5.500v5" stroke="#55535a" stroke-width=".8"/></g>`;
+const S1=`<svg viewBox="0 0 177 250" aria-hidden="true"><path d="${edge}" fill="#fbfbf8"/><rect x="9" y="9" width="159" height="232" fill="#efebdf" filter="url(#paper)"/>${sparrow}
+<g font-family="'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif" fill="#2f2c58" text-anchor="middle"><g font-size="19"><text x="143" y="39">静</text><text x="143" y="60">か</text><text x="143" y="81">な</text><text x="143" y="102">時</text><text x="143" y="123">間</text></g><g font-size="9.500"><text x="143" y="146">日</text><text x="143" y="157">本</text></g></g>
+<g fill="#2f2c58" font-family="'Hiragino Mincho ProN','Times New Roman',serif" text-anchor="end"><text x="150" y="217" font-size="20">63</text><text x="162" y="216" font-size="11.500">円</text><text x="162" y="231" font-size="11" font-family="'Times New Roman',serif" letter-spacing=".2">NIPPON</text></g></svg>`;
+const S2=`<svg viewBox="0 0 177 250" aria-hidden="true"><path d="${edge}" fill="#f4e6c6"/><rect x="9" y="9" width="159" height="232" fill="#2f9aa0"/><rect x="9" y="104" width="159" height="137" fill="url(#wave)"/>
+<circle cx="128" cy="98" r="9" fill="#ef6a33"/><path d="M124 110c6-9 19-12 26-4 6-1 11 1 18 6v2H124Z" fill="#f5f0e2"/>
+<path d="M116 158c-6-11-1-22 11-25 6 6 11 16 4 26-6-1-10-1-15-1Z" fill="#2f5da0" stroke="#232350" stroke-width="1.500"/>
+<g font-family="'Hiragino Kaku Gothic ProN','PingFang SC','Noto Sans JP',sans-serif" font-weight="800" fill="#232350" text-anchor="middle"><text x="134" y="72" font-size="54" stroke="#ef6a33" stroke-width="3.500" paint-order="stroke">鳥</text><text x="72" y="70" font-size="40" stroke="#ef6a33" stroke-width="3" paint-order="stroke">海</text><rect x="118" y="176" width="42" height="3"/><rect x="118" y="183" width="42" height="3"/><text x="140" y="214" font-size="26" fill="#ef6a33" stroke="#232350" stroke-width="1" paint-order="stroke">円</text><text x="140" y="236" font-size="15">便</text></g></svg>`;
+// 三个位置，数值量自原视频（1.5 倍录屏，已折算为 CSS 像素）
+const POS={
+ shut:{x:0,y:20,s:.72,r:.3},   // 关着：从门缝只露一条白边
+ peek:{x:0,y:-10,s:.72,r:2.5},  // 门打开：邮票升起，下半截被口袋挡住
+ high:{x:4,y:-114,s:.74,r:5},   // 取出时的最高点
+ rest:{x:-8,y:0,s:1,r:-.5},     // 落在合上的文件夹前面
+};
+const T=p=>`translate(${p.x}px,${p.y}px) rotate(${p.r}deg) scale(${p.s})`;
+const stack=document.createElement('div');stack.className='stack';stack.innerHTML=`<div class="stamp" id="s2">${S2}</div><div class="stamp" id="s1">${S1}</div>`;
+stack.style.transform=T(POS.shut);stack.classList.add("inpocket");
+const $=id=>document.getElementById(id),scene=$('scene'),folder=$('folder'),inner=$('inner'),over=$('over'),L=$('L'),R=$('R');
+inner.append(stack);
+const OPEN=98,EASE='cubic-bezier(.22,1,.36,1)';
+let state='shut',busy=false,inside=false;
+let curDeg=0;
+function setFlaps(deg,ms,easing){const k=reduce?0:ms,from=curDeg;curDeg=deg;folder.classList.toggle('open',deg>0);const fx=[[L,-1],[R,1]].map(([el,sign])=>el.animate([{transform:`translateZ(.6px) rotateY(${sign*from}deg)`},{transform:`translateZ(.6px) rotateY(${sign*deg}deg)`}],{duration:k,easing:easing||EASE,fill:'forwards'}));return Promise.all(fx.map(a=>a.finished))}
+const mv=(p,ms,e)=>stack.animate([{transform:getComputedStyle(stack).transform},{transform:T(p)}],{duration:reduce?0:ms,easing:e||EASE,fill:'forwards'}).finished;
+async function hoverOpen(){if(busy||state!=='shut')return;state='peek';setFlaps(OPEN,620,'cubic-bezier(.22,1.18,.36,1)');await mv(POS.peek,520)}
+async function hoverClose(){if(busy||state!=='peek')return;state='shut';setFlaps(0,420,'cubic-bezier(.4,0,.2,1)');await mv(POS.shut,380)}
+async function take(){if(busy)return;busy=true;
+ if(state==='shut'){setFlaps(OPEN,420);await mv(POS.peek,380)}
+ state='out';await mv(POS.high,420,'cubic-bezier(.3,.7,.3,1)');over.append(stack);stack.classList.remove('inpocket');
+ setFlaps(0,520,'cubic-bezier(.45,0,.2,1)');await mv(POS.rest,620,'cubic-bezier(.3,1.25,.4,1)');busy=false;stack.classList.toggle('fan',inside)}
+async function back(){if(busy)return;busy=true;stack.classList.remove('fan');inside=scene.matches(':hover');
+ setFlaps(OPEN,480,EASE);await mv(POS.high,430,'cubic-bezier(.4,0,.2,1)');inner.append(stack);stack.classList.add('inpocket');
+ await mv(POS.peek,420,'cubic-bezier(.3,.8,.3,1)');state='peek';busy=false;
+ if(!inside){await new Promise(r=>setTimeout(r,120));hoverClose()}}
+function jump(st){const p=POS[st==='out'?'rest':st==='peek'?'peek':'shut'];const d=st==='shut'||st==='out'?0:OPEN;curDeg=d;folder.classList.toggle('open',d>0);stack.classList.toggle('inpocket',st!=='out');[[L,-1],[R,1]].forEach(([el,s])=>{el.getAnimations().forEach(a=>a.cancel());el.style.transform=`translateZ(.6px) rotateY(${s*d}deg)`});stack.getAnimations().forEach(a=>a.cancel());stack.style.transform=T(p);(st==='out'?over:inner).append(stack);state=st}
+// 鼠标：进入开门，离开关门，点击取出；取出后点空白放回
+folder.addEventListener('pointerenter',()=>{inside=true;hoverOpen()});
+scene.addEventListener('pointerleave',()=>{inside=false;stack.classList.remove('fan');if(state==='peek')hoverClose()});
+scene.addEventListener('pointermove',e=>{const r=scene.getBoundingClientRect();const mx=(e.clientX-r.left-r.width/2)/r.width;if(!reduce)folder.style.transform=`rotateY(${(mx*5).toFixed(2)}deg)`;});
+stack.addEventListener('pointerenter',()=>{if(state==='out'&&!busy)stack.classList.add('fan')});
+stack.addEventListener('pointerleave',()=>stack.classList.remove('fan'));
+scene.addEventListener('click',e=>{if(state==='out'){if(!e.target.closest('.stamp'))back();return}take()});
+$('stage').addEventListener('click',e=>{if(state==='out'&&!scene.contains(e.target))back()});
+scene.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();state==='out'?back():take()}if(e.key==='Escape'&&state==='out')back()});
+const q=new URLSearchParams(location.search);
+if(q.has('s'))jump(q.get('s'));if(q.has('fan'))stack.classList.add('fan');if(q.has('tilt'))folder.style.transform=`rotateY(${q.get('tilt')}deg)`;
+window.__api={take,back,hoverOpen,hoverClose,get state(){return state}};
+</script></body></html>

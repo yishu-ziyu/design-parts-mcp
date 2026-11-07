@@ -1,0 +1,128 @@
+/* One shape, not two. The pill does not open a panel next to
+   itself and it does not grow a chin â it IS the panel, seen
+   small. Pressing it makes it spread: the pill goes, and what
+   is left standing in the same spot is the window. */
+
+/* The press lands first: the pill simply gets smaller. Going
+   straight to the expansion skips the acknowledgement and the
+   panel seems to arrive slightly before it was asked for.
+
+   The two overlap on purpose. The shrink takes 120ms and the
+   spread starts at 95, so it is still on its way down as it
+   begins to widen. Waiting for the shrink to land leaves a
+   stretch where nothing moves at all, and thirty still
+   milliseconds in the middle of a gesture reads as a
+   stutter. */
+const press = () => {
+  setSink(true);
+  setTimeout(() => { setSink(false); setOpen(true); }, 95);
+};
+
+/* and the rows come in close behind the shell rather than
+   after it â a panel that arrives empty and fills a beat
+   later reads as a pause even though nothing stopped */
+transitionDelay: open ? 70 + i * 38 : (n - 1 - i) * 30;
+
+/* a plain uniform shrink â nothing squashes and nothing
+   spreads â and in fast, because a press should be felt at
+   once and not eased into */
+[data-sink] .crt-body { scale: 0.94; transition: scale 110ms; }
+transition: scale 340ms cubic-bezier(0.22, 1, 0.36, 1);   /* and back, cleanly */
+
+/* the label is held at full strength through the press:
+   fading it during the squash hides the beat it is for */
+[data-sink] .crt-pill { opacity: 1; }
+
+/* The two states are two sets of custom properties and one
+   attribute picks between them. Nothing here is measured. */
+.crt-stage            { --w: 132px; --h: 46px;  --r: 999px; }
+.crt-stage[data-open] { --w: 212px; --h: 190px; --r: 26px;  }
+
+/* The spread is ONE move. Width, height and the corner all
+   run the same curve for the same time â staggering the axes
+   read as two animations queued up rather than one thing
+   changing size. Measured through the open, the two stay
+   within 3% of each other's progress.
+
+   And nothing overshoots. A spring past the target drags the
+   corner radius with it: the corners dip under 28 and come
+   back, which is a wobble rather than a bounce, and it is the
+   first thing that makes a panel look cheap. */
+transition:
+  width         480ms cubic-bezier(0.22, 1, 0.36, 1),
+  height        480ms cubic-bezier(0.22, 1, 0.36, 1),
+  border-radius 480ms cubic-bezier(0.22, 1, 0.36, 1);
+
+/* Centred by transform, never by a negative margin. A margin
+   would have to be animated alongside the size, and the two
+   axes run on different clocks â the box drifted 34px above
+   centre halfway through. A percentage translate is always
+   half of whatever the box is right now. */
+left: 50%; top: 50%; transform: translate(-50%, -50%);
+
+/* Nothing else happens. No burst, nothing flies off: one
+   shape changes shape.
+
+   And no metaball filter, which is the point. The other
+   liquid studies have two or more shapes that have to fuse;
+   this has exactly one, so a blur can only damage it â at the
+   radius the others use, a fifth of a row's height, the
+   corners came back bulged and uneven instead of at the
+   radius they were given. */
+
+/* The rows are fully round, so each nests inside the card's
+   own corners instead of squaring off against them â and none
+   of them carries a background. The highlight is one shape on
+   its own filtered layer, so it travels between rows as a
+   single body of liquid rather than fading out of one and
+   into the next. */
+.crt-item button { border-radius: 999px; background: none; }
+
+/* 28 outside against a 10px inset leaves 18 for the rows to
+   nest in, and a 34px row rounds fully at 17 â so the two
+   curves are concentric rather than merely both round */
+--r: 28px;
+
+/* Into the stretch fast and out of it slowly. At equal speeds
+   it straightened while still travelling, which is exactly
+   what made the hover feel wrong. */
+.crt-hov-pill          { transition: scale 300ms cubic-bezier(0.3, 0.9, 0.4, 1); }
+.crt-hov-pill[data-moving="true"] {
+  scale: 0.96 1.16;
+  transition: scale 110ms cubic-bezier(0.3, 1, 0.4, 1);
+}
+setTimeout(() => setMoving(false), 90);   // lands with the 380ms travel
+
+/* only a move between rows stretches it; arriving from
+   nowhere has no direction to stretch along */
+if (over !== null && over !== i) setMoving(true);
+
+/* Solid, unlike the other liquid studies. Those fade their
+   layer because the type sits behind it; here the labels are
+   white and ride ON the shape. */
+.crt-blobs { filter: url(#liq-goo); }
+
+/* No close button and no title bar â anywhere but the menu
+   puts it away. Registered only while it is open, and in an
+   effect, so the very press that opened it (whose pointerdown
+   has already been and gone) cannot close it on the same
+   click.
+
+   AND IT ASKS THE VISIBLE BOX, NOT THE ELEMENT. contains() is
+   the obvious test and it was wrong here: the ref is the STAGE,
+   the square this block reserves so opening the menu does not
+   resize what is under it. The stage is 305 square, the menu
+   inside it is 265x208, and every press in between counted as
+   a press on the menu â 48px of dead ground above it and 49
+   below, where clicking did nothing at all. */
+useEffect(() => {
+  if (!open) return;
+  const away = e => {
+    const b = panel.current?.querySelector(".crt-panel")?.getBoundingClientRect();
+    const on = b && e.clientX >= b.left && e.clientX <= b.right
+                 && e.clientY >= b.top  && e.clientY <= b.bottom;
+    if (!on) setOpen(false);
+  };
+  document.addEventListener("pointerdown", away);
+  return () => document.removeEventListener("pointerdown", away);
+}, [open]);
