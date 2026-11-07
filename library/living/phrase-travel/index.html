@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一句折成胶囊再飞走</title>
+<style>
+:root { --ink:#2f2a22; --quiet:#5a5247; --paper:#f3f4f6; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.7 "PingFang SC",sans-serif; }
+.layout { width:min(680px,calc(100% - 32px)); margin:40px auto; display:grid; gap:28px; }
+article { background:#fff; border-radius:20px; padding:22px 22px 8px; box-shadow:inset 0 0 0 1px rgba(32,38,46,.1); }
+.phrase { display:inline; border:0; background:transparent; color:inherit; font:inherit; border-radius:8px; padding:0 2px; cursor:pointer; }
+.phrase:hover, .phrase[aria-pressed="true"] { background:#e7efe4; }
+#dock { justify-self:end; min-height:40px; }
+#dock span { display:inline-flex; align-items:center; min-height:36px; padding:0 12px; border-radius:999px; background:#2f2a22; color:#f6f5f2; font-size:13px; }
+#flyer { position:fixed; z-index:3; margin:0; border-radius:999px; background:#2f2a22; color:#f6f5f2; font-size:13px; display:grid; place-items:center; pointer-events:none; transform-origin:center; }
+.doc { width:min(680px,calc(100% - 32px)); margin:0 auto 64px; color:var(--quiet); font-size:15px; }
+.doc code { font:12.5px ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <article>
+    <p>雾比山先到。<button class="phrase" type="button">潮水退到可以走的地方。</button>灯还没亮，路已经认得。</p>
+  </article>
+  <div id="dock" aria-live="polite"></div>
+</div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#flyer</code></dt><dd>用起点和终点的 getBoundingClientRect 算出位移。先用 160ms 收到 0.92，再用 420ms 的 ease 飞到栏上。减少动态效果时不飞，直接出现。</dd>
+<dt><code>#dock</code></dt><dd>飞到之后胶囊留在栏上。再点一次换成新的一句。</dd>
+</dl>
+<p>同目录 <code>origin/ai-intent.tsx</code> 是研究页里的原实现。</p>
+</section>
+<script>
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const dock = document.getElementById("dock");
+document.querySelectorAll(".phrase").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    document.querySelectorAll(".phrase").forEach((n) => n.setAttribute("aria-pressed", "false"));
+    btn.setAttribute("aria-pressed", "true");
+    const text = btn.textContent;
+    if (reduce) { dock.innerHTML = `<span>${text}</span>`; return; }
+    const from = btn.getBoundingClientRect();
+    dock.innerHTML = `<span>${text}</span>`;
+    const target = dock.firstElementChild;
+    target.style.visibility = "hidden";
+    const to = target.getBoundingClientRect();
+    const flyer = document.createElement("div");
+    flyer.id = "flyer";
+    flyer.textContent = text;
+    flyer.style.left = from.left + "px";
+    flyer.style.top = from.top + "px";
+    flyer.style.width = from.width + "px";
+    flyer.style.height = from.height + "px";
+    document.body.appendChild(flyer);
+    flyer.animate([{ transform:"scale(1)" },{ transform:"scale(0.92)" }], { duration:160, fill:"forwards" });
+    await new Promise((r) => setTimeout(r, 160));
+    flyer.animate([
+      { left: from.left + "px", top: from.top + "px", width: from.width + "px", height: from.height + "px", borderRadius:"8px" },
+      { left: to.left + "px", top: to.top + "px", width: to.width + "px", height: to.height + "px", borderRadius:"999px" }
+    ], { duration:420, easing:"cubic-bezier(.2,0,0,1)", fill:"forwards" });
+    await new Promise((r) => setTimeout(r, 420));
+    flyer.remove();
+    target.style.visibility = "";
+  });
+});
+</script>
+</body>
+</html>

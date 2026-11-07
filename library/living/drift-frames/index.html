@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>三行画框各走各的</title>
+<style>
+:root { --ink:#2f2a22; --quiet:#5a5247; --paper:#f3f4f6; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.lead { width:min(640px,calc(100% - 32px)); margin:48px auto 0; }
+#wall { position:relative; height:28rem; margin-top:32px; overflow:hidden; }
+.row { position:absolute; left:0; display:flex; gap:16px; width:max-content; }
+.frame { width:220px; height:132px; border-radius:14px; position:relative; box-shadow:0 14px 28px -18px rgba(32,38,46,.45); }
+.frame span { position:absolute; left:8px; bottom:8px; background:rgba(255,255,255,.84); border-radius:999px; padding:2px 8px; font-size:12px; }
+.doc { width:min(640px,calc(100% - 32px)); margin:24px auto 80px; color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+.spacer { height:40vh; }
+</style>
+</head>
+<body>
+<p class="lead">往下走。三行不共用一个速度。</p>
+<div id="wall">
+  <div class="row" data-k="0.22" data-tilt="-7" style="top:6%"></div>
+  <div class="row" data-k="-0.16" data-tilt="4" style="top:38%"></div>
+  <div class="row" data-k="0.28" data-tilt="-3" style="top:68%"></div>
+</div>
+<div class="spacer"></div>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#wall</code></dt><dd>每行一个系数。位移是页面中心差乘这个系数，再用 0.12 的插值追上。倾斜写在行上，不写在单张上。</dd>
+</dl>
+<p>原实现在 <code>origin/parallax-wall.tsx</code>。画是色块，不是研究页里的作品。</p>
+</section>
+<script>
+const colors = ["#6e8b74","#d7c7a1","#24312c","#8aa0b4","#c47a62","#efe6d4"];
+const names = ["峭壁","江渚","烟雨","海平线","晨湖","夜脊"];
+document.querySelectorAll(".row").forEach((row) => {
+  const tilt = row.dataset.tilt;
+  row.style.transform = `rotate(${tilt}deg)`;
+  row.innerHTML = [...names, ...names].map((name, i) => `<div class="frame" style="background:${colors[i % colors.length]}"><span>${name}</span></div>`).join("");
+});
+const wall = document.getElementById("wall");
+let current = 0, target = 0, frame = 0;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function tick() {
+  current += (target - current) * 0.12;
+  if (Math.abs(target - current) < 0.2) current = target;
+  document.querySelectorAll(".row").forEach((row) => {
+    const k = Number(row.dataset.k);
+    const tilt = row.dataset.tilt;
+    row.style.transform = `translate3d(${current * k}px,0,0) rotate(${tilt}deg)`;
+  });
+  frame = current === target ? 0 : requestAnimationFrame(tick);
+}
+addEventListener("scroll", () => {
+  if (reduce) return;
+  const rect = wall.getBoundingClientRect();
+  target = innerHeight * 0.45 - (rect.top + rect.height * 0.5);
+  if (!frame) frame = requestAnimationFrame(tick);
+}, { passive:true });
+</script>
+</body>
+</html>

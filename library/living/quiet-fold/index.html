@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装饰收进高度零</title>
+<style>
+:root { --ink:#2f2a22; --paper:#f3f4f6; --quiet:#5a5247; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 "PingFang SC",sans-serif; }
+.lead { width:min(640px,calc(100% - 32px)); margin:36px auto 16px; }
+#stage { width:min(640px,calc(100% - 32px)); margin:0 auto; aspect-ratio:16/10; border-radius:20px; overflow:hidden; position:relative; background:linear-gradient(#8ea897,#1c2822 70%); color:#f6f5f2; }
+#extra { max-height:160px; overflow:hidden; opacity:1; transition:max-height 220ms cubic-bezier(.2,0,0,1), opacity 180ms; text-align:center; padding-top:18%; }
+#stage.is-quiet #extra { max-height:0; opacity:0; }
+#clock { font-size:64px; letter-spacing:-.04em; line-height:1; }
+#field { position:absolute; left:50%; bottom:18%; transform:translateX(-50%); width:min(280px,70%); }
+input { width:100%; border:0; border-radius:999px; min-height:40px; padding:0 14px; font:inherit; }
+button.toggle { margin-top:12px; border:0; border-radius:999px; background:#2f2a22; color:#f6f5f2; min-height:36px; padding:0 14px; }
+.doc { width:min(640px,calc(100% - 32px)); margin:20px auto 64px; color:var(--quiet); }
+.doc code { font:12.5px ui-monospace,monospace; }
+@media (prefers-reduced-motion:reduce) { #extra { transition:none; } }
+</style>
+</head>
+<body>
+<p class="lead">收起之后，时钟不再占位置，输入还在。</p>
+<div id="stage">
+  <div id="extra">
+    <div id="clock">09:41</div>
+    <p>雾比山先到。</p>
+  </div>
+  <div id="field"><input placeholder="只留下这一条" aria-label="输入"></div>
+</div>
+<p class="lead"><button class="toggle" type="button" aria-pressed="false">收起装饰</button></p>
+<section class="doc"><h3>可拆</h3><dl>
+<dt><code>#extra</code></dt><dd>收起时同时做 opacity 和 max-height:0。只改透明度会把空位留在画面里。过渡 220ms。减少动态效果时没有过渡。</dd>
+</dl>
+<p>原实现在 <code>origin/new-tab.tsx</code>。</p>
+</section>
+<script>
+const stage = document.getElementById("stage");
+const btn = document.querySelector(".toggle");
+btn.addEventListener("click", () => {
+  const on = !stage.classList.contains("is-quiet");
+  stage.classList.toggle("is-quiet", on);
+  btn.setAttribute("aria-pressed", String(on));
+  btn.textContent = on ? "展开装饰" : "收起装饰";
+});
+</script>
+</body>
+</html>

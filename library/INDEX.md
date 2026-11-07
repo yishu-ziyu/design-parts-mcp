@@ -145,6 +145,16 @@
 | [trace/index.html](living/trace/index.html) | Agent 依次查五个来源：每步长出一行在扫光，结果卡开两张收一张，答案逐词流出，最后整串收成「Ran 2 searches and read 3 sources」 | Agent / AI 助手展示工具调用过程、思考轨迹、引用来源。`?t=` 能和原视频逐秒对帧 |
 | [die-cut-sticker/index.html](living/die-cut-sticker/index.html) | 同一张抠图左右对照：左边是本子上歪 −8° 的模切贴纸（等宽厚白边、纸感颗粒、软投影），右边是粘进来的矩形截图 | Die-cut sticker / 贴纸 / 抠图白边：让一张图融入画面（blend an image into the scene），不像后贴的截图。先问它在场景里是什么物件 |
 
+| [caret-follow/index.html](living/caret-follow/index.html) | 浏览器里一条输入。指针跟着当前目标的盒子走，先是快捷键，再是竖线，再是亮起的那一行。 | 要演示召唤之后指针也跟着时。 |
+| [mode-track/index.html](living/mode-track/index.html) | 分段条的滑块按按钮实测宽度走。点一个站，栏上多一枚锁。 | 同一条检索要在全部、站内、模型之间换，而且站能锁住。 |
+| [phrase-travel/index.html](living/phrase-travel/index.html) | 一段话里点一句，这句缩成胶囊，飞到角落的栏上。 | 一句要离开正文、落到另一处继续用时。 |
+| [resize-dither/index.html](living/resize-dither/index.html) | 同一幅画面换成 Bayer 网点。窗口变大，点的位置不游走。 | 整幅画面的有序抖动。格子按 CSS 像素钉死。标题雾走 halftone。 |
+| [drift-frames/index.html](living/drift-frames/index.html) | 三行画框各有倾斜和速度，页面移动时错开。 | 一堵作品墙。不要每张卡再写一段说明。 |
+| [quote-band/index.html](living/quote-band/index.html) | 同一列短句贴两次，接成一条不停的带。 | 短句要循环，接缝不能露。 |
+| [dock-reach/index.html](living/dock-reach/index.html) | 底部一排图标，指针靠近的更大，远处回到 1。 | 停靠栏放大。不是菜单。 |
+| [quiet-fold/index.html](living/quiet-fold/index.html) | 时钟和一句短句收进高度 0，只留下输入。 | 想把装饰收掉，画面还在。 |
+| [sheet-switches/index.html](living/sheet-switches/index.html) | 一张用 1px 缝拼起来的表。每格一个开关。 | 一组轻开关，不要做成散落的卡片。 |
+
 ## 零件
 
 按要做的那一块查。同一页可以拆出好几块。锚点是页里的 id。
@@ -737,3 +747,19 @@
 | 贴纸尺寸 / sticker scale | [die-cut-sticker](living/die-cut-sticker/index.html#scale) | 宽 240px ≈ 场景 25–30%，白边随宽缩放 |
 | 纸感颗粒 / paper grain / noise texture | [die-cut-sticker](living/die-cut-sticker/index.html#grain) | `feTurbulence fractalNoise .9`，只上白边，α 0.06–0.14 |
 | 图片融入画面 / 不像粘贴的截图 / blend image into scene | [die-cut-sticker](living/die-cut-sticker/index.html) | 整页：左贴纸右截图反例 |
+
+### 产品站里拆出的机制
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 指针跟着书写位置 | [caret-follow](living/caret-follow/index.html#pointer) | 先停在快捷键，再跟着竖线，最后跟着亮起的行。过渡 280ms |
+| 字按 150ms 补进输入 | [caret-follow](living/caret-follow/index.html#caret) | 输入里的竖线 |
+| 分段滑块按实测宽度 | [mode-track](living/mode-track/index.html#indicator) | 滑块宽和位移来自按钮的 offsetWidth / offsetLeft，220ms |
+| 把一个站锁在栏上 | [mode-track](living/mode-track/index.html#chip) | 点站名后栏上的锁 |
+| 一句收成胶囊再飞走 | [phrase-travel](living/phrase-travel/index.html#flyer) | 160ms 收到 0.92，420ms 飞到终点盒子 |
+| 整幅 Bayer 网点，改大小不游走 | [resize-dither](living/resize-dither/index.html#canvas) | 细 4px，粗 8px，按 CSS 像素钉死 |
+| 三行不同速度的画框 | [drift-frames](living/drift-frames/index.html#wall) | 每行一个系数，插值 0.12 |
+| 无缝循环的短句带 | [quote-band](living/quote-band/index.html#track) | 两份相同列表走到 -50%，36s |
+| 停靠栏靠近放大 | [dock-reach](living/dock-reach/index.html#dock) | 120px 内从 1 到 1.45，原点在底边 |
+| 装饰收到高度 0 | [quiet-fold](living/quiet-fold/index.html#extra) | opacity 与 max-height 一起收到 0，220ms |
+| 1px 缝的开关表 | [sheet-switches](living/sheet-switches/index.html#sheet) | 缝是表的背景。滑块移动 16px，180ms |
