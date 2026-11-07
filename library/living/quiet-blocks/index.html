@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>十块页面，一次只看一块</title>
+<style>
+:root{
+  --paper:hsl(0 0% 0%);
+  --card:hsl(0 0% 5%);
+  --raised:hsl(0 0% 10%);
+  --ink:hsl(0 0% 92%);
+  --muted:hsl(0 0% 60%);
+  --accent:hsl(211 90% 56%);
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.5 var(--sans)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.shell{display:grid;grid-template-columns:200px minmax(0,1fr);min-height:100vh}
+nav{background:var(--card);padding:1.25rem .75rem}
+nav p{margin:0 .5rem 1rem;font-size:.875rem;color:var(--muted)}
+nav button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--muted);border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem}
+nav button[aria-current=true]{background:var(--raised);color:var(--ink);font-weight:500}
+main{padding:2rem 1.5rem 4rem}
+.tools{display:flex;flex-wrap:wrap;gap:1rem;margin:0 0 2rem;font-size:.875rem;color:var(--muted)}
+.tools label{display:flex;gap:.5rem;align-items:center}
+.stage{max-width:36rem}
+.stage h1,.stage h2{font-size:1.25rem;font-weight:500;line-height:1.2;margin:0}
+.muted{color:var(--muted)}
+.group{display:flex;flex-direction:column;gap:.5rem}
+.groups{display:flex;flex-direction:column;gap:2rem}
+.row{display:flex;flex-wrap:wrap;gap:1rem;align-items:center}
+.btn{border:0;border-radius:.5rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500}
+.primary{background:var(--accent);color:#fff}
+.secondary{background:var(--raised);color:var(--ink)}
+.card{background:var(--card);border-radius:.75rem;padding:1.25rem;box-shadow:0 12px 32px hsl(0 0% 0% / .4)}
+.marks{display:flex;gap:.5rem}
+.mark{width:1.5rem;height:1.5rem;border-radius:.5rem;background:var(--raised);display:grid;place-items:center;font-size:.875rem}
+.metrics{display:flex;flex-wrap:wrap;gap:2rem}
+.metrics b{font-weight:500}
+.works{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.works .card{min-height:7rem}
+.quote+.who{margin-top:.5rem}
+body.tight .groups,body.tight .works,body.tight .metrics{gap:.25rem}
+body.tight .row{gap:.25rem}
+body.spray .mark,body.spray .num,body.spray .who b{color:var(--accent)}
+.note{max-width:40rem;margin-top:3rem;color:var(--muted);font-size:.875rem}
+.note h3{color:var(--ink);font-size:1rem;font-weight:500;margin:1.5rem 0 .5rem}
+dt{color:var(--ink)}
+dd{margin:.25rem 0 1rem}
+@media(max-width:720px){
+  .shell{grid-template-columns:1fr}
+  nav{display:flex;gap:.25rem;overflow:auto;padding:.75rem}
+  nav p{display:none}
+  nav button{width:auto;white-space:nowrap}
+  .works{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav aria-label="组块">
+    <p>一次只看一块</p>
+    <button type="button" data-block="header" aria-current="true">01 顶栏</button>
+    <button type="button" data-block="hero">02 首句</button>
+    <button type="button" data-block="practice">03 说明</button>
+    <button type="button" data-block="logos">04 字标</button>
+    <button type="button" data-block="proof">05 数字</button>
+    <button type="button" data-block="works">06 作品</button>
+    <button type="button" data-block="voices">07 引言</button>
+    <button type="button" data-block="pricing">08 报价</button>
+    <button type="button" data-block="letter">09 信</button>
+    <button type="button" data-block="close">10 收束</button>
+  </nav>
+  <main>
+    <div class="tools">
+      <label><input id="space" type="checkbox" checked> 组内紧、组外松</label>
+      <label><input id="accent" type="checkbox" checked> 强调色只给主按钮</label>
+    </div>
+    <div class="stage">
+      <section id="header" class="block">
+        <div class="row" style="justify-content:space-between">
+          <strong>工作室</strong>
+          <span class="row muted" style="font-size:.875rem"><span>关于</span><span>作品</span></span>
+          <button class="btn primary" type="button">联系</button>
+        </div>
+      </section>
+      <section id="hero" class="block" hidden>
+        <h1>先把这一句话说清楚</h1>
+      </section>
+      <section id="practice" class="block groups" hidden>
+        <div class="group muted">
+          <p style="margin:0">这一段是说明，16px，明度 60%。</p>
+          <p style="margin:0">和它挨着的下一句，算同一组。</p>
+        </div>
+        <div class="row">
+          <button class="btn primary" type="button">联系</button>
+          <button class="btn secondary" type="button">看合作方式</button>
+        </div>
+      </section>
+      <section id="logos" class="block" hidden>
+        <div class="row">
+          <span class="muted" style="font-size:.875rem">几支团队</span>
+          <span class="marks"><span class="mark">甲</span><span class="mark">乙</span><span class="mark">丙</span><span class="mark">丁</span></span>
+        </div>
+      </section>
+      <section id="proof" class="block" hidden>
+        <p class="metrics" style="margin:0"><span><b class="num">12</b> <span class="muted">个项目</span></span><span><b class="num">4</b> <span class="muted">支团队</span></span></p>
+      </section>
+      <section id="works" class="block" hidden>
+        <div class="works">
+          <article class="card"><b>界面一</b><p class="muted" style="margin:.5rem 0 0;font-size:.875rem">卡片是 5% 明度，浮在 0% 的页面上。</p></article>
+          <article class="card"><b>界面二</b><p class="muted" style="margin:.5rem 0 0;font-size:.875rem">两张卡之间比卡内的字距更远。</p></article>
+        </div>
+      </section>
+      <section id="voices" class="block groups" hidden>
+        <article><p class="quote" style="margin:0">这句话和署名是一组。</p><p class="who" style="margin:0;font-size:.875rem"><b>林</b> <span class="muted">编辑</span></p></article>
+        <article><p class="quote" style="margin:0">下一句离得更远，所以不是同一组。</p><p class="who" style="margin:0;font-size:.875rem"><b>周</b> <span class="muted">产品</span></p></article>
+      </section>
+      <section id="pricing" class="block" hidden>
+        <h2 style="margin-bottom:2rem">合作方式</h2>
+        <article class="card groups">
+          <div class="row" style="justify-content:space-between"><b>驻场</b><span>按月</span></div>
+          <p class="muted" style="margin:0;font-size:.875rem">坐进产品里面，而不是站在旁边。</p>
+          <button class="btn primary" type="button">开始合作</button>
+        </article>
+      </section>
+      <section id="letter" class="block" hidden>
+        <article class="card groups">
+          <p class="muted" style="margin:0;font-size:.875rem">信</p>
+          <h2>比功能活得更久的是决定</h2>
+          <p class="muted" style="margin:0">字、间距、哪一个颜色可以出现，先写下来。</p>
+        </article>
+      </section>
+      <section id="close" class="block groups" hidden>
+        <p class="muted" style="margin:0">收束再给一次同样的两个按钮，不再新造一种。</p>
+        <div class="row">
+          <button class="btn primary" type="button">联系</button>
+          <button class="btn secondary" type="button">看系统</button>
+        </div>
+      </section>
+    </div>
+    <div class="note">
+      <h3>可拆</h3>
+      <dl>
+        <dt><code>#isolate</code></dt>
+        <dd>左侧点一块，其余 <code>hidden</code>。整页只是这十块按顺序叠回去。</dd>
+        <dt id="type"><code>#type</code></dt>
+        <dd>只用三种字号：正文 1rem（16px），次要 0.875rem（14px），标题 1.25rem（20px）、行高 1.2。一种无衬线。标题靠字重，不靠再大一号。</dd>
+        <dt id="space"><code>#space</code></dt>
+        <dd>组内 0.5rem，组与组之间 2rem。按钮上下 0.5rem、左右 1rem，按钮之间的空隙等于左右留白。取消勾选就能看见挤在一起的样子。</dd>
+        <dt id="layers"><code>#layers</code></dt>
+        <dd>同一套灰，色相和饱和度都是 0。页面 0%，卡片 5%，可点的表面 10%。越亮越靠前。文字 92%，次要 60%，标题不用纯白。</dd>
+        <dt id="accent"><code>#accent</code></dt>
+        <dd>强调色 <code>hsl(211 90% 56%)</code> 只给主按钮。取消勾选后，数字和名字也会变蓝，那就是用多了。</dd>
+      </dl>
+      <p>来源是自己的页面组块分类，加上间距、字号、明度三条可执行规则。不收任何现成网站的文案、字标或配色。</p>
+    </div>
+  </main>
+</div>
+<script>
+const nav=[...document.querySelectorAll("nav button")];
+const blocks=[...document.querySelectorAll(".block")];
+function show(id){
+  blocks.forEach(b=>b.hidden=b.id!==id);
+  nav.forEach(b=>b.setAttribute("aria-current",b.dataset.block===id?"true":"false"));
+}
+nav.forEach(b=>b.addEventListener("click",()=>show(b.dataset.block)));
+document.getElementById("space").addEventListener("change",e=>document.body.classList.toggle("tight",!e.target.checked));
+document.getElementById("accent").addEventListener("change",e=>document.body.classList.toggle("spray",!e.target.checked));
+</script>
+</body>
+</html>
