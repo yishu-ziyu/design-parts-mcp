@@ -21,9 +21,10 @@ const TOOLS = [
   {
     name: "search_parts",
     description:
+      "Visual-technique & UI-parts library with tested parameters. Call before building visual effects or UI pieces. English or Chinese. " +
       "检索设计零件库：发明表（每篇活笔记是什么、什么时候用）+ 零件表（要做哪一块 UI，打开哪一页哪一处）+ 各笔记页尾「可拆」锚点 + 已整理零件的机制和适用场景 + 各笔记 README。" +
       'query 为空字符串时返回全量发明表；否则命中任一词即返回，少见的词和笔记名命中排得更前，同一篇最多连占两条（type: invention/part/part-detail/detachable/readme，含 note、anchor、path、description、matched）。unmatched 列出整库都没命中的词。' +
-      '示例 query："镜头"、"工具栏"、"tooltip"、"批量选择"、"手风琴"。中文关键词效果最好。',
+      '示例 query："镜头"、"工具栏"、"tooltip"、"批量选择"、"手风琴"、"die-cut"。中英文都可。',
     inputSchema: {
       type: "object",
       properties: {

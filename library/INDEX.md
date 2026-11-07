@@ -142,6 +142,8 @@
 | [flip-browser/index.html](living/flip-browser/index.html) | 截图版：窗口里只有一条地址栏和一张手绘风格的大图，点图上任何地方，旁边弹出缩略图小卡，然后画面钻进去变成下一张图。 | 做图册、地图、知识探索这类点进去看细节的产品，或想讲清楚「整页都由模型生成」长什么样时。 |
 | [stickman-wrecker/index.html](living/stickman-wrecker/index.html) | 一个带火箭筒的像素小人在百科页面上乱飞，字母被炸飞悬在半空，炸开的洞里露出夜景，图片碎成多边形。 | 做彩蛋、404 页或想让人记住的活动页时用。 |
 | [product-timeline/index.html](living/product-timeline/index.html) | 白底上一个物件压着巨大的灰色年份，下面一排竖条像山峰，拖动时山峰滑动、物件一格一换。 | 让人按顺序翻看一组有时间先后的条目时用。 |
+| [trace/index.html](living/trace/index.html) | Agent 依次查五个来源：每步长出一行在扫光，结果卡开两张收一张，答案逐词流出，最后整串收成「Ran 2 searches and read 3 sources」 | Agent / AI 助手展示工具调用过程、思考轨迹、引用来源。`?t=` 能和原视频逐秒对帧 |
+| [die-cut-sticker/index.html](living/die-cut-sticker/index.html) | 同一张抠图左右对照：左边是本子上歪 −8° 的模切贴纸（等宽厚白边、纸感颗粒、软投影），右边是粘进来的矩形截图 | Die-cut sticker / 贴纸 / 抠图白边：让一张图融入画面（blend an image into the scene），不像后贴的截图。先问它在场景里是什么物件 |
 
 ## 零件
 
@@ -718,3 +720,20 @@
 | 做可拖动的时间标尺 | [product-timeline](living/product-timeline/index.html#rail) | 竖条区域，按住左右拖 |
 | 单物件展示版式 | [product-timeline](living/product-timeline/index.html#stage) | 上半部分的年份和物件 |
 | 带键帽提示的计数按钮 | [product-timeline](living/product-timeline/index.html#votes) | had 和 wanted 按钮 |
+
+### main 合入补充（trace / die-cut）
+
+| 要做 | 打开 | 看哪一块 |
+|------|------|----------|
+| 正在运行的一行 / 扫光 / shimmer text | [trace](living/trace/index.html#sweep) | 一道 28% 的淡带从右往左扫过正常字色，chip 里的图标一起变淡。用 mask，不用 background-clip |
+| Agent 当前在做什么 / 实时状态行 / 进度一句话 | [trace](living/trace/index.html#live-head) | Working on it → 当前步骤文字 → Ran 2 searches and read 3 sources + 图标叠片 |
+| 工具调用结果卡 / 搜索结果预览 / +N more | [trace](living/trace/index.html#card) | 比底亮一档的灰卡，白分隔线；前导位放未读点、字母头像、PR / 工单状态 |
+| 多步结果太长 / 只开最近几张 / 手风琴自动收 | [trace](living/trace/index.html#window) | 新卡展开的同一帧收起倒数第三张，`grid-template-rows 0fr→1fr` 340ms |
+| 来源标签 / 引用 chip / 正文里的出处 | [trace](living/trace/index.html#chip) | 3.5% 黑底、圆角 6、图标 + 名字；正文里缩一号夹在句末 |
+| 答案逐词出现 / 流式输出 / 过程收成摘要 | [trace](living/trace/index.html#stream) | 按词淡入，chip / code / 链接整块出；写完后步骤列表收成一行，模糊淡入 |
+| 贴纸白边 / die-cut outline / 抠图外描边 / white border | [die-cut-sticker](living/die-cut-sticker/index.html#edge) | `feMorphology dilate radius=7`（宽×0.03）+ blur 1.5 阈值圆角，暖白 #fffdf8 |
+| 贴纸投影 / sticker drop shadow / 阴影跟轮廓走 | [die-cut-sticker](living/die-cut-sticker/index.html#shadow) | `drop-shadow(0 4px 10px rgba(0,0,0,.15))` 写在 url(#diecut) 之后；不用 box-shadow |
+| 贴纸倾斜 / tilt / rotate 手贴感 | [die-cut-sticker](living/die-cut-sticker/index.html#tilt) | `rotate(-8deg)`，区间 −12…−4deg |
+| 贴纸尺寸 / sticker scale | [die-cut-sticker](living/die-cut-sticker/index.html#scale) | 宽 240px ≈ 场景 25–30%，白边随宽缩放 |
+| 纸感颗粒 / paper grain / noise texture | [die-cut-sticker](living/die-cut-sticker/index.html#grain) | `feTurbulence fractalNoise .9`，只上白边，α 0.06–0.14 |
+| 图片融入画面 / 不像粘贴的截图 / blend image into scene | [die-cut-sticker](living/die-cut-sticker/index.html) | 整页：左贴纸右截图反例 |

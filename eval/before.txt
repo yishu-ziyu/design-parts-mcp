@@ -1,0 +1,27 @@
+✗ make a die-cut vinyl sticker of only the character  →  (无)
+✗ die-cut sticker  →  (无)
+✗ sticker  →  (无)
+✗ 贴纸  →  (无)
+✗ 模切边  →  (无)
+✗ 暖色纸感  →  (无)
+✗ 融入画面  →  (无)
+✗ make an image blend into a scene  →  (无)
+✗ place this character image on a desk scene so it looks natural  →  (无)
+✗ 一眼看出是后加的  →  (无)
+✗ 像粘进去的截图  →  (无)
+✗ polaroid vs sticker  →  (无)
+✗ soft shadow slight tilt  →  (无)
+✗ 抠图 白边  →  (无)
+✗ shadow  →  spine#dot, spine, triage
+✗ 轻微倾斜  →  (无)
+✗ 玻璃导航  →  (无)
+✗ glass navigation refraction  →  (无)
+✗ 推镜头  →  (无)
+✗ 点卡片翻开 再点合上  →  (无)
+✗ 手绘标题  →  (无)
+✗ hand-drawn svg icons  →  (无)
+✗ 批量上传 拖文件  →  (无)
+✓ 文件夹  →  mosby, gsap, paper-echo
+✗ visible camera frustum flight path  →  (无)
+
+top-3 1/25 = 4.0%
