@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 1,
+  "status": "local-preview",
+  "cli": "shadcn@4.23.0",
+  "items": [
+    {
+      "name": "growing-ui",
+      "version": "0.1.0",
+      "title": {
+        "en": "Answer card",
+        "zh": "回答卡片"
+      },
+      "description": {
+        "en": "Use it to write an answer onto one card.",
+        "zh": "用来把一段回答写到同一张卡片上。"
+      },
+      "keywords": [
+        "生成",
+        "流式",
+        "卡片",
+        "边写边长",
+        "告警",
+        "growing",
+        "stream",
+        "card"
+      ],
+      "framework": "vanilla",
+      "technology": "JavaScript",
+      "license": "MIT",
+      "status": "local-preview",
+      "files": [
+        "example.html",
+        "LICENSE"
+      ],
+      "entry": "example.html",
+      "example": "example.html",
+      "source": {
+        "reference": "same-card growth",
+        "attribution": "Preview of a card that grows across timed edits. No third-party media.",
+        "materials": "No third-party images, fonts or network assets.",
+        "summary": {
+          "en": "A local preview of one card receiving five edits, then a check. No third-party media.",
+          "zh": "本机预览：同一张卡片接受五次写入，写完再核对。不含第三方素材。"
+        }
+      },
+      "mechanism": {
+        "summary": {
+          "en": "A block lands every 700ms. After five blocks it waits 1.8 seconds, clears, and writes again.",
+          "zh": "每 700ms 补一块。五块到齐后停 1.8 秒，清空，再写。"
+        },
+        "intervalMs": 700,
+        "passes": 5,
+        "after": {
+          "en": "Write it again",
+          "zh": "再写一遍"
+        },
+        "parameters": [
+          {
+            "key": "intervalMs",
+            "label": {
+              "en": "Between edits",
+              "zh": "补下一块之前"
+            },
+            "unit": "ms"
+          },
+          {
+            "key": "passes",
+            "label": {
+              "en": "Edits",
+              "zh": "一共几块"
+            }
+          },
+          {
+            "key": "after",
+            "label": {
+              "en": "After the last edit",
+              "zh": "到齐之后"
+            }
+          }
+        ]
+      },
+      "fit": {
+        "en": "An answer should land on one card while someone is still reading it.",
+        "zh": "一段回答要落在同一张卡片上，人还看着的时候。"
+      },
+      "avoid": {
+        "en": "The sentences in the card are a sample. Replace them with your own.",
+        "zh": "卡片里的句子只是样本。用的时候换成你自己的。"
+      },
+      "previewHint": {
+        "en": "Watch this card fill in. Reset starts it again.",
+        "zh": "看这张卡片补完。重置从头来。"
+      },
+      "integration": {
+        "en": "Open example.html. Keep one card element and append blocks on a timer. Check the result after the last edit.",
+        "zh": "从 example.html 看。保留同一张卡片，按计时把块补上去。最后一次写完再核对。"
+      },
+      "accessibility": {
+        "en": "The status line says Writing, then Done. Reduced motion shows the finished card.",
+        "zh": "状态行写着「还在写」，到齐后改成「写完了」。开了减少动态效果时，直接给出写完的卡片。"
+      },
+      "usage": {
+        "mount": "Open example.html. The card reveals five blocks, 500ms apart.",
+        "requirements": "A browser that can run the example page."
+      },
+      "registryPath": "r/growing-ui.json",
+      "examplePath": "parts/growing-ui/example.html"
+    },
+    {
+      "name": "drag-panel",
+      "version": "0.1.0",
+      "title": {
+        "en": "Drag panel",
+        "zh": "跟手阅读面板"
+      },
+      "description": {
+        "en": "An embedded panel that follows your pointer and settles with an interruptible spring.",
+        "zh": "嵌入页面的拖动面板。跟随手势，松手后弹簧回位，途中可再次抓住。"
+      },
+      "keywords": [
+        "拖动",
+        "阅读",
+        "面板",
+        "弹簧",
+        "中途打断",
+        "drag",
+        "panel",
+        "reading",
+        "spring"
+      ],
+      "framework": "vanilla",
+      "technology": "JavaScript",
+      "license": "MIT",
+      "status": "local-preview",
+      "files": [
+        "drag-panel.js",
+        "drag-panel.css",
+        "example.html",
+        "LICENSE"
+      ],
+      "entry": "drag-panel.js",
+      "example": "example.html",
+      "source": {
+        "reference": "skill-samples#handle, skill-samples#sheet",
+        "attribution": "Original local skill-samples reading panel, 2026-09-08; modularized for Design parts. Not an Apple component.",
+        "materials": "No third-party images, fonts or network assets.",
+        "summary": {
+          "en": "Original local skill-samples reading panel, retaining the gesture parameters in an independent module. Not an Apple component; no third-party images, fonts or network assets.",
+          "zh": "来源：原有 skill-samples 跟手阅读面板，保留机制参数并提炼为独立模块。不是 Apple 官方组件；不含第三方图片、字体或网络素材。"
+        }
+      },
+      "mechanism": {
+        "summary": {
+          "en": "The pointer controls position directly. Release to settle at one of two resting positions. Grab the handle again to interrupt the spring.",
+          "zh": "拖动时直接跟手。松手后，根据位置与速度选择停靠点。回弹途中重新抓住横条，即可打断弹簧。"
+        },
+        "parameters": [
+          {
+            "key": "stiffness",
+            "label": {
+              "en": "Stiffness",
+              "zh": "弹簧刚度"
+            }
+          },
+          {
+            "key": "damping",
+            "label": {
+              "en": "Damping",
+              "zh": "阻尼"
+            }
+          },
+          {
+            "key": "projectionSeconds",
+            "label": {
+              "en": "Velocity projection",
+              "zh": "速度投影"
+            },
+            "unit": "s"
+          }
+        ],
+        "stiffness": 490,
+        "damping": 42,
+        "maxStepSeconds": 0.025,
+        "velocityExpiryMs": 100,
+        "projectionSeconds": 0.499,
+        "settleDistancePx": 0.15,
+        "settleVelocityPxPerSecond": 1
+      },
+      "fit": {
+        "en": "A reading or detail panel contained within a page region, with two resting positions.",
+        "zh": "页面区域内的阅读或详情面板，具有展开和收起两个停靠位置。"
+      },
+      "avoid": {
+        "en": "Not a modal dialog. No focus trap or page scroll lock. No React/Vue adapter or real-phone certification.",
+        "zh": "不是模态弹层，不提供焦点约束或页面滚动锁定；没有 React/Vue 适配，也未做真实手机验收。"
+      },
+      "previewHint": {
+        "en": "Drag the handle, or use ↑ / ↓.",
+        "zh": "拖动横条，或使用 ↑ / ↓。"
+      },
+      "integration": {
+        "en": "Start with example.html. Change content and CSS variables; call destroy() when removing the panel.",
+        "zh": "从 example.html 开始。替换内容与 CSS 变量，移除面板时调用 destroy()。"
+      },
+      "accessibility": {
+        "en": "Keyboard actions switch immediately. System reduced motion is respected. Collapsed content is not focusable.",
+        "zh": "键盘操作即时切换。尊重系统的减少动态效果设置。收起的正文不可聚焦。"
+      },
+      "usage": {
+        "mount": "mountDragPanel(root, { collapsedHeight: 104, initial: 'collapsed', reducedMotion: 'system', onStateChange })",
+        "methods": [
+          "open()",
+          "close()",
+          "toggle()",
+          "update(options)",
+          "getState()",
+          "destroy()"
+        ],
+        "css": [
+          "--dp-height",
+          "--dp-radius",
+          "--dp-surface",
+          "--dp-ink",
+          "--dp-accent"
+        ],
+        "requirements": "Modern browsers with ES modules, Pointer Events, ResizeObserver and inert. Serve examples over HTTP, not file://."
+      },
+      "revision": "77a2f8d884280e16cf47f0f3f76a1439241823434d78d7e21b108be3fda1683e",
+      "integrity": {
+        "drag-panel.js": "b9c8d022fcc8722fdf1c0eedbd02ba168d5dc10eb1a0d91f4dcaee81ea82ef06",
+        "drag-panel.css": "47586525cbafa56b1f6712a53702dcd8ba17bfc3cdfebb3b1916490426b38bf2",
+        "example.html": "972edcf971f0b3ebe2c214581ea0c951190210b43306cae2ca21b64030c29ee5",
+        "LICENSE": "890d2f23ea4ded24fc42aa1e2b92c7083a6649f4a5d39035225d6c7287e0a594"
+      },
+      "registryPath": "r/drag-panel-0.1.0.json",
+      "examplePath": "parts/drag-panel/example.html"
+    },
+    {
+      "name": "press-feedback",
+      "version": "0.1.0",
+      "title": {
+        "en": "Press feedback button",
+        "zh": "轻按反馈按钮"
+      },
+      "description": {
+        "en": "A native button that gently compresses on press. CSS only, with instant keyboard activation.",
+        "zh": "按下时轻微缩小，松开后复位。只需 CSS，键盘触发不播放缩放。"
+      },
+      "keywords": [
+        "按钮",
+        "按压",
+        "反馈",
+        "轻按",
+        "原生",
+        "CSS",
+        "button",
+        "press",
+        "feedback",
+        "native"
+      ],
+      "framework": "vanilla",
+      "technology": "CSS",
+      "license": "MIT",
+      "status": "local-preview",
+      "files": [
+        "press-feedback.css",
+        "example.html",
+        "LICENSE"
+      ],
+      "entry": "press-feedback.css",
+      "example": "example.html",
+      "source": {
+        "reference": "skill-samples/base.css::.btn; skill-samples/review.html#good",
+        "attribution": "Extracted from the locally authored skill-samples buttons, 2026-09-08. Keeps the 0.97 pressed scale and 100ms duration; uses the reviewed strong ease-out curve.",
+        "materials": "No third-party images, fonts, artwork or network assets.",
+        "summary": {
+          "en": "From the locally authored skill-samples buttons: scale 0.97 and 100ms. The easing curve comes from the reviewed menu example. No third-party media.",
+          "zh": "来自本地制作的 skill-samples 按钮：按下缩放 0.97、过渡 100ms；缓动曲线来自同组菜单评审样本。不包含第三方素材。"
+        }
+      },
+      "mechanism": {
+        "summary": {
+          "en": "A transform transition follows the native active state. Repeated presses retarget from the current scale; releasing outside does not activate the button.",
+          "zh": "transform 过渡跟随原生按下状态。连续按压从当前缩放继续变化；移出按钮后松手不触发操作。"
+        },
+        "pressedScale": 0.97,
+        "durationMs": 100,
+        "runtimeListeners": 0,
+        "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "parameters": [
+          {
+            "key": "pressedScale",
+            "label": {
+              "en": "Pressed scale",
+              "zh": "按下缩放"
+            }
+          },
+          {
+            "key": "durationMs",
+            "label": {
+              "en": "Transition",
+              "zh": "过渡时间"
+            },
+            "unit": "ms"
+          },
+          {
+            "key": "runtimeListeners",
+            "label": {
+              "en": "JS listeners",
+              "zh": "JS 监听器"
+            }
+          }
+        ]
+      },
+      "fit": {
+        "en": "Native action buttons that need subtle pointer or touch feedback while keeping the project's own click behavior.",
+        "zh": "需要轻微按压反馈的原生操作按钮，保留项目已有的点击行为。"
+      },
+      "avoid": {
+        "en": "Not a loading or async-state controller, link replacement or complete button design system. Use real button elements and native disabled. Real phones have not been checked.",
+        "zh": "不提供加载或异步状态管理，不替代链接，也不是完整按钮设计系统。使用真实 button 和原生 disabled；未做真实手机检查。"
+      },
+      "previewHint": {
+        "en": "Press and hold, or focus with Tab and use Space.",
+        "zh": "按住按钮试试，或用 Tab 聚焦后按空格。"
+      },
+      "integration": {
+        "en": "Load press-feedback.css and add class=\"press-feedback\" to a native button. Keep your click handler; change CSS variables for colors and spacing. No mount function or cleanup is needed.",
+        "zh": "引入 press-feedback.css，给原生 button 添加 press-feedback 类。保留自己的点击处理，用 CSS 变量调整配色和间距。无需初始化或销毁函数。"
+      },
+      "accessibility": {
+        "en": "Native Enter and Space activation. Focus-visible keyboard use and reduced motion skip scaling. Disabled buttons stay disabled; hover styling only applies to a fine pointer.",
+        "zh": "保留原生回车和空格激活。键盘焦点和减少动态效果模式不缩放。禁用按钮不响应；悬停样式仅作用于精细指针。"
+      },
+      "usage": {
+        "element": "<button type=\"button\" class=\"press-feedback\">Save</button>",
+        "css": [
+          "--pf-background",
+          "--pf-hover",
+          "--pf-color",
+          "--pf-border",
+          "--pf-radius",
+          "--pf-padding",
+          "--pf-scale",
+          "--pf-duration"
+        ],
+        "reducedMotion": "System preference is automatic. Add the boolean data-reduced-motion attribute to disable scaling for an individual button.",
+        "requirements": "A native button in a browser supporting :focus-visible and prefers-reduced-motion. Behavior and state are owned by the consuming project.",
+        "acceptance": [
+          "Pointer hold and release",
+          "Rapid reversal",
+          "Release outside without activation",
+          "Enter and Space without scaling",
+          "Native disabled",
+          "System and per-button reduced motion",
+          "Multiple buttons without shared state"
+        ]
+      },
+      "revision": "980917bb03ee406c77044213a495231dd6ce34e2e99b2154490268131b3308e1",
+      "integrity": {
+        "press-feedback.css": "4278d3875d323ea7b2b69486cd2931144cb1a35f453cdfb407d87cd34f3464a4",
+        "example.html": "fbf029112cf3c2773449dab768e605b4dba7898df0c46f8b9d8b17340503185e",
+        "LICENSE": "890d2f23ea4ded24fc42aa1e2b92c7083a6649f4a5d39035225d6c7287e0a594"
+      },
+      "registryPath": "r/press-feedback-0.1.0.json",
+      "examplePath": "parts/press-feedback/example.html"
+    }
+  ],
+  "skillPath": "r/design-parts-skill.json"
+}
